@@ -35,7 +35,7 @@ O anfitrião escolhe um dos dois presets antes de criar a sala. A tela de entrad
 
 - Tabuleiro por voltas e turnos, inspirado no formato clássico e na referência visual de *Business Tour*.
 - Inclui o conjunto completo pedido: compra, leilões, grupos de cor, casas e hotéis, hipotecas, trocas, cartas, prisão, dívidas e falência.
-- Usa um limite de duração para reduzir partidas longas. Proposta para fechar: 30 ou 45 minutos; ao zerar, terminar ações e pagamentos em andamento e comparar patrimônio segundo uma regra publicada na sala.
+- Duração confirmada: **30 minutos**. Ao zerar, terminar ações e pagamentos em andamento e comparar patrimônio segundo uma regra publicada na sala.
 - Pode usar construções aceleradas, como permitir hotel com menos casas, conforme as regras opcionais do manual do Super Banco Imobiliário.
 - A falência pode encerrar a partida antes do relógio se restar apenas uma pessoa solvente.
 
@@ -44,20 +44,19 @@ O anfitrião escolhe um dos dois presets antes de criar a sala. A tela de entrad
 - Preset inspirado na descrição pública da edição atual Banco Imobiliário Express: ritmo acelerado, cartas de objetivo, compra e troca de imóveis e vitória por dinheiro ao fim do tempo.
 - É uma adaptação digital inspirada no formato, não uma reprodução literal da edição física. O material oficial consultado não detalha todas as regras nem confirma hipotecas, construção clássica ou leilões.
 - Como o escopo pedido inclui todas as mecânicas, o preset deve manter compra, leilões, grupos de cor, casas e hotéis, hipotecas, trocas, cartas, prisão, dívidas e falência. A diferença fica no ritmo, nos objetivos e na condição de vitória; qualquer exceção precisa ser escolhida e explicada antes da sala começar.
+- Tem duas condições de vitória: quem completar os objetivos primeiro vence imediatamente; se o tempo acabar antes, vence quem tiver o maior patrimônio.
 - Antes de começar, a sala deve exibir a duração, os objetivos e as mecânicas incluídas.
 
 ### Regras comuns aos dois presets
 
-- **2–4 jogadores** é a recomendação inicial, compatível com a faixa publicada para Banco Imobiliário Express e mais simples de ler em telas móveis. O limite de quatro ainda precisa de confirmação.
+- **2–4 jogadores**, confirmado por enquanto para os dois modos; é compatível com a faixa publicada para Banco Imobiliário Express e mantém o tabuleiro legível em telas móveis.
 - A interface deve explicar o modo e a condição de vitória antes do início da partida.
-- Os detalhes de duração, desempate, ações pendentes no fim do relógio e tratamento de desconexão devem ser fechados antes da produção.
+- Os detalhes de desempate, ações pendentes no fim do relógio e tratamento de desconexão devem ser fechados antes da produção.
 
 ## Decisões para fechar
 
-- Qual duração para o Clássico Rápido: 30 ou 45 minutos?
-- Quais ajustes de ritmo e condição de vitória diferenciam o Express sem retirar as mecânicas pedidas?
-- Quais objetivos e condição de vitória entram no Express? A referência física termina com a contagem de dinheiro ao acabar o tempo.
-- Confirmar o limite de quatro jogadores para os dois modos.
+- Quais objetivos entram no Express e quantos devem ser concluídos para a vitória imediata?
+- Como desempatar patrimônio igual ao fim do Express ou do Clássico Rápido?
 - Quais propriedades entram no leilão antes do primeiro turno? Quantos segundos cada lance fica aberto?
 - No Clássico Rápido, o que conta como patrimônio no fim: dinheiro + preço de venda ao banco ou dinheiro + valor parcial dos imóveis?
 - Quando é permitido negociar títulos e por quanto tempo?
@@ -70,4 +69,6 @@ O anfitrião escolhe um dos dois presets antes de criar a sala. A tela de entrad
 - Jogável em computador e celular.
 - Escopo inclui todas as mecânicas principais.
 - Nome desejado para o repositório: `BancoImobiliarioOnline`.
-- Limite de 4 jogadores é a recomendação, ainda a confirmar.
+- Partidas de 2 a 4 jogadores por enquanto.
+- Clássico Rápido dura 30 minutos.
+- No Express, completar os objetivos primeiro encerra a partida com vitória; se o tempo acabar antes, vence o maior patrimônio.

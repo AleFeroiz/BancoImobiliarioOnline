@@ -20,11 +20,11 @@ Um jogo de Banco Imobiliário para abrir no navegador e jogar com amigos, sem ca
 3. Executar turnos, dados, movimento, compra, leilão e aluguel de propriedades e companhias.
 4. Implementar conjuntos, casas, hotéis, hipotecas, negociação entre jogadores, cartas/eventos, prisão, dívidas e falência.
 5. Mostrar dinheiro, propriedades, construções, eventos e ações disponíveis para cada jogador.
-6. Oferecer partida rápida com relógio e cálculo de patrimônio no fim, além da vitória por falência.
+6. Oferecer Clássico Rápido de 30 minutos e Express com vitória imediata ao cumprir objetivos ou vitória por patrimônio quando o tempo acabar, além da falência.
 7. Reconectar um participante que caiu, sem permitir que duas pessoas controlem a mesma vaga.
 8. Ajustar a apresentação 3D e a interface em computadores e celulares.
 
-O usuário quer duas opções de regras na criação da sala: Clássico Rápido e Express. O escopo inclui todas as mecânicas principais nos dois modos; eles se diferenciam pelo ritmo, objetivos e condição de vitória, que ainda precisam ser definidos. Qualquer alteração ou exceção de regra deve aparecer antes da partida.
+O usuário quer duas opções de regras na criação da sala: Clássico Rápido, com duração de 30 minutos, e Express, em que completar objetivos primeiro encerra a partida com vitória, ou o maior patrimônio vence quando o tempo acabar. O escopo inclui todas as mecânicas principais nos dois modos. As salas terão 2 a 4 jogadores por enquanto. Os objetivos exatos e a duração do Express ainda precisam ser definidos. Qualquer alteração ou exceção de regra deve aparecer antes da partida.
 
 ## Stack e arquitetura propostas
 
@@ -48,7 +48,7 @@ Referências oficiais consultadas em 2026-10-27: [WebSockets no Vercel](https://
 
 ## Limites iniciais
 
-- Recomendação para o MVP: salas de 2 a 4 pessoas, igual à edição Express atualmente listada pela Estrela. Assentos e HUD ficam mais legíveis, os turnos circulam mais rápido e o tabuleiro continua claro no celular. "Sem limite" não combina com um tabuleiro por assentos; a página oficial do [Banco Imobiliário Express](https://www.estrela.com.br/produto/banco-imobiliario-express-150394) especifica 2, 3 ou 4 jogadores.
+- Salas de 2 a 4 pessoas por enquanto, igual à edição Express atualmente listada pela Estrela. Assentos e HUD ficam mais legíveis, os turnos circulam mais rápido e o tabuleiro continua claro no celular. "Sem limite" não combina com um tabuleiro por assentos; a página oficial do [Banco Imobiliário Express](https://www.estrela.com.br/produto/banco-imobiliario-express-150394) especifica 2, 3 ou 4 jogadores.
 - Dois presets de regras na criação da sala; nada de marketplace, ranking ou matchmaking público no MVP.
 - Sem login, contas, chat de voz ou sistema social.
 - Sem copiar assets, marca ou layout exato de *Business Tour*. A referência descreve câmera, profundidade e clareza visual.

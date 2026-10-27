@@ -12,6 +12,9 @@ Este arquivo separa decisões confirmadas de propostas para evitar que uma suges
 | Plataformas | Computador e celular. |
 | Mecânicas | Incluir o conjunto completo, incluindo leilões, construções, hipotecas e negociação. |
 | Modos de partida | Oferecer duas opções de regras na criação da sala: Clássico Rápido e Express. |
+| Duração | Clássico Rápido terá 30 minutos. |
+| Express | Vitória imediata ao completar os objetivos primeiro; se o tempo acabar, vence o maior patrimônio. |
+| Tamanho da sala | De 2 a 4 jogadores por enquanto, nos dois modos. |
 | Repositório | Nome desejado: `BancoImobiliarioOnline`. |
 | Referência visual | A captura de *Business Tour* enviada pelo usuário orienta a sensação de perspectiva e leitura do tabuleiro. |
 | Fase atual | Preparar produto, regras, GitHub e instruções antes de iniciar produção. |
@@ -22,20 +25,20 @@ Este arquivo separa decisões confirmadas de propostas para evitar que uma suges
 |---|---|---|
 | Frontend | React + TypeScript + Vite | Pendente |
 | Renderização 3D | React Three Fiber + Three.js | Pendente |
-| Ritmo/regras | Clássico Rápido com mecânicas completas; Express com objetivos e rodada cronometrada | Dois modos na criação da sala confirmados; detalhes de cada preset pendentes |
+| Ritmo/regras | Clássico Rápido de 30 minutos com mecânicas completas; Express com objetivos, vitória imediata por objetivos ou maior patrimônio ao fim do tempo | Modos, duração clássica e condição de vitória do Express confirmados; objetivos exatos e duração do Express pendentes |
 | Regras e autoridade | Estado e ações validados no servidor por sala | Pendente; recomendação técnica |
 | Multiplayer | Avaliar Colyseus para salas, sincronização e reconexão | Pendente |
 | Frontend em produção | Vercel | Pendente |
 | Servidor de partidas | Comparar Vercel Functions com WebSockets e hospedagem Node persistente | Pendente |
 | Persistência | Sem contas e sem persistência de partidas no MVP | Pendente |
 | Repositório | Preparar Git local com branch `main` e criar remoto `BancoImobiliarioOnline` | Autenticação CLI pendente; visibilidade a definir |
-| Tamanho da sala | 2–4 jogadores no MVP | Recomendação; usuário perguntou se deveria ser sem limite ou até 4. |
+| Tamanho da sala | 2–4 jogadores | Confirmado por enquanto; pode ser revisto depois do MVP. |
 
 ## Questões de produto em ordem de impacto
 
-1. Qual duração inicial do Clássico Rápido: 30 ou 45 minutos?
-2. No modo Express, quais mecânicas clássicas devem permanecer além de compra, troca e objetivos?
-3. Confirmar o limite de 4 pessoas no MVP; recomendado por ritmo e legibilidade no celular.
+1. Quais objetivos entram no Express e quantos devem ser concluídos para a vitória imediata?
+2. Qual duração padrão do Express?
+3. Como desempatar patrimônio igual ao fim do relógio?
 4. O repositório GitHub será público ou privado? O nome solicitado é `BancoImobiliarioOnline`.
 5. Em quais momentos de um turno os jogadores podem negociar títulos e dinheiro?
 6. Quais opções de avatar/cor e regras para anfitrião e desconexão?
@@ -49,3 +52,4 @@ A captura fornecida comunica perspectiva, escala do tabuleiro, presença de peç
 
 - 2026-10-27: criado o esqueleto de preparação do projeto. A stack e o provedor ainda são propostas.
 - 2026-10-27: usuário confirmou computador e celular, quer todas as mecânicas no modo Clássico Rápido, quer também uma opção Express no seletor da criação da sala e escolheu `BancoImobiliarioOnline` como nome do remoto. Recomendado limite de quatro jogadores.
+- 2026-10-27: usuário definiu duração de 30 minutos para o Clássico Rápido, confirmou até quatro jogadores por enquanto e escolheu as duas condições de vitória para o Express: completar objetivos primeiro ou liderar em patrimônio quando o tempo acabar.
