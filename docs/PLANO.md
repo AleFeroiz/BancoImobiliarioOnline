@@ -20,11 +20,11 @@ Um jogo de Banco Imobiliário para abrir no navegador e jogar com amigos, sem ca
 3. Executar turnos, dados, movimento, compra, leilão e aluguel de propriedades e companhias.
 4. Implementar conjuntos, casas, hotéis, hipotecas, negociação entre jogadores, cartas/eventos, prisão, dívidas e falência.
 5. Mostrar dinheiro, propriedades, construções, eventos e ações disponíveis para cada jogador.
-6. Oferecer Clássico Rápido de 30 minutos e Express com vitória imediata ao cumprir objetivos ou vitória por patrimônio quando o tempo acabar, além da falência.
+6. Oferecer Clássico Rápido de 30 minutos e Express baseado em seis rodadas de 40 segundos (cerca de 8 minutos no total), com objetivos e vitória por dinheiro no fim; a vitória imediata por objetivo é uma regra customizada ainda a confirmar.
 7. Reconectar um participante que caiu, sem permitir que duas pessoas controlem a mesma vaga.
 8. Ajustar a apresentação 3D e a interface em computadores e celulares.
 
-O usuário quer duas opções de regras na criação da sala: Clássico Rápido, com duração de 30 minutos, e Express, em que completar objetivos primeiro encerra a partida com vitória, ou o maior patrimônio vence quando o tempo acabar. O escopo inclui todas as mecânicas principais nos dois modos. As salas terão 2 a 4 jogadores por enquanto. Os objetivos exatos e a duração do Express ainda precisam ser definidos. Qualquer alteração ou exceção de regra deve aparecer antes da partida.
+O usuário quer duas opções de regras na criação da sala: Clássico Rápido, com duração de 30 minutos, e Express. A referência pública para Express anuncia cerca de 8 minutos, em 6 rodadas de 40 segundos, cartas de objetivo e vitória por dinheiro ao final; o texto das cartas não está publicado. O usuário também pediu vitória instantânea ao completar objetivo, que deve ser tratada como extensão digital customizada se mantida. As salas terão 2 a 4 jogadores por enquanto. Qualquer alteração ou exceção de regra deve aparecer antes da partida.
 
 ## Stack e arquitetura propostas
 
@@ -64,4 +64,4 @@ Referências oficiais consultadas em 2026-10-27: [WebSockets no Vercel](https://
 
 ## Perguntas para fechar antes da produção
 
-Veja `docs/DECISOES.md` para as definições restantes. As principais são duração padrão do modo rápido, detalhes de leilão e visibilidade do repositório GitHub.
+Veja `docs/DECISOES.md` para as definições restantes. As principais são a regra de vitória e pontuação do Express, conteúdo das metas, detalhes de negociação e desconexão e stack multiplayer.

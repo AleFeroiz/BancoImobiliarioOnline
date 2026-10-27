@@ -2,9 +2,11 @@
 
 ## Edição rápida atual: Banco Imobiliário Express
 
-A página atual da Estrela apresenta o **Banco Imobiliário Express** como uma versão acelerada. É para 2–4 pessoas e usa cartas de objetivo, cartas Sorte ou Revés, quatro dados coloridos e uma ampulheta. A ideia publicada é comprar e trocar imóveis, completar objetivos e acumular mais dinheiro antes de o tempo acabar. [Página oficial do produto](https://www.estrela.com.br/produto/banco-imobiliario-express-150394)
+A página oficial da Estrela confirma que a edição Express usa cartas de objetivo, cartas Sorte ou Revés, casas, dados e ampulheta, e descreve compras, trocas, objetivos e vitória por dinheiro ao fim do tempo. Ela não publica o texto das regras nem o conteúdo das cartas de objetivo. [Página oficial do produto](https://www.estrela.com.br/produto/banco-imobiliario-express-150394)
 
-Em resumo: a pessoa não precisa esperar uma longa partida de eliminação; o grupo joga sob pressão de tempo, toma decisões rápidas de compra e troca e busca cumprir objetivos para chegar ao fim com mais dinheiro. A página oficial não apresenta detalhes suficientes para reproduzir todas as regras do Express, nem lista hipotecas ou o sistema normal de casas e hotéis.
+Para o produto de referência 828100, a ficha de um distribuidor informa **aproximadamente 8 minutos**, em **6 rodadas de 40 segundos**. Isso soma quatro minutos de rodada cronometrada; os oito minutos são a duração aproximada total anunciada. O dado aparece em listagens de venda/distribuição, não no texto público do manual, então deve ser tratado como referência da edição, não como transcrição verificada do livreto. [Ficha do distribuidor](https://www.brokercorporativo.com.br/farol/brokercorp/produto/banco-imobiliario-express-estrela/1570102/)
+
+A embalagem lista **8 cartas de objetivo**, mas não encontrei uma cópia pública do manual com o texto delas. A descrição disponível associa completar objetivos a ganhar mais dinheiro; ela aponta como vencedor quem tiver mais dinheiro no final, não quem completar primeiro um objetivo. Portanto, vitória imediata por objetivo seria uma regra digital extra, não confirmada como regra da caixa.
 
 ## Como manter a partida 3D parecida com o estilo clássico
 
@@ -41,22 +43,24 @@ O anfitrião escolhe um dos dois presets antes de criar a sala. A tela de entrad
 
 ### Express
 
-- Preset inspirado na descrição pública da edição atual Banco Imobiliário Express: ritmo acelerado, cartas de objetivo, compra e troca de imóveis e vitória por dinheiro ao fim do tempo.
-- É uma adaptação digital inspirada no formato, não uma reprodução literal da edição física. O material oficial consultado não detalha todas as regras nem confirma hipotecas, construção clássica ou leilões.
-- Como o escopo pedido inclui todas as mecânicas, o preset deve manter compra, leilões, grupos de cor, casas e hotéis, hipotecas, trocas, cartas, prisão, dívidas e falência. A diferença fica no ritmo, nos objetivos e na condição de vitória; qualquer exceção precisa ser escolhida e explicada antes da sala começar.
-- Tem duas condições de vitória: quem completar os objetivos primeiro vence imediatamente; se o tempo acabar antes, vence quem tiver o maior patrimônio.
-- Antes de começar, a sala deve exibir a duração, os objetivos e as mecânicas incluídas.
+- Referência de duração: aproximadamente **8 minutos**, distribuídos em **6 rodadas de 40 segundos**, conforme a ficha pública do produto 828100. Proposta de adaptação digital: usar exatamente seis fases cronometradas de 40 segundos e reservar a preparação/transições dentro da duração total aproximada.
+- A caixa contém 8 cartas de objetivo. O texto e a distribuição exata não estão publicados no material oficial consultado. Não inventar as cartas como se fossem as originais; obter o livreto físico ou criar objetivos próprios identificados como originais do jogo digital.
+- A descrição da edição diz para completar objetivos e acumular dinheiro; o vencedor ao final é quem tiver mais dinheiro. Para ficar fiel, recomendo que objetivos concedam dinheiro ou vantagem, sem vitória instantânea por objetivo. A vitória instantânea pedida anteriormente pelo usuário pode ficar como regra extra digital, se for mantida conscientemente.
+- Para dar identidade ao preset, recomendo concentrar Express em compra, troca/roubo de propriedades, cartas de objetivo e Sorte ou Revés. A edição traz peças de casas, mas as fontes acessíveis não esclarecem todo o uso delas. Deixar hipotecas, leilões, prisão e falência como mecânicas do Clássico Rápido, salvo se o manual físico confirmar que fazem parte do Express.
+- Antes de começar, a sala deve exibir a duração, o funcionamento das cartas e as condições de vitória.
 
 ### Regras comuns aos dois presets
 
 - **2–4 jogadores**, confirmado por enquanto para os dois modos; é compatível com a faixa publicada para Banco Imobiliário Express e mantém o tabuleiro legível em telas móveis.
 - A interface deve explicar o modo e a condição de vitória antes do início da partida.
-- Os detalhes de desempate, ações pendentes no fim do relógio e tratamento de desconexão devem ser fechados antes da produção.
+- Os detalhes de pontuação final, empate, ações pendentes no fim do relógio e tratamento de desconexão devem ser fechados antes da produção.
 
 ## Decisões para fechar
 
-- Quais objetivos entram no Express e quantos devem ser concluídos para a vitória imediata?
-- Como desempatar patrimônio igual ao fim do Express ou do Clássico Rápido?
+- Manter Express fiel (objetivos dão dinheiro/benefício e vence o maior saldo) ou manter a extensão digital de vitória imediata por objetivo?
+- Quais objetivos originais do jogo digital entram no Express enquanto não tivermos o livreto da edição física?
+- No Express, contar apenas o dinheiro em mãos, como na descrição da edição, ou patrimônio incluindo imóveis?
+- Como desempatar pontuação igual ao fim do Express ou do Clássico Rápido?
 - Quais propriedades entram no leilão antes do primeiro turno? Quantos segundos cada lance fica aberto?
 - No Clássico Rápido, o que conta como patrimônio no fim: dinheiro + preço de venda ao banco ou dinheiro + valor parcial dos imóveis?
 - Quando é permitido negociar títulos e por quanto tempo?
@@ -71,4 +75,5 @@ O anfitrião escolhe um dos dois presets antes de criar a sala. A tela de entrad
 - Nome desejado para o repositório: `BancoImobiliarioOnline`.
 - Partidas de 2 a 4 jogadores por enquanto.
 - Clássico Rápido dura 30 minutos.
-- No Express, completar os objetivos primeiro encerra a partida com vitória; se o tempo acabar antes, vence o maior patrimônio.
+- O usuário pediu vitória imediata por objetivo no Express ou, se o tempo acabar, vitória por patrimônio; isso é uma regra digital personalizada e difere da descrição pública da edição física.
+- Referência para duração do Express: 6 rodadas de 40 segundos e aproximadamente 8 minutos totais; aguarda confirmação para adotar no preset.
