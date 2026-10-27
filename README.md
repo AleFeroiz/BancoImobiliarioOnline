@@ -4,16 +4,22 @@ Jogo de tabuleiro 3D para navegador, para partidas privadas entre amigos. Sem co
 
 ## Estado atual
 
-A primeira fatia de produção contém a experiência inicial, seletor de regras, fluxo local demonstrativo de sala e uma cena 3D original em React Three Fiber. A sala e o botão de dados são demonstrações no navegador; ainda não conectam participantes em dispositivos diferentes nem implementam as regras completas. A próxima fase liga o frontend ao servidor autoritativo Colyseus.
+A fatia atual contém a experiência inicial, seletor de regras, salas privadas Colyseus por código, lobby sincronizado e uma cena 3D original em React Three Fiber. O início de partida sincroniza entre participantes. O tabuleiro e o botão de dados ainda são uma prévia; a lógica completa da partida será implementada na próxima fase.
 
 ## Desenvolvimento local
 
-Requer Node.js 24 LTS e npm 10 ou superior.
+Requer Node.js 24 LTS e npm 10 ou superior. Abra dois terminais na pasta do projeto:
 
 ```sh
 npm install
+npm run dev:server
+```
+
+```sh
 npm run dev
 ```
+
+Em produção, configure `VITE_ROOM_SERVER_URL` com a origem HTTP/HTTPS do servidor Colyseus. `.env.example` mostra o formato.
 
 Para executar todos os testes e o build:
 
@@ -32,8 +38,11 @@ npm run preview
 
 ## Estrutura
 
-- `src/ui/`: telas, HUD, estilos e cena React Three Fiber.
-- `src/game/`: dados e geometria do tabuleiro, fora da camada visual.
+- `src/ui/`: telas, lobby, HUD, integração Colyseus, estilos e cena React Three Fiber.
+- `src/game/`: dados, geometria do tabuleiro e testes independentes do render.
+- `server/src/`: servidor Colyseus autoritativo e estado sincronizado das salas.
+- `server/test/`: testes de integração das salas reais.
+- `shared/`: contratos compartilhados entre cliente e servidor.
 - `docs/PLANO.md`: escopo e fases de produção.
 - `docs/REGRAS-DE-JOGO.md`: regras acordadas e referências pesquisadas.
 - `docs/DECISOES.md`: decisões confirmadas e detalhes a calibrar.

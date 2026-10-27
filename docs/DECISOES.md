@@ -21,6 +21,7 @@
 | Stack | React + TypeScript + Vite + React Three Fiber/Three.js. Regras desacopladas da cena e validadas por servidor autoritativo Node com Colyseus. |
 | Hospedagem planejada | Frontend na Vercel; servidor multiplayer em hospedagem compatível com Node e WebSockets. Validar operação e custo antes do lançamento público. |
 | Dados | MVP sem contas e sem progresso persistente; salas e partidas temporárias. |
+| Código da sala | Código privado único de 5 caracteres, usado como ID da sala Colyseus. |
 | Repositório | `BancoImobiliarioOnline`, remoto privado no GitHub, branch principal `main`. |
 | Fluxo Game Studio | Usar o plugin Game Studio em todas as tarefas deste projeto, conforme `AGENTS.md`, incluindo habilidade de roteamento e a habilidade especializada pertinente. |
 
