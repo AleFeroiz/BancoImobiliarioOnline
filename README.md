@@ -8,12 +8,20 @@ A primeira fatia de produção contém a experiência inicial, seletor de regras
 
 ## Desenvolvimento local
 
-Requer Node.js LTS e npm.
+Requer Node.js 24 LTS e npm 10 ou superior.
 
 ```sh
 npm install
 npm run dev
 ```
+
+Para executar todos os testes e o build:
+
+```sh
+npm run verify
+```
+
+O hook Husky executa `npm run verify` antes de cada commit. Correções de bugs devem vir com um teste de regressão.
 
 Para gerar a versão estática para hospedagem:
 

@@ -4,6 +4,7 @@ dist/
 build/
 coverage/
 .vite/
+.vitest/
 
 # Local configuration and secrets
 .env
