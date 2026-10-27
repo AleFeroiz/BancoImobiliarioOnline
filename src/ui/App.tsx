@@ -186,11 +186,18 @@ function App() {
             <div className="room-code-label">CÓDIGO DA SALA</div><button className="room-code" onClick={() => navigator.clipboard?.writeText(roomCode)}>{roomCode}<span>▣</span></button>
             <div className="room-mode"><span className="mode-icon">✦</span><div><strong>{modeDetails[mode].title}</strong><small>{modeDetails[mode].duration} · {modeDetails[mode].detail}</small></div></div>
             <div className="seat-list">{roomPlayers.map((player, index) => <div className="seat" key={`${player.name}-${index}`}><span className={`seat-avatar avatar-${index}`}>{player.name.slice(0, 1).toUpperCase()}</span><span>{player.name}</span>{player.isHost && <small>ANFITRIÃO</small>}</div>)}{Array.from({ length: Math.max(0, 4 - roomPlayers.length) }, (_, index) => <div className="seat waiting" key={`waiting-${index}`}><span className="seat-avatar">+</span><span>Aguardando jogador</span></div>)}</div>
-            <div className="prototype-note">Sala online · {roomPlayers.length}/4 jogadores. O jogo completo ainda está em desenvolvimento.</div>
+            <div className="prototype-note">{roomPlayers.length}/4 lugares ocupados · sala temporária para sua turma.</div>
             {error && <p className="form-error" role="alert">{error}</p>}
             <button className="primary-button" onClick={startGame} disabled={!isHost || roomPlayers.length < 2}><span>{isHost ? (roomPlayers.length < 2 ? 'Aguardando jogadores' : 'Iniciar partida') : 'Aguardando anfitrião'}</span><span className="button-arrow">↗</span></button>
           </div>
-          <div className="room-aside"><div className="aside-top">SEUS AMIGOS VÃO APARECER AQUI</div><div className="avatar-orbit"><span className="orbit-orb orb-one">L</span><span className="orbit-orb orb-two">R</span><span className="orbit-orb orb-three">N</span><div className="orbit-center">B</div></div><div className="aside-bottom">UMA BOA PARTIDA COMEÇA<br />COM UMA BOA COMPANHIA.</div></div>
+          <div className="room-aside" aria-label="Lugares da sala">
+            <div className="aside-top">LUGARES À MESA</div>
+            <div className="seat-orbit"><div className="orbit-center">MESA</div>{Array.from({ length: 4 }, (_, index) => {
+              const player = roomPlayers[index]
+              return <div className={`seat-orb seat-orb-${index} ${player ? 'occupied' : 'empty'}`} key={player?.sessionId ?? `empty-${index}`}><span>{player?.name.slice(0, 1).toUpperCase() ?? '+'}</span><small>{player?.name ?? 'Livre'}</small></div>
+            })}</div>
+            <div className="aside-bottom">{roomPlayers.length < 4 ? 'COMPARTILHE O CÓDIGO E COMPLETE A MESA.' : 'A MESA ESTÁ COMPLETA.'}</div>
+          </div>
         </section>
       )}
 

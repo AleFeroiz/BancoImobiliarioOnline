@@ -8,3 +8,62 @@
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;transition:none!important}}
 
 button:disabled{opacity:.55;cursor:not-allowed}
+
+/* A sala deve parecer uma mesa pronta para receber a turma, sem apertar o painel em telas médias. */
+.screen-room{background:#dce7d9;color:#263d34}
+.screen-room .scene-backdrop{inset:0;opacity:.43;filter:saturate(.9)}
+.screen-room .scene-backdrop:after{background:linear-gradient(90deg,rgba(233,239,224,.94),rgba(233,239,224,.6) 48%,rgba(233,239,224,.32)),linear-gradient(0deg,rgba(233,239,224,.38),transparent 48%)}
+.screen-room .topbar{border-bottom-color:rgba(57,83,68,.15);background:rgba(248,246,234,.76)}
+.screen-room .brand,.screen-room .topbar-right{color:#365146}
+.screen-room .brand-light{color:#718276}
+.screen-room .brand-mark{border-color:#75947b;color:#587a64}
+.screen-room .icon-button{border-color:rgba(57,83,68,.28);color:#365146}
+.room-layout{min-height:calc(100vh - 82px);padding:24px 32px;grid-template-columns:minmax(330px,470px) minmax(260px,350px);gap:clamp(28px,5vw,72px)}
+.room-card{padding:24px 28px;background:rgba(250,248,237,.96);border:1px solid #d4d9c6;border-radius:18px;box-shadow:0 24px 70px rgba(45,65,49,.14);backdrop-filter:blur(8px);color:#2f4439}
+.room-card .back-link{margin-bottom:16px;color:#6b7f70}
+.room-card .eyebrow{color:#7b895b}
+.room-card h1{font-size:clamp(40px,4.2vw,52px);margin:8px 0 10px;line-height:1.04;letter-spacing:-.04em}
+.room-card h1 em{color:#9b7740}
+.room-card>p{color:#66776a;font-size:12px}
+.room-code-label{margin:18px 0 7px;color:#788673}
+.room-code{height:54px;border:1px dashed #b9ad75;border-radius:10px;background:#f0efdf;color:#47634d;font-size:23px;letter-spacing:.3em}
+.room-code span{color:#8d8156}
+.room-mode{margin:14px 0;padding:11px 12px;background:#edf0e2;border:1px solid #e1e5d5;border-radius:10px;color:#384b3d}
+.room-mode small{color:#728073}
+.seat-list{gap:5px}
+.seat{height:34px;color:#34493d}
+.seat-avatar{background:#dce6d6;color:#46664e}
+.seat small{color:#8a7443}
+.seat.waiting{color:#7f8d81}
+.seat.waiting .seat-avatar{border-color:#bbc6b8;color:#849285}
+.prototype-note{padding-top:10px;color:#728164;font-size:10px}
+.room-card .primary-button{border-radius:9px;background:#779675;color:#fffdf3;box-shadow:0 7px 18px rgba(91,125,89,.18)}
+.room-card .primary-button:hover{background:#648462}
+.room-aside{height:310px;border-left-color:rgba(67,99,73,.22);color:#607663}
+.seat-orbit{position:relative;width:min(250px,100%);height:250px;border:1px solid rgba(89,121,87,.23);border-radius:50%;display:grid;place-items:center;background:rgba(248,248,232,.38)}
+.seat-orbit:before,.seat-orbit:after{content:'';position:absolute;border:1px solid rgba(89,121,87,.17);border-radius:50%;inset:28px}
+.seat-orbit:after{inset:69px}
+.orbit-center{width:58px;height:58px;border:1px solid #c5ae6d;border-radius:50%;display:grid;place-items:center;color:#788861;font:600 10px 'DM Sans',sans-serif;letter-spacing:.14em;background:#f4f0dc;z-index:1}
+.seat-orb{position:absolute;display:flex;align-items:center;gap:6px;color:#48604c;font-size:10px;letter-spacing:0;z-index:2}
+.seat-orb span{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:#7f9e7d;color:#fff;font-size:12px;font-weight:700;border:2px solid #f5f2e6}
+.seat-orb small{font-size:9px;max-width:65px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.seat-orb.empty span{background:#eff0e2;border:1px dashed #aebaab;color:#879584}
+.seat-orb-0{top:0;left:50%;transform:translateX(-50%);flex-direction:column;gap:2px}
+.seat-orb-1{right:-2px;top:50%;transform:translateY(-50%)}
+.seat-orb-2{bottom:0;left:50%;transform:translateX(-50%);flex-direction:column-reverse;gap:2px}
+.seat-orb-3{left:-2px;top:50%;transform:translateY(-50%);flex-direction:row-reverse}
+.aside-bottom{max-width:240px;color:#738473}
+
+@media(max-width:900px){
+  .room-layout{display:flex;justify-content:center;min-height:calc(100vh - 82px);padding:20px 18px 28px}
+  .room-card{width:min(500px,100%)}
+  .room-aside{display:none}
+}
+@media(max-width:640px){
+  .screen-room .topbar{height:66px}
+  .room-layout{min-height:calc(100vh - 66px);padding:16px 14px 24px}
+  .room-card{padding:20px;border-radius:15px}
+  .room-card .back-link{margin-bottom:14px}
+  .room-card h1{font-size:43px}
+  .room-code{font-size:21px}
+}

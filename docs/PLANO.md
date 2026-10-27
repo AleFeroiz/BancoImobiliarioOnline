@@ -39,7 +39,7 @@ As decisões detalhadas estão em [DECISOES.md](DECISOES.md) e as fontes de regr
 ## Fases de produção
 
 1. **Fatia visual inicial:** tela inicial, escolha de modo e primeira cena 3D responsiva com tabuleiro e peças próprias. Implementada como prévia visual.
-2. **Salas online:** servidor Colyseus, código privado de cinco caracteres, lobby sincronizado, anfitrião e reconexão. Implementado; falta validação visual em navegador e revisão de hospedagem.
+2. **Salas online:** servidor Colyseus, código privado de cinco caracteres, lobby sincronizado, anfitrião e reconexão. Implementado; lobby revisado visualmente no navegador integrado. Falta repetir a checagem no Firefox e revisar hospedagem.
 3. **Ciclo de partida:** em andamento. Estado autoritativo, ordem dos turnos, dados, movimento e exibição da casa alcançada estão ligados à sala. Resolver compras, pagamentos, cartas, prisão e relógios continua nas fases seguintes.
 4. **Economia e interação:** compras, aluguel, leilões, negociação, construções, hipotecas, eventos, dívidas e falência. Próximo passo depois de concluir o ciclo básico.
 5. **Presets:** limites de tempo, objetivos e pontuação final do Express e Clássico.
