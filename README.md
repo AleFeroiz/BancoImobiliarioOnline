@@ -1,24 +1,36 @@
 # Banco Imobiliário Online
 
-Jogo de tabuleiro multiplayer para navegador, pensado para partidas casuais entre amigos. A proposta é uma partida 3D com visão inclinada do tabuleiro, salas por código e entrada somente com nome, sem cadastro. Ao criar a sala, o anfitrião poderá escolher entre os modos Clássico Rápido e Express. O público-alvo inicial são grupos de até 4 pessoas, jogando em computador ou celular.
-
-O projeto está na fase de preparação. As decisões listadas como propostas ainda precisam ser confirmadas antes da implementação.
-
-## Documentos do projeto
-
-- [Plano e perguntas de alinhamento](docs/PLANO.md)
-- [Rascunho das regras da partida](docs/REGRAS-DE-JOGO.md)
-- [Registro de decisões](docs/DECISOES.md)
-- [Fluxo de contribuição](CONTRIBUTING.md)
-- [Instruções para agentes de código](AGENTS.md)
-
-## Referência visual
-
-A captura de tela enviada pelo usuário, de *Business Tour*, serve para comunicar a direção geral: tabuleiro 3D em perspectiva inclinada, leitura clara das casas, peças e dados animados e informações dos jogadores ao redor. Ela não é uma especificação literal nem um arquivo de produção. O jogo deverá ter identidade visual, tabuleiro, textos e assets próprios.
+Jogo de tabuleiro 3D para navegador, para partidas privadas entre amigos. Sem conta: cada pessoa informa um nome e cria uma sala ou entra usando código. Os modos são Clássico Rápido (30 minutos) e Express (seis rodadas de 40 segundos, cerca de 8 minutos), para 2–4 pessoas.
 
 ## Estado atual
 
-- Preparação de produto e regras: em andamento; dois modos de partida definidos para discussão.
-- Stack e hospedagem: propostas registradas; falta confirmar.
-- Implementação do jogo: ainda não iniciada.
-- GitHub remoto: [BancoImobiliarioOnline](https://github.com/AleFeroiz/BancoImobiliarioOnline), privado, conectado à branch `main`.
+A primeira fatia de produção contém a experiência inicial, seletor de regras, fluxo local demonstrativo de sala e uma cena 3D original em React Three Fiber. A sala e o botão de dados são demonstrações no navegador; ainda não conectam participantes em dispositivos diferentes nem implementam as regras completas. A próxima fase liga o frontend ao servidor autoritativo Colyseus.
+
+## Desenvolvimento local
+
+Requer Node.js LTS e npm.
+
+```sh
+npm install
+npm run dev
+```
+
+Para gerar a versão estática para hospedagem:
+
+```sh
+npm run build
+npm run preview
+```
+
+## Estrutura
+
+- `src/ui/`: telas, HUD, estilos e cena React Three Fiber.
+- `src/game/`: dados e geometria do tabuleiro, fora da camada visual.
+- `docs/PLANO.md`: escopo e fases de produção.
+- `docs/REGRAS-DE-JOGO.md`: regras acordadas e referências pesquisadas.
+- `docs/DECISOES.md`: decisões confirmadas e detalhes a calibrar.
+- `AGENTS.md`: regras de trabalho, incluindo uso obrigatório do Game Studio.
+
+## Direção visual
+
+A imagem de *Business Tour* enviada pelo usuário é referência de câmera inclinada, profundidade e leitura do tabuleiro. A implementação usa composição, nomes, formas e materiais próprios; não inclui assets nem interface copiados do jogo de referência.
