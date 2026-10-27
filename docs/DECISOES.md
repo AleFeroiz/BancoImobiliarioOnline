@@ -16,6 +16,7 @@ Este arquivo separa decisões confirmadas de propostas para evitar que uma suges
 | Express | Vitória imediata ao completar os objetivos primeiro; se o tempo acabar, vence o maior patrimônio. |
 | Tamanho da sala | De 2 a 4 jogadores por enquanto, nos dois modos. |
 | Repositório | Nome desejado: `BancoImobiliarioOnline`. |
+| GitHub | Remoto privado criado e conectado em `origin`; branch `main` publicada. |
 | Referência visual | A captura de *Business Tour* enviada pelo usuário orienta a sensação de perspectiva e leitura do tabuleiro. |
 | Fase atual | Preparar produto, regras, GitHub e instruções antes de iniciar produção. |
 
@@ -31,7 +32,7 @@ Este arquivo separa decisões confirmadas de propostas para evitar que uma suges
 | Frontend em produção | Vercel | Pendente |
 | Servidor de partidas | Comparar Vercel Functions com WebSockets e hospedagem Node persistente | Pendente |
 | Persistência | Sem contas e sem persistência de partidas no MVP | Pendente |
-| Repositório | Preparar Git local com branch `main` e criar remoto `BancoImobiliarioOnline` | Autenticação CLI pendente; visibilidade a definir |
+| Repositório | Git local com branch `main` e remoto `BancoImobiliarioOnline` | Criado como privado; `main` publicada em `origin` |
 | Tamanho da sala | 2–4 jogadores | Confirmado por enquanto; pode ser revisto depois do MVP. |
 
 ## Questões de produto em ordem de impacto
@@ -39,10 +40,9 @@ Este arquivo separa decisões confirmadas de propostas para evitar que uma suges
 1. Quais objetivos entram no Express e quantos devem ser concluídos para a vitória imediata?
 2. Qual duração padrão do Express?
 3. Como desempatar patrimônio igual ao fim do relógio?
-4. O repositório GitHub será público ou privado? O nome solicitado é `BancoImobiliarioOnline`.
-5. Em quais momentos de um turno os jogadores podem negociar títulos e dinheiro?
-6. Quais opções de avatar/cor e regras para anfitrião e desconexão?
-7. O primeiro lançamento deve usar formas simples ou assets 3D mais acabados?
+4. Em quais momentos de um turno os jogadores podem negociar títulos e dinheiro?
+5. Quais opções de avatar/cor e regras para anfitrião e desconexão?
+6. O primeiro lançamento deve usar formas simples ou assets 3D mais acabados?
 
 ## Referência visual e propriedade intelectual
 
@@ -53,3 +53,4 @@ A captura fornecida comunica perspectiva, escala do tabuleiro, presença de peç
 - 2026-10-27: criado o esqueleto de preparação do projeto. A stack e o provedor ainda são propostas.
 - 2026-10-27: usuário confirmou computador e celular, quer todas as mecânicas no modo Clássico Rápido, quer também uma opção Express no seletor da criação da sala e escolheu `BancoImobiliarioOnline` como nome do remoto. Recomendado limite de quatro jogadores.
 - 2026-10-27: usuário definiu duração de 30 minutos para o Clássico Rápido, confirmou até quatro jogadores por enquanto e escolheu as duas condições de vitória para o Express: completar objetivos primeiro ou liderar em patrimônio quando o tempo acabar.
+- 2026-10-27: autenticação do GitHub concluída; repositório privado `BancoImobiliarioOnline` criado e branch `main` enviada.

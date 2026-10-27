@@ -21,4 +21,4 @@ A captura de tela enviada pelo usuário, de *Business Tour*, serve para comunica
 - Preparação de produto e regras: em andamento; dois modos de partida definidos para discussão.
 - Stack e hospedagem: propostas registradas; falta confirmar.
 - Implementação do jogo: ainda não iniciada.
-- GitHub remoto: ainda não conectado.
+- GitHub remoto: [BancoImobiliarioOnline](https://github.com/AleFeroiz/BancoImobiliarioOnline), privado, conectado à branch `main`.
