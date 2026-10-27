@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { Room } from '@colyseus/sdk'
 import type { GameMode, LobbyPlayer } from '../../shared/lobby'
 import BoardScene from './BoardScene'
@@ -7,6 +7,7 @@ import { boardSpaces, formatMoney } from '../game/board'
 
 type Mode = GameMode
 type Screen = 'home' | 'room' | 'game'
+type SyncedPlayer = LobbyPlayer & { sessionId: string }
 
 const modeDetails: Record<Mode, { title: string; duration: string; detail: string }> = {
   classic: { title: 'Clássico Rápido', duration: '30 min', detail: 'Regras completas • patrimônio no final' },
@@ -19,15 +20,20 @@ function App() {
   const [roomCode, setRoomCode] = useState('')
   const [mode, setMode] = useState<Mode>('classic')
   const [error, setError] = useState('')
-  const [position, setPosition] = useState(0)
-  const [dice, setDice] = useState<[number, number]>([2, 5])
+  const [activePlayerSessionId, setActivePlayerSessionId] = useState('')
+  const [turnNumber, setTurnNumber] = useState(0)
+  const [turnPhase, setTurnPhase] = useState<'roll' | 'resolve'>('roll')
+  const [dice, setDice] = useState<[number, number]>([0, 0])
+  const [landingDescription, setLandingDescription] = useState('')
   const [room, setRoom] = useState<Room | null>(null)
-  const [roomPlayers, setRoomPlayers] = useState<LobbyPlayer[]>([])
+  const [roomPlayers, setRoomPlayers] = useState<SyncedPlayer[]>([])
   const [isHost, setIsHost] = useState(false)
   const [isConnecting, setIsConnecting] = useState(false)
   const activeRoom = useRef<Room | null>(null)
-  const activeSpace = boardSpaces[position]
-  const players = useMemo(() => roomPlayers.map((player) => player.name), [roomPlayers])
+  const activePlayer = roomPlayers.find((player) => player.sessionId === activePlayerSessionId)
+  const activeSpace = boardSpaces[activePlayer?.position ?? 0]
+  const playerPositions = roomPlayers.length > 0 ? roomPlayers.map((player) => player.position) : [0, 3, 6, 9]
+  const isMyTurn = room?.sessionId === activePlayerSessionId
 
   useEffect(() => {
     if (!room) return
@@ -38,12 +44,23 @@ function App() {
         roomCode: string
         mode: Mode
         status: 'waiting' | 'playing'
+        activePlayerSessionId: string
+        turnNumber: number
+        turnPhase: 'roll' | 'resolve'
+        diceOne: number
+        diceTwo: number
+        landingDescription: string
       }
-      const nextPlayers = Array.from(snapshot.players.values())
+      const nextPlayers = Array.from(snapshot.players.entries()).map(([sessionId, player]) => ({ ...player, sessionId }))
       setRoomPlayers(nextPlayers)
       setRoomCode(snapshot.roomCode)
       setMode(snapshot.mode)
       setIsHost(snapshot.players.get(room.sessionId)?.isHost ?? false)
+      setActivePlayerSessionId(snapshot.activePlayerSessionId)
+      setTurnNumber(snapshot.turnNumber)
+      setTurnPhase(snapshot.turnPhase)
+      setDice([snapshot.diceOne, snapshot.diceTwo])
+      setLandingDescription(snapshot.landingDescription)
       if (snapshot.status === 'playing') setScreen('game')
     }
     const handleRoomError = (payload: { message: string }) => setError(payload.message)
@@ -107,6 +124,10 @@ function App() {
     setRoom(null)
     setRoomPlayers([])
     setIsHost(false)
+    setActivePlayerSessionId('')
+    setTurnNumber(0)
+    setDice([0, 0])
+    setLandingDescription('')
     setScreen('home')
     if (currentRoom) await currentRoom.leave()
   }
@@ -115,15 +136,9 @@ function App() {
     room?.send('start')
   }
 
-  function rollDice() {
-    const result: [number, number] = [1 + Math.floor(Math.random() * 6), 1 + Math.floor(Math.random() * 6)]
-    setDice(result)
-    setPosition((current) => (current + result[0] + result[1]) % boardSpaces.length)
-  }
-
   return (
     <main className={`app-shell screen-${screen}`}>
-      <div className="scene-backdrop"><BoardScene currentSpace={position} /></div>
+      <div className="scene-backdrop"><BoardScene playerPositions={playerPositions} /></div>
       <header className="topbar">
         <button className="brand" onClick={() => { if (room) void leaveRoom(); else setScreen('home') }} aria-label="Voltar ao início">
           <span className="brand-mark">B</span><span>BANCO<span className="brand-light">IMOBILIÁRIO</span></span>
@@ -182,9 +197,9 @@ function App() {
       {screen === 'game' && (
         <section className="game-overlay">
           <div className="game-topline"><button className="back-link" onClick={() => setScreen('room')}>← Sala {roomCode}</button><div className="game-pill">{modeDetails[mode].title.toUpperCase()} <span>·</span> {mode === 'classic' ? '30:00' : 'RODADA 1/6'}</div><button className="icon-button" aria-label="Menu">···</button></div>
-          <div className="player-hud">{players.map((player, index) => <div className={`player-card ${index === 0 ? 'active' : ''}`} key={`${player}-${index}`}><span className={`player-avatar player-${index}`}>{player.slice(0, 1).toUpperCase()}</span><div className="player-info"><strong>{player}</strong><small>NA MESA</small></div><b>—</b></div>)}</div>
-          <div className="turn-card"><span className="turn-label">CASA {String(activeSpace.id + 1).padStart(2, '0')}</span><h2>{activeSpace.name}</h2><p>{activeSpace.kind === 'property' ? `Propriedade · ${formatMoney(activeSpace.price ?? 0)}` : 'Resolva o efeito desta casa'}</p><div className="dice-row"><span className="die">{dice[0]}</span><span className="die">{dice[1]}</span><button className="roll-button" onClick={rollDice}>Lançar dados <span>↗</span></button></div></div>
-          <div className="game-bottom"><span>PRÉVIA DA MESA · REGRAS ONLINE EM CONSTRUÇÃO</span><button className="leave-button" onClick={() => void leaveRoom()}>Sair da mesa</button></div>
+          <div className="player-hud">{roomPlayers.map((player, index) => <div className={`player-card ${player.sessionId === activePlayerSessionId ? 'active' : ''}`} key={player.sessionId}><span className={`player-avatar player-${index}`}>{player.name.slice(0, 1).toUpperCase()}</span><div className="player-info"><strong>{player.name}</strong><small>{player.sessionId === activePlayerSessionId ? 'VEZ ATUAL' : `CASA ${String(player.position + 1).padStart(2, '0')}`}</small></div><b>—</b></div>)}</div>
+          <div className="turn-card"><span className="turn-label">TURNO {turnNumber} · {isMyTurn ? 'SUA VEZ' : `VEZ DE ${activePlayer?.name ?? '…'}`}</span><h2>{activeSpace.name}</h2><p>{landingDescription || (activeSpace.kind === 'property' ? `Propriedade · ${formatMoney(activeSpace.price ?? 0)}` : 'Aguardando a jogada.')}</p><div className="dice-row"><span className="die">{dice[0] || '·'}</span><span className="die">{dice[1] || '·'}</span>{turnPhase === 'roll' ? <button className="roll-button" onClick={() => room?.send('roll')} disabled={!isMyTurn}>Lançar dados <span>↗</span></button> : <button className="roll-button" onClick={() => room?.send('finishTurn')} disabled={!isMyTurn}>Concluir vez <span>↗</span></button>}</div></div>
+          <div className="game-bottom"><span>JOGADA SINCRONIZADA · ECONOMIA EM IMPLEMENTAÇÃO</span><button className="leave-button" onClick={() => void leaveRoom()}>Sair da mesa</button></div>
         </section>
       )}
     </main>

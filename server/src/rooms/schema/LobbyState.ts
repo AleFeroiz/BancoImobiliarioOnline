@@ -3,6 +3,7 @@ import { schema, t, type SchemaType } from '@colyseus/schema'
 export const LobbyPlayerState = schema({
   name: t.string().default(''),
   isHost: t.boolean().default(false),
+  position: t.uint8().default(0),
 })
 
 export type LobbyPlayerState = SchemaType<typeof LobbyPlayerState>
@@ -12,6 +13,12 @@ export const LobbyState = schema({
   roomCode: t.string().default(''),
   mode: t.string().default('classic'),
   status: t.string().default('waiting'),
+  turnPhase: t.string().default('roll'),
+  activePlayerSessionId: t.string().default(''),
+  turnNumber: t.uint8().default(0),
+  diceOne: t.uint8().default(0),
+  diceTwo: t.uint8().default(0),
+  landingDescription: t.string().default(''),
 })
 
 export type LobbyState = SchemaType<typeof LobbyState>

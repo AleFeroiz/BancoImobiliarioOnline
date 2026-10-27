@@ -64,6 +64,43 @@ describe('sala privada', () => {
     await expect(hostStarted).resolves.toEqual({ mode: 'classic' })
     await guestStarted
     expect(room.state.status).toBe('playing')
+    expect(room.state.activePlayerSessionId).toBe(host.sessionId)
+    expect(room.state.turnNumber).toBe(1)
+  })
+
+  it('autoriza apenas a pessoa da vez a rolar e só avança após concluir a casa', async () => {
+    const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
+    const host = await colyseus.connectTo(room, { name: 'Ana' })
+    const guest = await colyseus.connectTo(room, { name: 'Bia' })
+    host.send('start')
+    await new Promise((resolve) => setTimeout(resolve, 50))
+
+    const unauthorizedRoll = new Promise<{ message: string }>((resolve) => guest.onMessage('room:error', resolve))
+    guest.send('roll')
+    await expect(unauthorizedRoll).resolves.toMatchObject({ message: 'Aguarde a sua vez para lançar os dados.' })
+    expect(room.state.turnPhase).toBe('roll')
+
+    host.send('roll')
+    await new Promise((resolve) => setTimeout(resolve, 50))
+    expect(room.state.turnPhase).toBe('resolve')
+    expect(room.state.diceOne).toBeGreaterThanOrEqual(1)
+    expect(room.state.diceOne).toBeLessThanOrEqual(6)
+    expect(room.state.diceTwo).toBeGreaterThanOrEqual(1)
+    expect(room.state.diceTwo).toBeLessThanOrEqual(6)
+    expect(room.state.players.get(host.sessionId)?.position).toBe(room.state.diceOne + room.state.diceTwo)
+    expect(room.state.landingDescription.length).toBeGreaterThan(0)
+
+    const unauthorizedFinish = new Promise<{ message: string }>((resolve) => guest.onMessage('room:error', resolve))
+    guest.send('finishTurn')
+    await expect(unauthorizedFinish).resolves.toMatchObject({ message: 'Somente a pessoa da vez pode concluir a jogada.' })
+    expect(room.state.activePlayerSessionId).toBe(host.sessionId)
+
+    host.send('finishTurn')
+    await new Promise((resolve) => setTimeout(resolve, 50))
+    expect(room.state.activePlayerSessionId).toBe(guest.sessionId)
+    expect(room.state.turnNumber).toBe(2)
+    expect(room.state.turnPhase).toBe('roll')
+    expect(room.state.landingDescription).toBe('')
   })
 
   it('recusa nomes inválidos antes de ocupar um assento', async () => {

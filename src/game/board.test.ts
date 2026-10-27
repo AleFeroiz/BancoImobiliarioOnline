@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { boardSpaces, positionOnBoard } from './board'
+import { describeLanding, movePosition } from '../../shared/game'
 
 describe('tabuleiro', () => {
   it('tem 40 casas com identificadores únicos e em ordem', () => {
@@ -21,5 +22,16 @@ describe('tabuleiro', () => {
     const properties = boardSpaces.filter(({ kind }) => kind === 'property')
     expect(properties.length).toBeGreaterThan(0)
     expect(properties.every(({ price }) => typeof price === 'number' && price > 0)).toBe(true)
+  })
+
+  it('move pelo resultado dos dados e volta ao início ao completar uma volta', () => {
+    expect(movePosition(37, [2, 3])).toBe(2)
+    expect(movePosition(10, [1, 1])).toBe(12)
+  })
+
+  it('descreve a casa alcançada sem aplicar efeitos econômicos ainda não definidos', () => {
+    expect(describeLanding(15)).toContain('Estação Central')
+    expect(describeLanding(15)).toContain('Você parou em uma propriedade')
+    expect(() => describeLanding(40)).toThrow(RangeError)
   })
 })

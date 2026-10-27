@@ -4,6 +4,7 @@ export type LobbyStatus = 'waiting' | 'playing'
 export type LobbyPlayer = {
   name: string
   isHost: boolean
+  position: number
 }
 
 export function isGameMode(value: unknown): value is GameMode {

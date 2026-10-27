@@ -36,6 +36,13 @@ Como referência de regras clássicas e jogo curto, o [manual oficial do Super B
 - O servidor será a autoridade para ordem de turno, resultados de dados, movimento, compras, cobranças, leilões, trocas e demais alterações compartilhadas.
 - Nomes, valores, efeitos de cartas e economia serão originais, sem alegar reproduzir uma edição física específica.
 
+## Ciclo básico implementado
+
+- A primeira pessoa a entrar na sala começa. O servidor rola dois dados de seis lados e move a peça pelo percurso de 40 casas; todas as pessoas recebem o mesmo estado.
+- Depois da exibição da casa alcançada, a pessoa da vez confirma para passar o turno à próxima pessoa. O servidor rejeita rolagens e confirmações fora da vez.
+- Esta etapa apenas identifica e mostra a casa. Não concede bônus ao passar pela Partida e ainda não executa compra, aluguel, taxa, evento ou movimento para a prisão; esses efeitos dependem das regras econômicas e cartas a fechar nas fases seguintes.
+- Os relógios de 30 minutos e de seis rodadas Express ainda não estão ativos no ciclo básico; entram com a implementação dos presets e da resolução de fim de partida.
+
 ## Fora do que está especificado
 
 O tabuleiro, textos completos das cartas, valores econômicos e procedimentos detalhados de prisão, hipoteca, falência e construção ainda precisam ser escritos como regras autorais e implementados. Não temos o texto público das cartas Express. Esses detalhes não alteram as decisões de duração, vitória e número de jogadores acima; serão definidos e registrados antes de fechar cada sistema.

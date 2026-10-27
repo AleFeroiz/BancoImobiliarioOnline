@@ -4,7 +4,7 @@ import { boardSpaces, positionOnBoard } from '../game/board'
 
 const playerColors = ['#e7785f', '#54aec0', '#e7bd62', '#8775bd']
 
-function Board({ currentSpace }: { currentSpace: number }) {
+function Board({ playerPositions }: { playerPositions: number[] }) {
   return (
     <group>
       <mesh position={[0, -0.25, 0]} receiveShadow>
@@ -51,8 +51,9 @@ function Board({ currentSpace }: { currentSpace: number }) {
           </group>
         )
       })}
-      {playerColors.map((color, index) => {
-        const { x, z } = positionOnBoard(index === 0 ? currentSpace : index * 3)
+      {playerPositions.map((position, index) => {
+        const color = playerColors[index]
+        const { x, z } = positionOnBoard(position)
         return (
           <group key={color} position={[x + 0.13 * (index - 1.5), 0.35, z + 0.06]}>
             <mesh castShadow position={[0, 0.17, 0]}>
@@ -78,14 +79,14 @@ function Board({ currentSpace }: { currentSpace: number }) {
   )
 }
 
-export default function BoardScene({ currentSpace }: { currentSpace: number }) {
+export default function BoardScene({ playerPositions }: { playerPositions: number[] }) {
   return (
     <Canvas camera={{ position: [12.5, 15.5, 15.5], fov: 34 }} shadows dpr={[1, 1.6]}>
       <color attach="background" args={['#b7d8d9']} />
       <fog attach="fog" args={['#b7d8d9', 17, 31]} />
       <ambientLight intensity={1.1} />
       <directionalLight position={[7, 13, 5]} intensity={2.4} castShadow shadow-mapSize={[1024, 1024]} />
-      <Board currentSpace={currentSpace} />
+      <Board playerPositions={playerPositions} />
       <ContactShadows position={[0, -0.46, 0]} opacity={0.25} scale={18} blur={2.5} far={5} />
     </Canvas>
   )
