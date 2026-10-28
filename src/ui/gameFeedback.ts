@@ -1,7 +1,37 @@
-export type GameSound = 'dice' | 'purchase' | 'money' | 'auction' | 'milestone'
+export type GameSound = 'dice' | 'purchase' | 'money' | 'auction' | 'milestone' | 'construction' | 'demolition' | 'ownership' | 'mortgage' | 'redemption'
+export type PropertyVisualState = { ownerSessionId: string; houses: number; isMortgaged?: boolean }
+export type PropertyVisualChange = 'placed' | 'built' | 'demolished' | 'ownership' | 'released' | 'mortgaged' | 'redeemed'
+
+export function getPropertyVisualChange(previous: PropertyVisualState | undefined, next: PropertyVisualState): PropertyVisualChange | null {
+  if (!previous) return next.ownerSessionId ? 'placed' : null
+  if (previous.ownerSessionId !== next.ownerSessionId) {
+    if (!previous.ownerSessionId && next.ownerSessionId) return 'placed'
+    return next.ownerSessionId ? 'ownership' : previous.ownerSessionId ? 'released' : null
+  }
+  if (previous.houses !== next.houses) return next.houses > previous.houses ? 'built' : 'demolished'
+  if (Boolean(previous.isMortgaged) !== Boolean(next.isMortgaged)) return next.isMortgaged ? 'mortgaged' : 'redeemed'
+  return null
+}
+
+export function getPropertyChangeSound(change: PropertyVisualChange): GameSound {
+  switch (change) {
+    case 'placed': return 'purchase'
+    case 'built': return 'construction'
+    case 'demolished': return 'demolition'
+    case 'ownership':
+    case 'released': return 'ownership'
+    case 'mortgaged': return 'mortgage'
+    case 'redeemed': return 'redemption'
+  }
+}
 
 export function getGameSound(description: string): GameSound {
   const text = description.toLocaleLowerCase('pt-BR')
+  if (text.includes('construção vendida') || text.includes('hotel devolvido')) return 'demolition'
+  if (text.includes('construída') || text.includes('construido')) return 'construction'
+  if (text.includes('hipotecada')) return 'mortgage'
+  if (text.includes('resgatada')) return 'redemption'
+  if (text.includes('transferidos') || text.includes('transferida') || text.includes('aceitou a troca')) return 'ownership'
   if (text.includes('leilão') || text.includes('leilao') || text.includes('lance')) return 'auction'
   if (text.includes('comprad') || text.includes('propriedade') && text.includes('compr')) return 'purchase'
   if (text.includes('objetivo') && (text.includes('cumpr') || text.includes('conclu'))) return 'milestone'

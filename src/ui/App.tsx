@@ -11,7 +11,7 @@ import { boardSpaces, formatMoney } from '../game/board'
 import { AUCTION_MIN_BID_INCREMENT, JAIL_FINE, START_BONUS, buildingSaleValue, calculateRent, canBuildProperty, canMortgageProperty, canRedeemMortgage, canSellBuilding, constructionCost, hasLiquidatableAssets, liquidatablePropertyIds, mortgageRedemptionCost, mortgageValue, taxForSpace, type PropertyHolding } from '../../shared/game'
 import type { ExpressObjectiveUpdate } from '../../shared/objectives'
 import { PLAYER_COLORS } from './playerPalette'
-import { getGameSound, formatCashDelta } from './gameFeedback'
+import { getGameSound, getPropertyChangeSound, getPropertyVisualChange, formatCashDelta, type GameSound } from './gameFeedback'
 import { playGameSound, startGameMusic, stopGameMusic, unlockGameAudio } from './gameAudio'
 
 type Mode = GameMode
@@ -166,7 +166,7 @@ function App() {
     ? calculateRent(pendingPurchaseSpace.id, pendingRentOwnership)
     : 0
 
-  function showGameFeedback(message: string, sound: 'dice' | 'purchase' | 'money' | 'auction' | 'milestone') {
+  function showGameFeedback(message: string, sound: GameSound) {
     setFeedbackToast(message)
     if (feedbackTimeout.current !== null) window.clearTimeout(feedbackTimeout.current)
     feedbackTimeout.current = window.setTimeout(() => setFeedbackToast(''), 4500)
@@ -243,12 +243,16 @@ function App() {
       const nextPlayerFacts = new Map(nextPlayers.map((player) => [player.sessionId, { cash: player.cash, position: player.position }]))
       const nextPropertyFacts = new Map(snapshot.properties.entries())
       if (previous) {
+        const propertyChange = Array.from(nextPropertyFacts.entries())
+          .map(([id, holding]) => getPropertyVisualChange(previous.properties.get(id), holding))
+          .find((change) => change !== null) ?? null
+        const propertySound = propertyChange ? getPropertyChangeSound(propertyChange) : null
         const movedPlayer = nextPlayers.find((player) => previous.players.get(player.sessionId)?.position !== undefined && previous.players.get(player.sessionId)?.position !== player.position)
         if (movedPlayer) {
           setLandingPulseSpaceId(movedPlayer.position)
           setLandingPulseSequence((sequence) => sequence + 1)
         }
-        const buildingChanged = Array.from(nextPropertyFacts.entries()).find(([id, holding]) => holding.houses > (previous.properties.get(id)?.houses ?? 0))
+        const buildingChanged = Array.from(nextPropertyFacts.entries()).find(([id, holding]) => holding.houses !== (previous.properties.get(id)?.houses ?? 0))
         if (buildingChanged) {
           setLandingPulseSpaceId(Number(buildingChanged[0]))
           setLandingPulseSequence((sequence) => sequence + 1)
@@ -258,7 +262,9 @@ function App() {
         if (snapshot.landingDescription && snapshot.landingDescription !== previous.description) {
           const localCashDelta = (nextPlayerFacts.get(room.sessionId)?.cash ?? 0) - (previous.players.get(room.sessionId)?.cash ?? 0)
           const delta = formatCashDelta(localCashDelta)
-          showGameFeedback(`${snapshot.landingDescription}${delta ? ` · ${delta}` : ''}`, getGameSound(snapshot.landingDescription))
+          showGameFeedback(`${snapshot.landingDescription}${delta ? ` · ${delta}` : ''}`, propertySound ?? getGameSound(snapshot.landingDescription))
+        } else if (propertySound && soundEnabled) {
+          playGameSound(propertySound)
         } else if (didRoll && soundEnabled) {
           playGameSound('dice')
         }
