@@ -1012,6 +1012,31 @@ describe('sala privada', () => {
     expect(room.state.players.get(guest.sessionId)?.finalCash).toBe(1_300_000)
   })
 
+  it('conclui uma partida Express completa com quatro jogadores após as seis rodadas', async () => {
+    const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'express' })
+    const clients = []
+    for (const name of ['Ana', 'Bia', 'Caio', 'Duda']) clients.push(await colyseus.connectTo(room, { name }))
+    const host = clients[0]!
+    host.send('start')
+    await waitFor(() => room.state.status === 'playing')
+    const expirePhase = (room as unknown as { expireExpressPhase: () => void }).expireExpressPhase.bind(room)
+
+    for (let turn = 0; turn < 23; turn += 1) {
+      room.state.phaseSeconds = 0
+      expirePhase()
+      expect(room.state.status).toBe('playing')
+    }
+    room.state.phaseSeconds = 0
+    expirePhase()
+
+    expect(room.state.status).toBe('ended')
+    expect(room.state.expressRound).toBe(6)
+    expect(room.state.turnNumber).toBe(24)
+    expect(clients.map((client) => room.state.players.get(client.sessionId)?.finalCash)).toEqual([1_500_000, 1_500_000, 1_500_000, 1_500_000])
+    expect(clients.map((client) => room.state.players.get(client.sessionId)?.finalNetWorth)).toEqual([1_500_000, 1_500_000, 1_500_000, 1_500_000])
+    expect(clients.some((client) => client.sessionId === room.state.winnerSessionId)).toBe(true)
+  })
+
   it('desempata saldo Express igual pelo patrimônio antes de rolar dados', async () => {
     const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'express' })
     const host = await colyseus.connectTo(room, { name: 'Ana' })

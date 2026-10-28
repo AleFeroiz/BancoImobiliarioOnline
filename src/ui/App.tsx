@@ -11,6 +11,8 @@ import { boardSpaces, formatMoney } from '../game/board'
 import { AUCTION_MIN_BID_INCREMENT, JAIL_FINE, START_BONUS, buildingSaleValue, calculateRent, canBuildProperty, canMortgageProperty, canRedeemMortgage, canSellBuilding, constructionCost, hasLiquidatableAssets, liquidatablePropertyIds, mortgageRedemptionCost, mortgageValue, taxForSpace, type PropertyHolding } from '../../shared/game'
 import type { ExpressObjectiveUpdate } from '../../shared/objectives'
 import { PLAYER_COLORS } from './playerPalette'
+import { getGameSound, formatCashDelta } from './gameFeedback'
+import { playGameSound, unlockGameAudio } from './gameAudio'
 
 type Mode = GameMode
 type Screen = 'home' | 'room' | 'game'
@@ -37,6 +39,12 @@ const modeDetails: Record<Mode, { title: string; duration: string; detail: strin
 function App() {
   const [screen, setScreen] = useState<Screen>('home')
   const [sceneReady, setSceneReady] = useState(false)
+  const [soundEnabled, setSoundEnabled] = useState(true)
+  const [reducedMotion, setReducedMotion] = useState(() => typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches)
+  const [feedbackToast, setFeedbackToast] = useState('')
+  const [diceRollSequence, setDiceRollSequence] = useState(0)
+  const [landingPulseSpaceId, setLandingPulseSpaceId] = useState(-1)
+  const [landingPulseSequence, setLandingPulseSequence] = useState(0)
   const [name, setName] = useState('')
   const [roomCode, setRoomCode] = useState('')
   const [mode, setMode] = useState<Mode>('classic')
@@ -86,6 +94,9 @@ function App() {
   const [isHost, setIsHost] = useState(false)
   const [isConnecting, setIsConnecting] = useState(false)
   const activeRoom = useRef<Room | null>(null)
+  const previousFeedbackSnapshot = useRef<{ description: string; diceOne: number; diceTwo: number; players: Map<string, { cash: number; position: number }>; properties: Map<string, PropertyHolding> } | null>(null)
+  const previousObjectiveComplete = useRef(false)
+  const feedbackTimeout = useRef<number | null>(null)
   const previousTradeOfferId = useRef<number | null>(null)
   const activePlayer = roomPlayers.find((player) => player.sessionId === activePlayerSessionId)
   const activeSpace = boardSpaces[activePlayer?.position ?? 0]
@@ -155,6 +166,13 @@ function App() {
     ? calculateRent(pendingPurchaseSpace.id, pendingRentOwnership)
     : 0
 
+  function showGameFeedback(message: string, sound: 'dice' | 'purchase' | 'money' | 'auction' | 'milestone') {
+    setFeedbackToast(message)
+    if (feedbackTimeout.current !== null) window.clearTimeout(feedbackTimeout.current)
+    feedbackTimeout.current = window.setTimeout(() => setFeedbackToast(''), 4500)
+    if (soundEnabled) playGameSound(sound)
+  }
+
   useEffect(() => {
     if (sceneReady || screen === 'game') {
       setSceneReady(true)
@@ -221,6 +239,31 @@ function App() {
         auctionSeconds: number
       }
       const nextPlayers = playerEntries.map(([sessionId, player]) => ({ ...player, sessionId }))
+      const previous = previousFeedbackSnapshot.current
+      const nextPlayerFacts = new Map(nextPlayers.map((player) => [player.sessionId, { cash: player.cash, position: player.position }]))
+      const nextPropertyFacts = new Map(snapshot.properties.entries())
+      if (previous) {
+        const movedPlayer = nextPlayers.find((player) => previous.players.get(player.sessionId)?.position !== undefined && previous.players.get(player.sessionId)?.position !== player.position)
+        if (movedPlayer) {
+          setLandingPulseSpaceId(movedPlayer.position)
+          setLandingPulseSequence((sequence) => sequence + 1)
+        }
+        const buildingChanged = Array.from(nextPropertyFacts.entries()).find(([id, holding]) => holding.houses > (previous.properties.get(id)?.houses ?? 0))
+        if (buildingChanged) {
+          setLandingPulseSpaceId(Number(buildingChanged[0]))
+          setLandingPulseSequence((sequence) => sequence + 1)
+        }
+        const didRoll = snapshot.diceOne > 0 && (previous.diceOne === 0 && previous.diceTwo === 0 || snapshot.diceOne !== previous.diceOne || snapshot.diceTwo !== previous.diceTwo)
+        if (didRoll) setDiceRollSequence((sequence) => sequence + 1)
+        if (snapshot.landingDescription && snapshot.landingDescription !== previous.description) {
+          const localCashDelta = (nextPlayerFacts.get(room.sessionId)?.cash ?? 0) - (previous.players.get(room.sessionId)?.cash ?? 0)
+          const delta = formatCashDelta(localCashDelta)
+          showGameFeedback(`${snapshot.landingDescription}${delta ? ` · ${delta}` : ''}`, getGameSound(snapshot.landingDescription))
+        } else if (didRoll && soundEnabled) {
+          playGameSound('dice')
+        }
+      }
+      previousFeedbackSnapshot.current = { description: snapshot.landingDescription, diceOne: snapshot.diceOne, diceTwo: snapshot.diceTwo, players: nextPlayerFacts, properties: nextPropertyFacts }
       setRoomPlayers(nextPlayers)
       setRoomProperties(new Map(snapshot.properties.entries()))
       setRoomCode(snapshot.roomCode)
@@ -264,12 +307,20 @@ function App() {
     const handleRoomError = (payload: { message: string }) => setError(payload.message)
     const handleDrop = () => setIsReconnecting(true)
     const handleReconnect = () => setIsReconnecting(false)
-    const removeObjectiveMessage = room.onMessage<ExpressObjectiveUpdate>('game:objective', setExpressObjective)
+    const handleObjective = (update: ExpressObjectiveUpdate) => {
+      setExpressObjective(update)
+      if (update.completed && !previousObjectiveComplete.current) {
+        showGameFeedback(`Objetivo cumprido · +${formatCashDelta(update.rewardAwarded).replace('+', '')}`, 'milestone')
+      }
+      previousObjectiveComplete.current = update.completed
+    }
+    const removeObjectiveMessage = room.onMessage<ExpressObjectiveUpdate>('game:objective', handleObjective)
     const handleLeave = (_code: number, reason?: string) => {
       if (activeRoom.current !== room) return
       activeRoom.current = null
       setRoom(null)
       setExpressObjective(null)
+      previousObjectiveComplete.current = false
       setShowObjectivePanel(false)
       setIsReconnecting(false)
       setScreen('home')
@@ -290,7 +341,22 @@ function App() {
       room.onReconnect.remove(handleReconnect)
       removeObjectiveMessage()
     }
-  }, [room])
+  }, [room, soundEnabled])
+
+  useEffect(() => () => {
+    if (feedbackTimeout.current !== null) window.clearTimeout(feedbackTimeout.current)
+  }, [])
+
+  useEffect(() => {
+    if (!soundEnabled) return
+    const unlock = () => unlockGameAudio()
+    document.addEventListener('pointerdown', unlock, { once: true })
+    document.addEventListener('keydown', unlock, { once: true })
+    return () => {
+      document.removeEventListener('pointerdown', unlock)
+      document.removeEventListener('keydown', unlock)
+    }
+  }, [soundEnabled])
 
   useEffect(() => {
     setAuctionBidAmount((current) => normalizeAuctionBidInput(current, auctionMinimumBid))
@@ -302,7 +368,9 @@ function App() {
     setError('')
     try {
       const nextRoom = await roomClient.create('game_room', { mode, name: name.trim() })
+      previousFeedbackSnapshot.current = null
       setExpressObjective(null)
+      previousObjectiveComplete.current = false
       setShowObjectivePanel(false)
       setIsReconnecting(false)
       activeRoom.current = nextRoom
@@ -323,7 +391,9 @@ function App() {
     setError('')
     try {
       const nextRoom = await roomClient.joinById(roomCode.trim().toUpperCase(), { name: name.trim() })
+      previousFeedbackSnapshot.current = null
       setExpressObjective(null)
+      previousObjectiveComplete.current = false
       setShowObjectivePanel(false)
       setIsReconnecting(false)
       activeRoom.current = nextRoom
@@ -343,7 +413,11 @@ function App() {
     setRoom(null)
     setRoomPlayers([])
     setRoomProperties(new Map())
+    previousFeedbackSnapshot.current = null
+    setFeedbackToast('')
+    setLandingPulseSpaceId(-1)
     setExpressObjective(null)
+    previousObjectiveComplete.current = false
     setShowObjectivePanel(false)
     setIsHost(false)
     setActivePlayerSessionId('')
@@ -377,11 +451,11 @@ function App() {
   }
 
   return (
-    <main className={`app-shell screen-${screen}${screen === 'game' && turnPhase === 'ended' ? ' screen-ended' : ''}`}>
+    <main className={`app-shell screen-${screen}${screen === 'game' && turnPhase === 'ended' ? ' screen-ended' : ''}`} data-reduced-motion={reducedMotion}>
       <div className="scene-backdrop">
         {sceneReady && (
           <Suspense fallback={<div className="scene-placeholder" aria-hidden="true" />}>
-            <BoardScene players={playerTokens} propertyBuildings={propertyBuildings} highlightedSpaceIds={highlightedSpaceIds} onSelectSpace={setSelectedSpaceId} />
+            <BoardScene players={playerTokens} propertyBuildings={propertyBuildings} highlightedSpaceIds={highlightedSpaceIds} landingPulseSpaceId={landingPulseSpaceId} landingPulseSequence={landingPulseSequence} diceRollSequence={diceRollSequence} dice={dice} reducedMotion={reducedMotion} onSelectSpace={setSelectedSpaceId} />
           </Suspense>
         )}
       </div>
@@ -389,7 +463,7 @@ function App() {
         <button className="brand" onClick={() => { if (room) void leaveRoom(); else setScreen('home') }} aria-label="Voltar ao início">
           <span className="brand-mark">B</span><span>BANCO<span className="brand-light">IMOBILIÁRIO</span></span>
         </button>
-        <div className="topbar-right"><span className={`connection-dot ${isReconnecting ? 'connection-dot-retrying' : ''}`} /> <span className={isReconnecting ? 'connection-retrying' : ''} role={isReconnecting ? 'status' : undefined} aria-live={isReconnecting ? 'polite' : undefined}>{isReconnecting ? 'RECONECTANDO…' : 'PRÉVIA DE JOGO'}</span><button className="icon-button" aria-label="Ajuda">?</button></div>
+        <div className="topbar-right"><span className={`connection-dot ${isReconnecting ? 'connection-dot-retrying' : ''}`} /> <span className={isReconnecting ? 'connection-retrying' : ''} role={isReconnecting ? 'status' : undefined} aria-live={isReconnecting ? 'polite' : undefined}>{isReconnecting ? 'RECONECTANDO…' : 'PRÉVIA DE JOGO'}</span>{screen === 'game' && <><button className="game-preference" aria-pressed={soundEnabled} aria-label={`Som ${soundEnabled ? 'ativado' : 'desativado'}`} title={`Som ${soundEnabled ? 'ativado' : 'desativado'}`} onClick={() => { unlockGameAudio(); setSoundEnabled((enabled) => !enabled) }}>{soundEnabled ? '♫' : '♪̸'}</button><button className="game-preference" aria-pressed={reducedMotion} aria-label={`Movimento reduzido ${reducedMotion ? 'ativado' : 'desativado'}`} title={`Movimento reduzido ${reducedMotion ? 'ativado' : 'desativado'}`} onClick={() => setReducedMotion((enabled) => !enabled)}>◌</button></>}<button className="icon-button" aria-label="Ajuda">?</button></div>
       </header>
 
       {screen === 'home' && (
@@ -472,6 +546,7 @@ function App() {
               <span className="dice-result-total">Total {dice[0] + dice[1]}</span>
             </div>
           )}
+          {feedbackToast && turnPhase !== 'ended' && <div className="game-feedback-toast" role="status" aria-live="polite">{feedbackToast}</div>}
           {showAuctionPanel && turnPhase !== 'ended' ? (
             <aside className="turn-card trade-panel auction-panel" aria-label="Leilão voluntário de propriedade">
               <div className="asset-panel-heading"><span className="turn-label">{auctionId > 0 ? `LEILÃO · ${auctionSeconds}s` : 'MERCADO ENTRE JOGADORES'}</span><button className="trade-close" onClick={() => setShowAuctionPanel(false)} aria-label="Fechar leilão">×</button></div>

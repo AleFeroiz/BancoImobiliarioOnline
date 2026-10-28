@@ -272,3 +272,10 @@
 - Reduzi a largura máxima do cartão de jogada desktop de 390 para 350 px e o espaçamento interno de 15 × 17 para 12 × 15 px; a regra móvel mantém a largura quase completa da viewport.
 - No Firefox headless em 1366 × 682, o cartão ficou em 350 × 143 px, a cena 3D permaneceu visível e não houve rolagem horizontal. Em uma segunda captura, o viewport informado pelo Firefox foi 500 × 758 apesar da solicitação de 390 × 844; o cartão móvel ocupou 480 px e o documento continuou sem overflow.
 - Capturas inspecionadas: `/tmp/banco-firefox-compact-turn-card.png` e `/tmp/banco-firefox-compact-turn-card-mobile.png`. A versão móvel preservou a largura fluida; o viewport limitado do Firefox não substitui a validação móvel anterior em Chrome 390 × 844.
+
+## 2026-10-28 — Game juice, avisos e acessibilidade
+
+- Acrescentei rolagem animada dos dados, pulso na casa alcançada, surgimento curto para casas/hotel e opção de movimento reduzido que também respeita `prefers-reduced-motion`. Sons sintetizados de dados, compra, dinheiro, leilão e objetivo podem ser desligados; eventos mostram um aviso breve com a variação do saldo local.
+- O navegador integrado criou uma sala Clássica com dois clientes, iniciou a partida, lançou 6 + 3 e comprou Porto Dourado. O HUD mostrou o resultado dos dados, o saldo de R$ 1.340.000 e um aviso de compra com `−R$ 160.000`. Testei por teclado os controles de som e movimento reduzido; o atributo de acessibilidade mudou para `true` e a largura do documento permaneceu igual à viewport estreita de 503 px.
+- A integração do servidor concluiu seis rodadas Express com quatro clientes reais e verificou encerramento, classificação por saldo/patrimônio e definição de vencedor.
+- `npm run verify`: 107 testes passaram; builds web e de servidor passaram. O build ainda informa o chunk da cena 3D acima de 500 kB. A revisão visual desta mudança foi feita no navegador integrado; não repeti a captura em Firefox nem em um aparelho móvel físico.

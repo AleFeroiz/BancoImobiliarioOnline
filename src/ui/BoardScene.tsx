@@ -1,6 +1,6 @@
 import { Canvas } from '@react-three/fiber'
 import { ContactShadows } from '@react-three/drei'
-import { useEffect, useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef, type ReactNode } from 'react'
 import { CanvasTexture, Fog, PerspectiveCamera, SRGBColorSpace, type Group } from 'three'
 import { useFrame, useThree } from '@react-three/fiber'
 import { boardSpaces, positionOnBoard } from '../game/board'
@@ -73,7 +73,7 @@ function SpaceLabel({ name, size }: { name: string; size: number }) {
   )
 }
 
-function AnimatedPawn({ player, seatIndex }: { player: PlayerToken; seatIndex: number }) {
+function AnimatedPawn({ player, seatIndex, reducedMotion }: { player: PlayerToken; seatIndex: number; reducedMotion: boolean }) {
   const group = useRef<Group>(null)
   const previousSpace = useRef(player.position)
   const hopPath = useRef<number[]>([])
@@ -88,15 +88,23 @@ function AnimatedPawn({ player, seatIndex }: { player: PlayerToken; seatIndex: n
     if (player.position === previousSpace.current) return
     const path = getPawnStepPath(previousSpace.current, player.position)
     if (!path.length) return
+    if (reducedMotion) {
+      const destination = positionOnBoard(player.position)
+      group.current?.position.set(destination.x + offsetX, 0.35, destination.z + offsetZ)
+      previousSpace.current = player.position
+      hopPath.current = []
+      return
+    }
     hopStart.current = group.current ? { x: group.current.position.x, z: group.current.position.z } : { x: initial.x + offsetX, z: initial.z + offsetZ }
     hopPath.current = path
     elapsed.current = 0
     previousSpace.current = player.position
-  }, [player.position, initial.x, initial.z, offsetX])
+  }, [player.position, initial.x, initial.z, offsetX, offsetZ, reducedMotion])
 
   useFrame((_, delta) => {
     const pawn = group.current
     if (!pawn) return
+    if (reducedMotion) return
     idleTime.current += delta
     const path = hopPath.current
     if (path.length) {
@@ -137,7 +145,77 @@ function AnimatedPawn({ player, seatIndex }: { player: PlayerToken; seatIndex: n
   )
 }
 
-function Board({ players, propertyBuildings, highlightedSpaceIds, onSelectSpace }: { players: PlayerToken[]; propertyBuildings: PropertyBuilding[]; highlightedSpaceIds: readonly number[]; onSelectSpace: (spaceId: number) => void }) {
+const dicePips: Record<number, [number, number][]> = {
+  1: [[0, 0]],
+  2: [[-0.1, -0.1], [0.1, 0.1]],
+  3: [[-0.1, -0.1], [0, 0], [0.1, 0.1]],
+  4: [[-0.1, -0.1], [0.1, -0.1], [-0.1, 0.1], [0.1, 0.1]],
+  5: [[-0.1, -0.1], [0.1, -0.1], [0, 0], [-0.1, 0.1], [0.1, 0.1]],
+  6: [[-0.1, -0.1], [0.1, -0.1], [-0.1, 0], [0.1, 0], [-0.1, 0.1], [0.1, 0.1]],
+}
+
+function AnimatedDie({ position, rotation, sequence, value, reducedMotion }: { position: [number, number, number]; rotation: [number, number, number]; sequence: number; value: number; reducedMotion: boolean }) {
+  const group = useRef<Group>(null)
+  const elapsed = useRef(0)
+  const startRotation = useRef([rotation[0], rotation[1], rotation[2]])
+
+  useEffect(() => {
+    const die = group.current
+    if (!die || sequence === 0 || reducedMotion) return
+    startRotation.current = [die.rotation.x, die.rotation.y, die.rotation.z]
+    elapsed.current = 0
+  }, [sequence, reducedMotion])
+
+  useFrame((_, delta) => {
+    const die = group.current
+    if (!die || sequence === 0 || reducedMotion || elapsed.current >= 0.72) return
+    elapsed.current = Math.min(0.72, elapsed.current + delta)
+    const progress = elapsed.current / 0.72
+    const ease = 1 - (1 - progress) ** 3
+    die.rotation.set(
+      startRotation.current[0] + (rotation[0] + Math.PI * 4) * ease,
+      startRotation.current[1] + (rotation[1] + Math.PI * 4) * ease,
+      startRotation.current[2] + rotation[2] * ease,
+    )
+    die.position.y = position[1] + Math.sin(progress * Math.PI) * 0.48
+  })
+
+  return (
+    <group ref={group} position={position} rotation={rotation}>
+      <mesh castShadow><boxGeometry args={[0.45, 0.42, 0.45]} /><meshStandardMaterial color="#fffaf0" roughness={0.22} /></mesh>
+      {(dicePips[value] ?? dicePips[1]!).map(([x, z], index) => <mesh key={index} position={[x, 0.212, z]} rotation={[-Math.PI / 2, 0, 0]}><circleGeometry args={[0.035, 10]} /><meshBasicMaterial color="#c76550" /></mesh>)}
+    </group>
+  )
+}
+
+function AnimatedBuilding({ children, houses, reducedMotion }: { children: ReactNode; houses: number; reducedMotion: boolean }) {
+  const group = useRef<Group>(null)
+  const elapsed = useRef(0)
+  const previousHouses = useRef(houses)
+
+  useEffect(() => {
+    const building = group.current
+    if (!building || houses <= previousHouses.current || reducedMotion) {
+      previousHouses.current = houses
+      return
+    }
+    building.scale.setScalar(0.72)
+    elapsed.current = 0
+    previousHouses.current = houses
+  }, [houses, reducedMotion])
+
+  useFrame((_, delta) => {
+    const building = group.current
+    if (!building || reducedMotion || elapsed.current >= 0.22) return
+    elapsed.current = Math.min(0.22, elapsed.current + delta)
+    const progress = elapsed.current / 0.22
+    building.scale.setScalar(0.72 + 0.28 * (1 - (1 - progress) ** 3))
+  })
+
+  return <group ref={group}>{children}</group>
+}
+
+function Board({ players, propertyBuildings, highlightedSpaceIds, landingPulseSpaceId, landingPulseSequence, diceRollSequence, dice, reducedMotion, onSelectSpace }: { players: PlayerToken[]; propertyBuildings: PropertyBuilding[]; highlightedSpaceIds: readonly number[]; landingPulseSpaceId: number; landingPulseSequence: number; diceRollSequence: number; dice: [number, number]; reducedMotion: boolean; onSelectSpace: (spaceId: number) => void }) {
   return (
     <group>
       <mesh position={[0, -0.25, 0]} receiveShadow>
@@ -193,6 +271,7 @@ function Board({ players, propertyBuildings, highlightedSpaceIds, onSelectSpace 
                 <meshBasicMaterial color="#e5af3f" transparent opacity={0.96} toneMapped={false} />
               </mesh>
             )}
+            {landingPulseSpaceId === space.id && <LandingPulse sequence={landingPulseSequence} reducedMotion={reducedMotion} size={size} />}
             {corner && (
               <mesh position={[0, 0.19, 0]} rotation={[0, Math.PI / 4, 0]}>
                 <boxGeometry args={[0.32, 0.08, 0.32]} />
@@ -219,7 +298,7 @@ function Board({ players, propertyBuildings, highlightedSpaceIds, onSelectSpace 
         const { x, z } = positionOnBoard(spaceId)
         const rotation = spaceId <= 10 || spaceId >= 30 ? 0 : Math.PI / 2
         return (
-          <group key={`buildings-${spaceId}`} position={[x, 0.19, z]} rotation={[0, rotation, 0]}>
+          <AnimatedBuilding key={`buildings-${spaceId}`} houses={houses} reducedMotion={reducedMotion}><group position={[x, 0.19, z]} rotation={[0, rotation, 0]}>
             {houses === 5 ? (
               <group position={[0, 0.08, 0.23]}>
                 <mesh castShadow><boxGeometry args={[0.3, 0.18, 0.22]} /><meshStandardMaterial color={ownerColor} roughness={0.48} /></mesh>
@@ -231,23 +310,35 @@ function Board({ players, propertyBuildings, highlightedSpaceIds, onSelectSpace 
                 <mesh castShadow position={[0, 0.09, 0]}><coneGeometry args={[0.095, 0.09, 4]} /><meshStandardMaterial color={ownerColor} roughness={0.55} /></mesh>
               </group>
             ))}
-          </group>
+          </group></AnimatedBuilding>
         )
       })}
-      {players.map((player) => <AnimatedPawn key={player.id} player={player} seatIndex={player.seatIndex} />)}
-      <mesh castShadow position={[-0.34, 0.23, -0.23]} rotation={[0.12, 0.25, 0.25]}>
-        <boxGeometry args={[0.45, 0.42, 0.45]} />
-        <meshStandardMaterial color="#fffaf0" roughness={0.22} />
-      </mesh>
-      <mesh castShadow position={[0.38, 0.23, 0.2]} rotation={[-0.18, 0.3, -0.2]}>
-        <boxGeometry args={[0.45, 0.42, 0.45]} />
-        <meshStandardMaterial color="#fffaf0" roughness={0.22} />
-      </mesh>
+      {players.map((player) => <AnimatedPawn key={player.id} player={player} seatIndex={player.seatIndex} reducedMotion={reducedMotion} />)}
+      <AnimatedDie position={[-0.34, 0.23, -0.23]} rotation={[0.12, 0.25, 0.25]} sequence={diceRollSequence} value={dice[0] || 1} reducedMotion={reducedMotion} />
+      <AnimatedDie position={[0.38, 0.23, 0.2]} rotation={[-0.18, 0.3, -0.2]} sequence={diceRollSequence} value={dice[1] || 1} reducedMotion={reducedMotion} />
     </group>
   )
 }
 
-export default function BoardScene({ players, propertyBuildings, highlightedSpaceIds = [], onSelectSpace }: { players: PlayerToken[]; propertyBuildings: PropertyBuilding[]; highlightedSpaceIds?: readonly number[]; onSelectSpace: (spaceId: number) => void }) {
+function LandingPulse({ sequence, reducedMotion, size }: { sequence: number; reducedMotion: boolean; size: number }) {
+  const ring = useRef<Group>(null)
+  const elapsed = useRef(0)
+  useEffect(() => { elapsed.current = 0 }, [sequence])
+  useFrame((_, delta) => {
+    if (!ring.current || reducedMotion || elapsed.current >= 0.9) return
+    elapsed.current = Math.min(0.9, elapsed.current + delta)
+    const progress = elapsed.current / 0.9
+    const scale = 0.72 + progress * 0.5
+    ring.current.scale.setScalar(scale)
+    ring.current.children.forEach((child) => {
+      const material = (child as { material?: { opacity: number } }).material
+      if (material) material.opacity = 0.8 * (1 - progress)
+    })
+  })
+  return <group ref={ring} position={[0, 0.11, 0]}>{reducedMotion ? null : <mesh rotation={[-Math.PI / 2, 0, 0]}><ringGeometry args={[size * 0.38, size * 0.45, 40]} /><meshBasicMaterial color="#e5af3f" transparent opacity={0.8} toneMapped={false} /></mesh>}</group>
+}
+
+export default function BoardScene({ players, propertyBuildings, highlightedSpaceIds = [], landingPulseSpaceId = -1, landingPulseSequence = 0, diceRollSequence = 0, dice = [0, 0], reducedMotion = false, onSelectSpace }: { players: PlayerToken[]; propertyBuildings: PropertyBuilding[]; highlightedSpaceIds?: readonly number[]; landingPulseSpaceId?: number; landingPulseSequence?: number; diceRollSequence?: number; dice?: [number, number]; reducedMotion?: boolean; onSelectSpace: (spaceId: number) => void }) {
   return (
     <Canvas camera={{ position: [12.5, 15.5, 15.5], fov: 34 }} shadows dpr={[1, 1.6]}>
       <color attach="background" args={['#9bbcc1']} />
@@ -255,7 +346,7 @@ export default function BoardScene({ players, propertyBuildings, highlightedSpac
       <ambientLight intensity={0.72} />
       <directionalLight position={[7, 13, 5]} intensity={1.55} castShadow shadow-mapSize={[1024, 1024]} />
       <ResponsiveCamera />
-      <Board players={players} propertyBuildings={propertyBuildings} highlightedSpaceIds={highlightedSpaceIds} onSelectSpace={onSelectSpace} />
+      <Board players={players} propertyBuildings={propertyBuildings} highlightedSpaceIds={highlightedSpaceIds} landingPulseSpaceId={landingPulseSpaceId} landingPulseSequence={landingPulseSequence} diceRollSequence={diceRollSequence} dice={dice} reducedMotion={reducedMotion} onSelectSpace={onSelectSpace} />
       <ContactShadows position={[0, -0.46, 0]} opacity={0.25} scale={18} blur={2.5} far={5} />
     </Canvas>
   )
