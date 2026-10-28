@@ -19,7 +19,7 @@ function ResponsiveCamera() {
   return null
 }
 
-function SpaceLabel({ name, price, color, size }: { name: string; price?: number; color: string; size: number }) {
+function SpaceLabel({ name, price, size }: { name: string; price?: number; size: number }) {
   const texture = useMemo(() => {
     const canvas = document.createElement('canvas')
     canvas.width = 768
@@ -30,13 +30,13 @@ function SpaceLabel({ name, price, color, size }: { name: string; price?: number
       context.textAlign = 'center'
       context.textBaseline = 'middle'
       context.fillStyle = '#2f4536'
-      context.font = '700 58px system-ui, sans-serif'
+      context.font = '700 112px system-ui, sans-serif'
       let label = name.toLocaleUpperCase('pt-BR')
       while (context.measureText(label).width > 710 && label.length > 10) label = `${label.slice(0, -4)}…`
       context.fillText(label, 384, price ? 145 : 198)
       if (price) {
-        context.fillStyle = color
-        context.font = '700 54px system-ui, sans-serif'
+        context.fillStyle = '#52664c'
+        context.font = '700 92px system-ui, sans-serif'
         context.fillText(`R$ ${new Intl.NumberFormat('pt-BR').format(price)}`, 384, 284)
       }
     }
@@ -44,7 +44,7 @@ function SpaceLabel({ name, price, color, size }: { name: string; price?: number
     map.colorSpace = SRGBColorSpace
     map.needsUpdate = true
     return map
-  }, [color, name, price])
+  }, [name, price])
   useEffect(() => () => texture.dispose(), [texture])
 
   return (
@@ -104,7 +104,7 @@ function Board({ playerPositions, propertyBuildings }: { playerPositions: number
               <boxGeometry args={[size * 0.82, 0.045, size * 0.19]} />
               <meshStandardMaterial color={space.color} roughness={0.7} />
             </mesh>
-            <SpaceLabel name={space.name} price={space.price} color={space.color} size={size} />
+            <SpaceLabel name={space.name} price={space.price} size={size} />
             {corner && (
               <mesh position={[0, 0.19, 0]} rotation={[0, Math.PI / 4, 0]}>
                 <boxGeometry args={[0.32, 0.08, 0.32]} />
@@ -172,7 +172,7 @@ export default function BoardScene({ playerPositions, propertyBuildings }: { pla
   return (
     <Canvas camera={{ position: [12.5, 15.5, 15.5], fov: 34 }} shadows dpr={[1, 1.6]}>
       <color attach="background" args={['#9bbcc1']} />
-      <fog attach="fog" args={['#9bbcc1', 17, 31]} />
+      <fog attach="fog" args={['#9bbcc1', 21, 38]} />
       <ambientLight intensity={0.72} />
       <directionalLight position={[7, 13, 5]} intensity={1.55} castShadow shadow-mapSize={[1024, 1024]} />
       <ResponsiveCamera />
