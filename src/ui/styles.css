@@ -257,3 +257,56 @@ button:disabled{opacity:.55;cursor:not-allowed}
   .objective-panel h2{font-size:16px}
   .objective-progress{font-size:8px}
 }
+
+/* A entrada herda o clima da mesa de jogo: feltro, papel e cores de peças. */
+.screen-home{background:#dce7d9;color:#2d4337}
+.screen-home .scene-backdrop{inset:0 0 0 30%;opacity:.48;filter:saturate(.82)}
+.screen-home .scene-backdrop:after{background:linear-gradient(90deg,#dce7d9 0%,rgba(220,231,217,.88) 18%,rgba(220,231,217,.2) 76%),linear-gradient(0deg,rgba(220,231,217,.58),transparent 35%)}
+.screen-home .topbar{border-bottom-color:rgba(57,83,68,.15);background:rgba(248,246,234,.72)}
+.screen-home .brand,.screen-home .topbar-right{color:#365146}
+.screen-home .brand-light{color:#718276}
+.screen-home .brand-mark{border-color:#75947b;color:#587a64}
+.screen-home .icon-button{border-color:rgba(57,83,68,.28);color:#365146}
+.screen-home .eyebrow{color:#657e58}
+.screen-home .eyebrow-dot{background:#8daa6c;box-shadow:0 0 8px rgba(141,170,108,.55)}
+.screen-home .hero-copy h1{color:#304738}
+.screen-home .hero-copy h1 em{color:#9b7740}
+.screen-home .hero-copy>p{color:#607466}
+.screen-home .mode-switch{border-bottom-color:rgba(71,99,75,.23)}
+.screen-home .mode-tab{color:#77877b}
+.screen-home .mode-tab small{color:#849184}
+.screen-home .mode-tab.selected{color:#354d3c}
+.screen-home .mode-tab.selected:after{height:3px;background:#c29b45}
+.screen-home .mode-note{color:#566e58}
+.screen-home .note-icon{color:#a17b35}
+.screen-home .player-limit{color:#778979}
+.screen-home .entry-card{background:rgba(250,248,237,.96);border:1px solid #d4d9c6;border-radius:18px;box-shadow:0 24px 70px rgba(45,65,49,.14);backdrop-filter:blur(9px);color:#2f4439}
+.screen-home .step-number{color:#8a7443}
+.screen-home .card-heading h2{color:#344a3a}
+.screen-home .card-heading p{color:#748275}
+.screen-home .field-label{color:#718071}
+.screen-home .text-field{border:1px solid #cbd4c6;background:#fffef7;color:#33483a;border-radius:9px}
+.screen-home .text-field:focus{border-color:#9eaa6e;box-shadow:0 0 0 3px rgba(158,170,110,.15)}
+.screen-home .text-field::placeholder{color:#99a296}
+.screen-home .primary-button{border-radius:9px;background:#779675;color:#fffdf3;box-shadow:0 7px 18px rgba(91,125,89,.18)}
+.screen-home .primary-button:hover{background:#648462}
+.screen-home .divider{color:#899387}
+.screen-home .divider span{background:#dce1d5}
+.screen-home .join-button{border-color:#cbd4c6;border-radius:9px;background:#edf0e2;color:#4d614f}
+.screen-home .join-button:hover{background:#e2e8d7}
+.screen-home .join-button span{color:#8d7440}
+.screen-home .privacy-note{color:#748275}
+.screen-home .privacy-note span{color:#8d7440}
+.screen-home .form-error{color:#a14f38}
+.screen-home .home-footer{color:#748275}
+.screen-home .home-footer i{color:#8d7440}
+@media(max-width:640px){
+  .screen-home .topbar{height:66px}
+  .screen-home .scene-backdrop{inset:32% -40% 13% 8%;opacity:.3}
+  .screen-home .home-layout{min-height:calc(100vh - 66px);padding:5vh 18px 60px;gap:22px}
+  .screen-home .hero-copy h1{font-size:clamp(45px,13vw,56px)}
+  .screen-home .mode-switch{margin-top:19px}
+  .screen-home .entry-card{padding:19px;border-radius:15px}
+  .screen-home .card-heading{margin-bottom:17px}
+  .screen-home .home-footer{left:18px;right:18px;bottom:15px}
+}

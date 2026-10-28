@@ -7,6 +7,7 @@ Este documento traduz a hierarquia visual observada em capturas públicas de *Bu
 - [Página oficial de *Business Tour* na Steam](https://store.steampowered.com/app/397900/Business_Tour__Board_Game_with_Online_Multiplayer/), incluindo capturas oficiais de partida e sala.
 - [Galeria da interface de *Business Tour* no Interface In Game](https://interfaceingame.com/games/business-tour/), que organiza capturas por estado, como menu, tabuleiro, rolagem, venda, sala privada, configurações e placar. A galeria é uma referência histórica da interface, não uma garantia de que cada tela corresponda à versão atual.
 - [Galeria de capturas indexada pelo SteamDB](https://steamdb.info/app/397900/screenshots/), usada para localizar exemplos públicos adicionais.
+- A página oficial da Steam também foi consultada novamente em 2026-10-28 para confirmar a apresentação pública e as capturas atuais da partida. A descrição da loja classifica o jogo como mesa multiplayer casual para partidas rápidas; isso é contexto do produto, enquanto as observações visuais abaixo vêm das capturas.
 - Captura enviada pelo usuário nesta conversa, usada somente como referência visual.
 
 ## Leitura visual das capturas
@@ -43,6 +44,8 @@ Estas recomendações são uma proposta de direção visual baseada na leitura d
 | Sala privada | [Captura de sala](https://interfaceingame.com/wp-content/uploads/business-tour/business-tour-private-table-500x281.png) | A preparação da partida continua usando os mesmos retratos, cores e linguagem de mesa vistos na partida. |
 
 As observações acima descrevem as capturas públicas consultadas; não são especificações oficiais do jogo. O padrão de apresentação é consistente: a mesa e a posição dos participantes permanecem legíveis, a vez atual tem um marcador claro e a ação específica aparece junto ao contexto que a motivou.
+
+Na galeria histórica, a interface também está separada por estados de produto — menu principal, mesa privada, partida, rolagem, venda de cidade, dinheiro insuficiente, configurações e placar. Isso reforça que a mesma mesa deve continuar como contexto ao trocar de ação: um cartão ou escurecimento temporário explica a decisão, e depois sai de foco. A galeria foi publicada em 2017; usamos seus estados como repertório de apresentação, e as capturas da Steam como referência recente da composição da partida.
 
 ## Direção visual para o nosso jogo
 
@@ -81,6 +84,8 @@ As observações acima descrevem as capturas públicas consultadas; não são es
 ## Aplicação e limites
 
 O HUD atual já segue a composição principal: jogadores nas bordas, modo/relógio no topo e ação no rodapé. A próxima revisão visual deve concentrar-se em estados contextuais: ligar avisos e dados à casa/jogador que os provocou, destacar o espaço selecionado durante compra/leilão/dívida e apresentar um placar final com o critério de vitória. Esses ajustes devem ser verificados em captura de tela, com tabuleiro visível, em desktop e celular.
+
+A tela inicial também deve compartilhar o clima do jogo: fundo claro de feltro, superfícies cor de papel, cores de acento por ação e uma chamada visual para a mesa, evitando uma estética escura de produto editorial que destoe da partida. A marca, a tipografia, os textos e os elementos 3D continuam próprios.
 
 Usar as capturas acima apenas como referência visual durante design e revisão. Não salvá-las no pacote do jogo, nem reutilizar logotipo, nomes, ilustrações, formas de peças, tipografia ou organização exata dos painéis de *Business Tour*.
 
