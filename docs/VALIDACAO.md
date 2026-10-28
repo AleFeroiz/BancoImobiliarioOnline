@@ -8,6 +8,13 @@
 - Capturas revisadas: `/tmp/banco-visual-audit-before.png`, `/tmp/banco-visual-audit-after-desktop.png` e `/tmp/banco-visual-audit-after-mobile.png`. O Chrome usou renderização WebGL por software neste ambiente.
 - A validação cobre a tela de entrada; lobby e estados da partida não foram alterados nesta revisão.
 
+## 2026-10-28 — Prisão com saldo abaixo da fiança
+
+- Abri uma sala com duas sessões Chrome numa cópia temporária da sala de jogo, inicializando a anfitriã presa com R$ 49.999. A cópia e o servidor de teste foram removidos após a revisão.
+- Em 1440 × 900 e 390 × 844, o cartão informa que a fiança é R$ 50.000, orienta tentar duplas e mantém “Pagar fiança” desativado. A mensagem é clara, o cartão cabe nas duas telas e `scrollWidth` corresponde à largura do viewport (1440 e 390).
+- Revisei a mesa 3D e os dois cartões de participantes em ambas as resoluções. No Chrome headless, precisei redimensionar a janela uma vez para o primeiro quadro WebGL aparecer; após isso a cena permaneceu visível.
+- Capturas revisadas: `/tmp/banco-jail-insufficient-desktop-after-resize.png` e `/tmp/banco-jail-insufficient-mobile.png`.
+
 ## 2026-10-28 — Segundo balanço dos objetivos Express
 
 - A simulação anterior de 80 partidas indicou baixa ocorrência para completar grupos, construir e possuir duas estações. Substituí essas metas por quatro propriedades, uma estação, receber/pagar aluguel, tirar uma carta e cruzar a Partida; as duas metas mais simples de posse foram mantidas.
