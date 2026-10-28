@@ -2,66 +2,55 @@
 
 ## Visão
 
-Um jogo de Banco Imobiliário para abrir no navegador e jogar com amigos, sem cadastro. A pessoa escolhe um nome, cria uma sala ou entra usando o código recebido. A partida deve ser simples de organizar e funcionar bem para um grupo pequeno.
+Um jogo de tabuleiro para abrir no navegador e jogar com amigos, sem cadastro. Cada pessoa informa um nome e cria uma sala ou entra pelo código recebido. A partida combina um tabuleiro 3D original com interface acessível e regras executadas pelo servidor.
 
-## Experiência desejada
+## Experiência
 
-- A tela inicial permite escolher nome e criar ou entrar em uma sala. Ao criar, o anfitrião escolhe Clássico Rápido ou Express; quem entra vê o modo selecionado antes de confirmar.
-- A sala mostra participantes, anfitrião e estado de preparação; o anfitrião inicia a partida.
-- A partida acontece em um tabuleiro 3D com câmera inclinada e perspectiva isométrica, casas fáceis de ler, peças, dados animados e HUD discreta, tanto em computador quanto em celular.
-- Jogadores fazem ações por turnos, e a interface explica claramente o que aconteceu e qual ação está disponível.
-- Se alguém perder conexão, deve poder voltar à mesma sala durante um período a definir.
-- Sem contas e sem progresso permanente na primeira versão. A sala e a partida são temporárias, salvo decisão futura.
+- Tela inicial para escolher nome e criar/entrar em sala.
+- Ao criar, anfitrião escolhe Clássico Rápido ou Express; quem entra vê o modo antes de confirmar.
+- Lobby lista até quatro participantes, anfitrião e estado de preparação; anfitrião inicia.
+- Tabuleiro 3D de câmera inclinada, espaços legíveis, peças e dados; HUD em HTML responsivo para desktop e celular.
+- Ações disponíveis e resultados da jogada ficam claros em cada turno.
+- Partidas temporárias, sem conta ou progresso persistente.
 
-## Escopo combinado para a primeira versão
+## Regras acordadas
 
-1. Criar sala, escolher modo de regras, entrar por código, validar nomes e exibir lobby.
-2. Iniciar partida e manter ordem dos jogadores.
-3. Executar turnos, dados, movimento, compra, leilão e aluguel de propriedades e companhias.
-4. Implementar conjuntos, casas, hotéis, hipotecas, negociação entre jogadores, cartas/eventos, prisão, dívidas e falência.
-5. Mostrar dinheiro, propriedades, construções, eventos e ações disponíveis para cada jogador.
-6. Oferecer Clássico Rápido de 30 minutos e Express baseado em seis rodadas de 40 segundos (cerca de 8 minutos no total), com objetivos e vitória por dinheiro no fim; a vitória imediata por objetivo é uma regra customizada ainda a confirmar.
-7. Reconectar um participante que caiu, sem permitir que duas pessoas controlem a mesma vaga.
-8. Ajustar a apresentação 3D e a interface em computadores e celulares.
+- **Clássico Rápido:** 30 minutos, com compra, leilão, grupos, casas/hotéis, hipoteca, negociação, cartas, prisão, dívidas e falência. Quando o tempo acaba, termina-se a ação/pagamento corrente e vence o maior patrimônio após liquidação de bens e construções.
+- **Express:** seis rodadas de 40 segundos e cerca de 8 minutos de duração total. Cada pessoa recebe um objetivo privado entre oito objetivos digitais autorais, sem repetição dentro da sala. Cumprir um objetivo paga bônus; não encerra a partida. Ao final vence o maior saldo em dinheiro; empate é decidido pelo patrimônio e depois pelos dados.
+- **Leilão:** propriedade recusada vai a leilão público de 20 segundos.
+- **Negociação:** janela de 45 segundos na vez ativa do Clássico; no Express, nas fases de 40 segundos.
+- **Desconexão:** 60 segundos para reconectar; passado o prazo, pula-se a ação/vez atual sem ações automáticas.
+- **Sala:** 2–4 pessoas.
 
-O usuário quer duas opções de regras na criação da sala: Clássico Rápido, com duração de 30 minutos, e Express. A referência pública para Express anuncia cerca de 8 minutos, em 6 rodadas de 40 segundos, cartas de objetivo e vitória por dinheiro ao final; o texto das cartas não está publicado. O usuário também pediu vitória instantânea ao completar objetivo, que deve ser tratada como extensão digital customizada se mantida. As salas terão 2 a 4 jogadores por enquanto. Qualquer alteração ou exceção de regra deve aparecer antes da partida.
+As decisões detalhadas estão em [DECISOES.md](DECISOES.md) e as fontes de regras em [REGRAS-DE-JOGO.md](REGRAS-DE-JOGO.md).
 
-## Stack e arquitetura propostas
+## Arquitetura confirmada
 
-| Parte | Proposta inicial | Motivo |
+| Parte | Decisão | Responsabilidade |
 |---|---|---|
-| Aplicação web | React + TypeScript + Vite | Lobby e HUD têm bastante interface e compartilham estado com a partida. |
-| Cena 3D | React Three Fiber + Three.js | Tabuleiro genuinamente 3D com composição declarativa ligada à aplicação React. |
-| Estado das regras | Módulo TypeScript independente da cena | Permite validar regras e manter a renderização como representação do estado. |
-| Multijogador | Servidor autoritativo por sala; Colyseus é a opção inicial a avaliar | Oferece salas, estado compartilhado e recursos de reconexão adequados a uma partida por turnos. |
-| Deploy da aplicação | Vercel | Combina com uma aplicação web estática/Vite. |
-| Deploy do servidor | Comparar Vercel Functions com WebSockets e uma hospedagem Node persistente | Escolher após validar salas, estado compartilhado, reconexão e custo. |
-| Dados | Sem banco na primeira versão, salvo necessidade de recuperação entre reinícios | Sem contas nem histórico, uma partida pode ser temporária. |
+| Aplicação | React + TypeScript + Vite | Lobby, navegação, HUD e integração com a sala. |
+| Cena | React Three Fiber + Three.js | Representar tabuleiro, peças, dados e animações. |
+| Regras | Módulo TypeScript sem dependência de renderização | Estado determinístico e transições do jogo. |
+| Multiplayer | Node + Colyseus autoritativo | Criar/entrar em sala, validar ações e sincronizar estado. |
+| Frontend publicado | Vercel | Servir a aplicação web. |
+| Servidor publicado | Hospedagem Node com WebSockets | Manter salas multiplayer ativas. O provedor será escolhido após validar a sala e o custo. |
+| Persistência | Nenhuma no MVP | Salas temporárias; sem contas e histórico. |
 
-Essas escolhas são recomendações de partida, não compromissos. A implementação deve validar a hospedagem do servidor, reconexão e custo antes de abrir o jogo para além do grupo de amigos.
+## Fases de produção
 
-### Hospedagem em aberto
+1. **Fatia visual inicial:** tela inicial, escolha de modo e primeira cena 3D responsiva com tabuleiro e peças próprias. Implementada como prévia visual.
+2. **Salas online:** servidor Colyseus, código privado de cinco caracteres, lobby sincronizado, anfitrião e reconexão. O estado de conexão é sincronizado e o lobby bloqueia o início enquanto alguém tenta voltar. Após expirar a janela, a pessoa continua na sala com seus imóveis; turnos futuros são pulados e compras pendentes são canceladas sem leilão. A partida e o relógio seguem ativos. O que fazer se o timeout ocorrer durante uma dívida e como tratar uma saída voluntária durante a partida continuam pendentes. Lobby e partida também foram exercitados no Chrome e numa partida cruzada Chrome–Firefox. Revisão da hospedagem permanece pendente.
+3. **Ciclo de partida:** relógios de 30 minutos no Clássico e seis rodadas de 40 segundos por jogador no Express, contagem sincronizada e encerramento por tempo implementados no servidor. O fluxo de seis rodadas leva aproximadamente 8 minutos com duas pessoas e até 16 com quatro, sem contar leilões ou liquidação de dívidas. Objetivos privados Express, progresso reservado ao dono e bônus de conclusão implementados. O baralho foi recalibrado após a primeira simulação; uma nova simulação de 80 partidas completas não encontrou objetivos impossíveis nem falhas de conclusão. Playtests com pessoas ainda são necessários para avaliar estratégia, frequência real de conclusão e equilíbrio dos bônus.
+4. **Economia e interação:** em andamento. Compra, aluguel, taxas, leilão, construções residenciais equilibradas, venda de construções, hipotecas, dívidas, falência e uma primeira versão da negociação de dinheiro e títulos estão implementadas. A janela sincronizada de negociação é de 45 segundos no Clássico e 40 segundos no Express. Os detalhes de uma oferta pendente por sala e de títulos hipotecados transferidos permanecem propostas, aguardando playtest e decisão de produto.
+5. **Presets:** limites de tempo, critérios de vitória, cálculo inicial de patrimônio e objetivos Express implementados; validar o balanço dos objetivos em partidas com pessoas. A primeira simulação de 80 partidas está registrada em [VALIDACAO.md](VALIDACAO.md); os bônus permanecem como valores iniciais de playtest.
+6. **Acabamento:** acessibilidade, layout móvel, efeitos visuais, desempenho, publicação e validação com um grupo.
 
-Vercel pode hospedar o frontend, e desde 20 de outubro de 2026 as Vercel Functions também têm suporte geral a WebSockets. Isso não define, sozinho, como manter o estado de uma sala entre participantes que se conectam a instâncias diferentes. Vamos comparar Functions com estado compartilhado e um servidor Node persistente para as partidas. A documentação do Colyseus descreve seu servidor como uma aplicação Node e inclui salas e reconexão; o provedor só deve ser escolhido depois de validar esse fluxo e o custo.
+## Limites do MVP
 
-Referências oficiais consultadas em 2026-10-27: [WebSockets no Vercel](https://vercel.com/changelog/websocket-support-is-now-generally-available), [salas Colyseus](https://docs.colyseus.io/room), [implantação Colyseus](https://docs.colyseus.io/deployment), [reconexão Colyseus](https://docs.colyseus.io/room/reconnection).
+- Sem login, contas, matchmaking público, ranking ou chat de voz.
+- Sem assets, marcas, textos ou layout copiados de *Business Tour*; criar identidade visual própria.
+- Suportar computador e celular desde o começo; medir WebGL e controles em aparelhos móveis modestos.
 
-## Limites iniciais
+## Referências de hospedagem
 
-- Salas de 2 a 4 pessoas por enquanto, igual à edição Express atualmente listada pela Estrela. Assentos e HUD ficam mais legíveis, os turnos circulam mais rápido e o tabuleiro continua claro no celular. "Sem limite" não combina com um tabuleiro por assentos; a página oficial do [Banco Imobiliário Express](https://www.estrela.com.br/produto/banco-imobiliario-express-150394) especifica 2, 3 ou 4 jogadores.
-- Dois presets de regras na criação da sala; nada de marketplace, ranking ou matchmaking público no MVP.
-- Sem login, contas, chat de voz ou sistema social.
-- Sem copiar assets, marca ou layout exato de *Business Tour*. A referência descreve câmera, profundidade e clareza visual.
-- Computador e celular são plataformas-alvo desde o MVP; desempenho e controles em celulares modestos precisam ser validados durante os protótipos.
-
-## Roteiro de preparação
-
-1. Fechar os detalhes da variante rápida e sua duração padrão.
-2. Confirmar stack e topologia de hospedagem.
-3. Definir direção visual original e uma lista mínima de assets.
-4. Transformar o MVP em issues com critérios de aceite.
-5. Só então iniciar a implementação.
-
-## Perguntas para fechar antes da produção
-
-Veja `docs/DECISOES.md` para as definições restantes. As principais são a regra de vitória e pontuação do Express, conteúdo das metas, detalhes de negociação e desconexão e stack multiplayer.
+A decisão de usar Vercel para o frontend e um serviço Node para o multiplayer está aprovada. A validação do provedor do servidor permanece uma escolha operacional. Documentação consultada: [WebSockets na Vercel](https://vercel.com/changelog/websocket-support-is-now-generally-available), [salas Colyseus](https://docs.colyseus.io/room), [implantação Colyseus](https://docs.colyseus.io/deployment) e [reconexão Colyseus](https://docs.colyseus.io/room/reconnection).

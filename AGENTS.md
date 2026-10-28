@@ -35,5 +35,10 @@ Construir um jogo de tabuleiro multiplayer casual para navegador, para partidas 
 - Use branches curtas: `feat/`, `fix/`, `docs/` ou `chore/`, seguidas por um resumo em kebab-case.
 - Abra pull requests com objetivo, resumo, evidência de validação e riscos ou decisões pendentes. Use os templates em `.github/`.
 - Antes de implementar uma funcionalidade, alinhe comportamento e regras em documentação quando houver impacto no produto.
+- A cada implementação, adicione ou atualize testes, execute a suíte completa e faça commit/push da mudança aprovada para o GitHub.
+- Todo commit deve passar pelo hook local de pré-commit, que executa a suíte completa de testes e o build. Não use `--no-verify` nem desative o hook.
+- Quando um bug for encontrado e corrigido, inclua no mesmo trabalho um teste de regressão que falhe antes da correção e passe depois dela.
+- Se não houver teste automatizado adequado para uma mudança visual, registre a validação manual feita com o Game Studio e adicione testes automatizados para a lógica não visual relacionada.
+- O usuário autorizou Codex e agentes delegados a coordenar tarefas deste projeto por mensagem com chats existentes ou com novos chats. Use essa autorização só para trabalho relacionado ao projeto e não envie segredos ou dados pessoais.
 - Não inclua segredos, tokens, dados pessoais ou conteúdo de usuário em código, commits ou logs.
 - Ao terminar, informe os arquivos alterados e o que foi ou não validado.

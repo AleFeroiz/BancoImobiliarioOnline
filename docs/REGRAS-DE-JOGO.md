@@ -1,79 +1,70 @@
-# Regras — referência atual e proposta para o jogo
+# Regras do jogo
 
-## Edição rápida atual: Banco Imobiliário Express
+## Referência Express
 
-A página oficial da Estrela confirma que a edição Express usa cartas de objetivo, cartas Sorte ou Revés, casas, dados e ampulheta, e descreve compras, trocas, objetivos e vitória por dinheiro ao fim do tempo. Ela não publica o texto das regras nem o conteúdo das cartas de objetivo. [Página oficial do produto](https://www.estrela.com.br/produto/banco-imobiliario-express-150394)
+A página oficial da Estrela para o [Banco Imobiliário Express](https://www.estrela.com.br/produto/banco-imobiliario-express-150394) confirma oito cartas de objetivo, Sorte ou Revés, casas, dados, ampulheta e partidas para 2–4 pessoas. A descrição diz que os objetivos ajudam a acumular dinheiro e que vence quem tiver mais dinheiro ao fim do tempo; ela não publica o texto do manual nem das cartas.
 
-Para o produto de referência 828100, a ficha de um distribuidor informa **aproximadamente 8 minutos**, em **6 rodadas de 40 segundos**. Isso soma quatro minutos de rodada cronometrada; os oito minutos são a duração aproximada total anunciada. O dado aparece em listagens de venda/distribuição, não no texto público do manual, então deve ser tratado como referência da edição, não como transcrição verificada do livreto. [Ficha do distribuidor](https://www.brokercorporativo.com.br/farol/brokercorp/produto/banco-imobiliario-express-estrela/1570102/)
+Uma [ficha de distribuidor do produto 828100](https://www.brokercorporativo.com.br/farol/brokercorp/produto/banco-imobiliario-express-estrela/1570102/) anuncia aproximadamente 8 minutos e seis rodadas de 40 segundos. Essa duração é referência comercial, não transcrição do manual.
 
-A embalagem lista **8 cartas de objetivo**, mas não encontrei uma cópia pública do manual com o texto delas. A descrição disponível associa completar objetivos a ganhar mais dinheiro; ela aponta como vencedor quem tiver mais dinheiro no final, não quem completar primeiro um objetivo. Portanto, vitória imediata por objetivo seria uma regra digital extra, não confirmada como regra da caixa.
+Como referência de regras clássicas e jogo curto, o [manual oficial do Super Banco Imobiliário](https://estrela.vteximg.com.br/arquivos/Manual-Super-Banco-Imobili%C3%A1rio.pdf) descreve liquidação de bens no final e desempate nos dados. O jogo digital é uma variante própria, combinando mecânicas clássicas com o ritmo do Express.
 
-## Como manter a partida 3D parecida com o estilo clássico
+## Tabuleiro implementado
 
-Como você quer o tabuleiro com voltas, dados, propriedades, casas, hotéis, hipotecas, leilões e negociação, minha recomendação é usar o **Express como referência de ritmo** e as regras do **Super Banco Imobiliário** como referência para as mecânicas clássicas. O manual oficial do Super tem uma seção “Regras opcionais — jogo curto”, com relógio, liquidação de patrimônio no final, construções mais cedo e distribuição inicial de propriedades. [Manual oficial do Super Banco Imobiliário](https://estrela.vteximg.com.br/arquivos/Manual-Super-Banco-Imobili%C3%A1rio.pdf)
+- O percurso tem 40 casas: 24 ruas residenciais únicas em oito grupos de três, três estações e as casas de Partida, Sorte ou Revés, taxas, descanso e prisão.
+- O objetivo Express de grupo usa o grupo residencial com menor custo total de compra. Os grupos podem receber construções apenas quando todos os seus títulos pertencem à mesma pessoa.
 
-Isso é um conjunto híbrido para o nosso jogo, não uma reprodução literal de uma caixa. O manual oficial do Super também sugere proibir hipotecas no modo curto; como você pediu todas as mecânicas, nossa variante manteria hipotecas.
+## Clássico Rápido — 30 minutos
 
-## Resumo das mecânicas clássicas
+- Jogo por turnos em tabuleiro fechado. Rola-se dado e move-se a peça; casas e cartas resolvem seus efeitos.
+- Uma propriedade livre pode ser comprada. Se a compra for recusada, abre-se leilão público de 20 segundos.
+- Ao parar em propriedade de outra pessoa, paga-se aluguel conforme títulos e construções. Companhias usam a regra indicada no título.
+- Completar grupo de cor sem hipotecas permite construir casas e hotéis. Construções seguem a regra de equilíbrio definida para o tabuleiro.
+- Jogadores podem negociar dinheiro e títulos durante a vez ativa, em janela de 45 segundos. Construções devem ser vendidas antes da transferência do título.
+- Durante a própria vez, o dono pode hipotecar qualquer título sem construções no grupo e receber 50% do preço de compra. Um título hipotecado não cobra aluguel. Resgatá-lo custa 110% do valor recebido; enquanto qualquer título do grupo estiver hipotecado, não se pode construir casas ou hotéis naquele grupo. A regra vale nos dois modos.
+- Sorte ou Revés tem oito cartas digitais autorais, sorteadas com reposição pelo servidor: três créditos, três cobranças, avançar três casas e ir para a prisão. Créditos e cobranças variam entre R$ 50.000 e R$ 150.000.
+- Cair em “Vá para a prisão” ou receber a carta leva à casa de visita e encerra a vez. Na vez presa, pode-se pagar R$ 50.000 e rolar ou tentar duplas; falhar encerra a vez. Após três tentativas sem duplas, paga-se até R$ 50.000 do saldo, sai da prisão e move pelo resultado da terceira rolagem.
+- Se aluguel, taxa ou cobrança de carta exceder o saldo, registra-se a dívida integral sem debitar dinheiro parcialmente. Durante essa fase, a pessoa pode vender construções respeitando a ordem equilibrada e receber metade do custo de construção, ou hipotecar títulos elegíveis. Quando o saldo cobrir a dívida, paga-se o valor integral ao credor ou ao banco e a vez continua.
+- A falência só pode ser declarada quando o saldo continuar abaixo da dívida e não restarem construções vendáveis nem títulos que possam ser hipotecados. O dinheiro e os títulos restantes passam ao credor jogador; se a dívida for com o banco, os títulos voltam ao banco sem construções e sem hipoteca. A partida termina quando restar apenas uma pessoa solvente.
+- Ao completar 30 minutos, resolve-se a ação e os pagamentos em andamento. Compara-se patrimônio após liquidar bens e construções; empate vai aos dados.
+- A partida também pode terminar antes se restar apenas um jogador solvente.
 
-- **Objetivo:** fazer negócios com propriedades, cobrar aluguéis e falir os adversários, ou liderar em patrimônio quando o relógio terminar.
-- **Turno:** rolar dados, andar pelo tabuleiro e resolver a casa. Uma dupla concede outro lançamento; uma terceira dupla consecutiva leva à prisão.
-- **Propriedades e companhias:** uma propriedade livre pode ser comprada; se tiver dono, cobra-se aluguel. Companhias usam uma taxa ligada ao resultado dos dados. Completar grupos de cor libera construções.
-- **Construções:** a regra normal exige construir de forma equilibrada dentro do grupo de cor. Para acelerar, a variante do Super permite construir com dois títulos da mesma cor e fazer hotel a partir da terceira casa.
-- **Cartas:** aplicar o efeito Sorte ou Revés; cartas especiais podem ficar guardadas até serem usadas, conforme a regra da carta.
-- **Leilões:** o manual do Banco Imobiliário App oferece leilão pré-partida de uma quantidade escolhida de propriedades. O leilão quando alguém recusa uma compra será uma regra própria nossa, se adotado.
-- **Trocas:** jogadores podem negociar propriedades e dinheiro. Construções precisam ser vendidas antes de transferir a propriedade, conforme a regra clássica.
-- **Hipoteca:** propriedades elegíveis podem ser hipotecadas para obter dinheiro; não geram aluguel enquanto hipotecadas; o resgate inclui juros.
-- **Dívida e falência:** vender construções, hipotecar ou negociar propriedades para obter dinheiro. Se ainda não puder pagar, a pessoa vai à falência e sai da partida.
-- **Prisão:** pode ser acionada por uma casa, carta ou dados. A pessoa pode sair por uma dupla, pagando fiança ou usando uma carta apropriada.
+## Express — cerca de 8 a 16 minutos
 
-A Estrela tem versões diferentes, então valores iniciais, nomes de casas, cartas e algumas regras variam. Por exemplo, o manual do Banco Imobiliário App dá $2.558.000 iniciais; não devemos copiar esse valor para um tabuleiro digital com economia própria. A [central de manuais oficial](https://www.estrela.com.br/central-de-manuais) lista os PDFs das edições disponíveis.
+- São seis rodadas. Cada pessoa recebe uma fase de 40 segundos por rodada; são cerca de 8 minutos com duas pessoas e 16 com quatro, mais o tempo para resolver leilões ou dívidas pendentes.
+- Cada jogador recebe em segredo uma carta dentre oito objetivos digitais originais, distribuídas sem repetição na mesma sala. O progresso e o conteúdo da carta são enviados somente para a pessoa que a recebeu.
+- Cumprir o objetivo uma vez paga o bônus indicado; o cartão fica marcado como cumprido mesmo que os bens mudem depois. O objetivo não encerra a partida: a vitória continua sendo decidida ao fim das seis rodadas.
+- Baralho autoral atual para playtest: ter 1 propriedade (+R$ 50.000), ter 3 propriedades (+R$ 100.000), ter 4 propriedades (+R$ 150.000), ter 1 estação (+R$ 75.000), receber aluguel uma vez (+R$ 100.000), pagar aluguel uma vez (+R$ 75.000), comprar uma carta Sorte ou Revés (+R$ 75.000) ou passar pela Partida uma vez (+R$ 75.000). Propriedade inclui rua ou estação. Atividades contam apenas quando o servidor confirma o evento; aluguel em dívida só progride depois da quitação integral. Os objetivos continuam privados, distribuídos sem repetição na sala e concedem o bônus uma única vez.
+- A negociação só ocorre durante as fases de 40 segundos.
+- Ao fim das seis rodadas, vence quem tiver maior saldo em dinheiro. Empate: compara-se patrimônio incluindo valor de liquidação de imóveis e construções; persistindo, decide-se nos dados.
+- Os alvos, bônus e textos são autorais. Este segundo balanço substitui o primeiro depois de uma simulação que mostrou baixa ocorrência para grupos, construções e duas estações. Os valores continuam iniciais e devem ser revistos após playtests com pessoas.
 
-## Modos selecionáveis ao criar a sala
+## Regras compartilhadas
 
-O anfitrião escolhe um dos dois presets antes de criar a sala. A tela de entrada mostra o modo escolhido para que os amigos saibam que tipo de partida vão iniciar. Depois que a partida começa, o preset fica bloqueado.
+- Salas de 2–4 jogadores, sem conta.
+- Desconexão: janela de 60 segundos para reconectar; após isso, pula-se a ação/vez atual sem jogar ou negociar automaticamente pela pessoa.
+- O servidor será a autoridade para ordem de turno, resultados de dados, movimento, compras, cobranças, leilões, trocas e demais alterações compartilhadas.
+- Nomes, valores, efeitos de cartas e economia serão originais, sem alegar reproduzir uma edição física específica.
 
-### Clássico Rápido
+## Ciclo básico implementado
 
-- Tabuleiro por voltas e turnos, inspirado no formato clássico e na referência visual de *Business Tour*.
-- Inclui o conjunto completo pedido: compra, leilões, grupos de cor, casas e hotéis, hipotecas, trocas, cartas, prisão, dívidas e falência.
-- Duração confirmada: **30 minutos**. Ao zerar, terminar ações e pagamentos em andamento e comparar patrimônio segundo uma regra publicada na sala.
-- Pode usar construções aceleradas, como permitir hotel com menos casas, conforme as regras opcionais do manual do Super Banco Imobiliário.
-- A falência pode encerrar a partida antes do relógio se restar apenas uma pessoa solvente.
+- A primeira pessoa a entrar na sala começa. O servidor rola dois dados de seis lados e move a peça pelo percurso de 40 casas; todas as pessoas recebem o mesmo estado.
+- Depois da exibição da casa alcançada, a pessoa da vez confirma para passar o turno à próxima pessoa. O servidor rejeita rolagens e confirmações fora da vez.
+- O servidor resolve compras, aluguel, taxas, hipotecas, venda de construções, dívidas, falência, cartas Sorte ou Revés e movimento para a prisão.
+- O relógio do Clássico começa em 30 minutos. Quando zera, a partida encerra ao concluir o estado atual; uma compra já aberta pode ser decidida, um leilão termina e uma dívida permanece ativa até ser paga ou levar à falência.
+- No Express, cada fase tem 40 segundos. Se o tempo termina sem ação pendente, a vez passa automaticamente. Se houver uma compra sem resposta, abre-se o leilão de 20 segundos; se houver dívida, ela precisa ser resolvida antes de passar a vez. A rodada avança depois que todos os jogadores solventes tiverem sua fase.
+- Ao terminar o Clássico, compara-se dinheiro disponível + preço de compra dos imóveis - saldo hipotecado + valor de venda das construções. Ao terminar o Express, compara-se primeiro o dinheiro; em empate, usa-se o mesmo patrimônio e, persistindo, dois dados de seis lados. Empate nos próprios dados é resolvido aleatoriamente pelo servidor.
+- A fórmula de patrimônio e o desempate aleatório após dados iguais são detalhes iniciais de implementação e serão conferidos em playtests.
 
-### Express
+## Economia inicial implementada
 
-- Referência de duração: aproximadamente **8 minutos**, distribuídos em **6 rodadas de 40 segundos**, conforme a ficha pública do produto 828100. Proposta de adaptação digital: usar exatamente seis fases cronometradas de 40 segundos e reservar a preparação/transições dentro da duração total aproximada.
-- A caixa contém 8 cartas de objetivo. O texto e a distribuição exata não estão publicados no material oficial consultado. Não inventar as cartas como se fossem as originais; obter o livreto físico ou criar objetivos próprios identificados como originais do jogo digital.
-- A descrição da edição diz para completar objetivos e acumular dinheiro; o vencedor ao final é quem tiver mais dinheiro. Para ficar fiel, recomendo que objetivos concedam dinheiro ou vantagem, sem vitória instantânea por objetivo. A vitória instantânea pedida anteriormente pelo usuário pode ficar como regra extra digital, se for mantida conscientemente.
-- Para dar identidade ao preset, recomendo concentrar Express em compra, troca/roubo de propriedades, cartas de objetivo e Sorte ou Revés. A edição traz peças de casas, mas as fontes acessíveis não esclarecem todo o uso delas. Deixar hipotecas, leilões, prisão e falência como mecânicas do Clássico Rápido, salvo se o manual físico confirmar que fazem parte do Express.
-- Antes de começar, a sala deve exibir a duração, o funcionamento das cartas e as condições de vitória.
+- Cada pessoa começa com R$ 1.500.000. Ao cruzar a Partida, recebe R$ 200.000.
+- Ao parar em propriedade livre, a pessoa da vez pode comprar pelo preço impresso no espaço ou recusar e abrir leilão público de 20 segundos. O leilão começa em R$ 10.000, sobe em incrementos mínimos de R$ 10.000 e termina quando todos os demais passam ou o tempo acaba.
+- O aluguel base corresponde a 10% do preço da propriedade, com mínimo de R$ 10.000; completar o grupo de cor dobra esse valor. Quando o saldo não cobre aluguel ou taxa, a partida entra na fase de dívida descrita acima.
+- Ao possuir todas as propriedades residenciais de uma cor, o dono pode construir. Cada casa ou hotel custa metade do preço do imóvel e soma 10% desse preço ao aluguel; o bônus de grupo continua valendo. Os níveis 1–4 são casas e o nível 5 substitui as casas por um hotel. A construção deve ficar equilibrada: o nível de um imóvel não pode ultrapassar em mais de um o nível mais baixo do grupo. Estações não recebem casas ou hotéis.
+- Hipotecar rende metade do preço do título; resgatar custa 110% desse adiantamento. O título hipotecado não gera aluguel. Não se hipoteca um grupo que ainda tenha casas ou hotel; nenhum título de um grupo hipotecado recebe construção.
+- As taxas digitais custam R$ 50.000, R$ 75.000, R$ 100.000 e R$ 125.000 nas casas 4, 18, 28 e 38. Os valores são autorais e serão ajustados com playtests.
+- Construções residenciais, equilíbrio de grupo e hotéis são validados no servidor. A cena 3D mostra casas e hotéis quando o estado sincronizado muda.
 
-### Regras comuns aos dois presets
+## Fora do que está especificado
 
-- **2–4 jogadores**, confirmado por enquanto para os dois modos; é compatível com a faixa publicada para Banco Imobiliário Express e mantém o tabuleiro legível em telas móveis.
-- A interface deve explicar o modo e a condição de vitória antes do início da partida.
-- Os detalhes de pontuação final, empate, ações pendentes no fim do relógio e tratamento de desconexão devem ser fechados antes da produção.
-
-## Decisões para fechar
-
-- Manter Express fiel (objetivos dão dinheiro/benefício e vence o maior saldo) ou manter a extensão digital de vitória imediata por objetivo?
-- Quais objetivos originais do jogo digital entram no Express enquanto não tivermos o livreto da edição física?
-- No Express, contar apenas o dinheiro em mãos, como na descrição da edição, ou patrimônio incluindo imóveis?
-- Como desempatar pontuação igual ao fim do Express ou do Clássico Rápido?
-- Quais propriedades entram no leilão antes do primeiro turno? Quantos segundos cada lance fica aberto?
-- No Clássico Rápido, o que conta como patrimônio no fim: dinheiro + preço de venda ao banco ou dinheiro + valor parcial dos imóveis?
-- Quando é permitido negociar títulos e por quanto tempo?
-- Qual é o tempo máximo por turno e o que fazer se alguém desconectar?
-- Quais efeitos originais substituem as cartas da edição física?
-
-## Confirmado
-
-- Sem contas; nome do jogador e código da sala.
-- Jogável em computador e celular.
-- Escopo inclui todas as mecânicas principais.
-- Nome desejado para o repositório: `BancoImobiliarioOnline`.
-- Partidas de 2 a 4 jogadores por enquanto.
-- Clássico Rápido dura 30 minutos.
-- O usuário pediu vitória imediata por objetivo no Express ou, se o tempo acabar, vitória por patrimônio; isso é uma regra digital personalizada e difere da descrição pública da edição física.
-- Referência para duração do Express: 6 rodadas de 40 segundos e aproximadamente 8 minutos totais; aguarda confirmação para adotar no preset.
+Os textos e efeitos das cartas Express ainda serão escritos como regras autorais. Não temos o texto público dessas cartas. As regras de dívidas e falência acima são a primeira versão funcional e serão calibradas em playtests.

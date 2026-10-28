@@ -1,76 +1,64 @@
-# Decisões e questões abertas
+# Decisões do projeto
 
-Este arquivo separa decisões confirmadas de propostas para evitar que uma sugestão vire requisito sem alinhamento.
-
-## Confirmado pelo pedido
+## Confirmadas
 
 | Tema | Decisão |
 |---|---|
 | Produto | Jogo web casual de Banco Imobiliário para jogar com amigos. |
-| Conta | Sem contas; a pessoa usa um nome e cria uma sala ou entra com ID/código. |
-| Partida | A visão principal deve ser 3D. |
-| Plataformas | Computador e celular. |
-| Mecânicas | Incluir o conjunto completo, incluindo leilões, construções, hipotecas e negociação. |
-| Modos de partida | Oferecer duas opções de regras na criação da sala: Clássico Rápido e Express. |
-| Duração | Clássico Rápido terá 30 minutos. |
-| Express | O usuário pediu vitória imediata ao completar objetivos primeiro; se o tempo acabar, vence o maior patrimônio. É uma regra digital personalizada, diferente da descrição pública encontrada para a edição física. |
-| Tamanho da sala | De 2 a 4 jogadores por enquanto, nos dois modos. |
-| Repositório | Nome desejado: `BancoImobiliarioOnline`. |
-| GitHub | Remoto privado criado e conectado em `origin`; branch `main` publicada. |
-| Referência visual | A captura de *Business Tour* enviada pelo usuário orienta a sensação de perspectiva e leitura do tabuleiro. |
-| Fase atual | Preparar produto, regras, GitHub e instruções antes de iniciar produção. |
+| Conta | Sem contas; a pessoa escolhe um nome e cria uma sala ou entra com código. |
+| Plataforma | Navegador em computador e celular, com partida apresentada em 3D. |
+| Jogadores | De 2 a 4 por sala no MVP. |
+| Presets | A pessoa anfitriã escolhe Clássico Rápido ou Express ao criar a sala. |
+| Clássico Rápido | Partida de 30 minutos, com o conjunto completo de mecânicas clássicas combinado no escopo. |
+| Express | Seis rodadas, com fase de 40 segundos para cada pessoa em cada rodada; duração prevista de 8 minutos com duas pessoas e 16 com quatro, mais resolução de leilões/dívidas. Oito objetivos digitais originais e vitória por maior saldo ao final. Concluir objetivo não encerra a partida imediatamente. |
+| Objetivos Express | Uma carta privada original por jogador, distribuída sem repetição por sala. Progresso e conteúdo só são enviados à pessoa da carta. Cumprir uma vez concede o bônus do objetivo, sem encerrar a partida. Baralho inicial e recompensas autorais estão listados em [REGRAS-DE-JOGO.md](REGRAS-DE-JOGO.md); valores sujeitos a playtest. |
+| Pontuação Express | Maior saldo em dinheiro ao fim das seis rodadas. Empate: maior patrimônio avaliando imóveis e construções pelo valor de venda; persistindo, desempate em dois dados de seis lados. |
+| Fim do Clássico | Ao fim dos 30 minutos, concluir a ação e os pagamentos em andamento; vence o maior patrimônio após liquidação de bens e construções. Empate resolvido nos dados. |
+| Relógios | Clássico: contagem de 30 minutos. Express: 40 segundos por pessoa a cada rodada, seis rodadas; a ação pendente ou dívida é resolvida antes de passar ou encerrar. |
+| Leilão | Propriedade recusada vai a leilão público de 20 segundos, com incremento mínimo definido pelo jogo. |
+| Economia inicial | Cada pessoa começa com R$ 1.500.000; cruzar a Partida concede R$ 200.000. O aluguel base é 10% do preço do imóvel, dobrado ao completar o grupo de cor; o primeiro lance é R$ 10.000 e o incremento mínimo também é R$ 10.000. |
+| Taxas digitais | As quatro casas de taxa cobram R$ 50.000, R$ 75.000, R$ 100.000 e R$ 125.000, respectivamente. Valores autorais para o ritmo rápido e sujeitos a balanceamento por playtest. |
+| Construções | Completar um grupo residencial permite comprar casas equilibradas, no máximo uma casa de diferença entre propriedades. Cada nível custa metade do preço do imóvel; os níveis 1–4 são casas e o nível 5 é hotel. Estações não recebem construções. |
+| Hipotecas | Durante a própria vez, o dono recebe 50% do preço de compra ao hipotecar. O título hipotecado não cobra aluguel. O resgate custa o valor recebido mais 10%; casas/hotéis de todo o grupo precisam ser vendidos antes da hipoteca, e grupo hipotecado não pode receber construções. Disponível nos dois modos. |
+| Dívidas e falência | Cobranças acima do saldo geram dívida integral sem pagamento parcial. A pessoa pode vender construções pela metade do custo, respeitando a ordem equilibrada, ou hipotecar títulos. Quando puder pagar, quita a dívida integral ao credor ou banco. Se o saldo continuar insuficiente e não houver mais bens liquidáveis, pode declarar falência; bens restantes vão ao credor jogador ou retornam ao banco, e a partida termina quando só restar uma pessoa solvente. |
+| Sorte ou Revés | O servidor sorteia, com reposição, uma entre oito cartas digitais autorais: três créditos (+R$ 50.000, +R$ 100.000, +R$ 150.000), três cobranças (-R$ 50.000, -R$ 100.000, -R$ 150.000), avançar três casas ou ir para a prisão. |
+| Prisão | Cair em “Vá para a prisão” ou receber a carta leva à casa de visita e encerra a vez. Na vez presa, a pessoa pode pagar R$ 50.000 e rolar ou tentar duplas; falhar encerra a vez. Na terceira tentativa sem duplas, paga o que tiver até o limite da fiança, sai e move com esse resultado. |
+| Negociação | Clássico: durante a vez ativa, em janela de 45 segundos. Express: durante as fases cronometradas de 40 segundos. |
+| Desconexão | Até 60 segundos para reconectar; depois, pular a ação/vez atual sem tomar decisões automáticas em nome da pessoa. |
+| Direção visual | Tabuleiro e peças originais low-poly, câmera inclinada fixa e interface DOM responsiva. A tela de partida mantém o tabuleiro no centro, cartões de jogadores nos cantos com acentos de cor consistentes por participante, relógio/modo na faixa superior e ação contextual compacta na borda inferior. Em ações ligadas a uma casa, realçar o alvo e explicar valor/motivo/opções no mesmo cartão; dados e feedback de turno usam o espaço central; resultado mostra classificação e critério sem apagar a mesa. Materiais claros de papel e feltro combinam com cores de jogo mais vivas; cores, personagens, formas e assets são próprios. *Business Tour* serve como referência de composição, hierarquia e ritmo de cor, não de assets, marca, tabuleiro ou reprodução exata. Fontes e capturas por estado em [REFERENCIAS-VISUAIS.md](REFERENCIAS-VISUAIS.md). |
+| Stack | React + TypeScript + Vite + React Three Fiber/Three.js. Regras desacopladas da cena e validadas por servidor autoritativo Node com Colyseus. |
+| Hospedagem planejada | Frontend na Vercel; servidor multiplayer em hospedagem compatível com Node e WebSockets. Validar operação e custo antes do lançamento público. |
+| Dados | MVP sem contas e sem progresso persistente; salas e partidas temporárias. |
+| Código da sala | Código privado único de 5 caracteres, usado como ID da sala Colyseus. |
+| Repositório | `BancoImobiliarioOnline`, remoto privado no GitHub, branch principal `main`. |
+| Fluxo Game Studio | Usar o plugin Game Studio em todas as tarefas deste projeto, conforme `AGENTS.md`, incluindo habilidade de roteamento e a habilidade especializada pertinente. |
 
-## Propostas iniciais — confirmar antes de implementar
+## Detalhes de implementação que ainda serão calibrados
 
-| Tema | Proposta | Estado |
-|---|---|---|
-| Frontend | React + TypeScript + Vite | Pendente |
-| Renderização 3D | React Three Fiber + Three.js | Pendente |
-| Ritmo/regras | Clássico Rápido de 30 minutos com mecânicas completas; Express com 6 rodadas de 40 segundos, cerca de 8 minutos totais, cartas de objetivo e vitória por dinheiro no fim | Clássico confirmado; duração Express baseada em ficha de distribuição; confirmar regra fiel de dinheiro versus extensão digital de vitória imediata por objetivo |
-| Regras e autoridade | Estado e ações validados no servidor por sala | Pendente; recomendação técnica |
-| Multiplayer | Avaliar Colyseus para salas, sincronização e reconexão | Pendente |
-| Frontend em produção | Vercel | Pendente |
-| Servidor de partidas | Comparar Vercel Functions com WebSockets e hospedagem Node persistente | Pendente |
-| Persistência | Sem contas e sem persistência de partidas no MVP | Pendente |
-| Repositório | Git local com branch `main` e remoto `BancoImobiliarioOnline` | Criado como privado; `main` publicada em `origin` |
-| Tamanho da sala | 2–4 jogadores | Confirmado por enquanto; pode ser revisto depois do MVP. |
+- Balanço dos alvos e bônus das oito cartas de objetivo Express após playtests.
+- Balanço da economia do tabuleiro para sustentar partidas nos tempos definidos; as hipotecas começam em 50% do preço com resgate a 110% do valor recebido.
+- Comportamento após o timeout enquanto há dívida pendente, possibilidade de voltar à mesma cadeira após expirar a janela de 60 segundos e saída voluntária durante uma partida.
+- Opções visuais de avatares, cores e acessibilidade.
+- Escolha final do provedor Node para hospedar o servidor, depois de validar Colyseus com salas reais.
+- **Proposta para negociação:** uma oferta pendente por sala; aceitar/rejeitar somente pelo destinatário antes de acabar a janela de 45 segundos do Clássico ou 40 segundos do Express; títulos hipotecados podem ser trocados e permanecem hipotecados, sem cobrança automática ao transferir; construções de todo o grupo de cor precisam ser vendidas antes da troca de um título desse grupo. Ainda não é decisão de produto aprovada.
+- **Proposta para timeout de desconexão:** manter a cadeira e os títulos; pular a ação/vez quando os 60 segundos expirarem; cancelar uma compra pendente e encerrar um leilão ativo sem venda automática. A implementação inicial segue essa interpretação de “sem ações automáticas”; validar em playtest. O caso de dívida e a volta à sala após o prazo continuam pendentes.
+- **Proposta de cálculo final implementada para playtest:** patrimônio = dinheiro disponível + preço de compra dos imóveis - saldo de hipoteca (50% do preço) + valor de venda das construções (50% do custo por nível). Se jogadores também empatarem nos dados, o servidor escolhe um deles aleatoriamente. Rever após playtests.
 
-## Questões de produto em ordem de impacto
+## Base de regras Express
 
-1. No Express, aceitar a referência de 6 rodadas × 40 segundos (aprox. 8 minutos no total)?
-2. Manter a vitória imediata por objetivos pedida pelo usuário ou seguir a edição, onde objetivos dão dinheiro e vence o maior saldo ao final?
-3. Quais objetivos originais entram no digital enquanto o texto das 8 cartas da caixa não estiver acessível?
-4. No Express, pontuar só o dinheiro em mãos (referência da edição) ou patrimônio total?
-5. Em quais momentos do Clássico Rápido negociar títulos e dinheiro?
-6. Quais opções de avatar/cor e regras para anfitrião e desconexão?
-7. O primeiro lançamento deve usar formas simples ou assets 3D mais acabados?
-
-## Sugestões para fechar o restante
-
-Estas são recomendações para servir de base. Continuam propostas até o usuário aprová-las.
-
-| Tema | Sugestão | Motivo |
-|---|---|---|
-| Express: tempo | 6 rodadas de 40 segundos, cerca de 8 minutos no total | É a duração anunciada para o produto 828100; a Estrela confirma a ampulheta e os componentes, mas não publica o texto do manual. |
-| Express: objetivos | Oito cartas originais do jogo digital; uma carta privada por pessoa. Cumprir o objetivo paga bônus em dinheiro. | A caixa lista oito cartas de objetivo, mas o texto não está disponível. Bônus mantém a pressão por objetivo sem deixar uma carta fácil encerrar a partida. |
-| Express: vitória | Seguir a edição: maior saldo em dinheiro ao final. Manter vitória imediata por objetivo como variante personalizada se o usuário ainda preferir. | As descrições encontradas dizem que os objetivos ajudam a ganhar dinheiro e que vence quem tem mais dinheiro no fim; não confirmam vitória imediata por objetivo. |
-| Express: conteúdo de objetivos | Misturar metas de grupo de cor, quantidade de propriedades e construção; escrever nomes e condições próprios. | Evita afirmar que os cartões autorais reproduzem as oito cartas físicas. |
-| Clássico: desempate | Calcular dinheiro após liquidação de bens e construções; empate resolvido nos dados. | O manual oficial do Super Banco Imobiliário usa venda de bens para o jogo curto e sugere dados para desempate. |
-| Leilão | Se alguém recusar uma propriedade livre, iniciar leilão público de 20 segundos, com lances mínimos em incrementos fixos. | Mantém propriedades circulando sem alongar o turno. |
-| Negociação | No Clássico, permitir negociação durante a vez ativa, com janela de 45 segundos; no Express, negociar durante as fases de 40 segundos. | Clarifica quando ofertas podem ocorrer e mantém Express no ritmo de rodada. |
-| Desconexão | Dar 60 segundos para reconectar; depois, pular a ação/turno atual sem permitir ações automáticas em nome da pessoa. | Simples e previsível para partidas privadas sem contas. |
-| Direção visual | Começar com peças e edifícios low-poly próprios, câmera inclinada fixa e HUD DOM responsiva. | Valida leitura e desempenho antes de produzir assets detalhados. |
-| Stack | React + TypeScript + Vite + React Three Fiber; servidor autoritativo Node/Colyseus; frontend na Vercel e servidor multiplayer em hospedagem Node compatível. | Casa com o tabuleiro 3D, lobby/HUD e salas sincronizadas. Confirmar topologia e custos antes do deploy. |
-
-## Referência visual e propriedade intelectual
-
-A captura fornecida comunica perspectiva, escala do tabuleiro, presença de peças/dados e disposição geral do HUD. Os modelos, ilustrações, tabuleiro, nomes e componentes de interface do projeto devem ser originais ou licenciados. Uma semelhança de gênero e composição não exige reproduzir elementos identificáveis do jogo de referência.
+A página oficial da Estrela confirma a presença de oito cartas de objetivo e descreve a vitória pelo dinheiro ao fim do tempo, sem publicar o texto das cartas. A referência de seis rodadas de 40 segundos e cerca de oito minutos vem de ficha de distribuição do produto 828100, não de manual público. Os objetivos do jogo digital serão autorais e não apresentados como cópia das cartas físicas. Veja [REGRAS-DE-JOGO.md](REGRAS-DE-JOGO.md) para fontes e escopo.
 
 ## Histórico
 
-- 2026-10-27: criado o esqueleto de preparação do projeto. A stack e o provedor ainda são propostas.
-- 2026-10-27: usuário confirmou computador e celular, quer todas as mecânicas no modo Clássico Rápido, quer também uma opção Express no seletor da criação da sala e escolheu `BancoImobiliarioOnline` como nome do remoto. Recomendado limite de quatro jogadores.
-- 2026-10-27: usuário definiu duração de 30 minutos para o Clássico Rápido, confirmou até quatro jogadores por enquanto e escolheu as duas condições de vitória para o Express: completar objetivos primeiro ou liderar em patrimônio quando o tempo acabar.
-- 2026-10-27: autenticação do GitHub concluída; repositório privado `BancoImobiliarioOnline` criado e branch `main` enviada.
-- 2026-10-27: pesquisa da edição Express encontrou a duração anunciada de aproximadamente 8 minutos e seis rodadas de 40 segundos em uma ficha de distribuição; a Estrela confirma 8 cartas de objetivo, mas não publica seu texto. Descrição da edição favorece vitória por dinheiro ao final; vitória instantânea por objetivo fica registrada como regra personalizada solicitada.
-- 2026-10-27: adicionadas sugestões iniciais para metas Express, pontuação, leilão, negociação, desconexão, direção visual e stack; todas seguem como propostas.
+- 2026-10-27: preparação do produto, das regras, do repositório e das instruções do projeto.
+- 2026-10-27: usuário confirmou as decisões acima, aceitou as sugestões propostas e retirou a vitória instantânea por objetivo.
+- 2026-10-27: início da produção com a primeira fatia de interface e tabuleiro 3D; a conexão online será ligada ao servidor Colyseus em etapa seguinte.
+- 2026-10-27: definição e implementação inicial de grupos residenciais, casas e hotéis equilibrados; cada nível custa metade do preço do imóvel.
+- 2026-10-27: definição do baralho autoral Sorte ou Revés e das tentativas para sair da prisão.
+- 2026-10-28: definição e implementação de hipotecas por 50% do preço e resgate por 110% do adiantamento.
+- 2026-10-27: refinamento da composição do HUD da partida com participantes nas bordas e ação contextual separada, inspirado na hierarquia de leitura das capturas oficiais de *Business Tour*.
+- 2026-10-28: atualização da direção visual após consulta à página Steam e à galeria por estado: mais contraste/saturação na mesa, acentos próprios nos participantes e relógio mais fácil de localizar; o tabuleiro, peças e arte continuam originais.
+- 2026-10-27: implementação inicial da negociação sincronizada de dinheiro e títulos; janela de 45 segundos no Clássico e 40 segundos no Express. Limite de uma oferta pendente por sala, tratamento de hipotecas e exigência de vender as construções do grupo foram registrados como propostas, não como decisões aprovadas.
+- 2026-10-27: relógio de 30 minutos no Clássico, seis rodadas Express com 40 segundos por jogador e pontuação final ligados ao estado autoritativo. Fórmula patrimonial aplicada como proposta para playtest; os objetivos privados Express continuam pendentes.
+- 2026-10-27: objetivos Express implementados como cartas privadas únicas por sala, com progresso e bônus autoritativos. Alvos e recompensas iniciais documentados para playtest.
+- 2026-10-28: segundo balanço dos objetivos Express substituiu metas raras de grupo/construção por posse de uma estação e eventos privados de aluguel, carta e passagem pela Partida; os novos alvos e bônus ainda precisam de simulação e playtests humanos.

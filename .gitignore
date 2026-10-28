@@ -1,9 +1,11 @@
 # Dependencies and build output
 node_modules/
 dist/
+dist-server/
 build/
 coverage/
 .vite/
+.vitest/
 
 # Local configuration and secrets
 .env
