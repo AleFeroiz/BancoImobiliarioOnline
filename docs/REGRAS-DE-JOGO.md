@@ -26,11 +26,12 @@ Como referência de regras clássicas e jogo curto, o [manual oficial do Super B
 ## Express — cerca de 8 a 16 minutos
 
 - São seis rodadas. Cada pessoa recebe uma fase de 40 segundos por rodada; são cerca de 8 minutos com duas pessoas e 16 com quatro, mais o tempo para resolver leilões ou dívidas pendentes.
-- Cada jogador recebe em segredo uma carta dentre oito objetivos digitais originais. Exemplos de famílias de objetivo: completar um grupo de cor, obter uma quantidade de propriedades ou realizar construções.
-- Cumprir objetivo concede bônus em dinheiro; não encerra a partida imediatamente.
+- Cada jogador recebe em segredo uma carta dentre oito objetivos digitais originais, distribuídas sem repetição na mesma sala. O progresso e o conteúdo da carta são enviados somente para a pessoa que a recebeu.
+- Cumprir o objetivo uma vez paga o bônus indicado; o cartão fica marcado como cumprido mesmo que os bens mudem depois. O objetivo não encerra a partida: a vitória continua sendo decidida ao fim das seis rodadas.
+- Baralho inicial para playtest: ter 1 propriedade (+R$ 50.000), ter 3 propriedades (+R$ 100.000), ter 5 propriedades (+R$ 150.000), completar o grupo residencial de duas ruas (+R$ 150.000), construir 1 nível (+R$ 75.000), somar 3 níveis de construção (+R$ 150.000), construir um hotel (+R$ 200.000) ou ter 2 estações (+R$ 125.000). Propriedade inclui rua ou estação; níveis de construção são casas ou hotel.
 - A negociação só ocorre durante as fases de 40 segundos.
 - Ao fim das seis rodadas, vence quem tiver maior saldo em dinheiro. Empate: compara-se patrimônio incluindo valor de liquidação de imóveis e construções; persistindo, decide-se nos dados.
-- As condições e o relógio são mostrados antes do início. Valores e texto dos objetivos são conteúdo autoral e serão balanceados na implementação.
+- Os alvos, bônus e textos deste baralho são autorais e correspondem ao primeiro balanço implementado; devem ser revistos após playtests.
 
 ## Regras compartilhadas
 

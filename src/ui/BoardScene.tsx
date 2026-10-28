@@ -68,15 +68,15 @@ function Board({ playerPositions, propertyBuildings }: { playerPositions: number
       </mesh>
       <mesh position={[0, 0.01, 0]} receiveShadow>
         <boxGeometry args={[9.8, 0.04, 9.8]} />
-        <meshStandardMaterial color="#a9c49a" roughness={1} />
+        <meshStandardMaterial color="#829e6d" roughness={1} />
       </mesh>
       <mesh position={[0, 0.045, 0]} receiveShadow>
         <cylinderGeometry args={[1.42, 1.42, 0.045, 48]} />
-        <meshStandardMaterial color="#c5d49f" roughness={0.92} />
+        <meshStandardMaterial color="#b2c980" roughness={0.92} />
       </mesh>
       <mesh position={[0, 0.072, 0]} receiveShadow>
         <cylinderGeometry args={[1.22, 1.22, 0.025, 48]} />
-        <meshStandardMaterial color="#91ad7d" roughness={0.94} />
+        <meshStandardMaterial color="#76965f" roughness={0.94} />
       </mesh>
       <mesh position={[0, 0.087, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <ringGeometry args={[1.26, 1.34, 48]} />
@@ -171,10 +171,10 @@ function Board({ playerPositions, propertyBuildings }: { playerPositions: number
 export default function BoardScene({ playerPositions, propertyBuildings }: { playerPositions: number[]; propertyBuildings: PropertyBuilding[] }) {
   return (
     <Canvas camera={{ position: [12.5, 15.5, 15.5], fov: 34 }} shadows dpr={[1, 1.6]}>
-      <color attach="background" args={['#a9cbd0']} />
-      <fog attach="fog" args={['#a9cbd0', 17, 31]} />
-      <ambientLight intensity={0.85} />
-      <directionalLight position={[7, 13, 5]} intensity={1.8} castShadow shadow-mapSize={[1024, 1024]} />
+      <color attach="background" args={['#9bbcc1']} />
+      <fog attach="fog" args={['#9bbcc1', 17, 31]} />
+      <ambientLight intensity={0.72} />
+      <directionalLight position={[7, 13, 5]} intensity={1.55} castShadow shadow-mapSize={[1024, 1024]} />
       <ResponsiveCamera />
       <Board playerPositions={playerPositions} propertyBuildings={propertyBuildings} />
       <ContactShadows position={[0, -0.46, 0]} opacity={0.25} scale={18} blur={2.5} far={5} />

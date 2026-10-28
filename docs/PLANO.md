@@ -16,7 +16,7 @@ Um jogo de tabuleiro para abrir no navegador e jogar com amigos, sem cadastro. C
 ## Regras acordadas
 
 - **Clássico Rápido:** 30 minutos, com compra, leilão, grupos, casas/hotéis, hipoteca, negociação, cartas, prisão, dívidas e falência. Quando o tempo acaba, termina-se a ação/pagamento corrente e vence o maior patrimônio após liquidação de bens e construções.
-- **Express:** seis rodadas de 40 segundos e cerca de 8 minutos de duração total. Cada pessoa recebe um objetivo privado entre oito objetivos digitais autorais. Cumprir um objetivo paga bônus; não encerra a partida. Ao final vence o maior saldo em dinheiro; empate é decidido pelo patrimônio e depois pelos dados.
+- **Express:** seis rodadas de 40 segundos e cerca de 8 minutos de duração total. Cada pessoa recebe um objetivo privado entre oito objetivos digitais autorais, sem repetição dentro da sala. Cumprir um objetivo paga bônus; não encerra a partida. Ao final vence o maior saldo em dinheiro; empate é decidido pelo patrimônio e depois pelos dados.
 - **Leilão:** propriedade recusada vai a leilão público de 20 segundos.
 - **Negociação:** janela de 45 segundos na vez ativa do Clássico; no Express, nas fases de 40 segundos.
 - **Desconexão:** 60 segundos para reconectar; passado o prazo, pula-se a ação/vez atual sem ações automáticas.
@@ -40,9 +40,9 @@ As decisões detalhadas estão em [DECISOES.md](DECISOES.md) e as fontes de regr
 
 1. **Fatia visual inicial:** tela inicial, escolha de modo e primeira cena 3D responsiva com tabuleiro e peças próprias. Implementada como prévia visual.
 2. **Salas online:** servidor Colyseus, código privado de cinco caracteres, lobby sincronizado, anfitrião e reconexão. Implementado; lobby revisado visualmente no navegador integrado. Falta repetir a checagem no Firefox e revisar hospedagem.
-3. **Ciclo de partida:** relógios de 30 minutos no Clássico e seis rodadas de 40 segundos por jogador no Express, contagem sincronizada e encerramento por tempo implementados no servidor. O fluxo de seis rodadas leva aproximadamente 8 minutos com duas pessoas e até 16 com quatro, sem contar leilões ou liquidação de dívidas. Objetivos privados e bônus Express ainda faltam.
+3. **Ciclo de partida:** relógios de 30 minutos no Clássico e seis rodadas de 40 segundos por jogador no Express, contagem sincronizada e encerramento por tempo implementados no servidor. O fluxo de seis rodadas leva aproximadamente 8 minutos com duas pessoas e até 16 com quatro, sem contar leilões ou liquidação de dívidas. Objetivos privados Express, progresso reservado ao dono e bônus de conclusão implementados; o balanço inicial ainda precisa de playtest.
 4. **Economia e interação:** em andamento. Compra, aluguel, taxas, leilão, construções residenciais equilibradas, venda de construções, hipotecas, dívidas, falência e uma primeira versão da negociação de dinheiro e títulos estão implementadas. A janela sincronizada de negociação é de 45 segundos no Clássico e 40 segundos no Express. Os detalhes de uma oferta pendente por sala e de títulos hipotecados transferidos permanecem propostas, aguardando playtest e decisão de produto.
-5. **Presets:** limites de tempo, critérios de vitória e cálculo inicial de patrimônio implementados; objetivos e bônus Express ainda faltam.
+5. **Presets:** limites de tempo, critérios de vitória, cálculo inicial de patrimônio e objetivos Express implementados; validar o balanço dos objetivos em partidas com pessoas.
 6. **Acabamento:** acessibilidade, layout móvel, efeitos visuais, desempenho, publicação e validação com um grupo.
 
 ## Limites do MVP

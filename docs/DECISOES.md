@@ -11,7 +11,7 @@
 | Presets | A pessoa anfitriã escolhe Clássico Rápido ou Express ao criar a sala. |
 | Clássico Rápido | Partida de 30 minutos, com o conjunto completo de mecânicas clássicas combinado no escopo. |
 | Express | Seis rodadas, com fase de 40 segundos para cada pessoa em cada rodada; duração prevista de 8 minutos com duas pessoas e 16 com quatro, mais resolução de leilões/dívidas. Oito objetivos digitais originais e vitória por maior saldo ao final. Concluir objetivo não encerra a partida imediatamente. |
-| Objetivos Express | Uma carta privada por jogador; objetivos originais que podem envolver grupo de cor, quantidade de propriedades ou construções. Cumprir concede bônus em dinheiro. Valores e textos serão balanceados durante a implementação. |
+| Objetivos Express | Uma carta privada original por jogador, distribuída sem repetição por sala. Progresso e conteúdo só são enviados à pessoa da carta. Cumprir uma vez concede o bônus do objetivo, sem encerrar a partida. Baralho inicial e recompensas autorais estão listados em [REGRAS-DE-JOGO.md](REGRAS-DE-JOGO.md); valores sujeitos a playtest. |
 | Pontuação Express | Maior saldo em dinheiro ao fim das seis rodadas. Empate: maior patrimônio avaliando imóveis e construções pelo valor de venda; persistindo, desempate em dois dados de seis lados. |
 | Fim do Clássico | Ao fim dos 30 minutos, concluir a ação e os pagamentos em andamento; vence o maior patrimônio após liquidação de bens e construções. Empate resolvido nos dados. |
 | Relógios | Clássico: contagem de 30 minutos. Express: 40 segundos por pessoa a cada rodada, seis rodadas; a ação pendente ou dívida é resolvida antes de passar ou encerrar. |
@@ -35,9 +35,8 @@
 
 ## Detalhes de implementação que ainda serão calibrados
 
-- Valores, nomes e efeitos das 8 cartas de objetivo originais.
+- Balanço dos alvos e bônus das oito cartas de objetivo Express após playtests.
 - Balanço da economia do tabuleiro para sustentar partidas nos tempos definidos; as hipotecas começam em 50% do preço com resgate a 110% do valor recebido.
-- Texto e efeitos das oito cartas privadas de objetivo Express e limites de tempo por turno.
 - Detalhes de reconexão/retorno após o prazo de 60 segundos e de saída voluntária.
 - Opções visuais de avatares, cores e acessibilidade.
 - Escolha final do provedor Node para hospedar o servidor, depois de validar Colyseus com salas reais.
@@ -59,3 +58,4 @@ A página oficial da Estrela confirma a presença de oito cartas de objetivo e d
 - 2026-10-27: refinamento da composição do HUD da partida com participantes nas bordas e ação contextual separada, inspirado na hierarquia de leitura das capturas oficiais de *Business Tour*.
 - 2026-10-27: implementação inicial da negociação sincronizada de dinheiro e títulos; janela de 45 segundos no Clássico e 40 segundos no Express. Limite de uma oferta pendente por sala, tratamento de hipotecas e exigência de vender as construções do grupo foram registrados como propostas, não como decisões aprovadas.
 - 2026-10-27: relógio de 30 minutos no Clássico, seis rodadas Express com 40 segundos por jogador e pontuação final ligados ao estado autoritativo. Fórmula patrimonial aplicada como proposta para playtest; os objetivos privados Express continuam pendentes.
+- 2026-10-27: objetivos Express implementados como cartas privadas únicas por sala, com progresso e bônus autoritativos. Alvos e recompensas iniciais documentados para playtest.

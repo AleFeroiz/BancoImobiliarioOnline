@@ -5,6 +5,7 @@ import BoardScene from './BoardScene'
 import { roomClient } from './roomClient'
 import { boardSpaces, formatMoney } from '../game/board'
 import { buildingSaleValue, canBuildProperty, canMortgageProperty, canRedeemMortgage, canSellBuilding, constructionCost, hasLiquidatableAssets, mortgageRedemptionCost, mortgageValue, type PropertyHolding } from '../../shared/game'
+import type { ExpressObjectiveUpdate } from '../../shared/objectives'
 
 type Mode = GameMode
 type Screen = 'home' | 'room' | 'game'
@@ -39,6 +40,8 @@ function App() {
   const [matchEnding, setMatchEnding] = useState(false)
   const [expressRound, setExpressRound] = useState(0)
   const [phaseSeconds, setPhaseSeconds] = useState(0)
+  const [expressObjective, setExpressObjective] = useState<ExpressObjectiveUpdate | null>(null)
+  const [showObjectivePanel, setShowObjectivePanel] = useState(false)
   const [turnPhase, setTurnPhase] = useState<TurnPhase>('roll')
   const [dice, setDice] = useState<[number, number]>([0, 0])
   const [landingDescription, setLandingDescription] = useState('')
@@ -185,10 +188,13 @@ function App() {
       if (snapshot.status === 'playing' || snapshot.status === 'ended') setScreen('game')
     }
     const handleRoomError = (payload: { message: string }) => setError(payload.message)
+    const removeObjectiveMessage = room.onMessage<ExpressObjectiveUpdate>('game:objective', setExpressObjective)
     const handleLeave = (_code: number, reason?: string) => {
       if (activeRoom.current !== room) return
       activeRoom.current = null
       setRoom(null)
+      setExpressObjective(null)
+      setShowObjectivePanel(false)
       setScreen('home')
       setError(reason || 'A conexão com a sala foi encerrada.')
     }
@@ -201,6 +207,7 @@ function App() {
     return () => {
       room.onStateChange.remove(updateLobby)
       room.onLeave.remove(handleLeave)
+      removeObjectiveMessage()
     }
   }, [room])
 
@@ -210,6 +217,8 @@ function App() {
     setError('')
     try {
       const nextRoom = await roomClient.create('game_room', { mode, name: name.trim() })
+      setExpressObjective(null)
+      setShowObjectivePanel(false)
       activeRoom.current = nextRoom
       setRoom(nextRoom)
       setRoomCode(nextRoom.roomId)
@@ -228,6 +237,8 @@ function App() {
     setError('')
     try {
       const nextRoom = await roomClient.joinById(roomCode.trim().toUpperCase(), { name: name.trim() })
+      setExpressObjective(null)
+      setShowObjectivePanel(false)
       activeRoom.current = nextRoom
       setRoom(nextRoom)
       setRoomCode(nextRoom.roomId)
@@ -245,6 +256,8 @@ function App() {
     setRoom(null)
     setRoomPlayers([])
     setRoomProperties(new Map())
+    setExpressObjective(null)
+    setShowObjectivePanel(false)
     setIsHost(false)
     setActivePlayerSessionId('')
     setTurnNumber(0)
@@ -344,7 +357,7 @@ function App() {
 
       {screen === 'game' && (
         <section className="game-overlay">
-          <div className="game-topline"><button className="back-link" onClick={() => setScreen('room')}>← Sala {roomCode}</button><div className={`game-pill ${matchEnding || (mode === 'classic' && matchSeconds <= 60) ? 'clock-warning' : ''}`}>{modeDetails[mode].title.toUpperCase()} <span>·</span> {mode === 'classic' ? formatClock(matchSeconds) : `RODADA ${expressRound}/${6} · ${phaseSeconds}s`}</div><div className="game-tools"><button className="portfolio-toggle" aria-expanded={showTradePanel || Boolean(incomingTradeOffer)} disabled={tradeSeconds === 0 && !incomingTradeOffer} onClick={() => { setShowTradePanel((open) => !open); setShowPropertyPanel(false); setError('') }}>{incomingTradeOffer ? 'Oferta recebida' : `Negociar · ${tradeSeconds}s`}</button><button className="portfolio-toggle" aria-expanded={showPropertyPanel} onClick={() => { setShowPropertyPanel((open) => !open); setShowTradePanel(false) }}>{showPropertyPanel ? '← Jogada' : `Imóveis · ${myProperties.length}`}</button></div></div>
+          <div className="game-topline"><button className="back-link" onClick={() => setScreen('room')}>← Sala {roomCode}</button><div className={`game-pill ${matchEnding || (mode === 'classic' && matchSeconds <= 60) ? 'clock-warning' : ''}`}>{modeDetails[mode].title.toUpperCase()} <span>·</span> {mode === 'classic' ? formatClock(matchSeconds) : `RODADA ${expressRound}/${6} · ${phaseSeconds}s`}</div><div className="game-tools">{mode === 'express' && expressObjective && turnPhase !== 'ended' && <button className={`portfolio-toggle objective-toggle ${expressObjective.completed ? 'objective-complete' : ''}`} aria-expanded={showObjectivePanel} onClick={() => { setShowObjectivePanel((open) => !open); setShowTradePanel(false); setShowPropertyPanel(false) }}>{expressObjective.completed ? '✓ Meta' : `Meta ${expressObjective.progress}/${expressObjective.target}`}</button>}<button className="portfolio-toggle" aria-expanded={showTradePanel || Boolean(incomingTradeOffer)} disabled={tradeSeconds === 0 && !incomingTradeOffer} onClick={() => { setShowTradePanel((open) => !open); setShowPropertyPanel(false); setShowObjectivePanel(false); setError('') }}>{incomingTradeOffer ? 'Oferta recebida' : `Negociar · ${tradeSeconds}s`}</button><button className="portfolio-toggle" aria-expanded={showPropertyPanel} onClick={() => { setShowPropertyPanel((open) => !open); setShowTradePanel(false); setShowObjectivePanel(false) }}>{showPropertyPanel ? '← Jogada' : `Imóveis · ${myProperties.length}`}</button></div></div>
           <div className="player-hud">{roomPlayers.map((player, index) => <div className={`player-card seat-${index} ${player.sessionId === activePlayerSessionId ? 'active' : ''} ${player.isBankrupt ? 'bankrupt' : ''}`} key={player.sessionId}><span className={`player-avatar player-${index}`}>{player.name.slice(0, 1).toUpperCase()}</span><div className="player-info"><strong>{player.name}</strong><small>{player.isBankrupt ? 'FALIU' : player.isJailed ? `PRESO · ${player.jailTurns}/3` : player.sessionId === activePlayerSessionId ? 'VEZ ATUAL' : `CASA ${String(player.position + 1).padStart(2, '0')}`}</small></div><b>{formatMoney(player.cash)}</b></div>)}</div>
           {(showTradePanel || incomingTradeOffer) && turnPhase !== 'ended' ? (
             <aside className="turn-card trade-panel" aria-label="Negociação entre jogadores">
@@ -409,6 +422,18 @@ function App() {
                 })}
               </div>
               <span className="asset-note">Apenas a pessoa da vez pode alterar a carteira.</span>
+            </aside>
+          ) : mode === 'express' && expressObjective && showObjectivePanel && turnPhase !== 'ended' ? (
+            <aside className="turn-card objective-panel" aria-label="Objetivo privado Express">
+              <div className="asset-panel-heading"><span className="turn-label">SUA CARTA · EXPRESS</span><button className="trade-close" onClick={() => setShowObjectivePanel(false)} aria-label="Fechar objetivo">×</button></div>
+              <h2>{expressObjective.title}</h2>
+              <p>{expressObjective.description}</p>
+              <div className="objective-progress" role="progressbar" aria-label="Progresso do objetivo" aria-valuemin={0} aria-valuemax={expressObjective.target} aria-valuenow={expressObjective.progress}>
+                <span><b>{expressObjective.completed ? expressObjective.target : expressObjective.progress}/{expressObjective.target}</b> progresso</span>
+                <span>Bônus <b>{formatMoney(expressObjective.reward)}</b></span>
+                <div className="objective-progress-track"><i style={{ width: `${Math.min(100, expressObjective.progress / expressObjective.target * 100)}%` }} /></div>
+              </div>
+              {expressObjective.completed && <p className="objective-complete-note">Objetivo cumprido! {formatMoney(expressObjective.rewardAwarded)} adicionados ao saldo. Continue jogando: a vitória é decidida ao fim da partida.</p>}
             </aside>
           ) : (
             <div className="turn-card">

@@ -4,7 +4,7 @@ Jogo de tabuleiro 3D para navegador, para partidas privadas entre amigos. Sem co
 
 ## Estado atual
 
-A versão atual contém a experiência inicial, seletor de regras, salas privadas Colyseus por código, lobby sincronizado e uma cena 3D original em React Three Fiber. A partida tem turnos autoritativos, dados, movimento, economia, leilão, casas e hotéis, cartas Sorte ou Revés, prisão, hipotecas, dívidas, falência e negociação inicial de dinheiro e títulos. O Clássico tem relógio de 30 minutos e resultado por patrimônio; o Express tem seis rodadas cronometradas e resultado por saldo, com desempates por patrimônio e dados. Os objetivos privados e bônus Express seguem em implementação. Os detalhes de uma oferta pendente por sala e de transferência de títulos hipotecados estão marcados como propostas em `docs/DECISOES.md`.
+A versão atual contém a experiência inicial, seletor de regras, salas privadas Colyseus por código, lobby sincronizado e uma cena 3D original em React Three Fiber. A partida tem turnos autoritativos, dados, movimento, economia, leilão, casas e hotéis, cartas Sorte ou Revés, prisão, hipotecas, dívidas, falência e negociação inicial de dinheiro e títulos. O Clássico tem relógio de 30 minutos e resultado por patrimônio; o Express tem seis rodadas cronometradas, objetivo secreto individual com bônus e resultado por saldo, com desempates por patrimônio e dados. Os detalhes de uma oferta pendente por sala e de transferência de títulos hipotecados estão marcados como propostas em `docs/DECISOES.md`.
 
 ## Desenvolvimento local
 

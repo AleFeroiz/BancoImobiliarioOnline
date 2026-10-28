@@ -5,12 +5,15 @@ import { isGameMode, normalizePlayerName } from '../../../shared/lobby.js'
 import { AUCTION_MIN_INCREMENT, AUCTION_SECONDS, CLASSIC_MATCH_SECONDS, EXPRESS_PHASE_SECONDS, EXPRESS_ROUNDS, JAIL_FINE, START_BONUS, STARTING_CASH, buildingSaleValue, calculateNetWorth, calculateRent, canBuildProperty, canMortgageProperty, canRedeemMortgage, canSellBuilding, constructionCost, describeLanding, hasLiquidatableAssets, mortgageRedemptionCost, mortgageValue, movePosition, resolveJailAttempt, taxForSpace } from '../../../shared/game.js'
 import { boardSpaces } from '../../../shared/board.js'
 import { EVENT_CARDS } from '../../../shared/cards.js'
+import { EXPRESS_OBJECTIVES, getExpressObjectiveProgress, type ExpressObjectiveId, type ExpressObjectiveUpdate } from '../../../shared/objectives.js'
 import { LobbyPlayerState, LobbyState, PropertyState } from './schema/LobbyState.js'
 
 const ROOM_CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
 const ROOM_CODE_LENGTH = 5
 const ROOM_CODES_CHANNEL = '$banco-imobiliario-room-codes'
 const MAX_SCHEMA_CASH = 2_147_483_647
+
+type PrivateObjectiveState = { id: ExpressObjectiveId; progress: number; completed: boolean }
 
 function parseTradePropertyIds(value: unknown): number[] | null {
   if (value === undefined) return []
@@ -35,6 +38,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
   private tradeInterval?: ReturnType<typeof setInterval>
   private matchClockInterval?: ReturnType<typeof setInterval>
   private tradeOfferSequence = 0
+  private privateObjectives = new Map<string, PrivateObjectiveState>()
 
   async onCreate(options: { mode?: unknown }) {
     const mode: GameMode = isGameMode(options.mode) ? options.mode : 'classic'
@@ -74,6 +78,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       }
 
       this.state.status = 'playing'
+      this.privateObjectives.clear()
       this.state.properties.clear()
       for (const player of this.state.players.values()) {
         player.position = 0
@@ -109,6 +114,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       this.startTradeWindow()
       this.startMatchClock()
       this.broadcast('game:started', { mode: this.state.mode })
+      if (this.state.mode === 'express') this.dealExpressObjectives()
     },
     roll: (client: Client) => {
       if (this.state.status !== 'playing' || this.state.turnPhase !== 'roll') return
@@ -147,6 +153,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       this.state.pendingPropertyId = 255
       this.state.turnPhase = 'resolve'
       this.state.landingDescription = `${space.name} comprada por ${space.price.toLocaleString('pt-BR')}.`
+      this.refreshExpressObjective(client.sessionId)
       this.finishExpiredPhaseIfReady()
     },
     declinePurchase: (client: Client) => {
@@ -174,6 +181,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       this.state.landingDescription = property.houses === 5
         ? `Hotel construído em ${space.name} por ${cost.toLocaleString('pt-BR')}.`
         : `Casa ${property.houses}/4 construída em ${space.name} por ${cost.toLocaleString('pt-BR')}.`
+      this.refreshExpressObjective(client.sessionId)
     },
     sellBuilding: (client: Client, payload: { propertyId?: unknown }) => {
       if (this.state.status !== 'playing' || !['resolve', 'debt'].includes(this.state.turnPhase) || client.sessionId !== this.state.activePlayerSessionId) return
@@ -189,6 +197,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       property.houses -= 1
       player.cash += amount
       this.state.landingDescription = `${property.houses === 4 ? 'Hotel devolvido a quatro casas' : `Construção vendida (nível ${property.houses})`} em ${boardSpaces[propertyId].name}. Você recebeu ${amount.toLocaleString('pt-BR')}.`
+      this.refreshExpressObjective(client.sessionId)
     },
     mortgage: (client: Client, payload: { propertyId?: unknown }) => {
       if (this.state.status !== 'playing' || !['resolve', 'debt'].includes(this.state.turnPhase) || client.sessionId !== this.state.activePlayerSessionId) return
@@ -254,6 +263,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
           property.isMortgaged = false
         }
       }
+      if (creditor && !creditor.isBankrupt) this.refreshExpressObjective(creditorId)
       debtor.cash = 0
       debtor.isBankrupt = true
       debtor.isJailed = false
@@ -420,6 +430,8 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       for (const id of offeredIds) this.state.properties.get(String(id))!.ownerSessionId = recipientSessionId
       for (const id of requestedIds) this.state.properties.get(String(id))!.ownerSessionId = senderSessionId
       this.state.landingDescription = `${recipient.name} aceitou a troca proposta por ${sender.name}. As hipotecas permanecem vinculadas aos respectivos imóveis.`
+      this.refreshExpressObjective(senderSessionId)
+      this.refreshExpressObjective(recipientSessionId)
       this.clearTradeOffer()
     },
     tradeReject: (client: Client, payload: { offerId?: unknown }) => {
@@ -457,6 +469,55 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       houses: item.houses,
       isMortgaged: item.isMortgaged,
     }]))
+  }
+
+  private dealExpressObjectives() {
+    const playerIds = Array.from(this.state.players.keys())
+    const shuffled = [...EXPRESS_OBJECTIVES]
+    for (let index = shuffled.length - 1; index > 0; index -= 1) {
+      const swapIndex = randomInt(index + 1)
+      ;[shuffled[index], shuffled[swapIndex]] = [shuffled[swapIndex]!, shuffled[index]!]
+    }
+    playerIds.forEach((sessionId, index) => {
+      const objective = shuffled[index]
+      if (!objective) return
+      this.privateObjectives.set(sessionId, { id: objective.id, progress: 0, completed: false })
+      this.sendExpressObjective(sessionId, objective, 0, false, 0)
+    })
+  }
+
+  private refreshExpressObjective(sessionId: string) {
+    if (this.state.mode !== 'express' || this.state.status !== 'playing') return
+    const state = this.privateObjectives.get(sessionId)
+    const player = this.state.players.get(sessionId)
+    const objective = EXPRESS_OBJECTIVES.find((candidate) => candidate.id === state?.id)
+    if (!state || !player || !objective || player.isBankrupt) return
+
+    const currentProgress = Math.min(objective.target, getExpressObjectiveProgress(objective.id, sessionId, this.getHoldings()))
+    const progress = state.completed ? objective.target : currentProgress
+    const newlyCompleted = !state.completed && progress >= objective.target
+    let rewardAwarded = 0
+    if (newlyCompleted) {
+      state.completed = true
+      rewardAwarded = Math.min(objective.reward, MAX_SCHEMA_CASH - player.cash)
+      player.cash += rewardAwarded
+    }
+    if (progress === state.progress && !newlyCompleted) return
+    state.progress = progress
+    this.sendExpressObjective(sessionId, objective, progress, state.completed, rewardAwarded)
+  }
+
+  private sendExpressObjective(
+    sessionId: string,
+    objective: (typeof EXPRESS_OBJECTIVES)[number],
+    progress: number,
+    completed: boolean,
+    rewardAwarded: number,
+  ) {
+    const client = this.clients.find((candidate) => candidate.sessionId === sessionId)
+    if (!client) return
+    const update: ExpressObjectiveUpdate = { ...objective, progress, completed, rewardAwarded }
+    client.send('game:objective', update)
   }
 
   private clearDebt() {
@@ -770,6 +831,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       property.ownerSessionId = this.state.auctionHighestBidderSessionId
       this.state.properties.set(String(propertyId), property)
       this.state.landingDescription = `${space.name} arrematada por ${bidder.name} por ${amount.toLocaleString('pt-BR')}.`
+      this.refreshExpressObjective(this.state.auctionHighestBidderSessionId)
     } else if (space) {
       this.state.landingDescription = `O leilão de ${space.name} terminou sem lances.`
     }
@@ -788,6 +850,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
   }
 
   onLeave(client: Client) {
+    this.privateObjectives.delete(client.sessionId)
     if (this.state.status === 'playing') this.stopClocks()
     this.state.players.delete(client.sessionId)
     if (this.state.status === 'playing') this.state.status = 'waiting'

@@ -4,7 +4,8 @@ import appConfig from '../src/app.config.js'
 import type { LobbyState } from '../src/rooms/schema/LobbyState.js'
 import { PropertyState } from '../src/rooms/schema/LobbyState.js'
 import { boardSpaces } from '../../shared/board.js'
-import { buildingSaleValue, constructionCost, mortgageRedemptionCost, mortgageValue } from '../../shared/game.js'
+import { STARTING_CASH, buildingSaleValue, constructionCost, mortgageRedemptionCost, mortgageValue } from '../../shared/game.js'
+import { EXPRESS_OBJECTIVES, type ExpressObjectiveUpdate } from '../../shared/objectives.js'
 
 async function waitFor(condition: () => boolean, timeout = 2500) {
   const start = Date.now()
@@ -540,6 +541,82 @@ describe('sala privada', () => {
     expect(room.state.turnNumber).toBe(2)
     expect(room.state.turnPhase).toBe('roll')
     expect(room.state.landingDescription).toBe('')
+  })
+
+  it('distribui objetivos Express privados sem repetição e fora do estado compartilhado', async () => {
+    const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'express' })
+    const host = await colyseus.connectTo(room, { name: 'Ana' })
+    const guest = await colyseus.connectTo(room, { name: 'Bia' })
+    const hostObjectives: ExpressObjectiveUpdate[] = []
+    const guestObjectives: ExpressObjectiveUpdate[] = []
+    host.onMessage<ExpressObjectiveUpdate>('game:objective', (objective) => hostObjectives.push(objective))
+    guest.onMessage<ExpressObjectiveUpdate>('game:objective', (objective) => guestObjectives.push(objective))
+
+    host.send('start')
+    await waitFor(() => hostObjectives.length === 1 && guestObjectives.length === 1)
+
+    expect(hostObjectives[0]).toMatchObject({ progress: 0, completed: false, rewardAwarded: 0 })
+    expect(guestObjectives[0]).toMatchObject({ progress: 0, completed: false, rewardAwarded: 0 })
+    expect(hostObjectives[0]?.id).not.toBe(guestObjectives[0]?.id)
+    expect(hostObjectives).toHaveLength(1)
+    expect(guestObjectives).toHaveLength(1)
+    expect('objectives' in room.state).toBe(false)
+    expect('privateObjectives' in room.state).toBe(false)
+  })
+
+  it('paga o bônus do objetivo uma única vez e envia o progresso apenas à pessoa dona da carta', async () => {
+    const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'express' })
+    const host = await colyseus.connectTo(room, { name: 'Ana' })
+    const guest = await colyseus.connectTo(room, { name: 'Bia' })
+    const hostObjectives: ExpressObjectiveUpdate[] = []
+    const guestObjectives: ExpressObjectiveUpdate[] = []
+    host.onMessage<ExpressObjectiveUpdate>('game:objective', (objective) => hostObjectives.push(objective))
+    guest.onMessage<ExpressObjectiveUpdate>('game:objective', (objective) => guestObjectives.push(objective))
+
+    host.send('start')
+    await waitFor(() => hostObjectives.length === 1 && guestObjectives.length === 1)
+    const privateObjective = EXPRESS_OBJECTIVES.find((objective) => objective.id === hostObjectives[0]?.id)
+    expect(privateObjective).toBeDefined()
+
+    for (const space of boardSpaces.filter((candidate) => candidate.kind === 'property')) {
+      const property = new PropertyState()
+      property.ownerSessionId = host.sessionId
+      property.houses = space.buildable ? 5 : 0
+      room.state.properties.set(String(space.id), property)
+    }
+
+    const refreshObjective = (room as unknown as { refreshExpressObjective: (sessionId: string) => void }).refreshExpressObjective
+    refreshObjective.call(room, host.sessionId)
+    await waitFor(() => hostObjectives.length === 2)
+    expect(hostObjectives[1]).toMatchObject({ completed: true, progress: privateObjective?.target, rewardAwarded: privateObjective?.reward })
+    expect(room.state.players.get(host.sessionId)?.cash).toBe(STARTING_CASH + (privateObjective?.reward ?? 0))
+
+    refreshObjective.call(room, host.sessionId)
+    await new Promise((resolve) => setTimeout(resolve, 20))
+    expect(hostObjectives).toHaveLength(2)
+    expect(guestObjectives).toHaveLength(1)
+    expect(room.state.players.get(host.sessionId)?.cash).toBe(STARTING_CASH + (privateObjective?.reward ?? 0))
+  })
+
+  it('atualiza o objetivo privado depois de uma compra de propriedade', async () => {
+    const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'express' })
+    const host = await colyseus.connectTo(room, { name: 'Ana' })
+    await colyseus.connectTo(room, { name: 'Bia' })
+    const hostObjectives: ExpressObjectiveUpdate[] = []
+    host.onMessage<ExpressObjectiveUpdate>('game:objective', (objective) => hostObjectives.push(objective))
+    host.send('start')
+    await waitFor(() => hostObjectives.length === 1)
+
+    const objectiveStates = (room as unknown as { privateObjectives: Map<string, { id: string; progress: number; completed: boolean }> }).privateObjectives
+    objectiveStates.set(host.sessionId, { id: 'own-one-property', progress: 0, completed: false })
+    const property = boardSpaces.find((space) => space.kind === 'property' && typeof space.price === 'number')!
+    room.state.pendingPropertyId = property.id
+    room.state.turnPhase = 'purchase'
+    host.send('buy')
+    await waitFor(() => hostObjectives.length === 2)
+
+    expect(hostObjectives[1]).toMatchObject({ id: 'own-one-property', progress: 1, completed: true, rewardAwarded: 50_000 })
+    expect(room.state.players.get(host.sessionId)?.cash).toBe(STARTING_CASH - (property.price ?? 0) + 50_000)
   })
 
   it('recusa nomes inválidos antes de ocupar um assento', async () => {
