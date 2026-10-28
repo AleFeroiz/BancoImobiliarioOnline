@@ -12,7 +12,7 @@ import { AUCTION_MIN_BID_INCREMENT, JAIL_FINE, START_BONUS, buildingSaleValue, c
 import type { ExpressObjectiveUpdate } from '../../shared/objectives'
 import { PLAYER_COLORS } from './playerPalette'
 import { getGameSound, formatCashDelta } from './gameFeedback'
-import { playGameSound, unlockGameAudio } from './gameAudio'
+import { playGameSound, startGameMusic, stopGameMusic, unlockGameAudio } from './gameAudio'
 
 type Mode = GameMode
 type Screen = 'home' | 'room' | 'game'
@@ -359,6 +359,13 @@ function App() {
   }, [soundEnabled])
 
   useEffect(() => {
+    if (screen !== 'game' || !soundEnabled) return
+    unlockGameAudio()
+    startGameMusic()
+    return stopGameMusic
+  }, [screen, soundEnabled])
+
+  useEffect(() => {
     setAuctionBidAmount((current) => normalizeAuctionBidInput(current, auctionMinimumBid))
   }, [auctionId, auctionMinimumBid])
 
@@ -463,7 +470,7 @@ function App() {
         <button className="brand" onClick={() => { if (room) void leaveRoom(); else setScreen('home') }} aria-label="Voltar ao início">
           <span className="brand-mark">B</span><span>BANCO<span className="brand-light">IMOBILIÁRIO</span></span>
         </button>
-        <div className="topbar-right"><span className={`connection-dot ${isReconnecting ? 'connection-dot-retrying' : ''}`} /> <span className={isReconnecting ? 'connection-retrying' : ''} role={isReconnecting ? 'status' : undefined} aria-live={isReconnecting ? 'polite' : undefined}>{isReconnecting ? 'RECONECTANDO…' : 'PRÉVIA DE JOGO'}</span>{screen === 'game' && <><button className="game-preference" aria-pressed={soundEnabled} aria-label={`Som ${soundEnabled ? 'ativado' : 'desativado'}`} title={`Som ${soundEnabled ? 'ativado' : 'desativado'}`} onClick={() => { unlockGameAudio(); setSoundEnabled((enabled) => !enabled) }}>{soundEnabled ? '♫' : '♪̸'}</button><button className="game-preference" aria-pressed={reducedMotion} aria-label={`Movimento reduzido ${reducedMotion ? 'ativado' : 'desativado'}`} title={`Movimento reduzido ${reducedMotion ? 'ativado' : 'desativado'}`} onClick={() => setReducedMotion((enabled) => !enabled)}>◌</button></>}<button className="icon-button" aria-label="Ajuda">?</button></div>
+        <div className="topbar-right"><span className={`connection-dot ${isReconnecting ? 'connection-dot-retrying' : ''}`} /> <span className={isReconnecting ? 'connection-retrying' : ''} role={isReconnecting ? 'status' : undefined} aria-live={isReconnecting ? 'polite' : undefined}>{isReconnecting ? 'RECONECTANDO…' : 'PRÉVIA DE JOGO'}</span>{screen === 'game' && <><button className="game-preference" aria-pressed={soundEnabled} aria-label={`Áudio da partida ${soundEnabled ? 'ativado' : 'desativado'}`} title={`Trilha e efeitos ${soundEnabled ? 'ativados' : 'desativados'}`} onClick={() => { unlockGameAudio(); setSoundEnabled((enabled) => !enabled) }}>{soundEnabled ? '♫' : '♪̸'}</button><button className="game-preference" aria-pressed={reducedMotion} aria-label={`Movimento reduzido ${reducedMotion ? 'ativado' : 'desativado'}`} title={`Movimento reduzido ${reducedMotion ? 'ativado' : 'desativado'}`} onClick={() => setReducedMotion((enabled) => !enabled)}>◌</button></>}<button className="icon-button" aria-label="Ajuda">?</button></div>
       </header>
 
       {screen === 'home' && (
