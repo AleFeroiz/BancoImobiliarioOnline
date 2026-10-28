@@ -24,7 +24,7 @@
 | Prisão | Cair em “Vá para a prisão” ou receber a carta leva à casa de visita e encerra a vez. Na vez presa, a pessoa pode pagar R$ 50.000 e rolar ou tentar duplas; falhar encerra a vez. Na terceira tentativa sem duplas, paga o que tiver até o limite da fiança, sai e move com esse resultado. |
 | Negociação | Clássico: durante a vez ativa, em janela de 45 segundos. Express: durante as fases cronometradas de 40 segundos. |
 | Desconexão | Até 60 segundos para reconectar; depois, pular a ação/vez atual sem tomar decisões automáticas em nome da pessoa. |
-| Direção visual | Tabuleiro e peças originais low-poly, câmera inclinada fixa e interface DOM responsiva. A imagem de *Business Tour* é referência de composição e leitura, não de assets ou reprodução exata. |
+| Direção visual | Tabuleiro e peças originais low-poly, câmera inclinada fixa e interface DOM responsiva. A tela de partida mantém o tabuleiro no centro, cartões de jogadores junto às bordas e a ação atual em painel contextual no rodapé; cor, texto e materiais são próprios. A página oficial de [Business Tour na Steam](https://store.steampowered.com/app/397900/Business_Tour__Board_Game_with_Online_Multiplayer/) é referência de composição e leitura, não de assets, marca, tabuleiro ou reprodução exata. |
 | Stack | React + TypeScript + Vite + React Three Fiber/Three.js. Regras desacopladas da cena e validadas por servidor autoritativo Node com Colyseus. |
 | Hospedagem planejada | Frontend na Vercel; servidor multiplayer em hospedagem compatível com Node e WebSockets. Validar operação e custo antes do lançamento público. |
 | Dados | MVP sem contas e sem progresso persistente; salas e partidas temporárias. |
@@ -53,3 +53,4 @@ A página oficial da Estrela confirma a presença de oito cartas de objetivo e d
 - 2026-10-27: definição e implementação inicial de grupos residenciais, casas e hotéis equilibrados; cada nível custa metade do preço do imóvel.
 - 2026-10-27: definição do baralho autoral Sorte ou Revés e das tentativas para sair da prisão.
 - 2026-10-28: definição e implementação de hipotecas por 50% do preço e resgate por 110% do adiantamento.
+- 2026-10-27: refinamento da composição do HUD da partida com participantes nas bordas e ação contextual separada, inspirado na hierarquia de leitura das capturas oficiais de *Business Tour*.

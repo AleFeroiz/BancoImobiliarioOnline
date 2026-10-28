@@ -141,3 +141,65 @@ button:disabled{opacity:.55;cursor:not-allowed}
   .asset-row{gap:5px;padding:6px}
   .asset-action{padding:4px 6px;font-size:7px}
 }
+
+/* Composição de partida: tabuleiro no centro, participantes nas bordas e ação contextual embaixo. */
+.screen-game{min-height:100dvh;background:#c9d9c6}
+.screen-game .scene-backdrop{position:fixed;inset:0;filter:saturate(.96)}
+.screen-game .scene-backdrop:after{background:linear-gradient(180deg,rgba(230,237,218,.13),transparent 23%,transparent 72%,rgba(71,91,66,.14))}
+.screen-game .topbar{position:absolute;inset:0 0 auto;height:58px;padding:0 24px;background:linear-gradient(180deg,rgba(248,246,234,.88),rgba(248,246,234,.42));border:0;z-index:3}
+.screen-game .brand{font-size:9px;letter-spacing:.15em;color:#365146}
+.screen-game .brand-mark{width:27px;height:27px;font-size:17px}
+.screen-game .brand-light{font-size:7px;letter-spacing:.22em}
+.screen-game .topbar-right{font-size:8px;color:#516952}
+.screen-game .topbar-right .icon-button{width:27px;height:27px;border-color:rgba(57,83,68,.28);color:#365146}
+.game-overlay{position:fixed;inset:0;min-height:100dvh;padding:68px 22px 14px;pointer-events:none}
+.game-overlay button,.game-overlay input{pointer-events:auto}
+.game-topline{min-height:34px;pointer-events:auto}
+.game-topline .back-link{font-size:9px;color:#435d48;margin:0}
+.game-pill{padding:8px 13px;background:rgba(250,248,237,.9);border:1px solid rgba(105,132,97,.3);border-radius:999px;box-shadow:0 6px 18px rgba(56,76,54,.08);color:#465d48;font-size:8px}
+.player-hud{position:absolute;inset:0;display:block;pointer-events:none;margin:0;width:auto}
+.player-card{position:absolute;width:clamp(156px,17vw,218px);min-height:60px;grid-template-columns:34px 1fr;grid-template-rows:auto auto;padding:9px 11px;border-color:rgba(113,133,101,.24);border-radius:14px;background:rgba(250,248,237,.95);box-shadow:0 10px 28px rgba(57,75,53,.15);color:#33483a;pointer-events:auto}
+.player-card.seat-0{top:110px;left:22px}
+.player-card.seat-1{top:110px;right:22px}
+.player-card.seat-2{bottom:18px;left:22px}
+.player-card.seat-3{bottom:18px;right:22px}
+.player-card.active{border-color:#bc9b50;box-shadow:0 0 0 2px rgba(190,169,103,.18),0 10px 28px rgba(57,75,53,.15)}
+.player-avatar{width:30px;height:30px;grid-row:1/3;box-shadow:0 0 0 2px rgba(255,255,255,.8)}
+.player-info strong{font-size:11px;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.player-info small{margin-top:3px;color:#819080;font-size:7px}
+.player-card b{grid-column:2;grid-row:2;margin-top:4px;color:#526b4c;font-size:10px}
+.turn-card{align-self:flex-end;width:min(390px,calc(100vw - 36px));margin:auto auto 2px;padding:15px 17px;background:rgba(250,248,237,.97);border:1px solid #d1d9c8;border-radius:17px;box-shadow:0 18px 50px rgba(43,62,46,.2);color:#2f4439;pointer-events:auto}
+.turn-card h2{font-size:19px;margin:6px 0 3px}
+.turn-card p{font-size:10px;margin-bottom:10px}
+.game-bottom{min-height:34px;pointer-events:auto;color:#49604d;font-size:7px}
+.leave-button{padding:7px 10px;border-radius:999px;background:rgba(250,248,237,.88);color:#455c48}
+.asset-panel{max-height:min(66vh,550px);margin:auto 0 2px auto}
+@media(max-width:900px){
+  .screen-game .topbar{padding:0 14px}
+  .game-overlay{padding:63px 13px 12px}
+  .player-card{width:clamp(150px,25vw,195px)}
+  .player-card.seat-0{top:110px;left:12px}.player-card.seat-1{top:110px;right:12px}
+  .player-card.seat-2{left:12px;bottom:14px}.player-card.seat-3{right:12px;bottom:14px}
+  .turn-card{width:min(370px,calc(100vw - 28px))}
+}
+@media(max-width:640px){
+  .screen-game .topbar{height:54px;padding:0 12px}
+  .screen-game .topbar-right{gap:5px;font-size:6px;letter-spacing:.08em}
+  .screen-game .topbar-right .icon-button{margin:0}
+  .game-overlay{padding:59px 10px 10px}
+  .game-topline{min-height:30px}
+  .game-topline .back-link{font-size:7px}
+  .game-pill{padding:7px 9px;font-size:6px;letter-spacing:.08em}
+  .portfolio-toggle{min-height:28px;padding:0 8px;font-size:7px}
+  .player-hud{inset:0 0 auto;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px;padding:0 9px;top:98px;height:max-content}
+  .player-card,.player-card.seat-0,.player-card.seat-1,.player-card.seat-2,.player-card.seat-3{position:relative;inset:auto;width:auto;min-height:48px;padding:6px 7px;border-radius:10px;grid-template-columns:25px 1fr;grid-template-rows:auto auto}
+  .player-avatar{width:22px;height:22px;font-size:10px}
+  .player-info strong{font-size:9px;max-width:calc(100vw / 4)}
+  .player-info small{font-size:6px}
+  .player-card b{font-size:8px;margin-top:2px}
+  .turn-card{width:calc(100vw - 20px);padding:12px 13px;border-radius:14px;margin-bottom:0}
+  .turn-card h2{font-size:17px}
+  .turn-card p{font-size:9px;margin-bottom:8px}
+  .game-bottom{font-size:6px}
+  .asset-panel{max-height:56vh}
+}

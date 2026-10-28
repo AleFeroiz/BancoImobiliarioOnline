@@ -1,10 +1,59 @@
 import { Canvas } from '@react-three/fiber'
 import { ContactShadows } from '@react-three/drei'
+import { useEffect, useMemo } from 'react'
+import { CanvasTexture, PerspectiveCamera, SRGBColorSpace } from 'three'
+import { useThree } from '@react-three/fiber'
 import { boardSpaces, positionOnBoard } from '../game/board'
 
 const playerColors = ['#e7785f', '#54aec0', '#e7bd62', '#8775bd']
 
 type PropertyBuilding = { spaceId: number; houses: number; isMortgaged: boolean }
+
+function ResponsiveCamera() {
+  const { camera, size } = useThree()
+  useEffect(() => {
+    if (!(camera instanceof PerspectiveCamera)) return
+    camera.fov = size.width < 640 ? 49 : size.width < 900 ? 40 : 34
+    camera.updateProjectionMatrix()
+  }, [camera, size.width])
+  return null
+}
+
+function SpaceLabel({ name, price, color, size }: { name: string; price?: number; color: string; size: number }) {
+  const texture = useMemo(() => {
+    const canvas = document.createElement('canvas')
+    canvas.width = 768
+    canvas.height = 384
+    const context = canvas.getContext('2d')
+    if (context) {
+      context.clearRect(0, 0, canvas.width, canvas.height)
+      context.textAlign = 'center'
+      context.textBaseline = 'middle'
+      context.fillStyle = '#2f4536'
+      context.font = '700 58px system-ui, sans-serif'
+      let label = name.toLocaleUpperCase('pt-BR')
+      while (context.measureText(label).width > 710 && label.length > 10) label = `${label.slice(0, -4)}…`
+      context.fillText(label, 384, price ? 145 : 198)
+      if (price) {
+        context.fillStyle = color
+        context.font = '700 54px system-ui, sans-serif'
+        context.fillText(`R$ ${new Intl.NumberFormat('pt-BR').format(price)}`, 384, 284)
+      }
+    }
+    const map = new CanvasTexture(canvas)
+    map.colorSpace = SRGBColorSpace
+    map.needsUpdate = true
+    return map
+  }, [color, name, price])
+  useEffect(() => () => texture.dispose(), [texture])
+
+  return (
+    <mesh position={[0, 0.085, size * 0.12]} rotation={[-Math.PI / 2, 0, 0]}>
+      <planeGeometry args={[size * 0.9, size * 0.48]} />
+      <meshBasicMaterial map={texture} transparent toneMapped={false} />
+    </mesh>
+  )
+}
 
 function Board({ playerPositions, propertyBuildings }: { playerPositions: number[]; propertyBuildings: PropertyBuilding[] }) {
   return (
@@ -19,15 +68,15 @@ function Board({ playerPositions, propertyBuildings }: { playerPositions: number
       </mesh>
       <mesh position={[0, 0.01, 0]} receiveShadow>
         <boxGeometry args={[9.8, 0.04, 9.8]} />
-        <meshStandardMaterial color="#c4d5bd" roughness={1} />
+        <meshStandardMaterial color="#a9c49a" roughness={1} />
       </mesh>
       <mesh position={[0, 0.045, 0]} receiveShadow>
         <cylinderGeometry args={[1.42, 1.42, 0.045, 48]} />
-        <meshStandardMaterial color="#d8dfc2" roughness={0.92} />
+        <meshStandardMaterial color="#c5d49f" roughness={0.92} />
       </mesh>
       <mesh position={[0, 0.072, 0]} receiveShadow>
         <cylinderGeometry args={[1.22, 1.22, 0.025, 48]} />
-        <meshStandardMaterial color="#a9bf91" roughness={0.94} />
+        <meshStandardMaterial color="#91ad7d" roughness={0.94} />
       </mesh>
       <mesh position={[0, 0.087, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <ringGeometry args={[1.26, 1.34, 48]} />
@@ -55,6 +104,7 @@ function Board({ playerPositions, propertyBuildings }: { playerPositions: number
               <boxGeometry args={[size * 0.82, 0.045, size * 0.19]} />
               <meshStandardMaterial color={space.color} roughness={0.7} />
             </mesh>
+            <SpaceLabel name={space.name} price={space.price} color={space.color} size={size} />
             {corner && (
               <mesh position={[0, 0.19, 0]} rotation={[0, Math.PI / 4, 0]}>
                 <boxGeometry args={[0.32, 0.08, 0.32]} />
@@ -121,10 +171,11 @@ function Board({ playerPositions, propertyBuildings }: { playerPositions: number
 export default function BoardScene({ playerPositions, propertyBuildings }: { playerPositions: number[]; propertyBuildings: PropertyBuilding[] }) {
   return (
     <Canvas camera={{ position: [12.5, 15.5, 15.5], fov: 34 }} shadows dpr={[1, 1.6]}>
-      <color attach="background" args={['#b7d8d9']} />
-      <fog attach="fog" args={['#b7d8d9', 17, 31]} />
-      <ambientLight intensity={1.1} />
-      <directionalLight position={[7, 13, 5]} intensity={2.4} castShadow shadow-mapSize={[1024, 1024]} />
+      <color attach="background" args={['#a9cbd0']} />
+      <fog attach="fog" args={['#a9cbd0', 17, 31]} />
+      <ambientLight intensity={0.85} />
+      <directionalLight position={[7, 13, 5]} intensity={1.8} castShadow shadow-mapSize={[1024, 1024]} />
+      <ResponsiveCamera />
       <Board playerPositions={playerPositions} propertyBuildings={propertyBuildings} />
       <ContactShadows position={[0, -0.46, 0]} opacity={0.25} scale={18} blur={2.5} far={5} />
     </Canvas>
