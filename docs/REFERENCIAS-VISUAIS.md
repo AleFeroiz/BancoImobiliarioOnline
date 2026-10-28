@@ -4,10 +4,33 @@ Este documento traduz a hierarquia visual observada em capturas públicas de *Bu
 
 ## Fontes consultadas
 
-- [Página oficial de *Business Tour* na Steam](https://store.steampowered.com/app/397900/Business_Tour__Board_Game_with_Online_Multiplayer/), incluindo capturas oficiais da partida.
-- [Galeria da interface de *Business Tour* no Interface In Game](https://interfaceingame.com/games/business-tour/), que organiza capturas por estado, como tabuleiro, rolagem, venda, sala privada e placar.
+- [Página oficial de *Business Tour* na Steam](https://store.steampowered.com/app/397900/Business_Tour__Board_Game_with_Online_Multiplayer/), incluindo capturas oficiais de partida e sala.
+- [Galeria da interface de *Business Tour* no Interface In Game](https://interfaceingame.com/games/business-tour/), que organiza capturas por estado, como menu, tabuleiro, rolagem, venda, sala privada, configurações e placar. A galeria é uma referência histórica da interface, não uma garantia de que cada tela corresponda à versão atual.
 - [Galeria de capturas indexada pelo SteamDB](https://steamdb.info/app/397900/screenshots/), usada para localizar exemplos públicos adicionais.
 - Captura enviada pelo usuário nesta conversa, usada somente como referência visual.
+
+## Leitura visual das capturas
+
+As capturas oficiais de partida mostram uma mesa quadrada elevada em perspectiva, com o percurso colorido e construções pequenas ao redor de um centro aberto. As quatro fichas de jogador ocupam os cantos da tela, combinando retrato, nome e saldo em uma única leitura. Os dados, cronômetro e mensagens de turno usam o espaço central; os controles de apoio ficam junto às bordas. O tabuleiro permanece visível durante a partida e continua reconhecível em momentos de decisão.
+
+A apresentação é mais saturada e caricata que a direção atual deste projeto: gramado verde vivo, bordas claras, acentos fortes nas cores das propriedades, retratos expressivos e peças volumosas. O padrão que vale transportar é a leitura rápida e a distribuição espacial da informação. Nossa paleta de papel, feltro e madeira, os retratos/peças, a tipografia e a arte permanecem originais; aumentar contraste e cor nos elementos de jogo é compatível com essa identidade.
+
+Nas capturas de rolagem, a ação usa dados grandes no vazio do centro e uma mensagem curta de contexto. Nas telas de dívida, a atenção passa para o alvo selecionável e para as opções necessárias para continuar. No placar, o resultado ocupa a frente sem apagar por completo a mesa. Na sala privada, participantes, avatar e estado de preparação são os elementos mais imediatos; controles de configuração ficam agrupados.
+
+### Mapeamento das referências para o nosso produto
+
+| Superfície nossa | Padrão observado | Aplicação visual prevista |
+|---|---|---|
+| Início e escolha de modo | Menus coloridos e ações principais fáceis de localizar | Manter a entrada sem conta, com nome e criar/entrar em destaque; usar ilustração de mesa original como ambiente, sem painel com aparência administrativa. |
+| Lobby | Lugares dos participantes e estado da mesa | Fazer quatro assentos claros, marcar anfitrião/pronto e manter código e modo sempre visíveis. |
+| Turno normal | Tabuleiro central e informação dos jogadores nos cantos | Preservar mesa e percurso como foco; dar mais presença aos retratos, saldos e indicador de quem joga. |
+| Rolagem e movimento | Dados centrais e chamada curta junto à ação | Reservar o centro para os dados e feedback de movimento; evitar que mensagens longas cubram o percurso. |
+| Compra, leilão e aluguel | Casa ou propriedade ligada à decisão e valores destacados | Realçar a casa-alvo e mostrar preço, aluguel, maior lance e botões na mesma área contextual. |
+| Dívida e prisão | Sobreposição focada em poucas escolhas e urgência legível | Usar contraste mais forte no alvo e apresentar dívida, saldo e formas válidas de agir em ordem. |
+| Negociação e carteira | Painel de apoio aberto apenas quando necessário | Manter ativos e trocas fora do HUD persistente e preservar visão da mesa enquanto o painel estiver aberto. |
+| Resultado | Placar breve sobre a cena da partida | Mostrar vencedor, critério usado, saldo/patrimônio relevante e ação de saída; manter a mesa reconhecível no fundo. |
+
+Estas recomendações são uma proposta de direção visual baseada na leitura das fontes. A decisão já aprovada do projeto permanece: usar composição inspirada na clareza de *Business Tour* com arte, cores, nomes, tabuleiro e componentes próprios; não copiar telas ou assets.
 
 ### Capturas de referência por estado
 
