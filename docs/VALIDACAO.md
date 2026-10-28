@@ -243,3 +243,10 @@
 - Lancei os dados (5 + 4), comprei Porto Dourado por R$ 160.000 e confirmei o saldo sincronizado de R$ 1.340.000. Ao concluir a vez, o estado mudou para turno 2 de Teste Bia; os outros três saldos permaneceram em R$ 1.500.000.
 - Uma primeira tentativa de usar a quarta vaga numa sala de teste foi recusada porque uma conexão anterior havia encerrado sem sair e ainda ocupava a janela de reconexão de 60 segundos. Em uma sala nova, os quatro clientes entraram e iniciaram normalmente.
 - Capturas inspecionadas: `/tmp/banco-firefox-four-player-game.png` e `/tmp/banco-firefox-four-player-synced.png`. O Firefox usou WebGL por software e registrou aviso do backend gráfico, mas a cena carregou e as ações foram aplicadas.
+
+## 2026-10-28 — HUD do modo Express no Firefox
+
+- No Firefox headless, criei uma sala Express e iniciei uma partida real com duas conexões. O lobby apresentou “6 rodadas • objetivos valem bônus”; a partida abriu em Rodada 1/6 com fase de 40 segundos e tabuleiro 3D carregado.
+- Abri o cartão privado da anfitriã: “Primeira escritura”, progresso 0/1 e bônus de R$ 50.000. O elemento de progresso expôs corretamente o valor acessível `aria-valuenow=0` e alvo 1. O documento permaneceu sem rolagem horizontal em 1366 px.
+- Ao expirar a fase de 40 segundos sem ação, o turno avançou automaticamente para a segunda pessoa e o contador reiniciou. A inspeção do cartão consumiu a fase da anfitriã; por isso, esta sessão não validou compra nem conclusão de objetivo no navegador. Esses comportamentos continuam cobertos pelos testes de integração do servidor.
+- Captura inspecionada: `/tmp/banco-firefox-express-objective.png`. A renderização WebGL por software exibiu a cena; a validação do placar após seis rodadas não foi feita nesta sessão.
