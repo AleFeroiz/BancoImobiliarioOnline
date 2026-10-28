@@ -7,7 +7,8 @@ import { boardSpaces, formatMoney } from '../game/board'
 
 type Mode = GameMode
 type Screen = 'home' | 'room' | 'game'
-type SyncedPlayer = LobbyPlayer & { sessionId: string }
+type TurnPhase = 'roll' | 'resolve' | 'purchase' | 'auction'
+type SyncedPlayer = LobbyPlayer & { sessionId: string; cash: number }
 
 const modeDetails: Record<Mode, { title: string; duration: string; detail: string }> = {
   classic: { title: 'Clássico Rápido', duration: '30 min', detail: 'Regras completas • patrimônio no final' },
@@ -22,9 +23,13 @@ function App() {
   const [error, setError] = useState('')
   const [activePlayerSessionId, setActivePlayerSessionId] = useState('')
   const [turnNumber, setTurnNumber] = useState(0)
-  const [turnPhase, setTurnPhase] = useState<'roll' | 'resolve'>('roll')
+  const [turnPhase, setTurnPhase] = useState<TurnPhase>('roll')
   const [dice, setDice] = useState<[number, number]>([0, 0])
   const [landingDescription, setLandingDescription] = useState('')
+  const [pendingPropertyId, setPendingPropertyId] = useState(255)
+  const [auctionSeconds, setAuctionSeconds] = useState(0)
+  const [auctionHighestBid, setAuctionHighestBid] = useState(0)
+  const [bidAmount, setBidAmount] = useState('')
   const [room, setRoom] = useState<Room | null>(null)
   const [roomPlayers, setRoomPlayers] = useState<SyncedPlayer[]>([])
   const [isHost, setIsHost] = useState(false)
@@ -40,16 +45,19 @@ function App() {
 
     const updateLobby = (state: unknown) => {
       const snapshot = state as {
-        players: Map<string, LobbyPlayer>
+        players: Map<string, LobbyPlayer & { cash: number }>
         roomCode: string
         mode: Mode
         status: 'waiting' | 'playing'
         activePlayerSessionId: string
         turnNumber: number
-        turnPhase: 'roll' | 'resolve'
+        turnPhase: TurnPhase
         diceOne: number
         diceTwo: number
         landingDescription: string
+        pendingPropertyId: number
+        auctionSeconds: number
+        auctionHighestBid: number
       }
       const nextPlayers = Array.from(snapshot.players.entries()).map(([sessionId, player]) => ({ ...player, sessionId }))
       setRoomPlayers(nextPlayers)
@@ -61,6 +69,9 @@ function App() {
       setTurnPhase(snapshot.turnPhase)
       setDice([snapshot.diceOne, snapshot.diceTwo])
       setLandingDescription(snapshot.landingDescription)
+      setPendingPropertyId(snapshot.pendingPropertyId)
+      setAuctionSeconds(snapshot.auctionSeconds)
+      setAuctionHighestBid(snapshot.auctionHighestBid)
       if (snapshot.status === 'playing') setScreen('game')
     }
     const handleRoomError = (payload: { message: string }) => setError(payload.message)
@@ -128,6 +139,10 @@ function App() {
     setTurnNumber(0)
     setDice([0, 0])
     setLandingDescription('')
+    setPendingPropertyId(255)
+    setAuctionSeconds(0)
+    setAuctionHighestBid(0)
+    setBidAmount('')
     setScreen('home')
     if (currentRoom) await currentRoom.leave()
   }
@@ -204,8 +219,13 @@ function App() {
       {screen === 'game' && (
         <section className="game-overlay">
           <div className="game-topline"><button className="back-link" onClick={() => setScreen('room')}>← Sala {roomCode}</button><div className="game-pill">{modeDetails[mode].title.toUpperCase()} <span>·</span> {mode === 'classic' ? '30:00' : 'RODADA 1/6'}</div><button className="icon-button" aria-label="Menu">···</button></div>
-          <div className="player-hud">{roomPlayers.map((player, index) => <div className={`player-card ${player.sessionId === activePlayerSessionId ? 'active' : ''}`} key={player.sessionId}><span className={`player-avatar player-${index}`}>{player.name.slice(0, 1).toUpperCase()}</span><div className="player-info"><strong>{player.name}</strong><small>{player.sessionId === activePlayerSessionId ? 'VEZ ATUAL' : `CASA ${String(player.position + 1).padStart(2, '0')}`}</small></div><b>—</b></div>)}</div>
-          <div className="turn-card"><span className="turn-label">TURNO {turnNumber} · {isMyTurn ? 'SUA VEZ' : `VEZ DE ${activePlayer?.name ?? '…'}`}</span><h2>{activeSpace.name}</h2><p>{landingDescription || (activeSpace.kind === 'property' ? `Propriedade · ${formatMoney(activeSpace.price ?? 0)}` : 'Aguardando a jogada.')}</p><div className="dice-row"><span className="die">{dice[0] || '·'}</span><span className="die">{dice[1] || '·'}</span>{turnPhase === 'roll' ? <button className="roll-button" onClick={() => room?.send('roll')} disabled={!isMyTurn}>Lançar dados <span>↗</span></button> : <button className="roll-button" onClick={() => room?.send('finishTurn')} disabled={!isMyTurn}>Concluir vez <span>↗</span></button>}</div></div>
+          <div className="player-hud">{roomPlayers.map((player, index) => <div className={`player-card ${player.sessionId === activePlayerSessionId ? 'active' : ''}`} key={player.sessionId}><span className={`player-avatar player-${index}`}>{player.name.slice(0, 1).toUpperCase()}</span><div className="player-info"><strong>{player.name}</strong><small>{player.sessionId === activePlayerSessionId ? 'VEZ ATUAL' : `CASA ${String(player.position + 1).padStart(2, '0')}`}</small></div><b>{formatMoney(player.cash)}</b></div>)}</div>
+          <div className="turn-card">
+            <span className="turn-label">TURNO {turnNumber} · {isMyTurn ? 'SUA VEZ' : `VEZ DE ${activePlayer?.name ?? '…'}`}</span>
+            <h2>{boardSpaces[pendingPropertyId]?.name ?? activeSpace.name}</h2>
+            <p>{landingDescription || (activeSpace.kind === 'property' ? `Propriedade · ${formatMoney(activeSpace.price ?? 0)}` : 'Aguardando a jogada.')}</p>
+            {turnPhase === 'auction' ? <><div className="auction-info"><span>{auctionHighestBid ? `Maior lance: ${formatMoney(auctionHighestBid)}` : 'Sem lances ainda'}</span><strong>{auctionSeconds}s</strong></div><div className="auction-actions"><input aria-label="Valor do lance" inputMode="numeric" value={bidAmount} onChange={(event) => setBidAmount(event.target.value.replace(/[^0-9]/g, ''))} placeholder="Seu lance" /><button className="roll-button" onClick={() => { room?.send('bid', { amount: Number(bidAmount) }); setBidAmount('') }}>Lance</button><button className="secondary-action" onClick={() => room?.send('auctionPass')}>Passar</button></div></> : <div className="dice-row"><span className="die">{dice[0] || '·'}</span><span className="die">{dice[1] || '·'}</span>{turnPhase === 'roll' ? <button className="roll-button" onClick={() => room?.send('roll')} disabled={!isMyTurn}>Lançar dados <span>↗</span></button> : turnPhase === 'purchase' ? <><button className="roll-button" onClick={() => room?.send('buy')} disabled={!isMyTurn}>Comprar <span>{formatMoney(boardSpaces[pendingPropertyId]?.price ?? 0)}</span></button><button className="secondary-action" onClick={() => room?.send('declinePurchase')} disabled={!isMyTurn}>Leilão</button></> : <button className="roll-button" onClick={() => room?.send('finishTurn')} disabled={!isMyTurn}>Concluir vez <span>↗</span></button>}</div>}
+          </div>
           <div className="game-bottom"><span>JOGADA SINCRONIZADA · ECONOMIA EM IMPLEMENTAÇÃO</span><button className="leave-button" onClick={() => void leaveRoom()}>Sair da mesa</button></div>
         </section>
       )}

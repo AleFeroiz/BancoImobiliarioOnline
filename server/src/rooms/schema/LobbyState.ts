@@ -4,12 +4,20 @@ export const LobbyPlayerState = schema({
   name: t.string().default(''),
   isHost: t.boolean().default(false),
   position: t.uint8().default(0),
+  cash: t.int32().default(0),
 })
 
 export type LobbyPlayerState = SchemaType<typeof LobbyPlayerState>
 
+export const PropertyState = schema({
+  ownerSessionId: t.string().default(''),
+})
+
+export type PropertyState = SchemaType<typeof PropertyState>
+
 export const LobbyState = schema({
   players: t.map(LobbyPlayerState),
+  properties: t.map(PropertyState),
   roomCode: t.string().default(''),
   mode: t.string().default('classic'),
   status: t.string().default('waiting'),
@@ -19,6 +27,11 @@ export const LobbyState = schema({
   diceOne: t.uint8().default(0),
   diceTwo: t.uint8().default(0),
   landingDescription: t.string().default(''),
+  pendingPropertyId: t.uint8().default(255),
+  auctionPropertyId: t.uint8().default(255),
+  auctionHighestBid: t.int32().default(0),
+  auctionHighestBidderSessionId: t.string().default(''),
+  auctionSeconds: t.uint8().default(0),
 })
 
 export type LobbyState = SchemaType<typeof LobbyState>

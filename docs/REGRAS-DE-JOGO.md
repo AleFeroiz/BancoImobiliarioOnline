@@ -43,6 +43,13 @@ Como referência de regras clássicas e jogo curto, o [manual oficial do Super B
 - Esta etapa apenas identifica e mostra a casa. Não concede bônus ao passar pela Partida e ainda não executa compra, aluguel, taxa, evento ou movimento para a prisão; esses efeitos dependem das regras econômicas e cartas a fechar nas fases seguintes.
 - Os relógios de 30 minutos e de seis rodadas Express ainda não estão ativos no ciclo básico; entram com a implementação dos presets e da resolução de fim de partida.
 
+## Economia inicial implementada
+
+- Cada pessoa começa com R$ 1.500.000. Ao cruzar a Partida, recebe R$ 200.000.
+- Ao parar em propriedade livre, a pessoa da vez pode comprar pelo preço impresso no espaço ou recusar e abrir leilão público de 20 segundos. O leilão começa em R$ 10.000, sobe em incrementos mínimos de R$ 10.000 e termina quando todos os demais passam ou o tempo acaba.
+- O aluguel base corresponde a 10% do preço da propriedade, com mínimo de R$ 10.000; completar o grupo de cor dobra esse valor. Se o saldo do pagador for menor, o pagamento atual é limitado ao saldo restante; liquidação e falência estão na próxima parte da implementação.
+- As taxas digitais custam R$ 50.000, R$ 75.000, R$ 100.000 e R$ 125.000 nas casas 4, 18, 28 e 38. Os valores são autorais e serão ajustados com playtests.
+
 ## Fora do que está especificado
 
 O tabuleiro, textos completos das cartas, valores econômicos e procedimentos detalhados de prisão, hipoteca, falência e construção ainda precisam ser escritos como regras autorais e implementados. Não temos o texto público das cartas Express. Esses detalhes não alteram as decisões de duração, vitória e número de jogadores acima; serão definidos e registrados antes de fechar cada sistema.

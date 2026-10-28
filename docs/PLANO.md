@@ -40,8 +40,8 @@ As decisões detalhadas estão em [DECISOES.md](DECISOES.md) e as fontes de regr
 
 1. **Fatia visual inicial:** tela inicial, escolha de modo e primeira cena 3D responsiva com tabuleiro e peças próprias. Implementada como prévia visual.
 2. **Salas online:** servidor Colyseus, código privado de cinco caracteres, lobby sincronizado, anfitrião e reconexão. Implementado; lobby revisado visualmente no navegador integrado. Falta repetir a checagem no Firefox e revisar hospedagem.
-3. **Ciclo de partida:** em andamento. Estado autoritativo, ordem dos turnos, dados, movimento e exibição da casa alcançada estão ligados à sala. Resolver compras, pagamentos, cartas, prisão e relógios continua nas fases seguintes.
-4. **Economia e interação:** compras, aluguel, leilões, negociação, construções, hipotecas, eventos, dívidas e falência. Próximo passo depois de concluir o ciclo básico.
+3. **Ciclo de partida:** em andamento. Estado autoritativo, ordem dos turnos, dados, movimento e resolução da casa alcançada estão ligados à sala. O saldo inicial e o prêmio da Partida já funcionam.
+4. **Economia e interação:** em andamento. Compra, aluguel básico, taxas e leilão estão implementados. Construções, negociação, hipotecas, eventos, dívidas e falência continuam pendentes.
 5. **Presets:** limites de tempo, objetivos e pontuação final do Express e Clássico.
 6. **Acabamento:** acessibilidade, layout móvel, efeitos visuais, desempenho, publicação e validação com um grupo.
 

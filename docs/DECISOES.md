@@ -15,6 +15,8 @@
 | Pontuação Express | Maior saldo em dinheiro ao fim das seis rodadas. Empate: maior patrimônio avaliando imóveis e construções pelo valor de venda; persistindo, desempate nos dados. |
 | Fim do Clássico | Ao fim dos 30 minutos, concluir a ação e os pagamentos em andamento; vence o maior patrimônio após liquidação de bens e construções. Empate resolvido nos dados. |
 | Leilão | Propriedade recusada vai a leilão público de 20 segundos, com incremento mínimo definido pelo jogo. |
+| Economia inicial | Cada pessoa começa com R$ 1.500.000; cruzar a Partida concede R$ 200.000. O aluguel base é 10% do preço do imóvel, dobrado ao completar o grupo de cor; o primeiro lance é R$ 10.000 e o incremento mínimo também é R$ 10.000. |
+| Taxas digitais | As quatro casas de taxa cobram R$ 50.000, R$ 75.000, R$ 100.000 e R$ 125.000, respectivamente. Valores autorais para o ritmo rápido e sujeitos a balanceamento por playtest. |
 | Negociação | Clássico: durante a vez ativa, em janela de 45 segundos. Express: durante as fases cronometradas de 40 segundos. |
 | Desconexão | Até 60 segundos para reconectar; depois, pular a ação/vez atual sem tomar decisões automáticas em nome da pessoa. |
 | Direção visual | Tabuleiro e peças originais low-poly, câmera inclinada fixa e interface DOM responsiva. A imagem de *Business Tour* é referência de composição e leitura, não de assets ou reprodução exata. |

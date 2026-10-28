@@ -67,3 +67,39 @@ button:disabled{opacity:.55;cursor:not-allowed}
   .room-card h1{font-size:43px}
   .room-code{font-size:21px}
 }
+
+.screen-game{background:#dce7d9;color:#2d4337}
+.screen-game .scene-backdrop{filter:saturate(.88)}
+.screen-game .scene-backdrop:after{background:linear-gradient(180deg,rgba(241,241,224,.78),transparent 26%,transparent 58%,rgba(226,234,216,.72))}
+.screen-game .topbar{background:rgba(248,246,234,.76);border-bottom-color:rgba(57,83,68,.15)}
+.screen-game .brand,.screen-game .topbar-right{color:#365146}
+.screen-game .brand-light{color:#718276}
+.screen-game .brand-mark{border-color:#75947b;color:#587a64}
+.screen-game .game-topline .back-link{color:#3d5948}
+.game-pill{background:rgba(250,248,237,.88);border-color:rgba(105,132,97,.32);border-radius:999px;color:#3c5543}
+.player-card{background:rgba(250,248,237,.94);border-color:#d7ddca;border-radius:12px;box-shadow:0 8px 22px rgba(56,76,54,.1);backdrop-filter:blur(8px);color:#33483a}
+.player-card.active{border-color:#b5a66c;box-shadow:0 0 0 2px rgba(190,169,103,.15)}
+.player-info small{color:#788673}
+.player-card b{color:#536b4d;font-size:9px}
+.turn-card{width:min(360px,calc(100vw - 32px));padding:18px;background:rgba(250,248,237,.96);border:1px solid #d4d9c6;border-radius:16px;box-shadow:0 20px 48px rgba(43,62,46,.16);backdrop-filter:blur(9px);color:#2f4439}
+.turn-label{color:#8a7646}
+.turn-card p{color:#647568;font-size:10px;line-height:1.5}
+.roll-button{min-height:36px;height:auto;padding:0 10px;border-radius:8px;background:#779675;color:#fffdf3;font-size:10px}
+.roll-button:hover{background:#648462}
+.roll-button span{font-size:9px;line-height:1.2}
+.secondary-action{min-height:34px;padding:0 10px;border:1px solid #d1d7c8;border-radius:8px;background:#edf0e2;color:#4d614f;font-size:9px;font-weight:700}
+.secondary-action:hover{background:#e2e8d7}
+.auction-info{display:flex;justify-content:space-between;align-items:center;margin:10px 0;color:#647568;font-size:10px}
+.auction-info strong{color:#8b7240;font-size:17px}
+.auction-actions{display:grid;grid-template-columns:minmax(70px,1fr) auto auto;gap:6px}
+.auction-actions input{min-width:0;height:35px;padding:0 9px;border:1px solid #d1d7c8;border-radius:8px;background:#fffef7;color:#33483a;font-size:10px}
+.game-bottom{color:#475d4b}
+.leave-button{border-color:rgba(81,110,82,.35);border-radius:8px;background:rgba(250,248,237,.82);color:#455c48}
+@media(max-width:640px){
+  .screen-game .topbar{height:66px}
+  .player-hud{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .player-card b{font-size:8px}
+  .turn-card{margin:auto 0 8vh}
+  .auction-actions{grid-template-columns:minmax(60px,1fr) auto auto}
+  .auction-actions .secondary-action{padding:0 7px}
+}

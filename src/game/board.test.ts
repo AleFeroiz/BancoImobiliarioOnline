@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { boardSpaces, positionOnBoard } from './board'
-import { describeLanding, movePosition } from '../../shared/game'
+import { STARTING_CASH, calculateRent, describeLanding, movePosition, taxForSpace } from '../../shared/game'
 
 describe('tabuleiro', () => {
   it('tem 40 casas com identificadores únicos e em ordem', () => {
@@ -33,5 +33,22 @@ describe('tabuleiro', () => {
     expect(describeLanding(15)).toContain('Estação Central')
     expect(describeLanding(15)).toContain('Você parou em uma propriedade')
     expect(() => describeLanding(40)).toThrow(RangeError)
+  })
+
+  it('calcula aluguel base e dobra quando a mesma pessoa completa o grupo', () => {
+    const property = boardSpaces.find((space) => space.kind === 'property')!
+    const group = boardSpaces.filter((space) => space.kind === 'property' && space.color === property.color)
+    const owner = new Map(group.map((space) => [space.id, 'jogador-1']))
+    const base = Math.max(10_000, Math.floor((property.price ?? 0) * 0.1))
+
+    expect(STARTING_CASH).toBe(1_500_000)
+    expect(calculateRent(property.id, new Map([[property.id, 'jogador-1']]))).toBe(base)
+    expect(calculateRent(property.id, owner)).toBe(base * 2)
+    expect(calculateRent(property.id, owner, 2)).toBe(base * 2 + Math.floor((property.price ?? 0) * 0.1) * 2)
+  })
+
+  it('usa taxas fixas nas quatro casas de taxa', () => {
+    expect([4, 18, 28, 38].map(taxForSpace)).toEqual([50_000, 75_000, 100_000, 125_000])
+    expect(taxForSpace(0)).toBe(0)
   })
 })

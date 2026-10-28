@@ -4,7 +4,7 @@ Jogo de tabuleiro 3D para navegador, para partidas privadas entre amigos. Sem co
 
 ## Estado atual
 
-A fatia atual contém a experiência inicial, seletor de regras, salas privadas Colyseus por código, lobby sincronizado e uma cena 3D original em React Three Fiber. O início de partida sincroniza entre participantes. O tabuleiro e o botão de dados ainda são uma prévia; a lógica completa da partida será implementada na próxima fase.
+A versão atual contém a experiência inicial, seletor de regras, salas privadas Colyseus por código, lobby sincronizado e uma cena 3D original em React Three Fiber. A partida já tem turnos autoritativos, dados, movimento, saldo inicial, prêmio por cruzar a Partida, compra de propriedades, aluguel, taxas e leilão. Construções, cartas, prisão, negociação, hipotecas, falência e encerramento por tempo seguem em implementação.
 
 ## Desenvolvimento local
 
