@@ -12,9 +12,9 @@ Este documento traduz a hierarquia visual observada em capturas públicas de *Bu
 
 ## Leitura visual das capturas
 
-As capturas oficiais de partida mostram uma mesa quadrada elevada em perspectiva, com o percurso colorido e construções pequenas ao redor de um centro aberto. As quatro fichas de jogador ocupam os cantos da tela, combinando retrato, nome e saldo em uma única leitura. Os dados, cronômetro e mensagens de turno usam o espaço central; os controles de apoio ficam junto às bordas. O tabuleiro permanece visível durante a partida e continua reconhecível em momentos de decisão.
+As capturas oficiais de partida mostram uma mesa quadrada elevada em perspectiva, com o percurso colorido e construções pequenas ao redor de um centro aberto. A captura atual da página Steam mostra quatro fichas nos cantos, cada uma combinando retrato, nome e saldo. O modo e o relógio ficam no alto; dados grandes, marcador do turno e chamadas breves usam o centro. Os controles de apoio ficam junto às bordas. O tabuleiro permanece visível durante a partida e continua reconhecível em momentos de decisão. A loja descreve o produto como jogo de tabuleiro multiplayer para 2–4 pessoas e enfatiza partidas rápidas e jogo com amigos; isso confirma o enquadramento do produto, enquanto as posições e cores são observações das capturas.
 
-A apresentação é mais saturada e caricata que a direção atual deste projeto: gramado verde vivo, bordas claras, acentos fortes nas cores das propriedades, retratos expressivos e peças volumosas. O padrão que vale transportar é a leitura rápida e a distribuição espacial da informação. Nossa paleta de papel, feltro e madeira, os retratos/peças, a tipografia e a arte permanecem originais; aumentar contraste e cor nos elementos de jogo é compatível com essa identidade.
+A apresentação é mais saturada e caricata que a direção anterior deste projeto: gramado verde vivo, bordas claras, acentos fortes nas cores das propriedades, retratos expressivos e peças volumosas. O padrão que vale transportar é a leitura rápida e a distribuição espacial da informação. A direção agora aumenta a saturação do tabuleiro e dá um acento próprio a cada participante, mantendo papel, feltro e madeira como materiais e preservando peças, tipografia e arte originais.
 
 Nas capturas de rolagem, a ação usa dados grandes no vazio do centro e uma mensagem curta de contexto. Nas telas de dívida, a atenção passa para o alvo selecionável e para as opções necessárias para continuar. No placar, o resultado ocupa a frente sem apagar por completo a mesa. Na sala privada, participantes, avatar e estado de preparação são os elementos mais imediatos; controles de configuração ficam agrupados.
 
@@ -26,7 +26,7 @@ As capturas oficiais da Steam e a galeria histórica permitem observar estados d
 |---|---|---|
 | Lobby privado | Assentos e avatares identificáveis, código/contexto da mesa e controles de preparação agrupados | Manter os quatro lugares, anfitrião, modo e código juntos; deixar claro quem ainda está aguardando. |
 | Configuração da mesa | Opções de partida aparecem agrupadas numa superfície própria antes do início | Exibir os dois presets e seus parâmetros na criação/lobby, sem misturar regras detalhadas à mesa durante o turno. |
-| Partida ativa | Tabuleiro grande e quadrado em perspectiva; nome, avatar e dinheiro de cada participante nas bordas; controle secundário em coluna curta | Preservar o centro para o tabuleiro, usar cartões de participante compactos nos cantos e evitar transformar a partida em dashboard. |
+| Partida ativa | Tabuleiro grande e quadrado em perspectiva; nome, avatar e dinheiro de cada participante nos cantos; controle secundário nas bordas | Preservar o centro para o tabuleiro, usar cartões compactos com acentos de cor distintos por participante e evitar transformar a partida em dashboard. |
 | Rolagem | Dados em destaque no espaço central e fala curta de turno | Aumentar a leitura dos dados e mostrar quem está jogando e onde vai parar sem cobrir propriedades. |
 | Escolha de venda/dívida | Contexto da dívida e bens elegíveis recebem prioridade visual; o tabuleiro segue como referência | Realçar os ativos válidos, mostrar o valor devido e manter as ações disponíveis no mesmo painel contextual. |
 | Dinheiro insuficiente | Aviso ligado à ação que falhou, com informação para decidir o próximo passo | Explicar o saldo necessário e oferecer a próxima opção válida, como leilão ou liquidação. |
@@ -72,6 +72,8 @@ Na galeria histórica, a interface também está separada por estados de produto
 - Manter o tabuleiro 3D como foco e reservar espaço negativo no centro para dados, animações e mensagens breves.
 - Distribuir os cartões dos participantes pelas bordas/cantos em desktop, com nome, saldo e estado da vez visíveis sem abrir painéis.
 - Destacar quem está na vez com contorno, cor de acento e rótulo curto; não depender apenas da cor para comunicar o estado.
+- Usar cores de identificação consistentes entre avatar, ficha e peça no tabuleiro; reservar um realce mais forte para a pessoa da vez.
+- Manter saturação suficiente nas cores de propriedades e nos marcadores para que a mesa pareça um jogo de tabuleiro vivo, preservando superfícies claras e materiais originais.
 - Deixar a ação principal em um painel contextual compacto na borda inferior. Mostrar nele apenas a decisão atual, como lançar, comprar, ofertar ou pagar.
 - Apresentar o modo e o relógio numa cápsula curta na faixa superior. A carteira, regras longas e negociação ficam em painéis que abrem sob demanda.
 - Em ações com alvo no tabuleiro, marcar a propriedade ou casa envolvida e mostrar motivo, valor e opções no mesmo cartão; usar um escurecimento leve apenas enquanto a decisão estiver aberta.

@@ -62,6 +62,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
     const player = new LobbyPlayerState()
     player.name = normalizePlayerName(options.name) ?? 'Jogador'
     player.isHost = this.state.players.size === 0
+    player.isConnected = true
     this.state.players.set(client.sessionId, player)
   }
 
@@ -75,6 +76,10 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       if (this.state.status !== 'waiting') return
       if (this.state.players.size < 2) {
         client.send('room:error', { message: 'São necessários pelo menos dois jogadores para iniciar.' })
+        return
+      }
+      if (Array.from(this.state.players.values()).some((candidate) => !candidate.isConnected)) {
+        client.send('room:error', { message: 'Aguarde a reconexão de todas as pessoas antes de iniciar.' })
         return
       }
 
@@ -891,7 +896,14 @@ export class GameRoom extends Room<{ state: LobbyState }> {
   }
 
   onDrop(client: Client, _code: CloseCode) {
+    const player = this.state.players.get(client.sessionId)
+    if (player) player.isConnected = false
     this.allowReconnection(client, 60).catch(() => {})
+  }
+
+  onReconnect(client: Client) {
+    const player = this.state.players.get(client.sessionId)
+    if (player) player.isConnected = true
   }
 
   async onDispose() {

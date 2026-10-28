@@ -91,6 +91,41 @@ describe('sala privada', () => {
     expect(room.state.players.get(guest.sessionId)?.cash).toBe(1_500_000)
   })
 
+  it('sincroniza a reconexão e bloqueia o início enquanto alguém está offline', async () => {
+    const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'express' })
+    const host = await colyseus.connectTo(room, { name: 'Lia' })
+    const guest = await colyseus.connectTo(room, { name: 'Nina' })
+
+    guest.reconnection.delay = 300
+    guest.reconnection.minDelay = 300
+    guest.reconnection.maxDelay = 300
+    guest.reconnection.minUptime = 0
+    const dropped = new Promise<void>((resolve) => guest.onDrop(() => resolve()))
+    const reconnected = new Promise<void>((resolve) => guest.onReconnect(() => resolve()))
+    void guest.leave(false)
+
+    await dropped
+    await waitFor(() => room.state.players.get(guest.sessionId)?.isConnected === false)
+    await waitFor(() => host.state.players.get(guest.sessionId)?.isConnected === false)
+    const offlineStartMessage = new Promise<{ message: string }>((resolve) => host.onMessage('room:error', resolve))
+    host.send('start')
+    await expect(offlineStartMessage).resolves.toMatchObject({ message: expect.stringContaining('Aguarde a reconexão') })
+    expect(room.state.status).toBe('waiting')
+
+    await reconnected
+    await waitFor(() => room.state.players.get(guest.sessionId)?.isConnected === true)
+    await waitFor(() => host.state.players.get(guest.sessionId)?.isConnected === true)
+    const started = Promise.all([
+      new Promise<void>((resolve) => host.onMessage('game:started', () => resolve())),
+      new Promise<void>((resolve) => guest.onMessage('game:started', () => resolve())),
+    ])
+    host.send('start')
+    await started
+
+    expect(room.state.status).toBe('playing')
+    expect(room.state.players.has(guest.sessionId)).toBe(true)
+  })
+
   it('abre a janela de negociação de 45 segundos e troca dinheiro e títulos entre as duas pessoas', async () => {
     const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
     const host = await colyseus.connectTo(room, { name: 'Ana' })

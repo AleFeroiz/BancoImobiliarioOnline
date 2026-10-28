@@ -167,3 +167,11 @@
 - Em 390 × 844, o tabuleiro coube na largura, a borda mais próxima e seus nomes/preços ficaram mais legíveis, e `document.documentElement.scrollWidth` permaneceu em 390. As casas no lado oposto continuam menores por causa da perspectiva; o cartão da jogada mostra nome e preço da casa ativa em texto DOM.
 - Captura inspecionada: `/tmp/banco-labels-mobile.png`.
 - A suíte inclui testes para enquadramentos móvel, desktop e janela estreita. `npm run verify` passou com 85 testes e builds do cliente e servidor.
+
+## 2026-10-28 — Referências de apresentação e estado de reconexão
+
+- Consultei novamente a [página oficial de Business Tour na Steam](https://store.steampowered.com/app/397900/Business_Tour__Board_Game_with_Online_Multiplayer/) e a [galeria de telas por estado](https://interfaceingame.com/games/business-tour/). A leitura visual reforça tabuleiro quadrado central, participantes nos cantos com nome e saldo, modo/relógio no topo, dados no espaço central e mensagens de ação breves.
+- Ajustei o contraste da cena, o relógio e as fichas de participantes com acentos de cor consistentes. Em Chrome headless, iniciei uma partida real com dois clientes e revisei capturas em 1440 × 900 e 390 × 844; as duas mantiveram os jogadores, o estado da vez e o tabuleiro visíveis, sem rolagem horizontal no celular.
+- Capturas inspecionadas: `/tmp/banco-labels-desktop.png` e `/tmp/banco-labels-mobile.png`.
+- O teste de integração Colyseus simula queda, sincroniza o estado offline, bloqueia o início da sala, reconecta o cliente e confirma que a partida pode começar. A regra após expirar os 60 segundos ainda diverge do documento: o `onLeave` remove a pessoa e interrompe a partida; essa pendência está registrada em [PLANO.md](PLANO.md).
+- `npm run verify`: 86 testes passaram; build web e build do servidor passaram. O build mantém o aviso conhecido de bundle cliente acima de 500 kB. O Chrome headless emitiu avisos de fallback WebGL por software durante a captura.

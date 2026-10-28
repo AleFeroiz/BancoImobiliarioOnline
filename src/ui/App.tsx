@@ -37,6 +37,7 @@ function App() {
   const [roomCode, setRoomCode] = useState('')
   const [mode, setMode] = useState<Mode>('classic')
   const [error, setError] = useState('')
+  const [isReconnecting, setIsReconnecting] = useState(false)
   const [activePlayerSessionId, setActivePlayerSessionId] = useState('')
   const [turnNumber, setTurnNumber] = useState(0)
   const [matchSeconds, setMatchSeconds] = useState(0)
@@ -201,6 +202,8 @@ function App() {
       if (snapshot.status === 'playing' || snapshot.status === 'ended') setScreen('game')
     }
     const handleRoomError = (payload: { message: string }) => setError(payload.message)
+    const handleDrop = () => setIsReconnecting(true)
+    const handleReconnect = () => setIsReconnecting(false)
     const removeObjectiveMessage = room.onMessage<ExpressObjectiveUpdate>('game:objective', setExpressObjective)
     const handleLeave = (_code: number, reason?: string) => {
       if (activeRoom.current !== room) return
@@ -208,6 +211,7 @@ function App() {
       setRoom(null)
       setExpressObjective(null)
       setShowObjectivePanel(false)
+      setIsReconnecting(false)
       setScreen('home')
       setError(reason || 'A conexão com a sala foi encerrada.')
     }
@@ -215,11 +219,15 @@ function App() {
     room.onStateChange(updateLobby)
     room.onMessage('room:error', handleRoomError)
     room.onLeave(handleLeave)
+    room.onDrop(handleDrop)
+    room.onReconnect(handleReconnect)
     updateLobby(room.state)
 
     return () => {
       room.onStateChange.remove(updateLobby)
       room.onLeave.remove(handleLeave)
+      room.onDrop.remove(handleDrop)
+      room.onReconnect.remove(handleReconnect)
       removeObjectiveMessage()
     }
   }, [room])
@@ -232,6 +240,7 @@ function App() {
       const nextRoom = await roomClient.create('game_room', { mode, name: name.trim() })
       setExpressObjective(null)
       setShowObjectivePanel(false)
+      setIsReconnecting(false)
       activeRoom.current = nextRoom
       setRoom(nextRoom)
       setRoomCode(nextRoom.roomId)
@@ -252,6 +261,7 @@ function App() {
       const nextRoom = await roomClient.joinById(roomCode.trim().toUpperCase(), { name: name.trim() })
       setExpressObjective(null)
       setShowObjectivePanel(false)
+      setIsReconnecting(false)
       activeRoom.current = nextRoom
       setRoom(nextRoom)
       setRoomCode(nextRoom.roomId)
@@ -290,6 +300,7 @@ function App() {
     setShowTradePanel(false)
     setTradeOffer(null)
     setTradeSeconds(0)
+    setIsReconnecting(false)
     setTradeTargetSessionId('')
     setTradeCashOffered('0')
     setTradeCashRequested('0')
@@ -310,7 +321,7 @@ function App() {
         <button className="brand" onClick={() => { if (room) void leaveRoom(); else setScreen('home') }} aria-label="Voltar ao início">
           <span className="brand-mark">B</span><span>BANCO<span className="brand-light">IMOBILIÁRIO</span></span>
         </button>
-        <div className="topbar-right"><span className="connection-dot" /> <span>PRÉVIA DE JOGO</span><button className="icon-button" aria-label="Ajuda">?</button></div>
+        <div className="topbar-right"><span className={`connection-dot ${isReconnecting ? 'connection-dot-retrying' : ''}`} /> <span className={isReconnecting ? 'connection-retrying' : ''} role={isReconnecting ? 'status' : undefined} aria-live={isReconnecting ? 'polite' : undefined}>{isReconnecting ? 'RECONECTANDO…' : 'PRÉVIA DE JOGO'}</span><button className="icon-button" aria-label="Ajuda">?</button></div>
       </header>
 
       {screen === 'home' && (
@@ -352,10 +363,10 @@ function App() {
             <p>Compartilhe o código com seus amigos para sentarem à mesa.</p>
             <div className="room-code-label">CÓDIGO DA SALA</div><button className="room-code" onClick={() => navigator.clipboard?.writeText(roomCode)}>{roomCode}<span>▣</span></button>
             <div className="room-mode"><span className="mode-icon">✦</span><div><strong>{modeDetails[mode].title}</strong><small>{modeDetails[mode].duration} · {modeDetails[mode].detail}</small></div></div>
-            <div className="seat-list">{roomPlayers.map((player, index) => <div className="seat" key={`${player.name}-${index}`}><span className={`seat-avatar avatar-${index}`}>{player.name.slice(0, 1).toUpperCase()}</span><span>{player.name}</span>{player.isHost && <small>ANFITRIÃO</small>}</div>)}{Array.from({ length: Math.max(0, 4 - roomPlayers.length) }, (_, index) => <div className="seat waiting" key={`waiting-${index}`}><span className="seat-avatar">+</span><span>Aguardando jogador</span></div>)}</div>
+            <div className="seat-list">{roomPlayers.map((player, index) => <div className="seat" key={`${player.name}-${index}`}><span className={`seat-avatar avatar-${index}`}>{player.name.slice(0, 1).toUpperCase()}</span><span>{player.name}</span>{player.isConnected === false ? <small className="seat-reconnecting">RECONECTANDO</small> : player.isHost && <small>ANFITRIÃO</small>}</div>)}{Array.from({ length: Math.max(0, 4 - roomPlayers.length) }, (_, index) => <div className="seat waiting" key={`waiting-${index}`}><span className="seat-avatar">+</span><span>Aguardando jogador</span></div>)}</div>
             <div className="prototype-note">{roomPlayers.length}/4 lugares ocupados · sala temporária para sua turma.</div>
             {error && <p className="form-error" role="alert">{error}</p>}
-            <button className="primary-button" onClick={startGame} disabled={!isHost || roomPlayers.length < 2}><span>{isHost ? (roomPlayers.length < 2 ? 'Aguardando jogadores' : 'Iniciar partida') : 'Aguardando anfitrião'}</span><span className="button-arrow">↗</span></button>
+            <button className="primary-button" onClick={startGame} disabled={!isHost || roomPlayers.length < 2 || roomPlayers.some((player) => player.isConnected === false)}><span>{isHost ? (roomPlayers.length < 2 ? 'Aguardando jogadores' : roomPlayers.some((player) => player.isConnected === false) ? 'Aguardando reconexão' : 'Iniciar partida') : 'Aguardando anfitrião'}</span><span className="button-arrow">↗</span></button>
           </div>
           <div className="room-aside" aria-label="Lugares da sala">
             <div className="aside-top">LUGARES À MESA</div>
@@ -371,7 +382,7 @@ function App() {
       {screen === 'game' && (
         <section className="game-overlay">
           <div className="game-topline"><button className="back-link" onClick={() => setScreen('room')}>← Sala {roomCode}</button><div className={`game-pill ${matchEnding || (mode === 'classic' && matchSeconds <= 60) ? 'clock-warning' : ''}`}>{modeDetails[mode].title.toUpperCase()} <span>·</span> {mode === 'classic' ? formatClock(matchSeconds) : `RODADA ${expressRound}/${6} · ${phaseSeconds}s`}</div><div className="game-tools">{mode === 'express' && expressObjective && turnPhase !== 'ended' && <button className={`portfolio-toggle objective-toggle ${expressObjective.completed ? 'objective-complete' : ''}`} aria-expanded={showObjectivePanel} onClick={() => { setShowObjectivePanel((open) => !open); setShowTradePanel(false); setShowPropertyPanel(false) }}>{expressObjective.completed ? '✓ Meta' : `Meta ${expressObjective.progress}/${expressObjective.target}`}</button>}<button className="portfolio-toggle" aria-expanded={showTradePanel || Boolean(incomingTradeOffer)} disabled={tradeSeconds === 0 && !incomingTradeOffer} onClick={() => { setShowTradePanel((open) => !open); setShowPropertyPanel(false); setShowObjectivePanel(false); setError('') }}>{incomingTradeOffer ? 'Oferta recebida' : `Negociar · ${tradeSeconds}s`}</button><button className="portfolio-toggle" aria-expanded={showPropertyPanel} onClick={() => { setShowPropertyPanel((open) => !open); setShowTradePanel(false); setShowObjectivePanel(false) }}>{showPropertyPanel ? '← Jogada' : `Imóveis · ${myProperties.length}`}</button></div></div>
-          <div className="player-hud">{roomPlayers.map((player, index) => <div className={`player-card seat-${index} ${player.sessionId === activePlayerSessionId ? 'active' : ''} ${player.isBankrupt ? 'bankrupt' : ''}`} key={player.sessionId}><span className={`player-avatar player-${index}`}>{player.name.slice(0, 1).toUpperCase()}</span><div className="player-info"><strong>{player.name}</strong><small>{player.isBankrupt ? 'FALIU' : player.isJailed ? `PRESO · ${player.jailTurns}/3` : player.sessionId === activePlayerSessionId ? 'VEZ ATUAL' : `CASA ${String(player.position + 1).padStart(2, '0')}`}</small></div><b>{formatMoney(player.cash)}</b></div>)}</div>
+          <div className="player-hud">{roomPlayers.map((player, index) => <div className={`player-card seat-${index} ${player.sessionId === activePlayerSessionId ? 'active' : ''} ${player.isBankrupt ? 'bankrupt' : ''} ${player.isConnected === false ? 'disconnected' : ''}`} key={player.sessionId}><span className={`player-avatar player-${index}`}>{player.name.slice(0, 1).toUpperCase()}</span><div className="player-info"><strong>{player.name}</strong><small>{player.isBankrupt ? 'FALIU' : player.isConnected === false ? 'RECONECTANDO' : player.isJailed ? `PRESO · ${player.jailTurns}/3` : player.sessionId === activePlayerSessionId ? 'VEZ ATUAL' : `CASA ${String(player.position + 1).padStart(2, '0')}`}</small></div><b>{formatMoney(player.cash)}</b></div>)}</div>
           {(turnPhase === 'resolve' || turnPhase === 'purchase') && dice[0] > 0 && (
             <div className="dice-result" aria-live="polite" aria-label={`Resultado dos dados: ${dice[0]} e ${dice[1]}, total ${dice[0] + dice[1]}`}>
               <span className="dice-result-label">Resultado da jogada</span>

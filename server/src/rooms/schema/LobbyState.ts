@@ -3,6 +3,7 @@ import { schema, t, type SchemaType } from '@colyseus/schema'
 export const LobbyPlayerState = schema({
   name: t.string().default(''),
   isHost: t.boolean().default(false),
+  isConnected: t.boolean().default(true),
   position: t.uint8().default(0),
   cash: t.int32().default(0),
   isJailed: t.boolean().default(false),

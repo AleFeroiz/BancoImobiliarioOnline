@@ -4,6 +4,7 @@ export type LobbyStatus = 'waiting' | 'playing' | 'ended'
 export type LobbyPlayer = {
   name: string
   isHost: boolean
+  isConnected?: boolean
   position: number
   isBankrupt?: boolean
 }
