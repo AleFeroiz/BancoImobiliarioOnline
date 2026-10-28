@@ -1,5 +1,13 @@
 # Validação visual e de navegador
 
+## 2026-10-28 — Referências de Business Tour e entrada da mesa
+
+- Consultei a [página oficial da Steam](https://store.steampowered.com/app/397900/Business_Tour__Board_Game_with_Online_Multiplayer/), a [galeria Interface In Game](https://interfaceingame.com/games/business-tour/) e a [listagem de capturas do SteamDB](https://steamdb.info/app/397900/screenshots/). A página e a galeria mostram a variedade de estados: mesa privada, tabuleiro, rolagem, venda de propriedade, falta de dinheiro e placar. A galeria é histórica; usei-a para mapear apresentações, e as capturas da Steam para comparar a mesa pública atual.
+- A tela de entrada estava com a cena 3D muito apagada e os modos apresentados como abas sublinhadas. Aumentei a presença e a saturação do tabuleiro ao fundo e transformei os modos em cartões selecionáveis, mantendo texto e controles próprios.
+- Revisei capturas no Google Chrome headless em 1440 × 900 e 390 × 844. A mesa e os peões ficaram mais visíveis no desktop; em celular, o formulário e os dois modos couberam na largura da tela sem corte horizontal aparente.
+- Capturas revisadas: `/tmp/banco-visual-audit-before.png`, `/tmp/banco-visual-audit-after-desktop.png` e `/tmp/banco-visual-audit-after-mobile.png`. O Chrome usou renderização WebGL por software neste ambiente.
+- A validação cobre a tela de entrada; lobby e estados da partida não foram alterados nesta revisão.
+
 ## 2026-10-28 — Segundo balanço dos objetivos Express
 
 - A simulação anterior de 80 partidas indicou baixa ocorrência para completar grupos, construir e possuir duas estações. Substituí essas metas por quatro propriedades, uma estação, receber/pagar aluguel, tirar uma carta e cruzar a Partida; as duas metas mais simples de posse foram mantidas.

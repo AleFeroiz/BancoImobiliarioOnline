@@ -373,3 +373,22 @@ button:disabled{opacity:.55;cursor:not-allowed}
 .screen-game .player-card.active{border-top-color:#efc864;border-right-color:#efc864;border-bottom-color:#efc864;box-shadow:0 0 0 2px rgba(235,194,91,.28),0 10px 26px rgba(56,76,54,.2);transform:translateY(-1px)}
 .screen-game .player-avatar.player-0{background:#ce7558}.screen-game .player-avatar.player-1{background:#4e9da7}.screen-game .player-avatar.player-2{background:#9170aa}.screen-game .player-avatar.player-3{background:#d1a33e}
 .screen-game .game-pill.clock-warning{background:#fff1dd;border-color:#c27455;color:#934d37}
+
+/* A entrada mostra mais da mesa e apresenta os modos como escolhas de jogo. */
+.screen-home{background:radial-gradient(ellipse at 82% 44%,rgba(235,216,156,.38),transparent 39%),#dce7d9}
+.screen-home .scene-backdrop{inset:0 0 0 25%;opacity:.86;filter:saturate(1.2) contrast(1.07)}
+.screen-home .scene-backdrop:after{background:linear-gradient(90deg,#dce7d9 0%,rgba(220,231,217,.96) 19%,rgba(220,231,217,.7) 42%,rgba(220,231,217,.08) 78%),linear-gradient(0deg,rgba(220,231,217,.2),transparent 34%)}
+.screen-home .mode-switch{gap:9px;border:0;max-width:430px}
+.screen-home .mode-tab{flex:1;min-height:56px;margin:0;padding:10px 13px;border:1px solid rgba(86,117,83,.24);border-radius:12px;background:rgba(255,255,246,.57);color:#718071}
+.screen-home .mode-tab small{color:#7c8e7c}
+.screen-home .mode-tab.selected{border-color:#d2ad53;background:#fff8e4;color:#354d3c;box-shadow:0 5px 14px rgba(125,103,49,.12)}
+.screen-home .mode-tab.selected:after{display:none}
+.screen-home .primary-button{background:linear-gradient(115deg,#588b61,#71a36e);box-shadow:0 8px 20px rgba(73,123,75,.25)}
+.screen-home .primary-button:hover{background:linear-gradient(115deg,#477950,#60945f)}
+.screen-home .entry-card{border-color:rgba(190,171,115,.54);box-shadow:0 22px 55px rgba(56,75,51,.2)}
+@media(max-width:640px){
+  .screen-home .scene-backdrop{inset:27% -35% 14% 8%;opacity:.6;filter:saturate(1.18) contrast(1.06)}
+  .screen-home .scene-backdrop:after{background:linear-gradient(180deg,rgba(220,231,217,.25),rgba(220,231,217,.74) 78%),linear-gradient(90deg,rgba(220,231,217,.65),rgba(220,231,217,.12))}
+  .screen-home .mode-switch{gap:7px}
+  .screen-home .mode-tab{min-height:50px;padding:8px 9px}
+}
