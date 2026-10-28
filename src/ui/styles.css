@@ -97,10 +97,6 @@ button:disabled{opacity:.55;cursor:not-allowed}
 .roll-button span{font-size:9px;line-height:1.2}
 .secondary-action{min-height:34px;padding:0 10px;border:1px solid #d1d7c8;border-radius:8px;background:#edf0e2;color:#4d614f;font-size:9px;font-weight:700}
 .secondary-action:hover{background:#e2e8d7}
-.auction-info{display:flex;justify-content:space-between;align-items:center;margin:10px 0;color:#647568;font-size:10px}
-.auction-info strong{color:#8b7240;font-size:17px}
-.auction-actions{display:grid;grid-template-columns:minmax(70px,1fr) auto auto;gap:6px}
-.auction-actions input{min-width:0;height:35px;padding:0 9px;border:1px solid #d1d7c8;border-radius:8px;background:#fffef7;color:#33483a;font-size:10px}
 .build-actions{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:9px}
 .build-actions>span{grid-column:1/-1;color:#839078;font-size:7px;letter-spacing:.13em}
 .build-actions .secondary-action{min-width:0;padding:5px 7px;font-size:8px}
@@ -118,8 +114,6 @@ button:disabled{opacity:.55;cursor:not-allowed}
   .player-hud{grid-template-columns:repeat(2,minmax(0,1fr))}
   .player-card b{font-size:8px}
   .turn-card{margin:auto 0 8vh}
-  .auction-actions{grid-template-columns:minmax(60px,1fr) auto auto}
-  .auction-actions .secondary-action{padding:0 7px}
 }
 .portfolio-toggle{min-height:32px;padding:0 12px;border:1px solid #d1d7c8;border-radius:999px;background:rgba(250,248,237,.9);color:#4d614f;font-size:9px;font-weight:700;letter-spacing:.03em}
 .portfolio-toggle:hover{background:#edf0e2}
@@ -395,3 +389,43 @@ button:disabled{opacity:.55;cursor:not-allowed}
   .screen-home .mode-switch{gap:7px}
   .screen-home .mode-tab{min-height:50px;padding:8px 9px}
 }
+
+/* A mesa aceita toque e clique; o painel mantém os detalhes legíveis em DOM. */
+.screen-game .scene-backdrop{pointer-events:auto}
+.screen-game .scene-backdrop:after{pointer-events:none}
+.screen-game .scene-backdrop canvas{pointer-events:auto}
+.space-inspector{position:absolute;z-index:2;top:50%;left:22px;width:min(250px,23vw);padding:15px 16px;border:1px solid rgba(168,149,86,.48);border-radius:16px;background:rgba(255,252,239,.97);box-shadow:0 14px 36px rgba(47,67,48,.2);color:#2f4439;pointer-events:auto;transform:translateY(-50%);animation:space-inspector-enter .18s ease-out both}
+.space-inspector .trade-close{position:absolute;top:8px;right:8px}
+.space-inspector .turn-label{display:block;padding-right:22px;color:#92703a;font-size:8px;letter-spacing:.11em}
+.space-inspector h2{margin:7px 22px 8px 0;font-family:'Playfair Display',serif;font-size:18px;line-height:1.15}
+.space-inspector p{margin:10px 0 0;color:#647568;font-size:10px;line-height:1.45}
+.space-owner-line{display:flex;align-items:center;gap:7px;color:#50634f;font-size:10px}
+.space-owner-line i{width:10px;height:10px;border:1px solid rgba(51,70,52,.18);border-radius:50%}
+.space-facts{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:11px}
+.space-facts>div,.purchase-summary>div{display:grid;gap:4px;padding:8px;border-radius:9px;background:#f0f1e3}
+.space-facts small,.purchase-summary small{color:#788373;font-size:7px;font-weight:700;letter-spacing:.08em}
+.space-facts strong{color:#344b3a;font-size:11px}
+.purchase-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:7px 0 10px}
+.purchase-summary>div{padding:7px 8px}
+.purchase-summary strong{color:#354b39;font-size:9px;line-height:1.2}
+.purchase-actions{display:flex;flex:1;gap:7px;min-width:0}
+.purchase-actions>*{flex:1;min-width:0}
+.purchase-actions .roll-button{display:flex;align-items:center;justify-content:center;gap:5px}
+.purchase-actions .secondary-action{white-space:nowrap}
+@keyframes space-inspector-enter{from{opacity:0;translate:-6px 0}to{opacity:1;translate:0 0}}
+@media(max-width:900px){
+  .space-inspector{left:13px;width:min(230px,25vw)}
+}
+@media(max-width:640px){
+  .space-inspector{top:auto;right:10px;bottom:116px;left:10px;width:auto;max-height:30vh;overflow-y:auto;padding:11px 13px;transform:none}
+  .space-inspector h2{font-size:16px;margin-bottom:5px}
+  .space-inspector p{font-size:9px;margin-top:7px}
+  .space-facts{margin-top:8px}
+  .space-facts>div{padding:6px}
+  .purchase-summary{grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;margin:5px 0 8px}
+  .purchase-summary>div{padding:6px}
+  .purchase-summary strong{font-size:8px}
+  .purchase-actions{gap:5px}
+  .purchase-actions .roll-button,.purchase-actions .secondary-action{padding:0 7px;font-size:8px}
+}
+@media(prefers-reduced-motion:reduce){.space-inspector{animation:none}}

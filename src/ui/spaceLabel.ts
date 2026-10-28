@@ -16,3 +16,19 @@ export function wrapSpaceLabel(name: string, maxWidth: number, measureText: (tex
   if (currentLine) lines.push(currentLine)
   return lines
 }
+
+export function fitSpaceLabel(
+  name: string,
+  maxWidth: number,
+  measureText: (text: string, fontSize: number) => number,
+  preferredFontSize = 260,
+  minimumFontSize = 160,
+) {
+  let fontSize = preferredFontSize
+  let lines = wrapSpaceLabel(name, maxWidth, (text) => measureText(text, fontSize))
+  while (lines.length > 3 && fontSize > minimumFontSize) {
+    fontSize = Math.max(minimumFontSize, fontSize - 12)
+    lines = wrapSpaceLabel(name, maxWidth, (text) => measureText(text, fontSize))
+  }
+  return { fontSize, lines }
+}

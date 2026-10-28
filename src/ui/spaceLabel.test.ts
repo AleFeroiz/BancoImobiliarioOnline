@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { wrapSpaceLabel } from './spaceLabel'
+import { boardSpaces } from '../game/board'
+import { fitSpaceLabel, wrapSpaceLabel } from './spaceLabel'
 
 describe('quebra de nomes nas casas 3D', () => {
   const measureByCharacter = (text: string) => text.length * 10
@@ -16,5 +17,13 @@ describe('quebra de nomes nas casas 3D', () => {
     expect(wrapSpaceLabel('Parque Municipal das Palmeiras', 100, measureByCharacter)).toEqual([
       'PARQUE', 'MUNICIPAL', 'DAS', 'PALMEIRAS',
     ])
+  })
+
+  it('mantém os rótulos de todas as casas em até três linhas legíveis', () => {
+    for (const space of boardSpaces) {
+      const fitted = fitSpaceLabel(space.name, 900, (text, fontSize) => text.length * fontSize * 0.56)
+      expect(fitted.lines.length, space.name).toBeLessThanOrEqual(3)
+      expect(fitted.fontSize, space.name).toBeGreaterThanOrEqual(160)
+    }
   })
 })

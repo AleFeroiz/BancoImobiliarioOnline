@@ -4,8 +4,6 @@ export type DiceRoll = readonly [number, number]
 
 export const STARTING_CASH = 1_500_000
 export const START_BONUS = 200_000
-export const AUCTION_SECONDS = 20
-export const AUCTION_MIN_INCREMENT = 10_000
 export const PROPERTY_BUILD_LEVELS = 5
 export const JAIL_FINE = 50_000
 export const MAX_JAIL_ATTEMPTS = 3

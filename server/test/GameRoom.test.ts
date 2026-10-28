@@ -353,7 +353,7 @@ describe('sala privada', () => {
     expect(room.state.players.get(host.sessionId)!.cash).toBe(hostCashBeforeRejection)
   })
 
-  it('compra uma propriedade livre ou abre leilão público quando a compra é recusada', async () => {
+  it('permite recusar uma propriedade sem dono e deixa o imóvel livre para a próxima vez', async () => {
     const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
     const host = await colyseus.connectTo(room, { name: 'Ana' })
     const guest = await colyseus.connectTo(room, { name: 'Bia' })
@@ -387,19 +387,15 @@ describe('sala privada', () => {
     const buyer = clients.get(buyerId)!
     buyer.send('declinePurchase')
     await new Promise((resolve) => setTimeout(resolve, 30))
-    expect(room.state.turnPhase).toBe('auction')
-    expect(room.state.auctionSeconds).toBe(20)
-
-    const other = clients.get(buyerId === host.sessionId ? guest.sessionId : host.sessionId)!
-    const otherCashBeforeBid = room.state.players.get(other.sessionId)!.cash
-    other.send('bid', { amount: 10_000 })
-    await new Promise((resolve) => setTimeout(resolve, 30))
-    expect(room.state.auctionHighestBid).toBe(10_000)
-    buyer.send('auctionPass')
-    await new Promise((resolve) => setTimeout(resolve, 30))
     expect(room.state.turnPhase).toBe('resolve')
-    expect(room.state.properties.get(String(propertyId))?.ownerSessionId).toBe(other.sessionId)
-    expect(room.state.players.get(other.sessionId)!.cash).toBe(otherCashBeforeBid - 10_000)
+    expect(room.state.properties.get(String(propertyId))?.ownerSessionId ?? '').toBe('')
+    expect(room.state.pendingPropertyId).toBe(255)
+    expect(room.state.activePlayerSessionId).toBe(buyerId)
+
+    buyer.send('finishTurn')
+    await new Promise((resolve) => setTimeout(resolve, 30))
+    expect(room.state.activePlayerSessionId).not.toBe(buyerId)
+    expect(room.state.properties.get(String(propertyId))?.ownerSessionId ?? '').toBe('')
   })
 
   it('valida construções no servidor, cobra o custo e distribui casas igualmente', async () => {

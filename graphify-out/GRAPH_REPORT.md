@@ -1,17 +1,17 @@
 # Graph Report - BancoImobiliario  (2026-10-28)
 
 ## Corpus Check
-- 51 files · ~32,289 words
+- 54 files · ~33,225 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 4 file(s) not represented in the graph (top: (none) 2, .example 1, .css 1)
 
 ## Summary
-- 413 nodes · 682 edges · 25 communities (24 shown, 1 thin omitted)
+- 416 nodes · 690 edges · 26 communities (24 shown, 2 thin omitted)
 - Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS · INFERRED: 1 edges (avg confidence: 0.85)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `a60a91ca`
+- Built from commit: `ea4568e7`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -41,16 +41,17 @@
 - react
 - vite
 - engines
+- responsiveResults.test.ts
 
 ## God Nodes (most connected - your core abstractions)
-1. `Validação visual e de navegador` - 36 edges
-2. `GameRoom` - 35 edges
-3. `App()` - 26 edges
+1. `Validação visual e de navegador` - 37 edges
+2. `GameRoom` - 32 edges
+3. `App()` - 28 edges
 4. `compilerOptions` - 18 edges
-5. `compilerOptions` - 15 edges
-6. `vitest` - 14 edges
-7. `compilerOptions` - 12 edges
-8. `boardSpaces` - 11 edges
+5. `vitest` - 15 edges
+6. `compilerOptions` - 15 edges
+7. `boardSpaces` - 12 edges
+8. `compilerOptions` - 12 edges
 9. `scripts` - 10 edges
 10. `Regras do jogo` - 9 edges
 
@@ -69,27 +70,27 @@
 ## Import Cycles
 - None detected.
 
-## Communities (25 total, 1 thin omitted)
+## Communities (26 total, 2 thin omitted)
 
 ### Community 0 - "App.tsx"
-Cohesion: 0.07
-Nodes (29): @colyseus/sdk@^0.18.8, @colyseus/sdk, vitest, PropertyHolding, GameMode, LobbyPlayer, LobbyStatus, formatMoney() (+21 more)
+Cohesion: 0.08
+Nodes (27): @colyseus/sdk@^0.18.8, @colyseus/sdk, calculateRent(), taxForSpace(), GameMode, LobbyPlayer, LobbyStatus, App() (+19 more)
 
 ### Community 1 - "devDependencies"
 Cohesion: 0.12
 Nodes (16): devDependencies, @colyseus/testing@^0.18.6, @colyseus/tools@^0.18.11, husky@^9.1.7, tsx@^4.23.15, @types/node@^24.19.2, @types/react@^19.1.10, typescript@~5.8.3 (+8 more)
 
 ### Community 2 - "GameRoom"
-Cohesion: 0.11
+Cohesion: 0.12
 Nodes (5): createRoomCode(), GameRoom, LobbyPlayerState, isGameMode(), normalizePlayerName()
 
 ### Community 3 - "Validação visual e de navegador"
-Cohesion: 0.06
-Nodes (36): 2026-10-27 — Chrome: cartas Sorte ou Revés e prisão, 2026-10-27 — Chrome: dívida, sala e layout responsivo, 2026-10-27 — Chrome: estado de construções, 2026-10-27 — Chrome: hipoteca, resgate e carteira, 2026-10-27 — Chrome: sala, entrada de jogador e primeira compra, 2026-10-27 — Encerramento Express e placar final, 2026-10-27 — Lobby de sala, 2026-10-27 — Negociação entre participantes (+28 more)
+Cohesion: 0.05
+Nodes (37): 2026-10-27 — Chrome: cartas Sorte ou Revés e prisão, 2026-10-27 — Chrome: dívida, sala e layout responsivo, 2026-10-27 — Chrome: estado de construções, 2026-10-27 — Chrome: hipoteca, resgate e carteira, 2026-10-27 — Chrome: sala, entrada de jogador e primeira compra, 2026-10-27 — Encerramento Express e placar final, 2026-10-27 — Lobby de sala, 2026-10-27 — Negociação entre participantes (+29 more)
 
 ### Community 4 - "GameRoom.test.ts"
-Cohesion: 0.08
-Nodes (49): PrivateObjectiveState, LobbyState, PropertyState, BoardSpace, boardSpaces, colorGroups, properties, SpaceKind (+41 more)
+Cohesion: 0.09
+Nodes (45): vitest, PrivateObjectiveState, LobbyState, PropertyState, boardSpaces, colorGroups, properties, specialSpaces (+37 more)
 
 ### Community 5 - "Regras do jogo"
 Cohesion: 0.05
@@ -112,8 +113,8 @@ Cohesion: 0.12
 Nodes (15): jobs, verify, name, on, pull_request, push, branches, branches (+7 more)
 
 ### Community 10 - "BoardScene.tsx"
-Cohesion: 0.23
-Nodes (10): positionOnBoard(), Board(), BoardScene(), playerColors, PropertyBuilding, ResponsiveCamera(), SpaceLabel(), CameraFraming (+2 more)
+Cohesion: 0.14
+Nodes (17): BoardSpace, SpaceKind, formatMoney(), positionOnBoard(), BoardScene, AnimatedPawn(), Board(), BoardScene() (+9 more)
 
 ### Community 11 - "compilerOptions"
 Cohesion: 0.14
@@ -168,22 +169,22 @@ Cohesion: 0.67
 Nodes (3): engines, node, npm
 
 ## Knowledge Gaps
-- **1 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **2 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `GameRoom` connect `GameRoom` to `GameRoom.test.ts`, `app.config.ts`?**
-  _High betweenness centrality (0.061) - this node is a cross-community bridge._
+  _High betweenness centrality (0.055) - this node is a cross-community bridge._
 - **Should `App.tsx` be split into smaller, more focused modules?**
-  _Cohesion score 0.07092198581560284 - nodes in this community are weakly interconnected._
-- **Why does `vitest` connect `App.tsx` to `devDependencies`, `BoardScene.tsx`, `GameRoom.test.ts`, `package.json`?**
-  _High betweenness centrality (0.047) - this node is a cross-community bridge._
+  _Cohesion score 0.07716701902748414 - nodes in this community are weakly interconnected._
+- **Why does `vitest` connect `GameRoom.test.ts` to `App.tsx`, `devDependencies`, `package.json`, `BoardScene.tsx`, `responsiveResults.test.ts`?**
+  _High betweenness centrality (0.048) - this node is a cross-community bridge._
 - **Should `devDependencies` be split into smaller, more focused modules?**
   _Cohesion score 0.125 - nodes in this community are weakly interconnected._
 - **Why does `@colyseus/core` connect `app.config.ts` to `GameRoom.test.ts`, `package.json`?**
-  _High betweenness centrality (0.030) - this node is a cross-community bridge._
+  _High betweenness centrality (0.027) - this node is a cross-community bridge._
 - **Should `GameRoom` be split into smaller, more focused modules?**
-  _Cohesion score 0.11379800853485064 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.11596638655462185 - nodes in this community are weakly interconnected._
 - **Should `Validação visual e de navegador` be split into smaller, more focused modules?**
-  _Cohesion score 0.05555555555555555 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.05405405405405406 - nodes in this community are weakly interconnected._
