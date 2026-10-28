@@ -44,10 +44,6 @@ export const LobbyState = schema({
   activeCardTitle: t.string().default(''),
   activeCardDescription: t.string().default(''),
   pendingPropertyId: t.uint8().default(255),
-  auctionPropertyId: t.uint8().default(255),
-  auctionHighestBid: t.int32().default(0),
-  auctionHighestBidderSessionId: t.string().default(''),
-  auctionSeconds: t.uint8().default(0),
   debtAmount: t.int32().default(0),
   debtCreditorSessionId: t.string().default(''),
   debtReason: t.string().default(''),
@@ -60,6 +56,13 @@ export const LobbyState = schema({
   tradeOfferCashRequested: t.int32().default(0),
   tradeOfferPropertiesOffered: t.string().default(''),
   tradeOfferPropertiesRequested: t.string().default(''),
+  auctionId: t.uint32().default(0),
+  auctionPropertyId: t.uint8().default(255),
+  auctionSellerSessionId: t.string().default(''),
+  auctionStartingBid: t.int32().default(0),
+  auctionHighestBid: t.int32().default(0),
+  auctionHighestBidderSessionId: t.string().default(''),
+  auctionSeconds: t.uint8().default(0),
 })
 
 export type LobbyState = SchemaType<typeof LobbyState>

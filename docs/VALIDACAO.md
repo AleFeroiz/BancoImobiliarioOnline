@@ -1,5 +1,21 @@
 # Validação visual e de navegador
 
+> As entradas anteriores registram testes da versão existente naquele dia. A escolha ao cair em uma propriedade livre continua sendo **comprar ou não comprar**; leilão é uma ação voluntária separada para vender um título que o jogador já possui.
+
+## 2026-10-28 — Leilão voluntário entre jogadores
+
+- Em uma sala local com dois clientes no Chromium integrado, comprei Rua das Palmeiras por R$ 120.000 e abri a carteira. O dono escolheu R$ 120.000 como lance inicial e iniciou o leilão mesmo com outro jogador fora da vez.
+- O segundo cliente viu o nome do vendedor, o imóvel, o preço inicial, o contador e o campo de lance. Deu o lance mínimo; o valor foi reservado do saldo durante os segundos restantes e, ao terminar, a propriedade passou para o licitante e o vendedor recebeu o valor.
+- A carteira mostra os controles de hipoteca e lance inicial sem esconder o tabuleiro. O painel de disputa cabe no viewport, usa a mesma identidade visual leve da HUD e é recolhível.
+- A suíte completa valida também lance superado com devolução do valor reservado, permanência da hipoteca no título transferido, lance proibido do vendedor, início fora da vez e bloqueio de imóvel livre ou com construções no grupo.
+
+## 2026-10-28 — Recusa de compra e leitura das casas
+
+- No navegador interno, abri uma sala local com duas conexões, iniciei uma partida Clássico e caí em Lago Sereno. A tela apresentou preço, aluguel inicial, custo por nível e as ações “Comprar” e “Não comprar”. Recusei: o imóvel continuou livre, o texto confirmou a escolha e “Concluir vez” ficou disponível.
+- Cliquei numa casa distante no tabuleiro. O inspetor DOM mostrou o nome completo, dono, preço, aluguel e custo de construção; em um imóvel livre, o aluguel exibido corresponde à renda base.
+- Aumentei o tamanho e o contraste dos nomes impressos no tabuleiro, removi os preços redundantes e apliquei filtragem anisotrópica para reduzir o borrão em perspectiva. A revisão foi no Chromium integrado em 1280 × 720; Chrome do sistema, Firefox, celular, casas coloridas após compra e construções 3D ainda precisam de revisão visual dedicada.
+- Testes automatizados da regra de recusa e do caminho de animação são executados pela suíte completa; o build também valida o componente da cena 3D.
+
 ## 2026-10-28 — Referências de Business Tour e entrada da mesa
 
 - Consultei a [página oficial da Steam](https://store.steampowered.com/app/397900/Business_Tour__Board_Game_with_Online_Multiplayer/), a [galeria Interface In Game](https://interfaceingame.com/games/business-tour/) e a [listagem de capturas do SteamDB](https://steamdb.info/app/397900/screenshots/). A página e a galeria mostram a variedade de estados: mesa privada, tabuleiro, rolagem, venda de propriedade, falta de dinheiro e placar. A galeria é histórica; usei-a para mapear apresentações, e as capturas da Steam para comparar a mesa pública atual.

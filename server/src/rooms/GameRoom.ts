@@ -2,7 +2,7 @@ import { randomInt } from 'node:crypto'
 import { CloseCode, Client, Room } from '@colyseus/core'
 import type { GameMode } from '../../../shared/lobby.js'
 import { isGameMode, normalizePlayerName } from '../../../shared/lobby.js'
-import { AUCTION_MIN_INCREMENT, AUCTION_SECONDS, CLASSIC_MATCH_SECONDS, EXPRESS_PHASE_SECONDS, EXPRESS_ROUNDS, JAIL_FINE, START_BONUS, STARTING_CASH, buildingSaleValue, calculateNetWorth, calculateRent, canBuildProperty, canMortgageProperty, canRedeemMortgage, canSellBuilding, constructionCost, describeLanding, hasLiquidatableAssets, mortgageRedemptionCost, mortgageValue, movePosition, resolveJailAttempt, taxForSpace } from '../../../shared/game.js'
+import { AUCTION_DURATION_SECONDS, AUCTION_MIN_BID_INCREMENT, CLASSIC_MATCH_SECONDS, EXPRESS_PHASE_SECONDS, EXPRESS_ROUNDS, JAIL_FINE, START_BONUS, STARTING_CASH, buildingSaleValue, calculateNetWorth, calculateRent, canBuildProperty, canMortgageProperty, canRedeemMortgage, canSellBuilding, constructionCost, describeLanding, hasLiquidatableAssets, mortgageRedemptionCost, mortgageValue, movePosition, resolveJailAttempt, taxForSpace } from '../../../shared/game.js'
 import { boardSpaces } from '../../../shared/board.js'
 import { EVENT_CARDS } from '../../../shared/cards.js'
 import { EMPTY_OBJECTIVE_ACTIVITY, EXPRESS_OBJECTIVES, getExpressObjectiveProgress, type ExpressObjectiveId, type ExpressObjectiveUpdate, type ObjectiveActivity } from '../../../shared/objectives.js'
@@ -33,11 +33,11 @@ function createRoomCode() {
 export class GameRoom extends Room<{ state: LobbyState }> {
   maxClients = 4
   state = new LobbyState()
-  private auctionInterval?: ReturnType<typeof setInterval>
-  private auctionPassed = new Set<string>()
   private tradeInterval?: ReturnType<typeof setInterval>
+  private auctionInterval?: ReturnType<typeof setInterval>
   private matchClockInterval?: ReturnType<typeof setInterval>
   private tradeOfferSequence = 0
+  private auctionSequence = 0
   private privateObjectives = new Map<string, PrivateObjectiveState>()
   private expressActivity = new Map<string, ObjectiveActivity>()
   private expiredReconnections = new Set<string>()
@@ -112,14 +112,11 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       this.state.activeCardTitle = ''
       this.state.activeCardDescription = ''
       this.state.pendingPropertyId = 255
-      this.state.auctionPropertyId = 255
-      this.state.auctionHighestBid = 0
-      this.state.auctionHighestBidderSessionId = ''
-      this.state.auctionSeconds = 0
       this.state.debtAmount = 0
       this.state.debtCreditorSessionId = ''
       this.state.debtReason = ''
       this.state.winnerSessionId = ''
+      this.clearAuction(false)
       this.startTradeWindow()
       this.startMatchClock()
       this.broadcast('game:started', { mode: this.state.mode })
@@ -167,7 +164,11 @@ export class GameRoom extends Room<{ state: LobbyState }> {
     },
     declinePurchase: (client: Client) => {
       if (this.state.status !== 'playing' || this.state.turnPhase !== 'purchase' || client.sessionId !== this.state.activePlayerSessionId) return
-      this.startAuction(this.state.pendingPropertyId)
+      const space = boardSpaces[this.state.pendingPropertyId]
+      this.state.pendingPropertyId = 255
+      this.state.turnPhase = 'resolve'
+      this.state.landingDescription = space ? `${space.name} continua sem dono. Você escolheu não comprar.` : 'Você escolheu não comprar; a propriedade continua livre.'
+      this.finishExpiredPhaseIfReady()
     },
     build: (client: Client, payload: { propertyId?: unknown }) => {
       if (this.state.status !== 'playing' || this.state.turnPhase !== 'resolve' || client.sessionId !== this.state.activePlayerSessionId) return
@@ -331,30 +332,6 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       this.state.turnPhase = 'roll'
       this.state.landingDescription = `Fiança paga: ${JAIL_FINE.toLocaleString('pt-BR')}. Role os dados para avançar.`
     },
-    bid: (client: Client, payload: { amount?: unknown }) => {
-      if (this.state.status !== 'playing' || this.state.turnPhase !== 'auction') return
-      const player = this.state.players.get(client.sessionId)
-      const amount = typeof payload?.amount === 'number' ? Math.floor(payload.amount) : 0
-      const minimum = this.state.auctionHighestBid === 0 ? AUCTION_MIN_INCREMENT : this.state.auctionHighestBid + AUCTION_MIN_INCREMENT
-      if (!player || player.isBankrupt || player.cash < amount || amount < minimum || !Number.isSafeInteger(amount)) {
-        client.send('room:error', { message: `O lance mínimo é ${minimum.toLocaleString('pt-BR')} e precisa caber no seu saldo.` })
-        return
-      }
-      this.state.auctionHighestBid = amount
-      this.state.auctionHighestBidderSessionId = client.sessionId
-      this.auctionPassed.delete(client.sessionId)
-      this.state.landingDescription = `${player.name} ofereceu ${amount.toLocaleString('pt-BR')} no leilão.`
-    },
-    auctionPass: (client: Client) => {
-      if (this.state.status !== 'playing' || this.state.turnPhase !== 'auction') return
-      if (!this.state.players.has(client.sessionId) || this.state.players.get(client.sessionId)?.isBankrupt) return
-      if (client.sessionId === this.state.auctionHighestBidderSessionId) return
-      this.auctionPassed.add(client.sessionId)
-      const allOtherPlayersPassed = Array.from(this.state.players.keys())
-        .filter((sessionId) => sessionId !== this.state.auctionHighestBidderSessionId && !this.state.players.get(sessionId)?.isBankrupt)
-        .every((sessionId) => this.auctionPassed.has(sessionId))
-      if (allOtherPlayersPassed) this.finishAuction()
-    },
     tradeOffer: (client: Client, payload: {
       toSessionId?: unknown
       cashOffered?: unknown
@@ -368,6 +345,10 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       }
       if (this.state.tradeOfferId > 0) {
         client.send('room:error', { message: 'Já existe uma oferta de troca aguardando resposta.' })
+        return
+      }
+      if (this.state.auctionId > 0) {
+        client.send('room:error', { message: 'Aguarde o leilão atual terminar antes de propor uma troca.' })
         return
       }
       const sender = this.state.players.get(client.sessionId)
@@ -468,6 +449,94 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       }
       this.clearTradeOffer()
       this.state.landingDescription = 'A proposta de troca foi cancelada.'
+    },
+    auctionStart: (client: Client, payload: { propertyId?: unknown; startingBid?: unknown }) => {
+      if (this.state.status !== 'playing' || ['purchase', 'debt'].includes(this.state.turnPhase)) {
+        client.send('room:error', { message: 'Aguarde a resolução da compra ou dívida para abrir um leilão.' })
+        return
+      }
+      if (this.state.auctionId > 0 || this.state.tradeOfferId > 0) {
+        client.send('room:error', { message: 'Finalize a negociação atual antes de abrir um leilão.' })
+        return
+      }
+      const seller = this.state.players.get(client.sessionId)
+      const propertyId = typeof payload?.propertyId === 'number' ? payload.propertyId : -1
+      const startingBid = payload?.startingBid
+      const property = this.state.properties.get(String(propertyId))
+      const space = boardSpaces[propertyId]
+      if (!seller || seller.isBankrupt || !seller.isConnected || !property || property.ownerSessionId !== client.sessionId) {
+        client.send('room:error', { message: 'Você só pode leiloar um imóvel próprio enquanto estiver ativo.' })
+        return
+      }
+      if (typeof startingBid !== 'number' || !Number.isSafeInteger(startingBid)
+        || startingBid < AUCTION_MIN_BID_INCREMENT || startingBid > MAX_SCHEMA_CASH
+        || seller.cash + startingBid > MAX_SCHEMA_CASH) {
+        client.send('room:error', { message: 'Defina um lance inicial de pelo menos R$ 10.000 e dentro do limite de saldo.' })
+        return
+      }
+      if (!space || space.kind !== 'property' || !this.canTradeTitle(propertyId, client.sessionId)) {
+        client.send('room:error', { message: 'Venda as construções do grupo antes de leiloar esse imóvel.' })
+        return
+      }
+      this.auctionSequence = (this.auctionSequence % MAX_SCHEMA_CASH) + 1
+      this.state.auctionId = this.auctionSequence
+      this.state.auctionPropertyId = propertyId
+      this.state.auctionSellerSessionId = client.sessionId
+      this.state.auctionStartingBid = startingBid
+      this.state.auctionHighestBid = 0
+      this.state.auctionHighestBidderSessionId = ''
+      this.state.auctionSeconds = AUCTION_DURATION_SECONDS
+      this.startAuctionClock()
+    },
+    auctionBid: (client: Client, payload: { auctionId?: unknown; amount?: unknown }) => {
+      const amount = payload?.amount
+      const auctionId = payload?.auctionId
+      const bidder = this.state.players.get(client.sessionId)
+      const seller = this.state.players.get(this.state.auctionSellerSessionId)
+      if (this.state.status !== 'playing' || auctionId !== this.state.auctionId || this.state.auctionSeconds <= 0
+        || client.sessionId === this.state.auctionSellerSessionId || !bidder || bidder.isBankrupt || !bidder.isConnected) {
+        client.send('room:error', { message: 'Este leilão não está disponível para você.' })
+        return
+      }
+      if (['purchase', 'debt'].includes(this.state.turnPhase)) {
+        client.send('room:error', { message: 'Aguarde a resolução da compra ou dívida para dar um lance.' })
+        return
+      }
+      const minimumBid = this.state.auctionHighestBid > 0
+        ? this.state.auctionHighestBid + AUCTION_MIN_BID_INCREMENT
+        : this.state.auctionStartingBid
+      if (typeof amount !== 'number' || !Number.isSafeInteger(amount) || amount < minimumBid || amount > MAX_SCHEMA_CASH) {
+        client.send('room:error', { message: `O próximo lance deve ser de pelo menos ${minimumBid.toLocaleString('pt-BR')}.` })
+        return
+      }
+      if (!seller || seller.isBankrupt || seller.cash + amount > MAX_SCHEMA_CASH) {
+        client.send('room:error', { message: 'O vendedor não pode receber esse valor no momento.' })
+        return
+      }
+      const isCurrentBidder = this.state.auctionHighestBidderSessionId === client.sessionId
+      const additionalCash = isCurrentBidder ? amount - this.state.auctionHighestBid : amount
+      if (bidder.cash < additionalCash) {
+        client.send('room:error', { message: 'Seu saldo disponível não cobre esse lance.' })
+        return
+      }
+      if (this.state.auctionHighestBid > 0 && !isCurrentBidder) {
+        const previousBidder = this.state.players.get(this.state.auctionHighestBidderSessionId)
+        if (previousBidder) previousBidder.cash = Math.min(MAX_SCHEMA_CASH, previousBidder.cash + this.state.auctionHighestBid)
+      }
+      bidder.cash -= additionalCash
+      this.state.auctionHighestBid = amount
+      this.state.auctionHighestBidderSessionId = client.sessionId
+    },
+    auctionCancel: (client: Client, payload: { auctionId?: unknown }) => {
+      if (payload?.auctionId !== this.state.auctionId || client.sessionId !== this.state.auctionSellerSessionId) {
+        client.send('room:error', { message: 'Só quem iniciou o leilão pode cancelá-lo.' })
+        return
+      }
+      if (this.state.auctionHighestBid > 0) {
+        client.send('room:error', { message: 'O leilão não pode ser cancelado depois do primeiro lance.' })
+        return
+      }
+      this.clearAuction(true)
     },
     finishTurn: (client: Client) => {
       if (this.state.status !== 'playing' || this.state.turnPhase !== 'resolve') return
@@ -620,10 +689,11 @@ export class GameRoom extends Room<{ state: LobbyState }> {
   private expireExpressPhase() {
     if (this.state.status !== 'playing' || this.state.mode !== 'express') return
     if (this.state.turnPhase === 'purchase') {
-      this.startAuction(this.state.pendingPropertyId)
-      return
-    }
-    if (this.state.turnPhase === 'auction') {
+      const space = boardSpaces[this.state.pendingPropertyId]
+      this.state.pendingPropertyId = 255
+      this.state.turnPhase = 'resolve'
+      this.state.landingDescription = `${space?.name ?? 'A propriedade'} permaneceu livre; a compra expirou.`
+      this.advanceTurn()
       return
     }
     if (this.state.turnPhase === 'debt') return
@@ -644,10 +714,12 @@ export class GameRoom extends Room<{ state: LobbyState }> {
   private stopClocks() {
     this.stopMatchClock()
     this.stopTradeWindow()
+    this.clearAuction(true)
   }
 
   private finishMatch(forcedWinnerSessionId?: string) {
     if (this.state.status === 'ended') return
+    this.clearAuction(true)
     const activePlayers = Array.from(this.state.players.entries()).filter(([, player]) => !player.isBankrupt)
     const holdings = this.getHoldings()
     const ranked = activePlayers.map(([sessionId, player]) => ({
@@ -716,6 +788,65 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       }
       this.state.tradeSeconds -= 1
     }, 1000)
+  }
+
+  private startAuctionClock() {
+    this.stopAuctionClock()
+    this.auctionInterval = setInterval(() => {
+      if (this.state.status !== 'playing' || this.state.auctionId === 0) {
+        this.stopAuctionClock()
+        return
+      }
+      if (this.state.auctionSeconds > 1) {
+        this.state.auctionSeconds -= 1
+        return
+      }
+      this.finishAuction()
+    }, 1000)
+  }
+
+  private stopAuctionClock() {
+    if (this.auctionInterval) clearInterval(this.auctionInterval)
+    this.auctionInterval = undefined
+  }
+
+  private clearAuction(refundHighestBid: boolean) {
+    this.stopAuctionClock()
+    if (refundHighestBid && this.state.auctionHighestBid > 0) {
+      const bidder = this.state.players.get(this.state.auctionHighestBidderSessionId)
+      if (bidder) bidder.cash = Math.min(MAX_SCHEMA_CASH, bidder.cash + this.state.auctionHighestBid)
+    }
+    this.state.auctionId = 0
+    this.state.auctionPropertyId = 255
+    this.state.auctionSellerSessionId = ''
+    this.state.auctionStartingBid = 0
+    this.state.auctionHighestBid = 0
+    this.state.auctionHighestBidderSessionId = ''
+    this.state.auctionSeconds = 0
+  }
+
+  private finishAuction() {
+    const propertyId = this.state.auctionPropertyId
+    const sellerSessionId = this.state.auctionSellerSessionId
+    const bidderSessionId = this.state.auctionHighestBidderSessionId
+    const bid = this.state.auctionHighestBid
+    const seller = this.state.players.get(sellerSessionId)
+    const bidder = this.state.players.get(bidderSessionId)
+    const property = this.state.properties.get(String(propertyId))
+    if (bid > 0 && seller && bidder && !seller.isBankrupt && !bidder.isBankrupt
+      && property?.ownerSessionId === sellerSessionId && seller.cash + bid <= MAX_SCHEMA_CASH) {
+      property.ownerSessionId = bidderSessionId
+      seller.cash += bid
+      this.clearAuction(false)
+      this.state.landingDescription = `${bidder.name} venceu o leilão de ${boardSpaces[propertyId].name} por ${bid.toLocaleString('pt-BR')}.`
+      this.refreshExpressObjective(sellerSessionId)
+      this.refreshExpressObjective(bidderSessionId)
+      return
+    }
+    this.clearAuction(true)
+    this.state.landingDescription = bid > 0
+      ? 'O leilão foi encerrado sem transferência; o lance reservado foi devolvido.'
+      : 'O leilão terminou sem lances; o imóvel continua com o dono.'
   }
 
   private advanceTurn() {
@@ -791,6 +922,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
     this.state.debtCreditorSessionId = creditorSessionId
     this.state.debtReason = reason
     this.state.turnPhase = 'debt'
+    this.clearAuction(true)
     const creditor = this.state.players.get(creditorSessionId)
     this.state.landingDescription += ` Dívida de ${amount.toLocaleString('pt-BR')} ${creditor ? `com ${creditor.name}` : 'com o banco'}. Venda construções ou hipoteque imóveis para pagar.`
   }
@@ -858,53 +990,6 @@ export class GameRoom extends Room<{ state: LobbyState }> {
     }
   }
 
-  private startAuction(propertyId: number) {
-    this.clearAuctionTimer()
-    this.state.turnPhase = 'auction'
-    this.state.auctionPropertyId = propertyId
-    this.state.pendingPropertyId = 255
-    this.state.auctionHighestBid = 0
-    this.state.auctionHighestBidderSessionId = ''
-    this.state.auctionSeconds = AUCTION_SECONDS
-    this.auctionPassed.clear()
-    this.state.landingDescription = 'Leilão aberto. Lance ou passe; o maior lance leva a propriedade.'
-    this.auctionInterval = setInterval(() => {
-      if (this.state.turnPhase !== 'auction') return this.clearAuctionTimer()
-      this.state.auctionSeconds = Math.max(0, this.state.auctionSeconds - 1)
-      if (this.state.auctionSeconds === 0) this.finishAuction()
-    }, 1000)
-  }
-
-  private finishAuction() {
-    this.clearAuctionTimer()
-    const propertyId = this.state.auctionPropertyId
-    const bidder = this.state.players.get(this.state.auctionHighestBidderSessionId)
-    const amount = this.state.auctionHighestBid
-    const space = boardSpaces[propertyId]
-    if (bidder && space && bidder.cash >= amount && amount > 0) {
-      bidder.cash -= amount
-      const property = new PropertyState()
-      property.ownerSessionId = this.state.auctionHighestBidderSessionId
-      this.state.properties.set(String(propertyId), property)
-      this.state.landingDescription = `${space.name} arrematada por ${bidder.name} por ${amount.toLocaleString('pt-BR')}.`
-      this.refreshExpressObjective(this.state.auctionHighestBidderSessionId)
-    } else if (space) {
-      this.state.landingDescription = `O leilão de ${space.name} terminou sem lances.`
-    }
-    this.state.turnPhase = 'resolve'
-    this.state.auctionPropertyId = 255
-    this.state.auctionHighestBid = 0
-    this.state.auctionHighestBidderSessionId = ''
-    this.state.auctionSeconds = 0
-    this.auctionPassed.clear()
-    this.finishExpiredPhaseIfReady()
-  }
-
-  private clearAuctionTimer() {
-    if (this.auctionInterval) clearInterval(this.auctionInterval)
-    this.auctionInterval = undefined
-  }
-
   onLeave(client: Client) {
     const player = this.state.players.get(client.sessionId)
     if (this.state.status === 'playing' && player && !player.isConnected) {
@@ -920,15 +1005,6 @@ export class GameRoom extends Room<{ state: LobbyState }> {
           this.state.pendingPropertyId = 255
           this.state.turnPhase = 'resolve'
           skipDescription = `${player.name} desconectou antes de decidir a compra; a propriedade fica livre.`
-        } else if (this.state.turnPhase === 'auction') {
-          this.clearAuctionTimer()
-          this.state.auctionPropertyId = 255
-          this.state.auctionHighestBid = 0
-          this.state.auctionHighestBidderSessionId = ''
-          this.state.auctionSeconds = 0
-          this.auctionPassed.clear()
-          this.state.turnPhase = 'resolve'
-          skipDescription = `${player.name} desconectou durante o leilão; ele foi encerrado sem venda.`
         } else {
           skipDescription = `${player.name} desconectou; sua vez foi pulada.`
         }
@@ -967,7 +1043,6 @@ export class GameRoom extends Room<{ state: LobbyState }> {
   }
 
   async onDispose() {
-    this.clearAuctionTimer()
     this.stopClocks()
     await this.presence.srem(ROOM_CODES_CHANNEL, this.roomId)
   }

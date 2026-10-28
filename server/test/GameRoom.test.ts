@@ -353,7 +353,7 @@ describe('sala privada', () => {
     expect(room.state.players.get(host.sessionId)!.cash).toBe(hostCashBeforeRejection)
   })
 
-  it('compra uma propriedade livre ou abre leilão público quando a compra é recusada', async () => {
+  it('permite recusar uma propriedade sem dono e deixa o imóvel livre para a próxima vez', async () => {
     const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
     const host = await colyseus.connectTo(room, { name: 'Ana' })
     const guest = await colyseus.connectTo(room, { name: 'Bia' })
@@ -387,19 +387,86 @@ describe('sala privada', () => {
     const buyer = clients.get(buyerId)!
     buyer.send('declinePurchase')
     await new Promise((resolve) => setTimeout(resolve, 30))
-    expect(room.state.turnPhase).toBe('auction')
-    expect(room.state.auctionSeconds).toBe(20)
-
-    const other = clients.get(buyerId === host.sessionId ? guest.sessionId : host.sessionId)!
-    const otherCashBeforeBid = room.state.players.get(other.sessionId)!.cash
-    other.send('bid', { amount: 10_000 })
-    await new Promise((resolve) => setTimeout(resolve, 30))
-    expect(room.state.auctionHighestBid).toBe(10_000)
-    buyer.send('auctionPass')
-    await new Promise((resolve) => setTimeout(resolve, 30))
     expect(room.state.turnPhase).toBe('resolve')
-    expect(room.state.properties.get(String(propertyId))?.ownerSessionId).toBe(other.sessionId)
-    expect(room.state.players.get(other.sessionId)!.cash).toBe(otherCashBeforeBid - 10_000)
+    expect(room.state.properties.get(String(propertyId))?.ownerSessionId ?? '').toBe('')
+    expect(room.state.pendingPropertyId).toBe(255)
+    expect(room.state.activePlayerSessionId).toBe(buyerId)
+
+    buyer.send('finishTurn')
+    await new Promise((resolve) => setTimeout(resolve, 30))
+    expect(room.state.activePlayerSessionId).not.toBe(buyerId)
+    expect(room.state.properties.get(String(propertyId))?.ownerSessionId ?? '').toBe('')
+  })
+
+  it('permite ao dono iniciar leilão fora da vez, reserva lances e transfere o título ao maior lance', async () => {
+    const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
+    const host = await colyseus.connectTo(room, { name: 'Ana' })
+    const seller = await colyseus.connectTo(room, { name: 'Bia' })
+    const bidder = await colyseus.connectTo(room, { name: 'Caio' })
+    const started = Promise.all([
+      new Promise<void>((resolve) => host.onMessage('game:started', () => resolve())),
+      new Promise<void>((resolve) => seller.onMessage('game:started', () => resolve())),
+      new Promise<void>((resolve) => bidder.onMessage('game:started', () => resolve())),
+    ])
+    host.send('start')
+    await started
+
+    const title = new PropertyState()
+    title.ownerSessionId = seller.sessionId
+    title.isMortgaged = true
+    room.state.properties.set('1', title)
+    seller.send('auctionStart', { propertyId: 1, startingBid: 120_000 })
+    await waitFor(() => room.state.auctionId > 0)
+    expect(room.state.activePlayerSessionId).toBe(host.sessionId)
+    expect(room.state.auctionStartingBid).toBe(120_000)
+
+    const sellerBidError = new Promise<{ message: string }>((resolve) => seller.onMessage('room:error', resolve))
+    seller.send('auctionBid', { auctionId: room.state.auctionId, amount: 120_000 })
+    await expect(sellerBidError).resolves.toMatchObject({ message: expect.stringContaining('não está disponível') })
+
+    const hostCash = room.state.players.get(host.sessionId)!.cash
+    host.send('auctionBid', { auctionId: room.state.auctionId, amount: 120_000 })
+    await waitFor(() => room.state.auctionHighestBidderSessionId === host.sessionId)
+    expect(room.state.players.get(host.sessionId)!.cash).toBe(hostCash - 120_000)
+    bidder.send('auctionBid', { auctionId: room.state.auctionId, amount: 130_000 })
+    await waitFor(() => room.state.auctionHighestBidderSessionId === bidder.sessionId)
+    expect(room.state.players.get(host.sessionId)!.cash).toBe(hostCash)
+    expect(room.state.players.get(bidder.sessionId)!.cash).toBe(STARTING_CASH - 130_000)
+
+    room.state.auctionSeconds = 1
+    await waitFor(() => room.state.auctionId === 0, 1800)
+    expect(room.state.properties.get('1')).toMatchObject({ ownerSessionId: bidder.sessionId, isMortgaged: true })
+    expect(room.state.players.get(seller.sessionId)!.cash).toBe(STARTING_CASH + 130_000)
+    expect(room.state.players.get(bidder.sessionId)!.cash).toBe(STARTING_CASH - 130_000)
+  })
+
+  it('não permite leiloar imóvel livre ou título cujo grupo ainda tem construções', async () => {
+    const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
+    const host = await colyseus.connectTo(room, { name: 'Duda' })
+    const guest = await colyseus.connectTo(room, { name: 'Eva' })
+    const started = Promise.all([
+      new Promise<void>((resolve) => host.onMessage('game:started', () => resolve())),
+      new Promise<void>((resolve) => guest.onMessage('game:started', () => resolve())),
+    ])
+    host.send('start')
+    await started
+    const unownedMessage = new Promise<{ message: string }>((resolve) => host.onMessage('room:error', resolve))
+    host.send('auctionStart', { propertyId: 1, startingBid: 50_000 })
+    await expect(unownedMessage).resolves.toMatchObject({ message: expect.stringContaining('imóvel próprio') })
+
+    const title = new PropertyState()
+    title.ownerSessionId = host.sessionId
+    room.state.properties.set('1', title)
+    const sibling = boardSpaces.find((space) => space.kind === 'property' && space.color === boardSpaces[1].color && space.id !== 1)!
+    const builtSibling = new PropertyState()
+    builtSibling.ownerSessionId = host.sessionId
+    builtSibling.houses = 1
+    room.state.properties.set(String(sibling.id), builtSibling)
+    const builtMessage = new Promise<{ message: string }>((resolve) => host.onMessage('room:error', resolve))
+    host.send('auctionStart', { propertyId: 1, startingBid: 50_000 })
+    await expect(builtMessage).resolves.toMatchObject({ message: expect.stringContaining('Venda as construções') })
+    expect(room.state.auctionId).toBe(0)
+    expect(room.state.properties.get('1')?.ownerSessionId).toBe(host.sessionId)
   })
 
   it('valida construções no servidor, cobra o custo e distribui casas igualmente', async () => {
