@@ -18,6 +18,22 @@ A apresentação é mais saturada e caricata que a direção atual deste projeto
 
 Nas capturas de rolagem, a ação usa dados grandes no vazio do centro e uma mensagem curta de contexto. Nas telas de dívida, a atenção passa para o alvo selecionável e para as opções necessárias para continuar. No placar, o resultado ocupa a frente sem apagar por completo a mesa. Na sala privada, participantes, avatar e estado de preparação são os elementos mais imediatos; controles de configuração ficam agrupados.
 
+### Inventário de telas consultadas
+
+As capturas oficiais da Steam e a galeria histórica permitem observar estados diferentes, não apenas uma tela de partida. A galeria cataloga menu principal, mesa privada, configurações da mesa, tabuleiro ativo, rolagem, escolha de cidade para vender, aviso de dinheiro insuficiente e placar. Isso sugere que a interface deve reaproveitar os mesmos elementos de identidade e posição dos jogadores, mudando o foco conforme a ação atual.
+
+| Estado de referência | Padrão de apresentação observado | Tradução para BancoImobiliarioOnline |
+|---|---|---|
+| Lobby privado | Assentos e avatares identificáveis, código/contexto da mesa e controles de preparação agrupados | Manter os quatro lugares, anfitrião, modo e código juntos; deixar claro quem ainda está aguardando. |
+| Configuração da mesa | Opções de partida aparecem agrupadas numa superfície própria antes do início | Exibir os dois presets e seus parâmetros na criação/lobby, sem misturar regras detalhadas à mesa durante o turno. |
+| Partida ativa | Tabuleiro grande e quadrado em perspectiva; nome, avatar e dinheiro de cada participante nas bordas; controle secundário em coluna curta | Preservar o centro para o tabuleiro, usar cartões de participante compactos nos cantos e evitar transformar a partida em dashboard. |
+| Rolagem | Dados em destaque no espaço central e fala curta de turno | Aumentar a leitura dos dados e mostrar quem está jogando e onde vai parar sem cobrir propriedades. |
+| Escolha de venda/dívida | Contexto da dívida e bens elegíveis recebem prioridade visual; o tabuleiro segue como referência | Realçar os ativos válidos, mostrar o valor devido e manter as ações disponíveis no mesmo painel contextual. |
+| Dinheiro insuficiente | Aviso ligado à ação que falhou, com informação para decidir o próximo passo | Explicar o saldo necessário e oferecer a próxima opção válida, como leilão ou liquidação. |
+| Placar | Resultado e classificação aparecem à frente enquanto a mesa continua visível | Mostrar vencedor, critério de desempate e valores comparados num cartão sobre a cena. |
+
+As capturas atuais da loja Steam são a base principal para a composição do lobby e do tabuleiro. A galeria categorizada do Interface In Game é de 2017 e serve como repertório de estados e transições, não como comprovação do visual atual. Não foi possível confirmar pelas páginas públicas se todos os controles e estados da galeria antiga permanecem iguais na versão atual.
+
 ### Mapeamento das referências para o nosso produto
 
 | Superfície nossa | Padrão observado | Aplicação visual prevista |
@@ -37,11 +53,13 @@ Estas recomendações são uma proposta de direção visual baseada na leitura d
 
 | Estado | Referência | O que observar |
 |---|---|---|
-| Partida normal | [Captura oficial na Steam](https://cdn.cloudflare.steamstatic.com/steam/apps/397900/ss_0a4f490446cb091de93e8eef7b239eb3a530937f.1920x1080.jpg) · [Captura do tabuleiro](https://interfaceingame.com/wp-content/uploads/business-tour/business-tour-board-500x281.png) | Tabuleiro quadrado em perspectiva inclinada no centro; quatro cartões de jogador nos cantos com avatar e saldo; relógio sobre a área do tabuleiro; controles secundários em uma coluna curta na lateral. |
+| Lobby e sala privada | [Captura de lobby na Steam](https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/397900/ss_dda2ba3489344953c2bd7683a92440875153c238.1920x1080.jpg) · [Captura de mesa privada](https://interfaceingame.com/wp-content/uploads/business-tour/business-tour-private-table-500x281.png) | Assentos, identidade dos participantes e preparação da mesa são lidos de imediato. A captura Steam é referência recente da apresentação; a galeria é histórica. |
+| Partida normal | [Captura de partida na Steam](https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/397900/ss_0a4f490446cb091de3e8eef7b239eb3a530937f.1920x1080.jpg) · [Captura do tabuleiro](https://interfaceingame.com/wp-content/uploads/business-tour/business-tour-board-500x281.png) | Tabuleiro quadrado em perspectiva inclinada no centro; jogadores nas bordas com avatar e saldo; controles de apoio compactos. O relógio e os dados não devem competir com a leitura das casas. |
 | Rolagem | [Dados e mensagem de turno](https://interfaceingame.com/wp-content/uploads/business-tour/business-tour-rolling-dice-500x281.png) | Dados grandes no espaço negativo central e fala curta perto do jogador ativo; o evento aparece onde o olhar já está, sem substituir o HUD. |
-| Decisão durante dívida | [Escolher propriedade para vender](https://interfaceingame.com/wp-content/uploads/business-tour/business-tour-select-a-city-to-sell-500x281.png) | O tabuleiro escurece levemente, a propriedade relevante fica realçada, e um painel central explica saldo, dívida e ações disponíveis. |
+| Configuração da mesa | [Captura de lobby/configuração na Steam](https://cdn.akamai.steamstatic.com/steam/apps/397900/ss_b2bd565345e0f63170a893040fbe129efa3d4f30.1920x1080.jpg) · [Galeria por estado](https://interfaceingame.com/games/business-tour/) | Opções são agrupadas antes da partida. Para nós, o modo e a duração ficam visíveis junto aos assentos e ao botão de iniciar. |
+| Decisão durante dívida | [Escolher propriedade para vender](https://interfaceingame.com/wp-content/uploads/business-tour/business-tour-select-a-city-to-sell-500x281.png) | O tabuleiro escurece levemente, a propriedade relevante fica realçada, e um painel contextual explica saldo, dívida e ações disponíveis. |
 | Resultado | [Placar final](https://interfaceingame.com/wp-content/uploads/business-tour/business-tour-scoreboard-500x281.png) | Cartão de resultado sobre a partida ainda reconhecível, com classificação em tabela e uma ação principal para fechar. |
-| Sala privada | [Captura de sala](https://interfaceingame.com/wp-content/uploads/business-tour/business-tour-private-table-500x281.png) | A preparação da partida continua usando os mesmos retratos, cores e linguagem de mesa vistos na partida. |
+| Menu e opções | [Menu durante a partida](https://interfaceingame.com/wp-content/uploads/business-tour/business-tour-in-game-menu-500x281.png) · [Galeria de estados](https://interfaceingame.com/games/business-tour/) | Pausa, configurações e saída ficam fora do fluxo de decisão do turno, em camadas temporárias. |
 
 As observações acima descrevem as capturas públicas consultadas; não são especificações oficiais do jogo. O padrão de apresentação é consistente: a mesa e a posição dos participantes permanecem legíveis, a vez atual tem um marcador claro e a ação específica aparece junto ao contexto que a motivou.
 
@@ -83,7 +101,9 @@ Na galeria histórica, a interface também está separada por estados de produto
 
 ## Aplicação e limites
 
-O HUD atual já segue a composição principal: jogadores nas bordas, modo/relógio no topo e ação no rodapé. A próxima revisão visual deve concentrar-se em estados contextuais: ligar avisos e dados à casa/jogador que os provocou, destacar o espaço selecionado durante compra/leilão/dívida e apresentar um placar final com o critério de vitória. Esses ajustes devem ser verificados em captura de tela, com tabuleiro visível, em desktop e celular.
+O HUD atual já segue parte da composição principal: jogadores nas bordas, modo/relógio no topo, painel de ação compacto e painéis de imóveis, objetivo e negociação sob demanda. A sala também mostra os lugares e o código. A implementação ainda usa iniciais como avatares e o resultado aparece no mesmo cartão de ação; portanto, retratos/peões visuais originais e uma composição mais forte para o placar são oportunidades de refinamento, sem bloquear o loop.
+
+A próxima revisão visual deve concentrar-se nos estados em que a referência desloca o foco: dados e mensagem curta no centro, casa-alvo claramente realçada durante compra/leilão/dívida, e placar final com classificação e critério. Validar em Chrome e Firefox, nos tamanhos desktop e celular, com capturas em turno normal, rolagem, compra/leilão, dívida e resultado. Se um estado ainda não estiver acessível pela interface de teste, registrar isso como limite de validação.
 
 A tela inicial também deve compartilhar o clima do jogo: fundo claro de feltro, superfícies cor de papel, cores de acento por ação e uma chamada visual para a mesa, evitando uma estética escura de produto editorial que destoe da partida. A marca, a tipografia, os textos e os elementos 3D continuam próprios.
 
