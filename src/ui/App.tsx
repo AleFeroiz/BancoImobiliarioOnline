@@ -3,7 +3,7 @@ import type { Room } from '@colyseus/sdk'
 import type { GameMode, LobbyPlayer } from '../../shared/lobby'
 import BoardScene from './BoardScene'
 import { roomClient } from './roomClient'
-import { scoreCriteria } from './scoreCriteria'
+import { finalScoreMetrics, rankFinalScore, scoreCriteria } from './scoreCriteria'
 import { getLobbyPlayerEntries } from './lobbySnapshot'
 import { canAffordPurchase } from './purchaseActions'
 import { boardSpaces, formatMoney } from '../game/board'
@@ -304,7 +304,7 @@ function App() {
   }
 
   return (
-    <main className={`app-shell screen-${screen}`}>
+    <main className={`app-shell screen-${screen}${screen === 'game' && turnPhase === 'ended' ? ' screen-ended' : ''}`}>
       <div className="scene-backdrop"><BoardScene playerPositions={playerPositions} propertyBuildings={propertyBuildings} highlightedSpaceIds={highlightedSpaceIds} /></div>
       <header className="topbar">
         <button className="brand" onClick={() => { if (room) void leaveRoom(); else setScreen('home') }} aria-label="Voltar ao início">
@@ -456,17 +456,26 @@ function App() {
               {expressObjective.completed && <p className="objective-complete-note">Objetivo cumprido! {formatMoney(expressObjective.rewardAwarded)} adicionados ao saldo. Continue jogando: a vitória é decidida ao fim da partida.</p>}
             </aside>
           ) : (
-            <div className="turn-card">
+            <div className={`turn-card${turnPhase === 'ended' ? ' final-result-card' : ''}`}>
               <span className="turn-label">{turnPhase === 'ended' ? 'PARTIDA ENCERRADA' : turnPhase === 'debt' ? 'DÍVIDA EM ABERTO' : matchEnding ? 'TEMPO ESGOTADO · CONCLUA A JOGADA' : `TURNO ${turnNumber} · ${isMyTurn ? 'SUA VEZ' : `VEZ DE ${activePlayer?.name ?? '…'}`}`}</span>
-              <h2>{turnPhase === 'ended' ? 'Fim de jogo' : turnPhase === 'debt' ? 'Hora de liquidar bens' : activeCardTitle || boardSpaces[pendingPropertyId]?.name || activeSpace.name}</h2>
-              <p>{landingDescription || activeCardDescription || (activeSpace.kind === 'property' ? `Propriedade · ${formatMoney(activeSpace.price ?? 0)}` : 'Aguardando a jogada.')}</p>
+              <h2>{turnPhase === 'ended' ? (roomPlayers.find((player) => player.sessionId === winnerSessionId)?.name ?? 'Partida encerrada') : turnPhase === 'debt' ? 'Hora de liquidar bens' : activeCardTitle || boardSpaces[pendingPropertyId]?.name || activeSpace.name}</h2>
+              {turnPhase !== 'ended' && <p>{landingDescription || activeCardDescription || (activeSpace.kind === 'property' ? `Propriedade · ${formatMoney(activeSpace.price ?? 0)}` : 'Aguardando a jogada.')}</p>}
               {turnPhase === 'ended' ? (
-                <div className="debt-actions"><strong>{winnerSessionId ? `${roomPlayers.find((player) => player.sessionId === winnerSessionId)?.name ?? 'Jogador'} venceu!` : 'Partida encerrada sem vencedor.'}</strong><div className="final-score-list">{roomPlayers.slice().sort((first, second) => {
-                  if (first.sessionId === winnerSessionId) return -1
-                  if (second.sessionId === winnerSessionId) return 1
-                  const primary = mode === 'classic' ? second.finalNetWorth - first.finalNetWorth : second.finalCash - first.finalCash
-                  return primary || second.finalNetWorth - first.finalNetWorth || second.tieBreakRoll - first.tieBreakRoll
-                }).map((player) => <div className={player.sessionId === winnerSessionId ? 'final-score winner' : 'final-score'} key={player.sessionId}><span>{player.name}{player.tieBreakRoll ? ` · dados ${player.tieBreakRoll}` : ''}</span><b>{mode === 'classic' ? formatMoney(player.finalNetWorth) : formatMoney(player.finalCash)}</b></div>)}</div><small>{scoreCriteria(mode)}</small><button className="roll-button" onClick={() => void leaveRoom()}>Voltar ao início</button></div>
+                <div className="final-result-content">
+                  <div className="winner-banner"><span aria-hidden="true">✦</span><strong>{winnerSessionId ? 'VENCEDOR DA PARTIDA' : 'PARTIDA ENCERRADA'}</strong><span aria-hidden="true">✦</span></div>
+                  {winnerSessionId && (() => {
+                    const winner = roomPlayers.find((player) => player.sessionId === winnerSessionId)
+                    if (!winner) return null
+                    const metrics = finalScoreMetrics(mode)
+                    const primaryValue = mode === 'classic' ? winner.finalNetWorth : winner.finalCash
+                    const secondaryValue = mode === 'classic' ? winner.finalCash : winner.finalNetWorth
+                    return <div className="winner-metrics"><div className="winner-primary-metric"><span>{metrics.primaryLabel}</span><strong>{formatMoney(primaryValue)}</strong></div><div><span>{metrics.secondaryLabel}</span><strong>{formatMoney(secondaryValue)}</strong></div></div>
+                  })()}
+                  <div className="final-score-heading"><strong>CLASSIFICAÇÃO</strong><span>{finalScoreMetrics(mode).primaryLabel}</span></div>
+                  <div className="final-score-list">{rankFinalScore(roomPlayers, mode, winnerSessionId).map((player, index) => <div className={player.sessionId === winnerSessionId ? 'final-score winner' : 'final-score'} key={player.sessionId}><span className="final-score-rank">{String(index + 1).padStart(2, '0')}</span><span className="final-score-name">{player.name}{player.tieBreakRoll ? <small>Desempate: {player.tieBreakRoll} nos dados</small> : null}</span><span className="final-score-values"><b>{formatMoney(mode === 'classic' ? player.finalNetWorth : player.finalCash)}</b><small>{formatMoney(mode === 'classic' ? player.finalCash : player.finalNetWorth)} {mode === 'classic' ? 'saldo' : 'patrimônio'}</small></span></div>)}</div>
+                  <small className="final-score-criteria">{scoreCriteria(mode)}</small>
+                  <button className="roll-button" onClick={() => void leaveRoom()}>Voltar ao início <span>↗</span></button>
+                </div>
               ) : turnPhase === 'debt' ? (
                 <div className="debt-actions"><strong>Dívida: {formatMoney(debtAmount)}</strong><p>{debtReason} · credor: {roomPlayers.find((player) => player.sessionId === debtCreditorSessionId)?.name ?? 'banco'}</p><button className="roll-button" onClick={() => room?.send('payDebt')} disabled={!isMyTurn || (localPlayer?.cash ?? 0) < debtAmount}>Pagar dívida <span>{formatMoney(debtAmount)}</span></button><button className="secondary-action" onClick={() => setShowPropertyPanel(true)} disabled={!isMyTurn}>Ver bens para liquidar</button><button className="secondary-action" onClick={() => room?.send('declareBankruptcy')} disabled={!isMyTurn || (localPlayer?.cash ?? 0) >= debtAmount || hasLiquidatableAssets(room?.sessionId ?? '', holdingsById)}>Declarar falência</button></div>
               ) : turnPhase === 'jail' ? <div className="jail-actions"><button className="secondary-action" onClick={() => room?.send('jailRoll')} disabled={!isMyTurn}>Tentar duplas</button><button className="roll-button" onClick={() => room?.send('jailPay')} disabled={!isMyTurn}>Pagar fiança <span>{formatMoney(50_000)}</span></button></div> : turnPhase === 'auction' ? <><div className="auction-info"><span>{auctionHighestBid ? `Maior lance: ${formatMoney(auctionHighestBid)}` : 'Sem lances ainda'}</span><strong>{auctionSeconds}s</strong></div><div className="auction-actions"><input aria-label="Valor do lance" inputMode="numeric" value={bidAmount} onChange={(event) => setBidAmount(event.target.value.replace(/[^0-9]/g, ''))} placeholder="Seu lance" /><button className="roll-button" onClick={() => { room?.send('bid', { amount: Number(bidAmount) }); setBidAmount('') }}>Lance</button><button className="secondary-action" onClick={() => room?.send('auctionPass')}>Passar</button></div></> : <><div className={`dice-row ${turnPhase === 'resolve' || turnPhase === 'purchase' ? 'dice-row-result-shown' : ''}`}><span className="die">{dice[0] || '·'}</span><span className="die">{dice[1] || '·'}</span>{turnPhase === 'roll' ? <button className="roll-button" onClick={() => room?.send('roll')} disabled={!isMyTurn}>Lançar dados <span>↗</span></button> : turnPhase === 'purchase' ? <><button className="roll-button" onClick={() => room?.send('buy')} disabled={!isMyTurn || !canAffordPendingPurchase}>Comprar <span>{formatMoney(pendingPurchasePrice)}</span></button><button className="secondary-action" onClick={() => room?.send('declinePurchase')} disabled={!isMyTurn}>Leilão</button></> : <button className="roll-button" onClick={() => room?.send('finishTurn')} disabled={!isMyTurn}>Concluir vez <span>↗</span></button>}</div>{turnPhase === 'purchase' && !canAffordPendingPurchase && <p className="purchase-hint" role="status">Saldo insuficiente para comprar. Você ainda pode iniciar o leilão.</p>}{turnPhase === 'resolve' && buildOptions.length > 0 && <div className="build-actions" aria-label="Construções disponíveis"><span>CONSTRUIR · 50% DO PREÇO</span>{buildOptions.map((propertyId) => <button key={propertyId} className="secondary-action" onClick={() => room?.send('build', { propertyId })} disabled={!isMyTurn}>Construir em {boardSpaces[propertyId].name} · {formatMoney(constructionCost(propertyId))}</button>)}</div>}</>}

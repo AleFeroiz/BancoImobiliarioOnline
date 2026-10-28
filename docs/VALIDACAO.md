@@ -145,3 +145,11 @@
 - Em 1440 × 813, o tabuleiro permaneceu visível ao lado do painel de liquidação. Em 390 × 844, o painel ocupou a borda inferior e deixou a parte superior do tabuleiro visível; o documento não teve rolagem horizontal.
 - Capturas inspecionadas: `/tmp/banco-debt-desktop-recheck.png` e `/tmp/banco-debt-auto-mobile.png`.
 - Testes unitários verificam construções vendáveis em ordem equilibrada, estações hipotecáveis, bens do adversário e títulos já hipotecados. A suíte completa passou com 74 testes, e os builds do cliente e do servidor passaram.
+
+## 2026-10-28 — Placar final com métricas e classificação
+
+- Concluí uma partida Express real com duas abas Chrome na mesma sala e percorri as seis rodadas. O placar mostrou o vencedor, saldo como critério principal, patrimônio complementar, posições numeradas e a regra de desempate.
+- Em 1440 × 900, o painel ficou centralizado sem rolagem e deixou a mesa visível atrás. Em 390 × 844, o painel coube inteiro, o documento permaneceu sem rolagem horizontal e as duas métricas e posições continuaram legíveis.
+- Capturas inspecionadas: `/tmp/banco-chrome-final-desktop.png` e `/tmp/banco-chrome-final-mobile.png`.
+- `npm run verify`: 79 testes passaram; builds do cliente e servidor passaram. A tentativa inicial dentro do sandbox bloqueou o bind local do teste de sala; a repetição com permissão de rede local concluiu normalmente. O build ainda mostra o aviso conhecido de bundle cliente acima de 500 kB.
+- Esta revisão visual cobre Chrome; não repeti o fluxo final no Firefox nesta mudança.
