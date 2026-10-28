@@ -33,10 +33,10 @@ Como referência de regras clássicas e jogo curto, o [manual oficial do Super B
 - São seis rodadas. Cada pessoa recebe uma fase de 40 segundos por rodada; são cerca de 8 minutos com duas pessoas e 16 com quatro, mais o tempo para resolver leilões ou dívidas pendentes.
 - Cada jogador recebe em segredo uma carta dentre oito objetivos digitais originais, distribuídas sem repetição na mesma sala. O progresso e o conteúdo da carta são enviados somente para a pessoa que a recebeu.
 - Cumprir o objetivo uma vez paga o bônus indicado; o cartão fica marcado como cumprido mesmo que os bens mudem depois. O objetivo não encerra a partida: a vitória continua sendo decidida ao fim das seis rodadas.
-- Baralho inicial para playtest: ter 1 propriedade (+R$ 50.000), ter 3 propriedades (+R$ 100.000), ter 5 propriedades (+R$ 150.000), completar o grupo residencial de menor custo (+R$ 150.000), construir 1 nível (+R$ 75.000), somar 3 níveis de construção (+R$ 150.000), construir um hotel (+R$ 200.000) ou ter 2 estações (+R$ 125.000). Propriedade inclui rua ou estação; níveis de construção são casas ou hotel.
+- Baralho autoral atual para playtest: ter 1 propriedade (+R$ 50.000), ter 3 propriedades (+R$ 100.000), ter 4 propriedades (+R$ 150.000), ter 1 estação (+R$ 75.000), receber aluguel uma vez (+R$ 100.000), pagar aluguel uma vez (+R$ 75.000), comprar uma carta Sorte ou Revés (+R$ 75.000) ou passar pela Partida uma vez (+R$ 75.000). Propriedade inclui rua ou estação. Atividades contam apenas quando o servidor confirma o evento; aluguel em dívida só progride depois da quitação integral. Os objetivos continuam privados, distribuídos sem repetição na sala e concedem o bônus uma única vez.
 - A negociação só ocorre durante as fases de 40 segundos.
 - Ao fim das seis rodadas, vence quem tiver maior saldo em dinheiro. Empate: compara-se patrimônio incluindo valor de liquidação de imóveis e construções; persistindo, decide-se nos dados.
-- Os alvos, bônus e textos deste baralho são autorais e correspondem ao primeiro balanço implementado; devem ser revistos após playtests.
+- Os alvos, bônus e textos são autorais. Este segundo balanço substitui o primeiro depois de uma simulação que mostrou baixa ocorrência para grupos, construções e duas estações. Os valores continuam iniciais e devem ser revistos após playtests com pessoas.
 
 ## Regras compartilhadas
 

@@ -3,12 +3,12 @@ import { boardSpaces } from './board.js'
 export type ExpressObjectiveId =
   | 'own-one-property'
   | 'own-three-properties'
-  | 'own-five-properties'
-  | 'complete-color-group'
-  | 'build-one-level'
-  | 'build-three-levels'
-  | 'build-hotel'
-  | 'own-two-stations'
+  | 'own-four-properties'
+  | 'own-one-station'
+  | 'receive-rent'
+  | 'pay-rent'
+  | 'draw-event-card'
+  | 'pass-start'
 
 export type ExpressObjectiveDefinition = {
   id: ExpressObjectiveId
@@ -26,37 +26,36 @@ export type ExpressObjectiveUpdate = ExpressObjectiveDefinition & {
 
 export type ObjectiveHolding = { ownerSessionId: string; houses: number }
 
-const residentialGroups = Array.from(
-  boardSpaces.filter((space) => space.kind === 'property' && space.buildable).reduce((groups, space) => {
-    const group = groups.get(space.color) ?? []
-    group.push(space.id)
-    groups.set(space.color, group)
-    return groups
-  }, new Map<string, number[]>()),
-  ([color, spaces]) => ({ color, spaces }),
-).sort((first, second) => first.spaces.length - second.spaces.length || first.color.localeCompare(second.color))
+export type ObjectiveActivity = {
+  rentReceived: number
+  rentPaid: number
+  eventCardsDrawn: number
+  startCrossings: number
+}
 
-const easiestColorGroup = residentialGroups.sort((first, second) => {
-  const firstCost = first.spaces.reduce((total, spaceId) => total + (boardSpaces[spaceId]?.price ?? 0), 0)
-  const secondCost = second.spaces.reduce((total, spaceId) => total + (boardSpaces[spaceId]?.price ?? 0), 0)
-  return firstCost - secondCost || first.color.localeCompare(second.color)
-})[0]
+export const EMPTY_OBJECTIVE_ACTIVITY: Readonly<ObjectiveActivity> = {
+  rentReceived: 0,
+  rentPaid: 0,
+  eventCardsDrawn: 0,
+  startCrossings: 0,
+}
 
 export const EXPRESS_OBJECTIVES: readonly ExpressObjectiveDefinition[] = [
   { id: 'own-one-property', title: 'Primeira escritura', description: 'Tenha pelo menos um imóvel ou estação.', target: 1, reward: 50_000 },
   { id: 'own-three-properties', title: 'Pequeno portfólio', description: 'Tenha três imóveis ou estações.', target: 3, reward: 100_000 },
-  { id: 'own-five-properties', title: 'Expansão urbana', description: 'Tenha cinco imóveis ou estações.', target: 5, reward: 150_000 },
-  { id: 'complete-color-group', title: 'Feche um grupo de cor', description: 'Complete o grupo residencial mais barato do tabuleiro.', target: easiestColorGroup?.spaces.length ?? 3, reward: 150_000 },
-  { id: 'build-one-level', title: 'Uma casa para chamar de sua', description: 'Construa ao menos um nível em uma propriedade residencial.', target: 1, reward: 75_000 },
-  { id: 'build-three-levels', title: 'Bairro em crescimento', description: 'Some três níveis de construção nas suas propriedades.', target: 3, reward: 150_000 },
-  { id: 'build-hotel', title: 'Hospedagem completa', description: 'Construa um hotel em uma propriedade residencial.', target: 1, reward: 200_000 },
-  { id: 'own-two-stations', title: 'Conexão entre bairros', description: 'Tenha duas estações.', target: 2, reward: 125_000 },
+  { id: 'own-four-properties', title: 'Expansão urbana', description: 'Tenha quatro imóveis ou estações.', target: 4, reward: 150_000 },
+  { id: 'own-one-station', title: 'Conexão entre bairros', description: 'Tenha uma estação.', target: 1, reward: 75_000 },
+  { id: 'receive-rent', title: 'Renda de aluguel', description: 'Receba aluguel de outro jogador uma vez.', target: 1, reward: 100_000 },
+  { id: 'pay-rent', title: 'Pé na cidade', description: 'Pague aluguel a outro jogador uma vez.', target: 1, reward: 75_000 },
+  { id: 'draw-event-card', title: 'Notícias da cidade', description: 'Tire uma carta Sorte ou Revés.', target: 1, reward: 75_000 },
+  { id: 'pass-start', title: 'Volta completa', description: 'Passe pela Partida uma vez.', target: 1, reward: 75_000 },
 ]
 
 export function getExpressObjectiveProgress(
   objectiveId: ExpressObjectiveId,
   ownerSessionId: string,
   holdings: ReadonlyMap<number, ObjectiveHolding>,
+  activity: Readonly<ObjectiveActivity> = EMPTY_OBJECTIVE_ACTIVITY,
 ) {
   const ownedProperties = boardSpaces.filter((space) => space.kind === 'property'
     && holdings.get(space.id)?.ownerSessionId === ownerSessionId)
@@ -64,18 +63,17 @@ export function getExpressObjectiveProgress(
   switch (objectiveId) {
     case 'own-one-property':
     case 'own-three-properties':
-    case 'own-five-properties':
+    case 'own-four-properties':
       return ownedProperties.length
-    case 'complete-color-group': {
-      if (!easiestColorGroup) return 0
-      return easiestColorGroup.spaces.filter((spaceId) => holdings.get(spaceId)?.ownerSessionId === ownerSessionId).length
-    }
-    case 'build-one-level':
-    case 'build-three-levels':
-      return ownedProperties.reduce((total, space) => total + (holdings.get(space.id)?.houses ?? 0), 0)
-    case 'build-hotel':
-      return ownedProperties.some((space) => (holdings.get(space.id)?.houses ?? 0) >= 5) ? 1 : 0
-    case 'own-two-stations':
+    case 'own-one-station':
       return ownedProperties.filter((space) => !space.buildable).length
+    case 'receive-rent':
+      return activity.rentReceived
+    case 'pay-rent':
+      return activity.rentPaid
+    case 'draw-event-card':
+      return activity.eventCardsDrawn
+    case 'pass-start':
+      return activity.startCrossings
   }
 }

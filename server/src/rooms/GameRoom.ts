@@ -5,7 +5,7 @@ import { isGameMode, normalizePlayerName } from '../../../shared/lobby.js'
 import { AUCTION_MIN_INCREMENT, AUCTION_SECONDS, CLASSIC_MATCH_SECONDS, EXPRESS_PHASE_SECONDS, EXPRESS_ROUNDS, JAIL_FINE, START_BONUS, STARTING_CASH, buildingSaleValue, calculateNetWorth, calculateRent, canBuildProperty, canMortgageProperty, canRedeemMortgage, canSellBuilding, constructionCost, describeLanding, hasLiquidatableAssets, mortgageRedemptionCost, mortgageValue, movePosition, resolveJailAttempt, taxForSpace } from '../../../shared/game.js'
 import { boardSpaces } from '../../../shared/board.js'
 import { EVENT_CARDS } from '../../../shared/cards.js'
-import { EXPRESS_OBJECTIVES, getExpressObjectiveProgress, type ExpressObjectiveId, type ExpressObjectiveUpdate } from '../../../shared/objectives.js'
+import { EMPTY_OBJECTIVE_ACTIVITY, EXPRESS_OBJECTIVES, getExpressObjectiveProgress, type ExpressObjectiveId, type ExpressObjectiveUpdate, type ObjectiveActivity } from '../../../shared/objectives.js'
 import { LobbyPlayerState, LobbyState, PropertyState } from './schema/LobbyState.js'
 
 const ROOM_CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
@@ -39,6 +39,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
   private matchClockInterval?: ReturnType<typeof setInterval>
   private tradeOfferSequence = 0
   private privateObjectives = new Map<string, PrivateObjectiveState>()
+  private expressActivity = new Map<string, ObjectiveActivity>()
 
   async onCreate(options: { mode?: unknown }) {
     const mode: GameMode = isGameMode(options.mode) ? options.mode : 'classic'
@@ -79,6 +80,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
 
       this.state.status = 'playing'
       this.privateObjectives.clear()
+      this.expressActivity.clear()
       this.state.properties.clear()
       for (const player of this.state.players.values()) {
         player.position = 0
@@ -133,10 +135,10 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       const diceTwo = randomInt(1, 7)
       this.state.diceOne = diceOne
       this.state.diceTwo = diceTwo
-      this.movePlayer(player, diceOne + diceTwo)
+      this.movePlayer(client.sessionId, player, diceOne + diceTwo)
       this.state.activeCardTitle = ''
       this.state.activeCardDescription = ''
-      this.resolveSpace(player)
+      this.resolveSpace(client.sessionId, player)
     },
     buy: (client: Client) => {
       if (this.state.status !== 'playing' || this.state.turnPhase !== 'purchase' || client.sessionId !== this.state.activePlayerSessionId) return
@@ -234,13 +236,18 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       const debtor = this.state.players.get(client.sessionId)
       if (!debtor || debtor.cash < this.state.debtAmount) return
       const amount = this.state.debtAmount
-      const creditor = this.state.players.get(this.state.debtCreditorSessionId)
+      const creditorSessionId = this.state.debtCreditorSessionId
+      const creditor = this.state.players.get(creditorSessionId)
       debtor.cash -= amount
       if (creditor && !creditor.isBankrupt) creditor.cash += amount
       const reason = this.state.debtReason
       this.clearDebt()
       this.state.turnPhase = 'resolve'
       this.state.landingDescription = `Dívida paga (${reason}): ${amount.toLocaleString('pt-BR')}.`
+      if (reason === 'Aluguel') {
+        this.recordExpressActivity(client.sessionId, 'rentPaid')
+        if (creditor && !creditor.isBankrupt) this.recordExpressActivity(creditorSessionId, 'rentReceived')
+      }
       this.finishExpiredPhaseIfReady()
     },
     declareBankruptcy: (client: Client) => {
@@ -297,10 +304,10 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       const releaseText = result.outcome === 'doubles'
         ? 'Duplas! Você saiu da prisão.'
         : `Após três tentativas, saiu da prisão e pagou ${result.finePaid.toLocaleString('pt-BR')}.`
-      this.movePlayer(player, dice[0] + dice[1])
+      this.movePlayer(client.sessionId, player, dice[0] + dice[1])
       this.state.activeCardTitle = ''
       this.state.activeCardDescription = ''
-      this.resolveSpace(player)
+      this.resolveSpace(client.sessionId, player)
       this.state.landingDescription = `${releaseText} ${this.state.landingDescription}`
       this.finishExpiredPhaseIfReady()
     },
@@ -482,6 +489,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       const objective = shuffled[index]
       if (!objective) return
       this.privateObjectives.set(sessionId, { id: objective.id, progress: 0, completed: false })
+      this.expressActivity.set(sessionId, { ...EMPTY_OBJECTIVE_ACTIVITY })
       this.sendExpressObjective(sessionId, objective, 0, false, 0)
     })
   }
@@ -493,7 +501,12 @@ export class GameRoom extends Room<{ state: LobbyState }> {
     const objective = EXPRESS_OBJECTIVES.find((candidate) => candidate.id === state?.id)
     if (!state || !player || !objective || player.isBankrupt) return
 
-    const currentProgress = Math.min(objective.target, getExpressObjectiveProgress(objective.id, sessionId, this.getHoldings()))
+    const currentProgress = Math.min(objective.target, getExpressObjectiveProgress(
+      objective.id,
+      sessionId,
+      this.getHoldings(),
+      this.expressActivity.get(sessionId) ?? EMPTY_OBJECTIVE_ACTIVITY,
+    ))
     const progress = state.completed ? objective.target : currentProgress
     const newlyCompleted = !state.completed && progress >= objective.target
     let rewardAwarded = 0
@@ -518,6 +531,14 @@ export class GameRoom extends Room<{ state: LobbyState }> {
     if (!client) return
     const update: ExpressObjectiveUpdate = { ...objective, progress, completed, rewardAwarded }
     client.send('game:objective', update)
+  }
+
+  private recordExpressActivity(sessionId: string, activity: keyof ObjectiveActivity) {
+    if (this.state.mode !== 'express' || this.state.status !== 'playing') return
+    const playerActivity = this.expressActivity.get(sessionId)
+    if (!playerActivity) return
+    playerActivity[activity] += 1
+    this.refreshExpressObjective(sessionId)
   }
 
   private clearDebt() {
@@ -727,11 +748,15 @@ export class GameRoom extends Room<{ state: LobbyState }> {
     this.startTradeWindow()
   }
 
-  private collectPayment(debtor: LobbyPlayerState, amount: number, creditorSessionId: string, reason: string) {
+  private collectPayment(debtorSessionId: string, debtor: LobbyPlayerState, amount: number, creditorSessionId: string, reason: string) {
     if (amount <= debtor.cash) {
       debtor.cash -= amount
       const creditor = this.state.players.get(creditorSessionId)
       if (creditor && !creditor.isBankrupt) creditor.cash += amount
+      if (reason === 'Aluguel') {
+        this.recordExpressActivity(debtorSessionId, 'rentPaid')
+        if (creditor && !creditor.isBankrupt) this.recordExpressActivity(creditorSessionId, 'rentReceived')
+      }
       this.state.landingDescription += ` ${reason}: ${amount.toLocaleString('pt-BR')} pagos${creditor ? ` a ${creditor.name}` : ' ao banco'}.`
       return
     }
@@ -743,10 +768,13 @@ export class GameRoom extends Room<{ state: LobbyState }> {
     this.state.landingDescription += ` Dívida de ${amount.toLocaleString('pt-BR')} ${creditor ? `com ${creditor.name}` : 'com o banco'}. Venda construções ou hipoteque imóveis para pagar.`
   }
 
-  private movePlayer(player: LobbyPlayerState, spaces: number) {
+  private movePlayer(sessionId: string, player: LobbyPlayerState, spaces: number) {
     const previousPosition = player.position
     player.position = movePosition(player.position, [spaces, 0])
-    if (player.position < previousPosition) player.cash += START_BONUS
+    if (player.position < previousPosition) {
+      player.cash += START_BONUS
+      this.recordExpressActivity(sessionId, 'startCrossings')
+    }
   }
 
   private sendToJail(player: LobbyPlayerState) {
@@ -757,7 +785,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
     this.state.turnPhase = 'resolve'
   }
 
-  private resolveSpace(player: LobbyPlayerState, drawEvent = true) {
+  private resolveSpace(sessionId: string, player: LobbyPlayerState, drawEvent = true) {
     const space = boardSpaces[player.position]
     this.state.pendingPropertyId = 255
     this.state.turnPhase = 'resolve'
@@ -774,26 +802,27 @@ export class GameRoom extends Room<{ state: LobbyState }> {
         if (owner && property.isMortgaged) {
           this.state.landingDescription += ` ${space.name} está hipotecada; não há aluguel.`
         } else if (owner) {
-          this.collectPayment(player, rent, property.ownerSessionId, 'Aluguel')
+          this.collectPayment(sessionId, player, rent, property.ownerSessionId, 'Aluguel')
         }
       }
     } else if (space.kind === 'tax') {
       const tax = taxForSpace(space.id)
-      this.collectPayment(player, tax, '', 'Taxa')
+      this.collectPayment(sessionId, player, tax, '', 'Taxa')
     } else if (space.kind === 'go-to-prison') {
       this.sendToJail(player)
       this.state.landingDescription = 'Vá para a prisão: sua peça foi enviada à casa de visita e sua vez termina.'
     } else if (space.kind === 'event' && drawEvent) {
+      this.recordExpressActivity(sessionId, 'eventCardsDrawn')
       const card = EVENT_CARDS[randomInt(EVENT_CARDS.length)]
       this.state.activeCardTitle = card.title
       this.state.activeCardDescription = card.description
       this.state.landingDescription = card.description
       if (card.effect.kind === 'cash') {
-        if (card.effect.amount < 0) this.collectPayment(player, Math.abs(card.effect.amount), '', 'Carta')
+        if (card.effect.amount < 0) this.collectPayment(sessionId, player, Math.abs(card.effect.amount), '', 'Carta')
         else player.cash += card.effect.amount
       } else if (card.effect.kind === 'move') {
-        this.movePlayer(player, card.effect.spaces)
-        this.resolveSpace(player, false)
+        this.movePlayer(sessionId, player, card.effect.spaces)
+        this.resolveSpace(sessionId, player, false)
         this.state.landingDescription = `${card.description} ${this.state.landingDescription}`
       } else {
         this.sendToJail(player)
@@ -851,6 +880,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
 
   onLeave(client: Client) {
     this.privateObjectives.delete(client.sessionId)
+    this.expressActivity.delete(client.sessionId)
     if (this.state.status === 'playing') this.stopClocks()
     this.state.players.delete(client.sessionId)
     if (this.state.status === 'playing') this.state.status = 'waiting'
