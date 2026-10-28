@@ -4,7 +4,7 @@ import { boardSpaces, positionOnBoard } from '../game/board'
 
 const playerColors = ['#e7785f', '#54aec0', '#e7bd62', '#8775bd']
 
-type PropertyBuilding = { spaceId: number; houses: number }
+type PropertyBuilding = { spaceId: number; houses: number; isMortgaged: boolean }
 
 function Board({ playerPositions, propertyBuildings }: { playerPositions: number[]; propertyBuildings: PropertyBuilding[] }) {
   return (
@@ -34,6 +34,7 @@ function Board({ playerPositions, propertyBuildings }: { playerPositions: number
         const corner = space.id % 10 === 0
         const size = corner ? 1.14 : 0.98
         const rotation = space.id <= 10 || space.id >= 30 ? 0 : Math.PI / 2
+        const property = propertyBuildings.find((building) => building.spaceId === space.id)
         return (
           <group key={space.id} position={[x, 0.08, z]} rotation={[0, rotation, 0]}>
             <mesh castShadow receiveShadow>
@@ -48,6 +49,12 @@ function Board({ playerPositions, propertyBuildings }: { playerPositions: number
               <mesh position={[0, 0.19, 0]} rotation={[0, Math.PI / 4, 0]}>
                 <boxGeometry args={[0.32, 0.08, 0.32]} />
                 <meshStandardMaterial color="#d5a956" roughness={0.48} />
+              </mesh>
+            )}
+            {property?.isMortgaged && (
+              <mesh position={[size * 0.3, 0.12, size * 0.2]} rotation={[-Math.PI / 2, 0, 0]}>
+                <circleGeometry args={[0.11, 8]} />
+                <meshStandardMaterial color="#71858a" roughness={0.48} />
               </mesh>
             )}
           </group>

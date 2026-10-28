@@ -4,6 +4,7 @@ import appConfig from '../src/app.config.js'
 import type { LobbyState } from '../src/rooms/schema/LobbyState.js'
 import { PropertyState } from '../src/rooms/schema/LobbyState.js'
 import { boardSpaces } from '../../shared/board.js'
+import { mortgageRedemptionCost, mortgageValue } from '../../shared/game.js'
 
 describe('sala privada', () => {
   let colyseus: ColyseusTestServer<typeof appConfig>
@@ -76,8 +77,12 @@ describe('sala privada', () => {
     const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
     const host = await colyseus.connectTo(room, { name: 'Ana' })
     const guest = await colyseus.connectTo(room, { name: 'Bia' })
+    const started = Promise.all([
+      new Promise<void>((resolve) => host.onMessage('game:started', () => resolve())),
+      new Promise<void>((resolve) => guest.onMessage('game:started', () => resolve())),
+    ])
     host.send('start')
-    await new Promise((resolve) => setTimeout(resolve, 30))
+    await started
 
     const clients = new Map([[host.sessionId, host], [guest.sessionId, guest]])
     let buyerId = ''
@@ -145,6 +150,55 @@ describe('sala privada', () => {
     host.send('build', { propertyId: first.id })
     await expect(unbalancedError).resolves.toMatchObject({ message: expect.stringContaining('distribuição equilibrada') })
     expect(room.state.properties.get(String(first.id))?.houses).toBe(1)
+  })
+
+  it('autoriza hipotecar e resgatar um título somente pelo dono na sua vez', async () => {
+    const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
+    const host = await colyseus.connectTo(room, { name: 'Ana' })
+    const guest = await colyseus.connectTo(room, { name: 'Bia' })
+    const started = Promise.all([
+      new Promise<void>((resolve) => host.onMessage('game:started', () => resolve())),
+      new Promise<void>((resolve) => guest.onMessage('game:started', () => resolve())),
+    ])
+    host.send('start')
+    await started
+
+    const propertyId = 15
+    const property = new PropertyState()
+    property.ownerSessionId = host.sessionId
+    room.state.properties.set(String(propertyId), property)
+    room.state.turnPhase = 'resolve'
+    room.state.activePlayerSessionId = host.sessionId
+    const hostPlayer = room.state.players.get(host.sessionId)!
+    hostPlayer.cash = 100_000
+
+    guest.send('mortgage', { propertyId })
+    await new Promise((resolve) => setTimeout(resolve, 30))
+    expect(property.isMortgaged).toBe(false)
+
+    room.state.activePlayerSessionId = guest.sessionId
+    const notOwnedMortgage = new Promise<{ message: string }>((resolve) => guest.onMessage('room:error', resolve))
+    guest.send('mortgage', { propertyId })
+    await expect(notOwnedMortgage).resolves.toMatchObject({ message: expect.stringContaining('não pode ser hipotecada') })
+    expect(property.isMortgaged).toBe(false)
+
+    room.state.activePlayerSessionId = host.sessionId
+    host.send('mortgage', { propertyId })
+    await new Promise((resolve) => setTimeout(resolve, 30))
+    expect(property.isMortgaged).toBe(true)
+    expect(hostPlayer.cash).toBe(100_000 + mortgageValue(propertyId))
+
+    room.state.activePlayerSessionId = guest.sessionId
+    const unauthorizedRedemption = new Promise<{ message: string }>((resolve) => guest.onMessage('room:error', resolve))
+    guest.send('redeemMortgage', { propertyId })
+    await expect(unauthorizedRedemption).resolves.toMatchObject({ message: expect.stringContaining('ser dono') })
+    expect(property.isMortgaged).toBe(true)
+
+    room.state.activePlayerSessionId = host.sessionId
+    host.send('redeemMortgage', { propertyId })
+    await new Promise((resolve) => setTimeout(resolve, 30))
+    expect(property.isMortgaged).toBe(false)
+    expect(hostPlayer.cash).toBe(100_000 + mortgageValue(propertyId) - mortgageRedemptionCost(propertyId))
   })
 
   it('libera a pessoa presa após cobrar a fiança e permite rolar no mesmo turno', async () => {

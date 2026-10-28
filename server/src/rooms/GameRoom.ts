@@ -2,7 +2,7 @@ import { randomInt } from 'node:crypto'
 import { CloseCode, Client, Room } from '@colyseus/core'
 import type { GameMode } from '../../../shared/lobby.js'
 import { isGameMode, normalizePlayerName } from '../../../shared/lobby.js'
-import { AUCTION_MIN_INCREMENT, AUCTION_SECONDS, JAIL_FINE, START_BONUS, STARTING_CASH, calculateRent, canBuildProperty, constructionCost, describeLanding, movePosition, resolveJailAttempt, taxForSpace } from '../../../shared/game.js'
+import { AUCTION_MIN_INCREMENT, AUCTION_SECONDS, JAIL_FINE, START_BONUS, STARTING_CASH, calculateRent, canBuildProperty, canMortgageProperty, canRedeemMortgage, constructionCost, describeLanding, mortgageRedemptionCost, mortgageValue, movePosition, resolveJailAttempt, taxForSpace } from '../../../shared/game.js'
 import { boardSpaces } from '../../../shared/board.js'
 import { applyCardCashEffect, EVENT_CARDS } from '../../../shared/cards.js'
 import { LobbyPlayerState, LobbyState, PropertyState } from './schema/LobbyState.js'
@@ -145,6 +145,44 @@ export class GameRoom extends Room<{ state: LobbyState }> {
         ? `Hotel construído em ${space.name} por ${cost.toLocaleString('pt-BR')}.`
         : `Casa ${property.houses}/4 construída em ${space.name} por ${cost.toLocaleString('pt-BR')}.`
     },
+    mortgage: (client: Client, payload: { propertyId?: unknown }) => {
+      if (this.state.status !== 'playing' || client.sessionId !== this.state.activePlayerSessionId) return
+      const propertyId = typeof payload?.propertyId === 'number' ? payload.propertyId : -1
+      const player = this.state.players.get(client.sessionId)
+      const property = this.state.properties.get(String(propertyId))
+      const holdings = new Map(Array.from(this.state.properties.entries()).map(([id, item]) => [Number(id), {
+        ownerSessionId: item.ownerSessionId,
+        houses: item.houses,
+        isMortgaged: item.isMortgaged,
+      }]))
+      if (!player || !property || !canMortgageProperty(propertyId, client.sessionId, holdings)) {
+        client.send('room:error', { message: 'Essa propriedade não pode ser hipotecada. Venda as construções do grupo e tente novamente.' })
+        return
+      }
+      const amount = mortgageValue(propertyId)
+      property.isMortgaged = true
+      player.cash += amount
+      this.state.landingDescription = `${boardSpaces[propertyId].name} hipotecada. Você recebeu ${amount.toLocaleString('pt-BR')}; ela não gera aluguel até o resgate.`
+    },
+    redeemMortgage: (client: Client, payload: { propertyId?: unknown }) => {
+      if (this.state.status !== 'playing' || client.sessionId !== this.state.activePlayerSessionId) return
+      const propertyId = typeof payload?.propertyId === 'number' ? payload.propertyId : -1
+      const player = this.state.players.get(client.sessionId)
+      const property = this.state.properties.get(String(propertyId))
+      const holdings = new Map(Array.from(this.state.properties.entries()).map(([id, item]) => [Number(id), {
+        ownerSessionId: item.ownerSessionId,
+        houses: item.houses,
+        isMortgaged: item.isMortgaged,
+      }]))
+      if (!player || !property || !canRedeemMortgage(propertyId, client.sessionId, holdings, player.cash)) {
+        client.send('room:error', { message: 'Você precisa ser dono da propriedade hipotecada e ter saldo para pagar o resgate.' })
+        return
+      }
+      const amount = mortgageRedemptionCost(propertyId)
+      property.isMortgaged = false
+      player.cash -= amount
+      this.state.landingDescription = `Hipoteca de ${boardSpaces[propertyId].name} resgatada por ${amount.toLocaleString('pt-BR')}. O aluguel volta a valer.`
+    },
     jailRoll: (client: Client) => {
       const player = this.state.players.get(client.sessionId)
       if (this.state.status !== 'playing' || this.state.turnPhase !== 'jail' || client.sessionId !== this.state.activePlayerSessionId || !player?.isJailed) return
@@ -251,8 +289,10 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       } else if (property.ownerSessionId !== this.state.activePlayerSessionId) {
         const owner = this.state.players.get(property.ownerSessionId)
         const ownership = new Map(Array.from(this.state.properties.entries()).map(([id, item]) => [Number(id), item.ownerSessionId]))
-        const rent = calculateRent(space.id, ownership, property.houses)
-        if (owner) {
+        const rent = calculateRent(space.id, ownership, property.houses, property.isMortgaged)
+        if (owner && property.isMortgaged) {
+          this.state.landingDescription += ` ${space.name} está hipotecada; não há aluguel.`
+        } else if (owner) {
           const amountPaid = Math.min(player.cash, rent)
           player.cash -= amountPaid
           owner.cash += amountPaid

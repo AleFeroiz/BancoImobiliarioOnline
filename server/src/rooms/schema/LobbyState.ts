@@ -14,6 +14,7 @@ export type LobbyPlayerState = SchemaType<typeof LobbyPlayerState>
 export const PropertyState = schema({
   ownerSessionId: t.string().default(''),
   houses: t.uint8().default(0),
+  isMortgaged: t.boolean().default(false),
 })
 
 export type PropertyState = SchemaType<typeof PropertyState>

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { boardSpaces, positionOnBoard } from './board'
-import { JAIL_FINE, MAX_JAIL_ATTEMPTS, STARTING_CASH, calculateRent, canBuildProperty, constructionCost, describeLanding, movePosition, resolveJailAttempt, taxForSpace } from '../../shared/game'
+import { JAIL_FINE, MAX_JAIL_ATTEMPTS, STARTING_CASH, calculateRent, canBuildProperty, canMortgageProperty, canRedeemMortgage, constructionCost, describeLanding, mortgageRedemptionCost, mortgageValue, movePosition, resolveJailAttempt, taxForSpace } from '../../shared/game'
 import { EVENT_CARDS, applyCardCashEffect } from '../../shared/cards'
 
 describe('tabuleiro', () => {
@@ -97,5 +97,30 @@ describe('tabuleiro', () => {
     expect(resolveJailAttempt([2, 5], 0, 100_000)).toMatchObject({ isJailed: true, jailTurns: 1, move: false, outcome: 'failed' })
     expect(resolveJailAttempt([1, 6], 1, 100_000)).toMatchObject({ isJailed: true, jailTurns: 2, move: false, outcome: 'failed' })
     expect(resolveJailAttempt([1, 2], 2, 20_000)).toMatchObject({ isJailed: false, jailTurns: 0, cash: 0, move: true, outcome: 'forced-release', finePaid: 20_000 })
+  })
+
+  it('calcula hipoteca e resgate, bloqueia aluguel e exige vender construções do grupo', () => {
+    const first = boardSpaces.find((space) => space.kind === 'property' && space.buildable)!
+    const group = boardSpaces.filter((space) => space.kind === 'property' && space.buildable && space.color === first.color)
+    const holdings = new Map(group.map((space) => [space.id, { ownerSessionId: 'p1', houses: 0, isMortgaged: false }]))
+    const principal = Math.floor((first.price ?? 0) * 0.5)
+
+    expect(mortgageValue(first.id)).toBe(principal)
+    expect(mortgageRedemptionCost(first.id)).toBe(Math.ceil(principal * 1.1))
+    const propertyAt220k = boardSpaces.find((space) => space.kind === 'property' && space.price === 220_000)!
+    expect(mortgageValue(propertyAt220k.id)).toBe(110_000)
+    expect(mortgageRedemptionCost(propertyAt220k.id)).toBe(121_000)
+    expect(canMortgageProperty(first.id, 'p1', holdings)).toBe(true)
+    expect(canMortgageProperty(first.id, 'p2', holdings)).toBe(false)
+    expect(canRedeemMortgage(first.id, 'p1', holdings, mortgageRedemptionCost(first.id) - 1)).toBe(false)
+    expect(calculateRent(first.id, new Map([[first.id, 'p1']]), 0, true)).toBe(0)
+
+    holdings.get(group[1].id)!.houses = 1
+    expect(canMortgageProperty(first.id, 'p1', holdings)).toBe(false)
+    holdings.get(group[1].id)!.houses = 0
+    holdings.get(first.id)!.isMortgaged = true
+    expect(canMortgageProperty(first.id, 'p1', holdings)).toBe(false)
+    expect(canRedeemMortgage(first.id, 'p1', holdings, mortgageRedemptionCost(first.id))).toBe(true)
+    expect(canBuildProperty(first.id, 'p1', holdings, 1_000_000)).toBe(false)
   })
 })

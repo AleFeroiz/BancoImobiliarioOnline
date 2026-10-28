@@ -9,8 +9,9 @@ export const AUCTION_MIN_INCREMENT = 10_000
 export const PROPERTY_BUILD_LEVELS = 5
 export const JAIL_FINE = 50_000
 export const MAX_JAIL_ATTEMPTS = 3
+export const MORTGAGE_RATIO = 0.5
 
-export type PropertyHolding = { ownerSessionId: string; houses: number }
+export type PropertyHolding = { ownerSessionId: string; houses: number; isMortgaged?: boolean }
 
 export type JailAttemptResult = {
   isJailed: boolean
@@ -49,9 +50,9 @@ export function describeLanding(spaceId: number) {
   return `${space.name}. ${descriptions[space.kind]}`
 }
 
-export function calculateRent(spaceId: number, ownership: ReadonlyMap<number, string>, houses = 0) {
+export function calculateRent(spaceId: number, ownership: ReadonlyMap<number, string>, houses = 0, isMortgaged = false) {
   const space = boardSpaces[spaceId]
-  if (!space || space.kind !== 'property' || typeof space.price !== 'number') return 0
+  if (!space || space.kind !== 'property' || typeof space.price !== 'number' || isMortgaged) return 0
   const groupSpaces = boardSpaces.filter((candidate) => candidate.kind === 'property' && candidate.buildable && candidate.color === space.color)
   const groupIsComplete = groupSpaces.length > 1 && groupSpaces.every((candidate) => ownership.get(candidate.id) === ownership.get(spaceId))
   const baseRent = Math.max(10_000, Math.floor(space.price * 0.1))
@@ -65,6 +66,43 @@ export function constructionCost(spaceId: number) {
     : 0
 }
 
+export function mortgageValue(spaceId: number) {
+  const space = boardSpaces[spaceId]
+  return space?.kind === 'property' && typeof space.price === 'number'
+    ? Math.floor(space.price * MORTGAGE_RATIO)
+    : 0
+}
+
+export function mortgageRedemptionCost(spaceId: number) {
+  return Math.ceil(mortgageValue(spaceId) * 11 / 10)
+}
+
+export function canMortgageProperty(
+  spaceId: number,
+  ownerSessionId: string,
+  holdings: ReadonlyMap<number, PropertyHolding>,
+) {
+  const space = boardSpaces[spaceId]
+  const holding = holdings.get(spaceId)
+  if (!space || space.kind !== 'property' || !holding || holding.ownerSessionId !== ownerSessionId || holding.isMortgaged) return false
+  if (!space.buildable) return true
+  return !boardSpaces.some((candidate) => {
+    if (candidate.kind !== 'property' || !candidate.buildable || candidate.color !== space.color) return false
+    const groupHolding = holdings.get(candidate.id)
+    return groupHolding?.ownerSessionId === ownerSessionId && groupHolding.houses > 0
+  })
+}
+
+export function canRedeemMortgage(
+  spaceId: number,
+  ownerSessionId: string,
+  holdings: ReadonlyMap<number, PropertyHolding>,
+  cash: number,
+) {
+  const holding = holdings.get(spaceId)
+  return holding?.ownerSessionId === ownerSessionId && holding.isMortgaged === true && cash >= mortgageRedemptionCost(spaceId)
+}
+
 export function canBuildProperty(
   spaceId: number,
   ownerSessionId: string,
@@ -74,9 +112,11 @@ export function canBuildProperty(
   const space = boardSpaces[spaceId]
   const holding = holdings.get(spaceId)
   if (!space || space.kind !== 'property' || !space.buildable || !holding || holding.ownerSessionId !== ownerSessionId) return false
+  if (holding.isMortgaged) return false
   if (holding.houses >= PROPERTY_BUILD_LEVELS || cash < constructionCost(spaceId)) return false
   const groupSpaces = boardSpaces.filter((candidate) => candidate.kind === 'property' && candidate.buildable && candidate.color === space.color)
   if (groupSpaces.length < 2 || !groupSpaces.every((candidate) => holdings.get(candidate.id)?.ownerSessionId === ownerSessionId)) return false
+  if (groupSpaces.some((candidate) => holdings.get(candidate.id)?.isMortgaged)) return false
   const lowestLevel = Math.min(...groupSpaces.map((candidate) => holdings.get(candidate.id)?.houses ?? 0))
   return holding.houses <= lowestLevel
 }

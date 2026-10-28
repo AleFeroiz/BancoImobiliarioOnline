@@ -18,6 +18,7 @@
 | Economia inicial | Cada pessoa começa com R$ 1.500.000; cruzar a Partida concede R$ 200.000. O aluguel base é 10% do preço do imóvel, dobrado ao completar o grupo de cor; o primeiro lance é R$ 10.000 e o incremento mínimo também é R$ 10.000. |
 | Taxas digitais | As quatro casas de taxa cobram R$ 50.000, R$ 75.000, R$ 100.000 e R$ 125.000, respectivamente. Valores autorais para o ritmo rápido e sujeitos a balanceamento por playtest. |
 | Construções | Completar um grupo residencial permite comprar casas equilibradas, no máximo uma casa de diferença entre propriedades. Cada nível custa metade do preço do imóvel; os níveis 1–4 são casas e o nível 5 é hotel. Estações não recebem construções. |
+| Hipotecas | Durante a própria vez, o dono recebe 50% do preço de compra ao hipotecar. O título hipotecado não cobra aluguel. O resgate custa o valor recebido mais 10%; casas/hotéis de todo o grupo precisam ser vendidos antes da hipoteca, e grupo hipotecado não pode receber construções. Disponível nos dois modos. |
 | Sorte ou Revés | O servidor sorteia, com reposição, uma entre oito cartas digitais autorais: três créditos (+R$ 50.000, +R$ 100.000, +R$ 150.000), três cobranças (-R$ 50.000, -R$ 100.000, -R$ 150.000), avançar três casas ou ir para a prisão. |
 | Prisão | Cair em “Vá para a prisão” ou receber a carta leva à casa de visita e encerra a vez. Na vez presa, a pessoa pode pagar R$ 50.000 e rolar ou tentar duplas; falhar encerra a vez. Na terceira tentativa sem duplas, paga o que tiver até o limite da fiança, sai e move com esse resultado. |
 | Negociação | Clássico: durante a vez ativa, em janela de 45 segundos. Express: durante as fases cronometradas de 40 segundos. |
@@ -33,7 +34,7 @@
 ## Detalhes de implementação que ainda serão calibrados
 
 - Valores, nomes e efeitos das 8 cartas de objetivo originais.
-- Balanço da economia do tabuleiro para sustentar partidas nos tempos definidos; os preços de construções começam em metade do preço do imóvel.
+- Balanço da economia do tabuleiro para sustentar partidas nos tempos definidos; as hipotecas começam em 50% do preço com resgate a 110% do valor recebido.
 - Texto e efeitos das oito cartas privadas de objetivo Express e limites de tempo por turno.
 - Detalhes de reconexão/retorno após o prazo de 60 segundos e de saída voluntária.
 - Opções visuais de avatares, cores e acessibilidade.
@@ -50,3 +51,4 @@ A página oficial da Estrela confirma a presença de oito cartas de objetivo e d
 - 2026-10-27: início da produção com a primeira fatia de interface e tabuleiro 3D; a conexão online será ligada ao servidor Colyseus em etapa seguinte.
 - 2026-10-27: definição e implementação inicial de grupos residenciais, casas e hotéis equilibrados; cada nível custa metade do preço do imóvel.
 - 2026-10-27: definição do baralho autoral Sorte ou Revés e das tentativas para sair da prisão.
+- 2026-10-28: definição e implementação de hipotecas por 50% do preço e resgate por 110% do adiantamento.

@@ -107,3 +107,29 @@ button:disabled{opacity:.55;cursor:not-allowed}
   .auction-actions{grid-template-columns:minmax(60px,1fr) auto auto}
   .auction-actions .secondary-action{padding:0 7px}
 }
+.portfolio-toggle{min-height:32px;padding:0 12px;border:1px solid #d1d7c8;border-radius:999px;background:rgba(250,248,237,.9);color:#4d614f;font-size:9px;font-weight:700;letter-spacing:.03em}
+.portfolio-toggle:hover{background:#edf0e2}
+.asset-panel{max-height:min(68vh,560px);display:flex;flex-direction:column}
+.asset-panel-heading{display:flex;justify-content:space-between;align-items:center;gap:12px;color:#778476;font-size:9px}
+.asset-panel h2{margin-bottom:5px}
+.asset-panel>p{margin-bottom:8px}
+.asset-list{display:grid;gap:7px;overflow:auto;overscroll-behavior:contain;padding:2px 2px 2px 0;max-height:min(38vh,330px)}
+.asset-row{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:8px;padding:8px;border:1px solid #e0e3d7;border-radius:10px;background:rgba(237,240,226,.58)}
+.asset-row.mortgaged{background:rgba(226,233,231,.75);border-color:#c7d2ce}
+.asset-info{min-width:0}
+.asset-info strong,.asset-info small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.asset-info strong{font-size:10px}
+.asset-info small{margin-top:3px;color:#829087;font-size:7px;letter-spacing:.09em}
+.asset-row.mortgaged .asset-info small{color:#657b7b}
+.asset-action{display:grid;justify-items:end;gap:3px;min-height:34px;padding:5px 8px;border:1px solid #d1d7c8;border-radius:8px;background:#fffef7;color:#4d614f;font-size:8px;font-weight:700}
+.asset-action:hover:not(:disabled){background:#edf0e2}
+.asset-action b{font-size:8px}
+.asset-note,.asset-empty{color:#819087;font-size:8px;line-height:1.5}
+.asset-note{margin-top:8px}
+@media(max-width:640px){
+  .portfolio-toggle{min-height:30px;padding:0 9px;font-size:8px}
+  .asset-panel{max-height:min(62vh,520px);margin-bottom:4vh}
+  .asset-list{max-height:30vh}
+  .asset-row{gap:5px;padding:6px}
+  .asset-action{padding:4px 6px;font-size:7px}
+}
