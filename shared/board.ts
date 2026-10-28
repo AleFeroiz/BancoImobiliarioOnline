@@ -6,6 +6,7 @@ export type BoardSpace = {
   kind: SpaceKind
   color: string
   price?: number
+  buildable?: boolean
 }
 
 const colorGroups = ['#d66b55', '#e0ad51', '#6da998', '#8295ca', '#c8789a', '#6f9c73', '#53a6bd']
@@ -52,5 +53,6 @@ export const boardSpaces: BoardSpace[] = Array.from({ length: 40 }, (_, id) => {
     kind: 'property',
     color: colorGroups[Math.floor(propertyIndex / 2) % colorGroups.length],
     price,
+    buildable: true,
   }
 })

@@ -2,7 +2,7 @@ import { randomInt } from 'node:crypto'
 import { CloseCode, Client, Room } from '@colyseus/core'
 import type { GameMode } from '../../../shared/lobby.js'
 import { isGameMode, normalizePlayerName } from '../../../shared/lobby.js'
-import { AUCTION_MIN_INCREMENT, AUCTION_SECONDS, START_BONUS, STARTING_CASH, calculateRent, describeLanding, movePosition, taxForSpace } from '../../../shared/game.js'
+import { AUCTION_MIN_INCREMENT, AUCTION_SECONDS, START_BONUS, STARTING_CASH, calculateRent, canBuildProperty, constructionCost, describeLanding, movePosition, taxForSpace } from '../../../shared/game.js'
 import { boardSpaces } from '../../../shared/board.js'
 import { LobbyPlayerState, LobbyState, PropertyState } from './schema/LobbyState.js'
 
@@ -103,7 +103,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
         } else if (property.ownerSessionId !== client.sessionId) {
           const owner = this.state.players.get(property.ownerSessionId)
           const ownership = new Map(Array.from(this.state.properties.entries()).map(([id, item]) => [Number(id), item.ownerSessionId]))
-          const rent = calculateRent(space.id, ownership)
+          const rent = calculateRent(space.id, ownership, property.houses)
           if (owner) {
             const amountPaid = Math.min(player.cash, rent)
             player.cash -= amountPaid
@@ -137,6 +137,28 @@ export class GameRoom extends Room<{ state: LobbyState }> {
     declinePurchase: (client: Client) => {
       if (this.state.status !== 'playing' || this.state.turnPhase !== 'purchase' || client.sessionId !== this.state.activePlayerSessionId) return
       this.startAuction(this.state.pendingPropertyId)
+    },
+    build: (client: Client, payload: { propertyId?: unknown }) => {
+      if (this.state.status !== 'playing' || this.state.turnPhase !== 'resolve' || client.sessionId !== this.state.activePlayerSessionId) return
+      const propertyId = typeof payload?.propertyId === 'number' ? payload.propertyId : -1
+      const player = this.state.players.get(client.sessionId)
+      const property = this.state.properties.get(String(propertyId))
+      if (!player || !property || !canBuildProperty(
+        propertyId,
+        client.sessionId,
+        new Map(Array.from(this.state.properties.entries()).map(([id, item]) => [Number(id), { ownerSessionId: item.ownerSessionId, houses: item.houses }])),
+        player.cash,
+      )) {
+        client.send('room:error', { message: 'Para construir, complete o grupo, respeite a distribuição equilibrada e tenha saldo.' })
+        return
+      }
+      const cost = constructionCost(propertyId)
+      const space = boardSpaces[propertyId]
+      player.cash -= cost
+      property.houses += 1
+      this.state.landingDescription = property.houses === 5
+        ? `Hotel construído em ${space.name} por ${cost.toLocaleString('pt-BR')}.`
+        : `Casa ${property.houses}/4 construída em ${space.name} por ${cost.toLocaleString('pt-BR')}.`
     },
     bid: (client: Client, payload: { amount?: unknown }) => {
       if (this.state.status !== 'playing' || this.state.turnPhase !== 'auction') return

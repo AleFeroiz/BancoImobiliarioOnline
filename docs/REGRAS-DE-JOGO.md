@@ -48,7 +48,9 @@ Como referência de regras clássicas e jogo curto, o [manual oficial do Super B
 - Cada pessoa começa com R$ 1.500.000. Ao cruzar a Partida, recebe R$ 200.000.
 - Ao parar em propriedade livre, a pessoa da vez pode comprar pelo preço impresso no espaço ou recusar e abrir leilão público de 20 segundos. O leilão começa em R$ 10.000, sobe em incrementos mínimos de R$ 10.000 e termina quando todos os demais passam ou o tempo acaba.
 - O aluguel base corresponde a 10% do preço da propriedade, com mínimo de R$ 10.000; completar o grupo de cor dobra esse valor. Se o saldo do pagador for menor, o pagamento atual é limitado ao saldo restante; liquidação e falência estão na próxima parte da implementação.
+- Ao possuir todas as propriedades residenciais de uma cor, o dono pode construir. Cada casa ou hotel custa metade do preço do imóvel e soma 10% desse preço ao aluguel; o bônus de grupo continua valendo. Os níveis 1–4 são casas e o nível 5 substitui as casas por um hotel. A construção deve ficar equilibrada: o nível de um imóvel não pode ultrapassar em mais de um o nível mais baixo do grupo. Estações não recebem casas ou hotéis.
 - As taxas digitais custam R$ 50.000, R$ 75.000, R$ 100.000 e R$ 125.000 nas casas 4, 18, 28 e 38. Os valores são autorais e serão ajustados com playtests.
+- Construções residenciais, equilíbrio de grupo e hotéis são validados no servidor. A cena 3D mostra casas e hotéis quando o estado sincronizado muda.
 
 ## Fora do que está especificado
 

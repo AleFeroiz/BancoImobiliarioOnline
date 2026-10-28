@@ -4,7 +4,9 @@ import { boardSpaces, positionOnBoard } from '../game/board'
 
 const playerColors = ['#e7785f', '#54aec0', '#e7bd62', '#8775bd']
 
-function Board({ playerPositions }: { playerPositions: number[] }) {
+type PropertyBuilding = { spaceId: number; houses: number }
+
+function Board({ playerPositions, propertyBuildings }: { playerPositions: number[]; propertyBuildings: PropertyBuilding[] }) {
   return (
     <group>
       <mesh position={[0, -0.25, 0]} receiveShadow>
@@ -51,6 +53,26 @@ function Board({ playerPositions }: { playerPositions: number[] }) {
           </group>
         )
       })}
+      {propertyBuildings.map(({ spaceId, houses }) => {
+        if (houses < 1) return null
+        const { x, z } = positionOnBoard(spaceId)
+        const rotation = spaceId <= 10 || spaceId >= 30 ? 0 : Math.PI / 2
+        return (
+          <group key={`buildings-${spaceId}`} position={[x, 0.19, z]} rotation={[0, rotation, 0]}>
+            {houses === 5 ? (
+              <group position={[0, 0.08, 0.23]}>
+                <mesh castShadow><boxGeometry args={[0.3, 0.18, 0.22]} /><meshStandardMaterial color="#b8614e" roughness={0.56} /></mesh>
+                <mesh castShadow position={[0, 0.14, 0]}><coneGeometry args={[0.22, 0.16, 4]} /><meshStandardMaterial color="#86493e" roughness={0.62} /></mesh>
+              </group>
+            ) : Array.from({ length: houses }, (_, index) => (
+              <group key={index} position={[(index - 1.5) * 0.17, 0.07, 0.25]}>
+                <mesh castShadow><boxGeometry args={[0.11, 0.11, 0.11]} /><meshStandardMaterial color="#f6ead0" roughness={0.72} /></mesh>
+                <mesh castShadow position={[0, 0.09, 0]}><coneGeometry args={[0.095, 0.09, 4]} /><meshStandardMaterial color="#779675" roughness={0.62} /></mesh>
+              </group>
+            ))}
+          </group>
+        )
+      })}
       {playerPositions.map((position, index) => {
         const color = playerColors[index]
         const { x, z } = positionOnBoard(position)
@@ -79,14 +101,14 @@ function Board({ playerPositions }: { playerPositions: number[] }) {
   )
 }
 
-export default function BoardScene({ playerPositions }: { playerPositions: number[] }) {
+export default function BoardScene({ playerPositions, propertyBuildings }: { playerPositions: number[]; propertyBuildings: PropertyBuilding[] }) {
   return (
     <Canvas camera={{ position: [12.5, 15.5, 15.5], fov: 34 }} shadows dpr={[1, 1.6]}>
       <color attach="background" args={['#b7d8d9']} />
       <fog attach="fog" args={['#b7d8d9', 17, 31]} />
       <ambientLight intensity={1.1} />
       <directionalLight position={[7, 13, 5]} intensity={2.4} castShadow shadow-mapSize={[1024, 1024]} />
-      <Board playerPositions={playerPositions} />
+      <Board playerPositions={playerPositions} propertyBuildings={propertyBuildings} />
       <ContactShadows position={[0, -0.46, 0]} opacity={0.25} scale={18} blur={2.5} far={5} />
     </Canvas>
   )

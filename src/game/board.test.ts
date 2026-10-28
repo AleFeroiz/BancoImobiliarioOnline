@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { boardSpaces, positionOnBoard } from './board'
-import { STARTING_CASH, calculateRent, describeLanding, movePosition, taxForSpace } from '../../shared/game'
+import { STARTING_CASH, calculateRent, canBuildProperty, constructionCost, describeLanding, movePosition, taxForSpace } from '../../shared/game'
 
 describe('tabuleiro', () => {
   it('tem 40 casas com identificadores únicos e em ordem', () => {
@@ -45,6 +45,32 @@ describe('tabuleiro', () => {
     expect(calculateRent(property.id, new Map([[property.id, 'jogador-1']]))).toBe(base)
     expect(calculateRent(property.id, owner)).toBe(base * 2)
     expect(calculateRent(property.id, owner, 2)).toBe(base * 2 + Math.floor((property.price ?? 0) * 0.1) * 2)
+  })
+
+  it('permite construir grupos completos de forma equilibrada até um hotel', () => {
+    const first = boardSpaces.find((space) => space.kind === 'property' && space.buildable)!
+    const group = boardSpaces.filter((space) => space.kind === 'property' && space.buildable && space.color === first.color)
+    const second = group[1]
+    const holdings = new Map(group.map((space) => [space.id, { ownerSessionId: 'p1', houses: 0 }]))
+    const cost = Math.floor((first.price ?? 0) * 0.5)
+
+    expect(constructionCost(first.id)).toBe(cost)
+    expect(canBuildProperty(first.id, 'p1', holdings, 1_000_000)).toBe(true)
+    expect(canBuildProperty(first.id, 'p1', holdings, cost - 1)).toBe(false)
+    expect(canBuildProperty(first.id, 'p1', new Map([[first.id, holdings.get(first.id)!]]), 1_000_000)).toBe(false)
+
+    holdings.get(first.id)!.houses = 1
+    expect(canBuildProperty(first.id, 'p1', holdings, 1_000_000)).toBe(false)
+    expect(canBuildProperty(second.id, 'p1', holdings, 1_000_000)).toBe(true)
+
+    for (const property of group) holdings.get(property.id)!.houses = 4
+    expect(canBuildProperty(first.id, 'p1', holdings, 1_000_000)).toBe(true)
+    holdings.get(first.id)!.houses = 5
+    expect(canBuildProperty(first.id, 'p1', holdings, 1_000_000)).toBe(false)
+    expect(canBuildProperty(second.id, 'p1', holdings, 1_000_000)).toBe(true)
+
+    expect(constructionCost(15)).toBe(0)
+    expect(canBuildProperty(15, 'p1', new Map([[15, { ownerSessionId: 'p1', houses: 0 }]]), 1_000_000)).toBe(false)
   })
 
   it('usa taxas fixas nas quatro casas de taxa', () => {

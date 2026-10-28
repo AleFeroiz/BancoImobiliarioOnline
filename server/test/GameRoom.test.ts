@@ -2,6 +2,8 @@ import { ColyseusTestServer, boot } from '@colyseus/testing'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import appConfig from '../src/app.config.js'
 import type { LobbyState } from '../src/rooms/schema/LobbyState.js'
+import { PropertyState } from '../src/rooms/schema/LobbyState.js'
+import { boardSpaces } from '../../shared/board.js'
 
 describe('sala privada', () => {
   let colyseus: ColyseusTestServer<typeof appConfig>
@@ -113,6 +115,36 @@ describe('sala privada', () => {
     expect(room.state.turnPhase).toBe('resolve')
     expect(room.state.properties.get(String(propertyId))?.ownerSessionId).toBe(other.sessionId)
     expect(room.state.players.get(other.sessionId)!.cash).toBe(otherCashBeforeBid - 10_000)
+  })
+
+  it('valida construções no servidor, cobra o custo e distribui casas igualmente', async () => {
+    const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
+    const host = await colyseus.connectTo(room, { name: 'Ana' })
+    await colyseus.connectTo(room, { name: 'Bia' })
+    host.send('start')
+    await new Promise((resolve) => setTimeout(resolve, 30))
+
+    const first = boardSpaces.find((space) => space.kind === 'property' && space.buildable)!
+    const group = boardSpaces.filter((space) => space.kind === 'property' && space.buildable && space.color === first.color)
+    for (const space of group) {
+      const property = new PropertyState()
+      property.ownerSessionId = host.sessionId
+      room.state.properties.set(String(space.id), property)
+    }
+    room.state.turnPhase = 'resolve'
+    room.state.activePlayerSessionId = host.sessionId
+    const cost = Math.floor((first.price ?? 0) * 0.5)
+    const cashBefore = room.state.players.get(host.sessionId)!.cash
+
+    host.send('build', { propertyId: first.id })
+    await new Promise((resolve) => setTimeout(resolve, 30))
+    expect(room.state.properties.get(String(first.id))?.houses).toBe(1)
+    expect(room.state.players.get(host.sessionId)!.cash).toBe(cashBefore - cost)
+
+    const unbalancedError = new Promise<{ message: string }>((resolve) => host.onMessage('room:error', resolve))
+    host.send('build', { propertyId: first.id })
+    await expect(unbalancedError).resolves.toMatchObject({ message: expect.stringContaining('distribuição equilibrada') })
+    expect(room.state.properties.get(String(first.id))?.houses).toBe(1)
   })
 
   it('autoriza apenas a pessoa da vez a rolar e só avança após concluir a casa', async () => {
