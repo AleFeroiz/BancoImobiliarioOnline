@@ -6,6 +6,8 @@ export type LobbyPlayer = {
   isHost: boolean
   isConnected?: boolean
   reconnectionExpired?: boolean
+  isBot?: boolean
+  isBotControlled?: boolean
   position: number
   isBankrupt?: boolean
 }

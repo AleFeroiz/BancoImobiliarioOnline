@@ -41,8 +41,10 @@ Como referência de regras clássicas e jogo curto, o [manual oficial do Super B
 
 ## Regras compartilhadas
 
-- Salas de 2–4 jogadores, sem conta.
-- Desconexão: janela de 60 segundos para reconectar; após isso, pula-se a ação/vez atual sem jogar ou negociar automaticamente pela pessoa.
+- Salas de 2–4 participantes, sem conta; a anfitriã pode adicionar bots aos lugares livres antes do início.
+- Para iniciar, a sala precisa de pelo menos duas cadeiras ocupadas, combinando pessoas e bots.
+- Desconexão durante a partida: o bot assume imediatamente a mesma cadeira, incluindo a vez e qualquer compra ou dívida em andamento. Ao reconectar em até 24 horas, a pessoa reassume o controle. Patrimônio e posição são preservados.
+- Os bots lançam dados e decidem no servidor, usando as mesmas validações das ações humanas. Eles podem comprar propriedades com uma reserva de caixa, construir em grupos completos, pagar fiança ou tentar duplas, liquidar bens para quitar dívidas e participar de leilões. No MVP, recusam ofertas de troca e não abrem leilões voluntários.
 - O servidor será a autoridade para ordem de turno, resultados de dados, movimento, compras, cobranças, trocas e demais alterações compartilhadas.
 - Nomes, valores, efeitos de cartas e economia serão originais, sem alegar reproduzir uma edição física específica.
 

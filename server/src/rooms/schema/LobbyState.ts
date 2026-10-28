@@ -5,6 +5,8 @@ export const LobbyPlayerState = schema({
   isHost: t.boolean().default(false),
   isConnected: t.boolean().default(true),
   reconnectionExpired: t.boolean().default(false),
+  isBot: t.boolean().default(false),
+  isBotControlled: t.boolean().default(false),
   position: t.uint8().default(0),
   cash: t.int32().default(0),
   isJailed: t.boolean().default(false),

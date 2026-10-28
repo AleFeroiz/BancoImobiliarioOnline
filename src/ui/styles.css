@@ -456,3 +456,4 @@ button:disabled{opacity:.55;cursor:not-allowed}
   .purchase-actions .roll-button,.purchase-actions .secondary-action{padding:0 7px;font-size:8px}
 }
 @media(prefers-reduced-motion:reduce){.space-inspector{animation:none}}
+.seat-bot{color:#8bc8a3!important}.seat-remove-bot{margin-left:3px;width:22px;height:22px;border:1px solid rgba(255,255,255,.18);border-radius:50%;background:transparent;color:#d7b867}.add-bot-button{margin-top:9px;padding:8px 10px;width:100%;border:1px dashed rgba(213,184,101,.45);background:rgba(213,184,101,.07);color:#e5c979;text-align:left;font-size:10px}.add-bot-button:hover{background:rgba(213,184,101,.13)}
