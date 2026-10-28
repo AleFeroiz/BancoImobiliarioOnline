@@ -58,6 +58,19 @@ describe('sala privada', () => {
     expect(host.state.players.size).toBe(2)
   })
 
+  it('permite quatro participantes e rejeita a quinta conexão', async () => {
+    const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'express' })
+
+    for (const name of ['Ana', 'Bia', 'Caio', 'Duda']) {
+      await colyseus.connectTo(room, { name })
+    }
+
+    expect(room.state.players.size).toBe(4)
+    await expect(colyseus.connectTo(room, { name: 'Eva' })).rejects.toThrow()
+    expect(room.state.players.size).toBe(4)
+    expect(Array.from(room.state.players.values()).map((player) => player.name)).toEqual(['Ana', 'Bia', 'Caio', 'Duda'])
+  })
+
   it('só permite ao anfitrião iniciar com pelo menos duas pessoas', async () => {
     const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
     const host = await colyseus.connectTo(room, { name: 'Caio' })

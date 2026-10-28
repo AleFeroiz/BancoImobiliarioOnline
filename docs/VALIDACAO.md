@@ -224,3 +224,8 @@
 - No navegador interno, revisei a tela inicial em viewport estreito e confirmei o tabuleiro aparecendo após a carga adiada. No Chrome headless, com SwiftShader/WebGL habilitado e espera de 6 s, o canvas montou e a cena ficou visível atrás da interface. A captura correspondente está em `/tmp/banco-lazy-load-chrome.png`.
 - O Firefox headless capturou a tela antes do timer da cena; não há perfil Firefox conectado ao controlador visual desta sessão para aguardar o carregamento e confirmar a cena pós-idle. Portanto, a validação visual desta mudança no Firefox segue pendente.
 - Testes cobrem o agendamento em tempo ocioso, fallback por timer e execução única; `npm run test`: 93 testes passaram. O build web passou. O primeiro teste no sandbox não conseguiu abrir o socket local do Colyseus; a repetição com acesso a loopback passou.
+
+## 2026-10-28 — Limite de participantes da sala
+
+- A sala já declara `maxClients = 4`; acrescentei um teste de integração com quatro conexões reais e uma quinta tentativa. As quatro primeiras entram, a quinta é rejeitada e os quatro jogadores continuam no estado sincronizado.
+- `server/test/GameRoom.test.ts`: 35 testes passaram, incluindo o novo caso de capacidade.
