@@ -1,7 +1,7 @@
 import { Canvas } from '@react-three/fiber'
 import { ContactShadows } from '@react-three/drei'
 import { useEffect, useMemo } from 'react'
-import { CanvasTexture, PerspectiveCamera, SRGBColorSpace } from 'three'
+import { CanvasTexture, Fog, PerspectiveCamera, SRGBColorSpace } from 'three'
 import { useThree } from '@react-three/fiber'
 import { boardSpaces, positionOnBoard } from '../game/board'
 
@@ -10,12 +10,20 @@ const playerColors = ['#e7785f', '#54aec0', '#e7bd62', '#8775bd']
 type PropertyBuilding = { spaceId: number; houses: number; isMortgaged: boolean }
 
 function ResponsiveCamera() {
-  const { camera, size } = useThree()
+  const { camera, scene, size } = useThree()
   useEffect(() => {
     if (!(camera instanceof PerspectiveCamera)) return
+    const aspect = size.width / size.height
+    const distance = aspect < 0.7 ? 1.5 : aspect < 1.1 ? 1.15 : 1
+    camera.position.set(12.5 * distance, 15.5 * distance, 15.5 * distance)
+    camera.lookAt(0, 0, 0)
     camera.fov = size.width < 640 ? 49 : size.width < 900 ? 40 : 34
     camera.updateProjectionMatrix()
-  }, [camera, size.width])
+    if (scene.fog instanceof Fog) {
+      scene.fog.near = 21 * distance
+      scene.fog.far = 38 * distance
+    }
+  }, [camera, scene, size.width, size.height])
   return null
 }
 

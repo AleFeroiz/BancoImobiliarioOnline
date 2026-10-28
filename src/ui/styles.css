@@ -246,6 +246,7 @@ button:disabled{opacity:.55;cursor:not-allowed}
 .objective-panel .asset-panel-heading{margin-bottom:5px}
 .objective-panel h2{margin:7px 0 5px}
 .objective-panel>p{line-height:1.5}
+.purchase-hint{margin:8px 0 0!important;padding:7px 9px;border:1px solid #ead7b0;border-radius:8px;background:#f8f0dc;color:#87663c!important;font-size:9px!important;line-height:1.4!important}
 .objective-progress{display:grid;grid-template-columns:1fr auto;gap:8px;color:#778476;font-size:9px}
 .objective-progress b{color:#435c42;font-variant-numeric:tabular-nums}
 .objective-progress-track{grid-column:1/-1;height:7px;overflow:hidden;border-radius:99px;background:#e5e9dc}
