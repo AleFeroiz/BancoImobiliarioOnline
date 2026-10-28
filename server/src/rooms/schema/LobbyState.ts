@@ -7,6 +7,7 @@ export const LobbyPlayerState = schema({
   cash: t.int32().default(0),
   isJailed: t.boolean().default(false),
   jailTurns: t.uint8().default(0),
+  isBankrupt: t.boolean().default(false),
 })
 
 export type LobbyPlayerState = SchemaType<typeof LobbyPlayerState>
@@ -38,6 +39,10 @@ export const LobbyState = schema({
   auctionHighestBid: t.int32().default(0),
   auctionHighestBidderSessionId: t.string().default(''),
   auctionSeconds: t.uint8().default(0),
+  debtAmount: t.int32().default(0),
+  debtCreditorSessionId: t.string().default(''),
+  debtReason: t.string().default(''),
+  winnerSessionId: t.string().default(''),
 })
 
 export type LobbyState = SchemaType<typeof LobbyState>

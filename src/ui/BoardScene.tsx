@@ -21,14 +21,24 @@ function Board({ playerPositions, propertyBuildings }: { playerPositions: number
         <boxGeometry args={[9.8, 0.04, 9.8]} />
         <meshStandardMaterial color="#c4d5bd" roughness={1} />
       </mesh>
-      <mesh position={[-0.3, 0.045, 0]} rotation={[-Math.PI / 2, 0, -Math.PI / 4]}>
-        <planeGeometry args={[5.2, 1.5]} />
-        <meshBasicMaterial color="#728c76" transparent opacity={0.78} />
+      <mesh position={[0, 0.045, 0]} receiveShadow>
+        <cylinderGeometry args={[1.42, 1.42, 0.045, 48]} />
+        <meshStandardMaterial color="#d8dfc2" roughness={0.92} />
       </mesh>
-      <mesh position={[0.55, 0.05, 0.25]} rotation={[-Math.PI / 2, 0, Math.PI / 4]}>
-        <planeGeometry args={[3.7, 0.025]} />
-        <meshBasicMaterial color="#e6d5a9" transparent opacity={0.85} />
+      <mesh position={[0, 0.072, 0]} receiveShadow>
+        <cylinderGeometry args={[1.22, 1.22, 0.025, 48]} />
+        <meshStandardMaterial color="#a9bf91" roughness={0.94} />
       </mesh>
+      <mesh position={[0, 0.087, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[1.26, 1.34, 48]} />
+        <meshBasicMaterial color="#b79b58" transparent opacity={0.8} />
+      </mesh>
+      {[[-0.82, -0.76], [0.82, -0.76], [-0.82, 0.76], [0.82, 0.76]].map(([x, z], index) => (
+        <group key={`park-tree-${index}`} position={[x, 0.1, z]}>
+          <mesh castShadow position={[0, 0.1, 0]}><cylinderGeometry args={[0.045, 0.06, 0.2, 6]} /><meshStandardMaterial color="#9b7751" roughness={0.84} /></mesh>
+          <mesh castShadow position={[0, 0.26, 0]}><coneGeometry args={[0.18, 0.28, 7]} /><meshStandardMaterial color="#66885f" roughness={0.76} /></mesh>
+        </group>
+      ))}
       {boardSpaces.map((space) => {
         const { x, z } = positionOnBoard(space.id)
         const corner = space.id % 10 === 0

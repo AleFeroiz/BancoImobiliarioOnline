@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { boardSpaces, positionOnBoard } from './board'
-import { JAIL_FINE, MAX_JAIL_ATTEMPTS, STARTING_CASH, calculateRent, canBuildProperty, canMortgageProperty, canRedeemMortgage, constructionCost, describeLanding, mortgageRedemptionCost, mortgageValue, movePosition, resolveJailAttempt, taxForSpace } from '../../shared/game'
+import { JAIL_FINE, MAX_JAIL_ATTEMPTS, STARTING_CASH, buildingSaleValue, calculateRent, canBuildProperty, canMortgageProperty, canRedeemMortgage, canSellBuilding, constructionCost, describeLanding, hasLiquidatableAssets, mortgageRedemptionCost, mortgageValue, movePosition, resolveJailAttempt, taxForSpace } from '../../shared/game'
 import { EVENT_CARDS, applyCardCashEffect } from '../../shared/cards'
 
 describe('tabuleiro', () => {
@@ -122,5 +122,27 @@ describe('tabuleiro', () => {
     expect(canMortgageProperty(first.id, 'p1', holdings)).toBe(false)
     expect(canRedeemMortgage(first.id, 'p1', holdings, mortgageRedemptionCost(first.id))).toBe(true)
     expect(canBuildProperty(first.id, 'p1', holdings, 1_000_000)).toBe(false)
+  })
+
+  it('permite vender construções pela metade do custo em ordem equilibrada e identifica bens liquidáveis', () => {
+    const first = boardSpaces.find((space) => space.kind === 'property' && space.buildable)!
+    const group = boardSpaces.filter((space) => space.kind === 'property' && space.buildable && space.color === first.color)
+    const holdings = new Map(group.map((space) => [space.id, { ownerSessionId: 'p1', houses: 0, isMortgaged: false }]))
+
+    expect(buildingSaleValue(first.id)).toBe(Math.floor(constructionCost(first.id) / 2))
+    expect(canSellBuilding(first.id, 'p1', holdings)).toBe(false)
+    expect(hasLiquidatableAssets('p1', holdings)).toBe(true)
+    holdings.get(first.id)!.houses = 1
+    expect(canSellBuilding(first.id, 'p1', holdings)).toBe(true)
+    holdings.get(group[1].id)!.houses = 2
+    expect(canSellBuilding(first.id, 'p1', holdings)).toBe(false)
+    expect(canSellBuilding(group[1].id, 'p1', holdings)).toBe(true)
+    expect(canSellBuilding(group[1].id, 'p2', holdings)).toBe(false)
+
+    for (const property of group) {
+      holdings.get(property.id)!.houses = 0
+      holdings.get(property.id)!.isMortgaged = true
+    }
+    expect(hasLiquidatableAssets('p1', holdings)).toBe(false)
   })
 })

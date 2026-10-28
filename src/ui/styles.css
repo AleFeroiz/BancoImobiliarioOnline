@@ -11,8 +11,8 @@ button:disabled{opacity:.55;cursor:not-allowed}
 
 /* A sala deve parecer uma mesa pronta para receber a turma, sem apertar o painel em telas médias. */
 .screen-room{background:#dce7d9;color:#263d34}
-.screen-room .scene-backdrop{inset:0;opacity:.43;filter:saturate(.9)}
-.screen-room .scene-backdrop:after{background:linear-gradient(90deg,rgba(233,239,224,.94),rgba(233,239,224,.6) 48%,rgba(233,239,224,.32)),linear-gradient(0deg,rgba(233,239,224,.38),transparent 48%)}
+.screen-room .scene-backdrop{inset:0;opacity:.58;filter:saturate(.92)}
+.screen-room .scene-backdrop:after{background:linear-gradient(90deg,rgba(233,239,224,.88),rgba(233,239,224,.46) 48%,rgba(233,239,224,.18)),linear-gradient(0deg,rgba(233,239,224,.28),transparent 48%)}
 .screen-room .topbar{border-bottom-color:rgba(57,83,68,.15);background:rgba(248,246,234,.76)}
 .screen-room .brand,.screen-room .topbar-right{color:#365146}
 .screen-room .brand-light{color:#718276}
@@ -70,7 +70,7 @@ button:disabled{opacity:.55;cursor:not-allowed}
 
 .screen-game{background:#dce7d9;color:#2d4337}
 .screen-game .scene-backdrop{filter:saturate(.88)}
-.screen-game .scene-backdrop:after{background:linear-gradient(180deg,rgba(241,241,224,.78),transparent 26%,transparent 58%,rgba(226,234,216,.72))}
+.screen-game .scene-backdrop:after{background:linear-gradient(180deg,rgba(241,241,224,.5),transparent 24%,transparent 60%,rgba(226,234,216,.42))}
 .screen-game .topbar{background:rgba(248,246,234,.76);border-bottom-color:rgba(57,83,68,.15)}
 .screen-game .brand,.screen-game .topbar-right{color:#365146}
 .screen-game .brand-light{color:#718276}
@@ -79,11 +79,14 @@ button:disabled{opacity:.55;cursor:not-allowed}
 .game-pill{background:rgba(250,248,237,.88);border-color:rgba(105,132,97,.32);border-radius:999px;color:#3c5543}
 .player-card{background:rgba(250,248,237,.94);border-color:#d7ddca;border-radius:12px;box-shadow:0 8px 22px rgba(56,76,54,.1);backdrop-filter:blur(8px);color:#33483a}
 .player-card.active{border-color:#b5a66c;box-shadow:0 0 0 2px rgba(190,169,103,.15)}
-.player-info small{color:#788673}
-.player-card b{color:#536b4d;font-size:9px}
+.player-card.bankrupt{opacity:.55;filter:grayscale(.72)}
+.player-info strong{font-size:11px}
+.player-info small{color:#788673;font-size:8px}
+.player-card b{color:#536b4d;font-size:10px}
 .turn-card{width:min(360px,calc(100vw - 32px));padding:18px;background:rgba(250,248,237,.96);border:1px solid #d4d9c6;border-radius:16px;box-shadow:0 20px 48px rgba(43,62,46,.16);backdrop-filter:blur(9px);color:#2f4439}
-.turn-label{color:#8a7646}
-.turn-card p{color:#647568;font-size:10px;line-height:1.5}
+.turn-label{color:#8a7646;font-size:9px}
+.turn-card h2{font-size:21px}
+.turn-card p{color:#647568;font-size:11px;line-height:1.5}
 .roll-button{min-height:36px;height:auto;padding:0 10px;border-radius:8px;background:#779675;color:#fffdf3;font-size:10px}
 .roll-button:hover{background:#648462}
 .roll-button span{font-size:9px;line-height:1.2}
@@ -97,7 +100,12 @@ button:disabled{opacity:.55;cursor:not-allowed}
 .build-actions>span{grid-column:1/-1;color:#839078;font-size:7px;letter-spacing:.13em}
 .build-actions .secondary-action{min-width:0;padding:5px 7px;font-size:8px}
 .jail-actions{display:grid;grid-template-columns:1fr 1fr;gap:7px}
-.game-bottom{color:#475d4b}
+.debt-actions{display:grid;gap:8px;margin-top:10px}
+.debt-actions>strong{color:#a14f38;font-size:13px}
+.debt-actions>p{margin:0;color:#647568;font-size:9px}
+.debt-actions .roll-button{width:100%;min-height:38px;margin:0}
+.debt-actions .secondary-action{width:100%}
+.game-bottom{color:#475d4b;font-size:9px}
 .leave-button{border-color:rgba(81,110,82,.35);border-radius:8px;background:rgba(250,248,237,.82);color:#455c48}
 @media(max-width:640px){
   .screen-game .topbar{height:66px}

@@ -66,6 +66,33 @@ export function constructionCost(spaceId: number) {
     : 0
 }
 
+export function buildingSaleValue(spaceId: number) {
+  return Math.floor(constructionCost(spaceId) * 0.5)
+}
+
+export function canSellBuilding(
+  spaceId: number,
+  ownerSessionId: string,
+  holdings: ReadonlyMap<number, PropertyHolding>,
+) {
+  const space = boardSpaces[spaceId]
+  const holding = holdings.get(spaceId)
+  if (!space || space.kind !== 'property' || !space.buildable || !holding || holding.ownerSessionId !== ownerSessionId || holding.houses < 1) return false
+  const groupSpaces = boardSpaces.filter((candidate) => candidate.kind === 'property' && candidate.buildable && candidate.color === space.color)
+  if (groupSpaces.length < 2 || !groupSpaces.every((candidate) => holdings.get(candidate.id)?.ownerSessionId === ownerSessionId)) return false
+  const highestLevel = Math.max(...groupSpaces.map((candidate) => holdings.get(candidate.id)?.houses ?? 0))
+  return holding.houses === highestLevel
+}
+
+export function hasLiquidatableAssets(
+  ownerSessionId: string,
+  holdings: ReadonlyMap<number, PropertyHolding>,
+) {
+  return Array.from(holdings.keys()).some((spaceId) =>
+    canSellBuilding(spaceId, ownerSessionId, holdings) || canMortgageProperty(spaceId, ownerSessionId, holdings),
+  )
+}
+
 export function mortgageValue(spaceId: number) {
   const space = boardSpaces[spaceId]
   return space?.kind === 'property' && typeof space.price === 'number'

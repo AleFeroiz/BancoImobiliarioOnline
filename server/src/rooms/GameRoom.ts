@@ -2,9 +2,9 @@ import { randomInt } from 'node:crypto'
 import { CloseCode, Client, Room } from '@colyseus/core'
 import type { GameMode } from '../../../shared/lobby.js'
 import { isGameMode, normalizePlayerName } from '../../../shared/lobby.js'
-import { AUCTION_MIN_INCREMENT, AUCTION_SECONDS, JAIL_FINE, START_BONUS, STARTING_CASH, calculateRent, canBuildProperty, canMortgageProperty, canRedeemMortgage, constructionCost, describeLanding, mortgageRedemptionCost, mortgageValue, movePosition, resolveJailAttempt, taxForSpace } from '../../../shared/game.js'
+import { AUCTION_MIN_INCREMENT, AUCTION_SECONDS, JAIL_FINE, START_BONUS, STARTING_CASH, buildingSaleValue, calculateRent, canBuildProperty, canMortgageProperty, canRedeemMortgage, canSellBuilding, constructionCost, describeLanding, hasLiquidatableAssets, mortgageRedemptionCost, mortgageValue, movePosition, resolveJailAttempt, taxForSpace } from '../../../shared/game.js'
 import { boardSpaces } from '../../../shared/board.js'
-import { applyCardCashEffect, EVENT_CARDS } from '../../../shared/cards.js'
+import { EVENT_CARDS } from '../../../shared/cards.js'
 import { LobbyPlayerState, LobbyState, PropertyState } from './schema/LobbyState.js'
 
 const ROOM_CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
@@ -65,6 +65,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
         player.cash = STARTING_CASH
         player.isJailed = false
         player.jailTurns = 0
+        player.isBankrupt = false
       }
       this.state.turnPhase = 'roll'
       this.state.activePlayerSessionId = this.state.players.keys().next().value ?? ''
@@ -79,6 +80,10 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       this.state.auctionHighestBid = 0
       this.state.auctionHighestBidderSessionId = ''
       this.state.auctionSeconds = 0
+      this.state.debtAmount = 0
+      this.state.debtCreditorSessionId = ''
+      this.state.debtReason = ''
+      this.state.winnerSessionId = ''
       this.broadcast('game:started', { mode: this.state.mode })
     },
     roll: (client: Client) => {
@@ -131,7 +136,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       if (!player || !property || !canBuildProperty(
         propertyId,
         client.sessionId,
-        new Map(Array.from(this.state.properties.entries()).map(([id, item]) => [Number(id), { ownerSessionId: item.ownerSessionId, houses: item.houses }])),
+        this.getHoldings(),
         player.cash,
       )) {
         client.send('room:error', { message: 'Para construir, complete o grupo, respeite a distribuição equilibrada e tenha saldo.' })
@@ -145,16 +150,27 @@ export class GameRoom extends Room<{ state: LobbyState }> {
         ? `Hotel construído em ${space.name} por ${cost.toLocaleString('pt-BR')}.`
         : `Casa ${property.houses}/4 construída em ${space.name} por ${cost.toLocaleString('pt-BR')}.`
     },
-    mortgage: (client: Client, payload: { propertyId?: unknown }) => {
-      if (this.state.status !== 'playing' || client.sessionId !== this.state.activePlayerSessionId) return
+    sellBuilding: (client: Client, payload: { propertyId?: unknown }) => {
+      if (this.state.status !== 'playing' || !['resolve', 'debt'].includes(this.state.turnPhase) || client.sessionId !== this.state.activePlayerSessionId) return
       const propertyId = typeof payload?.propertyId === 'number' ? payload.propertyId : -1
       const player = this.state.players.get(client.sessionId)
       const property = this.state.properties.get(String(propertyId))
-      const holdings = new Map(Array.from(this.state.properties.entries()).map(([id, item]) => [Number(id), {
-        ownerSessionId: item.ownerSessionId,
-        houses: item.houses,
-        isMortgaged: item.isMortgaged,
-      }]))
+      const holdings = this.getHoldings()
+      if (!player || !property || !canSellBuilding(propertyId, client.sessionId, holdings)) {
+        client.send('room:error', { message: 'Venda construções do grupo em ordem equilibrada.' })
+        return
+      }
+      const amount = buildingSaleValue(propertyId)
+      property.houses -= 1
+      player.cash += amount
+      this.state.landingDescription = `${property.houses === 4 ? 'Hotel devolvido a quatro casas' : `Construção vendida (nível ${property.houses})`} em ${boardSpaces[propertyId].name}. Você recebeu ${amount.toLocaleString('pt-BR')}.`
+    },
+    mortgage: (client: Client, payload: { propertyId?: unknown }) => {
+      if (this.state.status !== 'playing' || !['resolve', 'debt'].includes(this.state.turnPhase) || client.sessionId !== this.state.activePlayerSessionId) return
+      const propertyId = typeof payload?.propertyId === 'number' ? payload.propertyId : -1
+      const player = this.state.players.get(client.sessionId)
+      const property = this.state.properties.get(String(propertyId))
+      const holdings = this.getHoldings()
       if (!player || !property || !canMortgageProperty(propertyId, client.sessionId, holdings)) {
         client.send('room:error', { message: 'Essa propriedade não pode ser hipotecada. Venda as construções do grupo e tente novamente.' })
         return
@@ -165,15 +181,11 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       this.state.landingDescription = `${boardSpaces[propertyId].name} hipotecada. Você recebeu ${amount.toLocaleString('pt-BR')}; ela não gera aluguel até o resgate.`
     },
     redeemMortgage: (client: Client, payload: { propertyId?: unknown }) => {
-      if (this.state.status !== 'playing' || client.sessionId !== this.state.activePlayerSessionId) return
+      if (this.state.status !== 'playing' || this.state.turnPhase !== 'resolve' || client.sessionId !== this.state.activePlayerSessionId) return
       const propertyId = typeof payload?.propertyId === 'number' ? payload.propertyId : -1
       const player = this.state.players.get(client.sessionId)
       const property = this.state.properties.get(String(propertyId))
-      const holdings = new Map(Array.from(this.state.properties.entries()).map(([id, item]) => [Number(id), {
-        ownerSessionId: item.ownerSessionId,
-        houses: item.houses,
-        isMortgaged: item.isMortgaged,
-      }]))
+      const holdings = this.getHoldings()
       if (!player || !property || !canRedeemMortgage(propertyId, client.sessionId, holdings, player.cash)) {
         client.send('room:error', { message: 'Você precisa ser dono da propriedade hipotecada e ter saldo para pagar o resgate.' })
         return
@@ -182,6 +194,55 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       property.isMortgaged = false
       player.cash -= amount
       this.state.landingDescription = `Hipoteca de ${boardSpaces[propertyId].name} resgatada por ${amount.toLocaleString('pt-BR')}. O aluguel volta a valer.`
+    },
+    payDebt: (client: Client) => {
+      if (this.state.status !== 'playing' || this.state.turnPhase !== 'debt' || client.sessionId !== this.state.activePlayerSessionId) return
+      const debtor = this.state.players.get(client.sessionId)
+      if (!debtor || debtor.cash < this.state.debtAmount) return
+      const amount = this.state.debtAmount
+      const creditor = this.state.players.get(this.state.debtCreditorSessionId)
+      debtor.cash -= amount
+      if (creditor && !creditor.isBankrupt) creditor.cash += amount
+      const reason = this.state.debtReason
+      this.clearDebt()
+      this.state.turnPhase = 'resolve'
+      this.state.landingDescription = `Dívida paga (${reason}): ${amount.toLocaleString('pt-BR')}.`
+    },
+    declareBankruptcy: (client: Client) => {
+      if (this.state.status !== 'playing' || this.state.turnPhase !== 'debt' || client.sessionId !== this.state.activePlayerSessionId) return
+      const debtor = this.state.players.get(client.sessionId)
+      if (!debtor || debtor.cash >= this.state.debtAmount || hasLiquidatableAssets(client.sessionId, this.getHoldings())) {
+        client.send('room:error', { message: 'Quite a dívida ou liquide todos os bens possíveis antes de declarar falência.' })
+        return
+      }
+      const creditorId = this.state.debtCreditorSessionId
+      const creditor = this.state.players.get(creditorId)
+      if (creditor && !creditor.isBankrupt) creditor.cash += debtor.cash
+      for (const property of this.state.properties.values()) {
+        if (property.ownerSessionId !== client.sessionId) continue
+        if (creditor && !creditor.isBankrupt) {
+          property.ownerSessionId = creditorId
+        } else {
+          property.ownerSessionId = ''
+          property.houses = 0
+          property.isMortgaged = false
+        }
+      }
+      debtor.cash = 0
+      debtor.isBankrupt = true
+      debtor.isJailed = false
+      const name = debtor.name
+      this.clearDebt()
+      const survivors = Array.from(this.state.players.entries()).filter(([, player]) => !player.isBankrupt)
+      if (survivors.length <= 1) {
+        this.state.status = 'ended'
+        this.state.turnPhase = 'ended'
+        this.state.winnerSessionId = survivors[0]?.[0] ?? ''
+        this.state.landingDescription = survivors.length ? `${name} faliu. ${survivors[0][1].name} venceu a partida.` : `${name} faliu. A partida terminou sem vencedor.`
+        return
+      }
+      this.state.landingDescription = `${name} declarou falência. Seus bens foram transferidos ao credor ou ao banco.`
+      this.advanceTurn()
     },
     jailRoll: (client: Client) => {
       const player = this.state.players.get(client.sessionId)
@@ -222,7 +283,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       const player = this.state.players.get(client.sessionId)
       const amount = typeof payload?.amount === 'number' ? Math.floor(payload.amount) : 0
       const minimum = this.state.auctionHighestBid === 0 ? AUCTION_MIN_INCREMENT : this.state.auctionHighestBid + AUCTION_MIN_INCREMENT
-      if (!player || player.cash < amount || amount < minimum || !Number.isSafeInteger(amount)) {
+      if (!player || player.isBankrupt || player.cash < amount || amount < minimum || !Number.isSafeInteger(amount)) {
         client.send('room:error', { message: `O lance mínimo é ${minimum.toLocaleString('pt-BR')} e precisa caber no seu saldo.` })
         return
       }
@@ -233,11 +294,11 @@ export class GameRoom extends Room<{ state: LobbyState }> {
     },
     auctionPass: (client: Client) => {
       if (this.state.status !== 'playing' || this.state.turnPhase !== 'auction') return
-      if (!this.state.players.has(client.sessionId)) return
+      if (!this.state.players.has(client.sessionId) || this.state.players.get(client.sessionId)?.isBankrupt) return
       if (client.sessionId === this.state.auctionHighestBidderSessionId) return
       this.auctionPassed.add(client.sessionId)
       const allOtherPlayersPassed = Array.from(this.state.players.keys())
-        .filter((sessionId) => sessionId !== this.state.auctionHighestBidderSessionId)
+        .filter((sessionId) => sessionId !== this.state.auctionHighestBidderSessionId && !this.state.players.get(sessionId)?.isBankrupt)
         .every((sessionId) => this.auctionPassed.has(sessionId))
       if (allOtherPlayersPassed) this.finishAuction()
     },
@@ -247,19 +308,58 @@ export class GameRoom extends Room<{ state: LobbyState }> {
         client.send('room:error', { message: 'Somente a pessoa da vez pode concluir a jogada.' })
         return
       }
-      const playerIds = Array.from(this.state.players.keys())
-      if (playerIds.length < 2) return
-      const activeIndex = playerIds.indexOf(this.state.activePlayerSessionId)
-      this.state.activePlayerSessionId = playerIds[(activeIndex + 1) % playerIds.length]
-      const nextPlayer = this.state.players.get(this.state.activePlayerSessionId)
-      this.state.turnNumber += 1
-      this.state.turnPhase = nextPlayer?.isJailed ? 'jail' : 'roll'
-      this.state.diceOne = 0
-      this.state.diceTwo = 0
-      this.state.landingDescription = nextPlayer?.isJailed ? 'Você está preso. Pague a fiança ou tente tirar duplas.' : ''
-      this.state.activeCardTitle = ''
-      this.state.activeCardDescription = ''
+      this.advanceTurn()
     },
+  }
+
+  private getHoldings() {
+    return new Map(Array.from(this.state.properties.entries()).map(([id, item]) => [Number(id), {
+      ownerSessionId: item.ownerSessionId,
+      houses: item.houses,
+      isMortgaged: item.isMortgaged,
+    }]))
+  }
+
+  private clearDebt() {
+    this.state.debtAmount = 0
+    this.state.debtCreditorSessionId = ''
+    this.state.debtReason = ''
+  }
+
+  private advanceTurn() {
+    const playerIds = Array.from(this.state.players.entries()).filter(([, player]) => !player.isBankrupt).map(([sessionId]) => sessionId)
+    if (playerIds.length <= 1) {
+      this.state.status = 'ended'
+      this.state.turnPhase = 'ended'
+      this.state.winnerSessionId = playerIds[0] ?? ''
+      return
+    }
+    const activeIndex = playerIds.indexOf(this.state.activePlayerSessionId)
+    this.state.activePlayerSessionId = playerIds[(activeIndex + 1 + playerIds.length) % playerIds.length]
+    const nextPlayer = this.state.players.get(this.state.activePlayerSessionId)
+    this.state.turnNumber += 1
+    this.state.turnPhase = nextPlayer?.isJailed ? 'jail' : 'roll'
+    this.state.diceOne = 0
+    this.state.diceTwo = 0
+    this.state.landingDescription = nextPlayer?.isJailed ? 'Você está preso. Pague a fiança ou tente tirar duplas.' : ''
+    this.state.activeCardTitle = ''
+    this.state.activeCardDescription = ''
+  }
+
+  private collectPayment(debtor: LobbyPlayerState, amount: number, creditorSessionId: string, reason: string) {
+    if (amount <= debtor.cash) {
+      debtor.cash -= amount
+      const creditor = this.state.players.get(creditorSessionId)
+      if (creditor && !creditor.isBankrupt) creditor.cash += amount
+      this.state.landingDescription += ` ${reason}: ${amount.toLocaleString('pt-BR')} pagos${creditor ? ` a ${creditor.name}` : ' ao banco'}.`
+      return
+    }
+    this.state.debtAmount = amount
+    this.state.debtCreditorSessionId = creditorSessionId
+    this.state.debtReason = reason
+    this.state.turnPhase = 'debt'
+    const creditor = this.state.players.get(creditorSessionId)
+    this.state.landingDescription += ` Dívida de ${amount.toLocaleString('pt-BR')} ${creditor ? `com ${creditor.name}` : 'com o banco'}. Venda construções ou hipoteque imóveis para pagar.`
   }
 
   private movePlayer(player: LobbyPlayerState, spaces: number) {
@@ -293,17 +393,12 @@ export class GameRoom extends Room<{ state: LobbyState }> {
         if (owner && property.isMortgaged) {
           this.state.landingDescription += ` ${space.name} está hipotecada; não há aluguel.`
         } else if (owner) {
-          const amountPaid = Math.min(player.cash, rent)
-          player.cash -= amountPaid
-          owner.cash += amountPaid
-          this.state.landingDescription += ` Aluguel de ${amountPaid.toLocaleString('pt-BR')} pago a ${owner.name}.`
+          this.collectPayment(player, rent, property.ownerSessionId, 'Aluguel')
         }
       }
     } else if (space.kind === 'tax') {
       const tax = taxForSpace(space.id)
-      const amountPaid = Math.min(player.cash, tax)
-      player.cash -= amountPaid
-      this.state.landingDescription += ` Taxa de ${amountPaid.toLocaleString('pt-BR')} paga ao banco.`
+      this.collectPayment(player, tax, '', 'Taxa')
     } else if (space.kind === 'go-to-prison') {
       this.sendToJail(player)
       this.state.landingDescription = 'Vá para a prisão: sua peça foi enviada à casa de visita e sua vez termina.'
@@ -313,7 +408,8 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       this.state.activeCardDescription = card.description
       this.state.landingDescription = card.description
       if (card.effect.kind === 'cash') {
-        player.cash = applyCardCashEffect(player.cash, card.effect.amount)
+        if (card.effect.amount < 0) this.collectPayment(player, Math.abs(card.effect.amount), '', 'Carta')
+        else player.cash += card.effect.amount
       } else if (card.effect.kind === 'move') {
         this.movePlayer(player, card.effect.spaces)
         this.resolveSpace(player, false)

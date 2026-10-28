@@ -4,7 +4,7 @@ import appConfig from '../src/app.config.js'
 import type { LobbyState } from '../src/rooms/schema/LobbyState.js'
 import { PropertyState } from '../src/rooms/schema/LobbyState.js'
 import { boardSpaces } from '../../shared/board.js'
-import { mortgageRedemptionCost, mortgageValue } from '../../shared/game.js'
+import { buildingSaleValue, constructionCost, mortgageRedemptionCost, mortgageValue } from '../../shared/game.js'
 
 describe('sala privada', () => {
   let colyseus: ColyseusTestServer<typeof appConfig>
@@ -150,6 +150,22 @@ describe('sala privada', () => {
     host.send('build', { propertyId: first.id })
     await expect(unbalancedError).resolves.toMatchObject({ message: expect.stringContaining('distribuição equilibrada') })
     expect(room.state.properties.get(String(first.id))?.houses).toBe(1)
+
+    room.state.properties.get(String(first.id))!.houses = 0
+    room.state.properties.get(String(group[1].id))!.isMortgaged = true
+    const mortgagedGroupError = new Promise<{ message: string }>((resolve) => host.onMessage('room:error', resolve))
+    host.send('build', { propertyId: first.id })
+    await expect(mortgagedGroupError).resolves.toMatchObject({ message: expect.stringContaining('complete o grupo') })
+    expect(room.state.properties.get(String(first.id))?.houses).toBe(0)
+
+    room.state.properties.get(String(group[1].id))!.isMortgaged = false
+    room.state.properties.get(String(first.id))!.houses = 1
+    const cashBeforeSale = room.state.players.get(host.sessionId)!.cash
+    host.send('sellBuilding', { propertyId: first.id })
+    await new Promise((resolve) => setTimeout(resolve, 30))
+    expect(room.state.properties.get(String(first.id))?.houses).toBe(0)
+    expect(room.state.players.get(host.sessionId)!.cash).toBe(cashBeforeSale + buildingSaleValue(first.id))
+    expect(buildingSaleValue(first.id)).toBe(Math.floor(constructionCost(first.id) / 2))
   })
 
   it('autoriza hipotecar e resgatar um título somente pelo dono na sua vez', async () => {
@@ -201,6 +217,105 @@ describe('sala privada', () => {
     expect(hostPlayer.cash).toBe(100_000 + mortgageValue(propertyId) - mortgageRedemptionCost(propertyId))
   })
 
+  it('abre dívida sem cobrar parcialmente e permite liquidar a hipoteca para pagar o valor integral', async () => {
+    const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
+    const host = await colyseus.connectTo(room, { name: 'Ana' })
+    await colyseus.connectTo(room, { name: 'Bia' })
+    host.send('start')
+    await new Promise((resolve) => setTimeout(resolve, 30))
+
+    const player = room.state.players.get(host.sessionId)!
+    player.position = 4
+    player.cash = 20_000
+    const resolveSpace = (room as unknown as { resolveSpace: (player: object) => void }).resolveSpace
+    resolveSpace.call(room, player)
+
+    expect(room.state.turnPhase).toBe('debt')
+    expect(room.state.debtAmount).toBe(50_000)
+    expect(room.state.debtCreditorSessionId).toBe('')
+    expect(player.cash).toBe(20_000)
+
+    const propertyId = 15
+    const property = new PropertyState()
+    property.ownerSessionId = host.sessionId
+    room.state.properties.set(String(propertyId), property)
+    host.send('mortgage', { propertyId })
+    await new Promise((resolve) => setTimeout(resolve, 30))
+    expect(property.isMortgaged).toBe(true)
+    expect(player.cash).toBe(20_000 + mortgageValue(propertyId))
+
+    host.send('payDebt')
+    await new Promise((resolve) => setTimeout(resolve, 30))
+    expect(room.state.debtAmount).toBe(0)
+    expect(room.state.turnPhase).toBe('resolve')
+    expect(player.cash).toBe(20_000 + mortgageValue(propertyId) - 50_000)
+  })
+
+  it('transfere saldo e títulos hipotecados ao credor e encerra quando resta uma pessoa solvente', async () => {
+    const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
+    const host = await colyseus.connectTo(room, { name: 'Ana' })
+    const guest = await colyseus.connectTo(room, { name: 'Bia' })
+    host.send('start')
+    await new Promise((resolve) => setTimeout(resolve, 30))
+
+    const debtor = room.state.players.get(host.sessionId)!
+    const creditor = room.state.players.get(guest.sessionId)!
+    debtor.cash = 45_000
+    const property = new PropertyState()
+    property.ownerSessionId = host.sessionId
+    property.isMortgaged = true
+    room.state.properties.set('15', property)
+    room.state.turnPhase = 'debt'
+    room.state.debtAmount = 80_000
+    room.state.debtCreditorSessionId = guest.sessionId
+    room.state.debtReason = 'Aluguel'
+
+    host.send('declareBankruptcy')
+    await new Promise((resolve) => setTimeout(resolve, 30))
+    expect(debtor.isBankrupt).toBe(true)
+    expect(debtor.cash).toBe(0)
+    expect(creditor.cash).toBe(1_545_000)
+    expect(property.ownerSessionId).toBe(guest.sessionId)
+    expect(property.isMortgaged).toBe(true)
+    expect(room.state.status).toBe('ended')
+    expect(room.state.winnerSessionId).toBe(guest.sessionId)
+  })
+
+  it('impede falência enquanto há bens liquidáveis e devolve títulos ao banco após liquidá-los', async () => {
+    const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
+    const host = await colyseus.connectTo(room, { name: 'Ana' })
+    const guest = await colyseus.connectTo(room, { name: 'Bia' })
+    host.send('start')
+    await new Promise((resolve) => setTimeout(resolve, 30))
+
+    const debtor = room.state.players.get(host.sessionId)!
+    const creditor = room.state.players.get(guest.sessionId)!
+    debtor.cash = 0
+    const property = new PropertyState()
+    property.ownerSessionId = host.sessionId
+    room.state.properties.set('15', property)
+    room.state.turnPhase = 'debt'
+    room.state.debtAmount = 200_000
+    room.state.debtCreditorSessionId = ''
+
+    const prematureBankruptcy = new Promise<{ message: string }>((resolve) => host.onMessage('room:error', resolve))
+    host.send('declareBankruptcy')
+    await expect(prematureBankruptcy).resolves.toMatchObject({ message: expect.stringContaining('liquide todos os bens') })
+    expect(debtor.isBankrupt).toBe(false)
+
+    host.send('mortgage', { propertyId: 15 })
+    await new Promise((resolve) => setTimeout(resolve, 30))
+    expect(property.isMortgaged).toBe(true)
+    expect(debtor.cash).toBeLessThan(room.state.debtAmount)
+    host.send('declareBankruptcy')
+    await new Promise((resolve) => setTimeout(resolve, 30))
+
+    expect(debtor.isBankrupt).toBe(true)
+    expect(creditor.cash).toBe(1_500_000)
+    expect(property).toMatchObject({ ownerSessionId: '', houses: 0, isMortgaged: false })
+    expect(room.state.status).toBe('ended')
+  })
+
   it('libera a pessoa presa após cobrar a fiança e permite rolar no mesmo turno', async () => {
     const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
     const host = await colyseus.connectTo(room, { name: 'Ana' })
@@ -220,7 +335,7 @@ describe('sala privada', () => {
     expect(room.state.turnPhase).toBe('roll')
     host.send('roll')
     await new Promise((resolve) => setTimeout(resolve, 30))
-    expect(['resolve', 'purchase']).toContain(room.state.turnPhase)
+    expect(['resolve', 'purchase', 'debt']).toContain(room.state.turnPhase)
     expect(room.state.diceOne).toBeGreaterThanOrEqual(1)
   })
 

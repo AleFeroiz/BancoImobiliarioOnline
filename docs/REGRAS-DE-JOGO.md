@@ -17,8 +17,9 @@ Como referência de regras clássicas e jogo curto, o [manual oficial do Super B
 - Jogadores podem negociar dinheiro e títulos durante a vez ativa, em janela de 45 segundos. Construções devem ser vendidas antes da transferência do título.
 - Durante a própria vez, o dono pode hipotecar qualquer título sem construções no grupo e receber 50% do preço de compra. Um título hipotecado não cobra aluguel. Resgatá-lo custa 110% do valor recebido; enquanto qualquer título do grupo estiver hipotecado, não se pode construir casas ou hotéis naquele grupo. A regra vale nos dois modos.
 - Sorte ou Revés tem oito cartas digitais autorais, sorteadas com reposição pelo servidor: três créditos, três cobranças, avançar três casas e ir para a prisão. Créditos e cobranças variam entre R$ 50.000 e R$ 150.000.
-- Cair em “Vá para a prisão” ou receber a carta leva à casa de visita e encerra a vez. Na vez presa, pode-se pagar R$ 50.000 e rolar ou tentar duplas; falhar encerra a vez. Após três tentativas sem duplas, paga-se até R$ 50.000 do saldo, sai da prisão e move pelo resultado da terceira rolagem. Até a mecânica de dívidas e falência entrar, pagamentos não reduzem o saldo abaixo de zero.
-- Dívidas e falência serão concluídas na próxima etapa de economia.
+- Cair em “Vá para a prisão” ou receber a carta leva à casa de visita e encerra a vez. Na vez presa, pode-se pagar R$ 50.000 e rolar ou tentar duplas; falhar encerra a vez. Após três tentativas sem duplas, paga-se até R$ 50.000 do saldo, sai da prisão e move pelo resultado da terceira rolagem.
+- Se aluguel, taxa ou cobrança de carta exceder o saldo, registra-se a dívida integral sem debitar dinheiro parcialmente. Durante essa fase, a pessoa pode vender construções respeitando a ordem equilibrada e receber metade do custo de construção, ou hipotecar títulos elegíveis. Quando o saldo cobrir a dívida, paga-se o valor integral ao credor ou ao banco e a vez continua.
+- A falência só pode ser declarada quando o saldo continuar abaixo da dívida e não restarem construções vendáveis nem títulos que possam ser hipotecados. O dinheiro e os títulos restantes passam ao credor jogador; se a dívida for com o banco, os títulos voltam ao banco sem construções e sem hipoteca. A partida termina quando restar apenas uma pessoa solvente.
 - Ao completar 30 minutos, resolve-se a ação e os pagamentos em andamento. Compara-se patrimônio após liquidar bens e construções; empate vai aos dados.
 - A partida também pode terminar antes se restar apenas um jogador solvente.
 
@@ -42,14 +43,14 @@ Como referência de regras clássicas e jogo curto, o [manual oficial do Super B
 
 - A primeira pessoa a entrar na sala começa. O servidor rola dois dados de seis lados e move a peça pelo percurso de 40 casas; todas as pessoas recebem o mesmo estado.
 - Depois da exibição da casa alcançada, a pessoa da vez confirma para passar o turno à próxima pessoa. O servidor rejeita rolagens e confirmações fora da vez.
-- O servidor resolve compras, aluguel, taxas, hipotecas, cartas Sorte ou Revés e movimento para a prisão. Dívidas e falência ainda não são aplicadas; até essa etapa, cobranças são limitadas ao saldo disponível.
+- O servidor resolve compras, aluguel, taxas, hipotecas, venda de construções, dívidas, falência, cartas Sorte ou Revés e movimento para a prisão.
 - Os relógios de 30 minutos e de seis rodadas Express ainda não estão ativos no ciclo básico; entram com a implementação dos presets e da resolução de fim de partida.
 
 ## Economia inicial implementada
 
 - Cada pessoa começa com R$ 1.500.000. Ao cruzar a Partida, recebe R$ 200.000.
 - Ao parar em propriedade livre, a pessoa da vez pode comprar pelo preço impresso no espaço ou recusar e abrir leilão público de 20 segundos. O leilão começa em R$ 10.000, sobe em incrementos mínimos de R$ 10.000 e termina quando todos os demais passam ou o tempo acaba.
-- O aluguel base corresponde a 10% do preço da propriedade, com mínimo de R$ 10.000; completar o grupo de cor dobra esse valor. Se o saldo do pagador for menor, o pagamento atual é limitado ao saldo restante; liquidação e falência estão na próxima parte da implementação.
+- O aluguel base corresponde a 10% do preço da propriedade, com mínimo de R$ 10.000; completar o grupo de cor dobra esse valor. Quando o saldo não cobre aluguel ou taxa, a partida entra na fase de dívida descrita acima.
 - Ao possuir todas as propriedades residenciais de uma cor, o dono pode construir. Cada casa ou hotel custa metade do preço do imóvel e soma 10% desse preço ao aluguel; o bônus de grupo continua valendo. Os níveis 1–4 são casas e o nível 5 substitui as casas por um hotel. A construção deve ficar equilibrada: o nível de um imóvel não pode ultrapassar em mais de um o nível mais baixo do grupo. Estações não recebem casas ou hotéis.
 - Hipotecar rende metade do preço do título; resgatar custa 110% desse adiantamento. O título hipotecado não gera aluguel. Não se hipoteca um grupo que ainda tenha casas ou hotel; nenhum título de um grupo hipotecado recebe construção.
 - As taxas digitais custam R$ 50.000, R$ 75.000, R$ 100.000 e R$ 125.000 nas casas 4, 18, 28 e 38. Os valores são autorais e serão ajustados com playtests.
@@ -57,4 +58,4 @@ Como referência de regras clássicas e jogo curto, o [manual oficial do Super B
 
 ## Fora do que está especificado
 
-Os textos e efeitos das cartas Express, falência e resolução completa de dívidas ainda precisam ser escritos como regras autorais e implementados. Não temos o texto público das cartas Express. Esses detalhes não alteram as decisões de duração, vitória e número de jogadores acima; serão definidos e registrados antes de fechar cada sistema.
+Os textos e efeitos das cartas Express ainda serão escritos como regras autorais. Não temos o texto público dessas cartas. As regras de dívidas e falência acima são a primeira versão funcional e serão calibradas em playtests.
