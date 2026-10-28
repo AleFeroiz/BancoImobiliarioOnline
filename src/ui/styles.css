@@ -205,6 +205,12 @@ button:disabled{opacity:.55;cursor:not-allowed}
 }
 .game-topline{gap:10px}
 .game-tools{display:flex;align-items:center;gap:7px}
+.game-pill.clock-warning{border-color:#b86f55;color:#934d37;background:rgba(255,247,231,.96)}
+.final-score-list{display:grid;gap:5px;margin:2px 0 3px}
+.final-score{display:flex;justify-content:space-between;gap:12px;padding:6px 8px;border:1px solid #e0e3d7;border-radius:8px;background:#f3f2e7;color:#687568;font-size:9px}
+.final-score.winner{border-color:#bdac70;background:#f6edcf;color:#4f644b}
+.final-score b{color:#3f5944;font-variant-numeric:tabular-nums}
+.debt-actions>small{color:#778477;font-size:8px}
 .trade-panel{width:min(550px,calc(100vw - 36px));max-height:min(72vh,650px);overflow:auto;overscroll-behavior:contain}
 .trade-panel .asset-panel-heading{flex:none}
 .trade-panel h2{margin:8px 0 5px}

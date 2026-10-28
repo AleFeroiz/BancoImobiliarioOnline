@@ -8,6 +8,9 @@ export const LobbyPlayerState = schema({
   isJailed: t.boolean().default(false),
   jailTurns: t.uint8().default(0),
   isBankrupt: t.boolean().default(false),
+  finalCash: t.int32().default(0),
+  finalNetWorth: t.int32().default(0),
+  tieBreakRoll: t.uint8().default(0),
 })
 
 export type LobbyPlayerState = SchemaType<typeof LobbyPlayerState>
@@ -28,7 +31,11 @@ export const LobbyState = schema({
   status: t.string().default('waiting'),
   turnPhase: t.string().default('roll'),
   activePlayerSessionId: t.string().default(''),
-  turnNumber: t.uint8().default(0),
+  turnNumber: t.uint16().default(0),
+  matchSeconds: t.uint16().default(0),
+  matchEnding: t.boolean().default(false),
+  expressRound: t.uint8().default(0),
+  phaseSeconds: t.uint8().default(0),
   diceOne: t.uint8().default(0),
   diceTwo: t.uint8().default(0),
   landingDescription: t.string().default(''),

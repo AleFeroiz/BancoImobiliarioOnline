@@ -9,16 +9,22 @@ import { buildingSaleValue, canBuildProperty, canMortgageProperty, canRedeemMort
 type Mode = GameMode
 type Screen = 'home' | 'room' | 'game'
 type TurnPhase = 'roll' | 'resolve' | 'purchase' | 'auction' | 'jail' | 'debt' | 'ended'
-type SyncedPlayer = LobbyPlayer & { sessionId: string; cash: number; isJailed: boolean; jailTurns: number; isBankrupt: boolean }
+type SyncedPlayer = LobbyPlayer & { sessionId: string; cash: number; isJailed: boolean; jailTurns: number; isBankrupt: boolean; finalCash: number; finalNetWorth: number; tieBreakRoll: number }
 type TradeOfferView = { id: number; fromSessionId: string; toSessionId: string; cashOffered: number; cashRequested: number; propertiesOffered: number[]; propertiesRequested: number[] }
 
 function parseTradeIds(value: string) {
   return value ? value.split(',').map(Number).filter(Number.isInteger) : []
 }
 
+function formatClock(seconds: number) {
+  const minutes = Math.floor(seconds / 60).toString().padStart(2, '0')
+  const remainingSeconds = Math.max(0, seconds % 60).toString().padStart(2, '0')
+  return `${minutes}:${remainingSeconds}`
+}
+
 const modeDetails: Record<Mode, { title: string; duration: string; detail: string }> = {
   classic: { title: 'Clássico Rápido', duration: '30 min', detail: 'Regras completas • patrimônio no final' },
-  express: { title: 'Express', duration: '≈ 8 min', detail: '6 rodadas • objetivos valem bônus' },
+  express: { title: 'Express', duration: '8–16 min', detail: '6 rodadas • objetivos valem bônus' },
 }
 
 function App() {
@@ -29,6 +35,10 @@ function App() {
   const [error, setError] = useState('')
   const [activePlayerSessionId, setActivePlayerSessionId] = useState('')
   const [turnNumber, setTurnNumber] = useState(0)
+  const [matchSeconds, setMatchSeconds] = useState(0)
+  const [matchEnding, setMatchEnding] = useState(false)
+  const [expressRound, setExpressRound] = useState(0)
+  const [phaseSeconds, setPhaseSeconds] = useState(0)
   const [turnPhase, setTurnPhase] = useState<TurnPhase>('roll')
   const [dice, setDice] = useState<[number, number]>([0, 0])
   const [landingDescription, setLandingDescription] = useState('')
@@ -105,13 +115,17 @@ function App() {
 
     const updateLobby = (state: unknown) => {
       const snapshot = state as {
-        players: Map<string, LobbyPlayer & { cash: number; isJailed: boolean; jailTurns: number; isBankrupt: boolean }>
+        players: Map<string, LobbyPlayer & { cash: number; isJailed: boolean; jailTurns: number; isBankrupt: boolean; finalCash: number; finalNetWorth: number; tieBreakRoll: number }>
         roomCode: string
         mode: Mode
         status: 'waiting' | 'playing' | 'ended'
         activePlayerSessionId: string
         properties: Map<string, PropertyHolding>
         turnNumber: number
+        matchSeconds: number
+        matchEnding: boolean
+        expressRound: number
+        phaseSeconds: number
         turnPhase: TurnPhase
         diceOne: number
         diceTwo: number
@@ -142,6 +156,10 @@ function App() {
       setIsHost(snapshot.players.get(room.sessionId)?.isHost ?? false)
       setActivePlayerSessionId(snapshot.activePlayerSessionId)
       setTurnNumber(snapshot.turnNumber)
+      setMatchSeconds(snapshot.matchSeconds)
+      setMatchEnding(snapshot.matchEnding)
+      setExpressRound(snapshot.expressRound)
+      setPhaseSeconds(snapshot.phaseSeconds)
       setTurnPhase(snapshot.turnPhase)
       setDice([snapshot.diceOne, snapshot.diceTwo])
       setLandingDescription(snapshot.landingDescription)
@@ -326,7 +344,7 @@ function App() {
 
       {screen === 'game' && (
         <section className="game-overlay">
-          <div className="game-topline"><button className="back-link" onClick={() => setScreen('room')}>← Sala {roomCode}</button><div className="game-pill">{modeDetails[mode].title.toUpperCase()} <span>·</span> {mode === 'classic' ? '30:00' : 'RODADA 1/6'}</div><div className="game-tools"><button className="portfolio-toggle" aria-expanded={showTradePanel || Boolean(incomingTradeOffer)} disabled={tradeSeconds === 0 && !incomingTradeOffer} onClick={() => { setShowTradePanel((open) => !open); setShowPropertyPanel(false); setError('') }}>{incomingTradeOffer ? 'Oferta recebida' : `Negociar · ${tradeSeconds}s`}</button><button className="portfolio-toggle" aria-expanded={showPropertyPanel} onClick={() => { setShowPropertyPanel((open) => !open); setShowTradePanel(false) }}>{showPropertyPanel ? '← Jogada' : `Imóveis · ${myProperties.length}`}</button></div></div>
+          <div className="game-topline"><button className="back-link" onClick={() => setScreen('room')}>← Sala {roomCode}</button><div className={`game-pill ${matchEnding || (mode === 'classic' && matchSeconds <= 60) ? 'clock-warning' : ''}`}>{modeDetails[mode].title.toUpperCase()} <span>·</span> {mode === 'classic' ? formatClock(matchSeconds) : `RODADA ${expressRound}/${6} · ${phaseSeconds}s`}</div><div className="game-tools"><button className="portfolio-toggle" aria-expanded={showTradePanel || Boolean(incomingTradeOffer)} disabled={tradeSeconds === 0 && !incomingTradeOffer} onClick={() => { setShowTradePanel((open) => !open); setShowPropertyPanel(false); setError('') }}>{incomingTradeOffer ? 'Oferta recebida' : `Negociar · ${tradeSeconds}s`}</button><button className="portfolio-toggle" aria-expanded={showPropertyPanel} onClick={() => { setShowPropertyPanel((open) => !open); setShowTradePanel(false) }}>{showPropertyPanel ? '← Jogada' : `Imóveis · ${myProperties.length}`}</button></div></div>
           <div className="player-hud">{roomPlayers.map((player, index) => <div className={`player-card seat-${index} ${player.sessionId === activePlayerSessionId ? 'active' : ''} ${player.isBankrupt ? 'bankrupt' : ''}`} key={player.sessionId}><span className={`player-avatar player-${index}`}>{player.name.slice(0, 1).toUpperCase()}</span><div className="player-info"><strong>{player.name}</strong><small>{player.isBankrupt ? 'FALIU' : player.isJailed ? `PRESO · ${player.jailTurns}/3` : player.sessionId === activePlayerSessionId ? 'VEZ ATUAL' : `CASA ${String(player.position + 1).padStart(2, '0')}`}</small></div><b>{formatMoney(player.cash)}</b></div>)}</div>
           {(showTradePanel || incomingTradeOffer) && turnPhase !== 'ended' ? (
             <aside className="turn-card trade-panel" aria-label="Negociação entre jogadores">
@@ -394,11 +412,16 @@ function App() {
             </aside>
           ) : (
             <div className="turn-card">
-              <span className="turn-label">{turnPhase === 'ended' ? 'PARTIDA ENCERRADA' : turnPhase === 'debt' ? 'DÍVIDA EM ABERTO' : `TURNO ${turnNumber} · ${isMyTurn ? 'SUA VEZ' : `VEZ DE ${activePlayer?.name ?? '…'}`}`}</span>
+              <span className="turn-label">{turnPhase === 'ended' ? 'PARTIDA ENCERRADA' : turnPhase === 'debt' ? 'DÍVIDA EM ABERTO' : matchEnding ? 'TEMPO ESGOTADO · CONCLUA A JOGADA' : `TURNO ${turnNumber} · ${isMyTurn ? 'SUA VEZ' : `VEZ DE ${activePlayer?.name ?? '…'}`}`}</span>
               <h2>{turnPhase === 'ended' ? 'Fim de jogo' : turnPhase === 'debt' ? 'Hora de liquidar bens' : activeCardTitle || boardSpaces[pendingPropertyId]?.name || activeSpace.name}</h2>
               <p>{landingDescription || activeCardDescription || (activeSpace.kind === 'property' ? `Propriedade · ${formatMoney(activeSpace.price ?? 0)}` : 'Aguardando a jogada.')}</p>
               {turnPhase === 'ended' ? (
-                <div className="debt-actions"><strong>{winnerSessionId ? `${roomPlayers.find((player) => player.sessionId === winnerSessionId)?.name ?? 'Jogador'} venceu!` : 'Partida encerrada sem vencedor.'}</strong><button className="roll-button" onClick={() => void leaveRoom()}>Voltar ao início</button></div>
+                <div className="debt-actions"><strong>{winnerSessionId ? `${roomPlayers.find((player) => player.sessionId === winnerSessionId)?.name ?? 'Jogador'} venceu!` : 'Partida encerrada sem vencedor.'}</strong><div className="final-score-list">{roomPlayers.slice().sort((first, second) => {
+                  if (first.sessionId === winnerSessionId) return -1
+                  if (second.sessionId === winnerSessionId) return 1
+                  const primary = mode === 'classic' ? second.finalNetWorth - first.finalNetWorth : second.finalCash - first.finalCash
+                  return primary || second.finalNetWorth - first.finalNetWorth || second.tieBreakRoll - first.tieBreakRoll
+                }).map((player) => <div className={player.sessionId === winnerSessionId ? 'final-score winner' : 'final-score'} key={player.sessionId}><span>{player.name}{player.tieBreakRoll ? ` · dados ${player.tieBreakRoll}` : ''}</span><b>{mode === 'classic' ? formatMoney(player.finalNetWorth) : formatMoney(player.finalCash)}</b></div>)}</div><small>{mode === 'classic' ? 'Patrimônio final após liquidação' : 'Saldo final · empate por patrimônio e dados'}</small><button className="roll-button" onClick={() => void leaveRoom()}>Voltar ao início</button></div>
               ) : turnPhase === 'debt' ? (
                 <div className="debt-actions"><strong>Dívida: {formatMoney(debtAmount)}</strong><p>{debtReason} · credor: {roomPlayers.find((player) => player.sessionId === debtCreditorSessionId)?.name ?? 'banco'}</p><button className="roll-button" onClick={() => room?.send('payDebt')} disabled={!isMyTurn || (localPlayer?.cash ?? 0) < debtAmount}>Pagar dívida <span>{formatMoney(debtAmount)}</span></button><button className="secondary-action" onClick={() => setShowPropertyPanel(true)} disabled={!isMyTurn}>Ver bens para liquidar</button><button className="secondary-action" onClick={() => room?.send('declareBankruptcy')} disabled={!isMyTurn || (localPlayer?.cash ?? 0) >= debtAmount || hasLiquidatableAssets(room?.sessionId ?? '', holdingsById)}>Declarar falência</button></div>
               ) : turnPhase === 'jail' ? <div className="jail-actions"><button className="secondary-action" onClick={() => room?.send('jailRoll')} disabled={!isMyTurn}>Tentar duplas</button><button className="roll-button" onClick={() => room?.send('jailPay')} disabled={!isMyTurn}>Pagar fiança <span>{formatMoney(50_000)}</span></button></div> : turnPhase === 'auction' ? <><div className="auction-info"><span>{auctionHighestBid ? `Maior lance: ${formatMoney(auctionHighestBid)}` : 'Sem lances ainda'}</span><strong>{auctionSeconds}s</strong></div><div className="auction-actions"><input aria-label="Valor do lance" inputMode="numeric" value={bidAmount} onChange={(event) => setBidAmount(event.target.value.replace(/[^0-9]/g, ''))} placeholder="Seu lance" /><button className="roll-button" onClick={() => { room?.send('bid', { amount: Number(bidAmount) }); setBidAmount('') }}>Lance</button><button className="secondary-action" onClick={() => room?.send('auctionPass')}>Passar</button></div></> : <><div className="dice-row"><span className="die">{dice[0] || '·'}</span><span className="die">{dice[1] || '·'}</span>{turnPhase === 'roll' ? <button className="roll-button" onClick={() => room?.send('roll')} disabled={!isMyTurn}>Lançar dados <span>↗</span></button> : turnPhase === 'purchase' ? <><button className="roll-button" onClick={() => room?.send('buy')} disabled={!isMyTurn}>Comprar <span>{formatMoney(boardSpaces[pendingPropertyId]?.price ?? 0)}</span></button><button className="secondary-action" onClick={() => room?.send('declinePurchase')} disabled={!isMyTurn}>Leilão</button></> : <button className="roll-button" onClick={() => room?.send('finishTurn')} disabled={!isMyTurn}>Concluir vez <span>↗</span></button>}</div>{turnPhase === 'resolve' && buildOptions.length > 0 && <div className="build-actions" aria-label="Construções disponíveis"><span>CONSTRUIR · 50% DO PREÇO</span>{buildOptions.map((propertyId) => <button key={propertyId} className="secondary-action" onClick={() => room?.send('build', { propertyId })} disabled={!isMyTurn}>Construir em {boardSpaces[propertyId].name} · {formatMoney(constructionCost(propertyId))}</button>)}</div>}</>}

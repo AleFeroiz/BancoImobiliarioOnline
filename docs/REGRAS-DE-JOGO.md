@@ -23,9 +23,9 @@ Como referência de regras clássicas e jogo curto, o [manual oficial do Super B
 - Ao completar 30 minutos, resolve-se a ação e os pagamentos em andamento. Compara-se patrimônio após liquidar bens e construções; empate vai aos dados.
 - A partida também pode terminar antes se restar apenas um jogador solvente.
 
-## Express — cerca de 8 minutos
+## Express — cerca de 8 a 16 minutos
 
-- Seis rodadas com fases cronometradas de 40 segundos. A preparação e transições compõem a duração aproximada de oito minutos.
+- São seis rodadas. Cada pessoa recebe uma fase de 40 segundos por rodada; são cerca de 8 minutos com duas pessoas e 16 com quatro, mais o tempo para resolver leilões ou dívidas pendentes.
 - Cada jogador recebe em segredo uma carta dentre oito objetivos digitais originais. Exemplos de famílias de objetivo: completar um grupo de cor, obter uma quantidade de propriedades ou realizar construções.
 - Cumprir objetivo concede bônus em dinheiro; não encerra a partida imediatamente.
 - A negociação só ocorre durante as fases de 40 segundos.
@@ -44,7 +44,10 @@ Como referência de regras clássicas e jogo curto, o [manual oficial do Super B
 - A primeira pessoa a entrar na sala começa. O servidor rola dois dados de seis lados e move a peça pelo percurso de 40 casas; todas as pessoas recebem o mesmo estado.
 - Depois da exibição da casa alcançada, a pessoa da vez confirma para passar o turno à próxima pessoa. O servidor rejeita rolagens e confirmações fora da vez.
 - O servidor resolve compras, aluguel, taxas, hipotecas, venda de construções, dívidas, falência, cartas Sorte ou Revés e movimento para a prisão.
-- Os relógios de 30 minutos e de seis rodadas Express ainda não estão ativos no ciclo básico; entram com a implementação dos presets e da resolução de fim de partida.
+- O relógio do Clássico começa em 30 minutos. Quando zera, a partida encerra ao concluir o estado atual; uma compra já aberta pode ser decidida, um leilão termina e uma dívida permanece ativa até ser paga ou levar à falência.
+- No Express, cada fase tem 40 segundos. Se o tempo termina sem ação pendente, a vez passa automaticamente. Se houver uma compra sem resposta, abre-se o leilão de 20 segundos; se houver dívida, ela precisa ser resolvida antes de passar a vez. A rodada avança depois que todos os jogadores solventes tiverem sua fase.
+- Ao terminar o Clássico, compara-se dinheiro disponível + preço de compra dos imóveis - saldo hipotecado + valor de venda das construções. Ao terminar o Express, compara-se primeiro o dinheiro; em empate, usa-se o mesmo patrimônio e, persistindo, dois dados de seis lados. Empate nos próprios dados é resolvido aleatoriamente pelo servidor.
+- A fórmula de patrimônio e o desempate aleatório após dados iguais são detalhes iniciais de implementação e serão conferidos em playtests.
 
 ## Economia inicial implementada
 

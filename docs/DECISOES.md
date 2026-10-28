@@ -10,10 +10,11 @@
 | Jogadores | De 2 a 4 por sala no MVP. |
 | Presets | A pessoa anfitriã escolhe Clássico Rápido ou Express ao criar a sala. |
 | Clássico Rápido | Partida de 30 minutos, com o conjunto completo de mecânicas clássicas combinado no escopo. |
-| Express | Seis rodadas de 40 segundos, cerca de 8 minutos de duração total, oito objetivos digitais originais e vitória por maior saldo ao final. Concluir objetivo não encerra a partida imediatamente. |
+| Express | Seis rodadas, com fase de 40 segundos para cada pessoa em cada rodada; duração prevista de 8 minutos com duas pessoas e 16 com quatro, mais resolução de leilões/dívidas. Oito objetivos digitais originais e vitória por maior saldo ao final. Concluir objetivo não encerra a partida imediatamente. |
 | Objetivos Express | Uma carta privada por jogador; objetivos originais que podem envolver grupo de cor, quantidade de propriedades ou construções. Cumprir concede bônus em dinheiro. Valores e textos serão balanceados durante a implementação. |
-| Pontuação Express | Maior saldo em dinheiro ao fim das seis rodadas. Empate: maior patrimônio avaliando imóveis e construções pelo valor de venda; persistindo, desempate nos dados. |
+| Pontuação Express | Maior saldo em dinheiro ao fim das seis rodadas. Empate: maior patrimônio avaliando imóveis e construções pelo valor de venda; persistindo, desempate em dois dados de seis lados. |
 | Fim do Clássico | Ao fim dos 30 minutos, concluir a ação e os pagamentos em andamento; vence o maior patrimônio após liquidação de bens e construções. Empate resolvido nos dados. |
+| Relógios | Clássico: contagem de 30 minutos. Express: 40 segundos por pessoa a cada rodada, seis rodadas; a ação pendente ou dívida é resolvida antes de passar ou encerrar. |
 | Leilão | Propriedade recusada vai a leilão público de 20 segundos, com incremento mínimo definido pelo jogo. |
 | Economia inicial | Cada pessoa começa com R$ 1.500.000; cruzar a Partida concede R$ 200.000. O aluguel base é 10% do preço do imóvel, dobrado ao completar o grupo de cor; o primeiro lance é R$ 10.000 e o incremento mínimo também é R$ 10.000. |
 | Taxas digitais | As quatro casas de taxa cobram R$ 50.000, R$ 75.000, R$ 100.000 e R$ 125.000, respectivamente. Valores autorais para o ritmo rápido e sujeitos a balanceamento por playtest. |
@@ -41,6 +42,7 @@
 - Opções visuais de avatares, cores e acessibilidade.
 - Escolha final do provedor Node para hospedar o servidor, depois de validar Colyseus com salas reais.
 - **Proposta para negociação:** uma oferta pendente por sala; aceitar/rejeitar somente pelo destinatário antes de acabar a janela de 45 segundos do Clássico ou 40 segundos do Express; títulos hipotecados podem ser trocados e permanecem hipotecados, sem cobrança automática ao transferir; construções de todo o grupo de cor precisam ser vendidas antes da troca de um título desse grupo. Ainda não é decisão de produto aprovada.
+- **Proposta de cálculo final implementada para playtest:** patrimônio = dinheiro disponível + preço de compra dos imóveis - saldo de hipoteca (50% do preço) + valor de venda das construções (50% do custo por nível). Se jogadores também empatarem nos dados, o servidor escolhe um deles aleatoriamente. Rever após playtests.
 
 ## Base de regras Express
 
@@ -56,3 +58,4 @@ A página oficial da Estrela confirma a presença de oito cartas de objetivo e d
 - 2026-10-28: definição e implementação de hipotecas por 50% do preço e resgate por 110% do adiantamento.
 - 2026-10-27: refinamento da composição do HUD da partida com participantes nas bordas e ação contextual separada, inspirado na hierarquia de leitura das capturas oficiais de *Business Tour*.
 - 2026-10-27: implementação inicial da negociação sincronizada de dinheiro e títulos; janela de 45 segundos no Clássico e 40 segundos no Express. Limite de uma oferta pendente por sala, tratamento de hipotecas e exigência de vender as construções do grupo foram registrados como propostas, não como decisões aprovadas.
+- 2026-10-27: relógio de 30 minutos no Clássico, seis rodadas Express com 40 segundos por jogador e pontuação final ligados ao estado autoritativo. Fórmula patrimonial aplicada como proposta para playtest; os objetivos privados Express continuam pendentes.

@@ -10,8 +10,21 @@ export const PROPERTY_BUILD_LEVELS = 5
 export const JAIL_FINE = 50_000
 export const MAX_JAIL_ATTEMPTS = 3
 export const MORTGAGE_RATIO = 0.5
+export const CLASSIC_MATCH_SECONDS = 30 * 60
+export const EXPRESS_ROUNDS = 6
+export const EXPRESS_PHASE_SECONDS = 40
 
 export type PropertyHolding = { ownerSessionId: string; houses: number; isMortgaged?: boolean }
+
+export function calculateNetWorth(ownerSessionId: string, cash: number, holdings: ReadonlyMap<number, PropertyHolding>) {
+  return Array.from(holdings.entries()).reduce((netWorth, [spaceId, holding]) => {
+    const space = boardSpaces[spaceId]
+    if (!space || space.kind !== 'property' || typeof space.price !== 'number' || holding.ownerSessionId !== ownerSessionId) return netWorth
+    const propertyValue = space.price - (holding.isMortgaged ? mortgageValue(spaceId) : 0)
+    const buildingsValue = Math.max(0, holding.houses) * buildingSaleValue(spaceId)
+    return netWorth + propertyValue + buildingsValue
+  }, Math.max(0, cash))
+}
 
 export type JailAttemptResult = {
   isJailed: boolean

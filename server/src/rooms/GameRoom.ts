@@ -2,7 +2,7 @@ import { randomInt } from 'node:crypto'
 import { CloseCode, Client, Room } from '@colyseus/core'
 import type { GameMode } from '../../../shared/lobby.js'
 import { isGameMode, normalizePlayerName } from '../../../shared/lobby.js'
-import { AUCTION_MIN_INCREMENT, AUCTION_SECONDS, JAIL_FINE, START_BONUS, STARTING_CASH, buildingSaleValue, calculateRent, canBuildProperty, canMortgageProperty, canRedeemMortgage, canSellBuilding, constructionCost, describeLanding, hasLiquidatableAssets, mortgageRedemptionCost, mortgageValue, movePosition, resolveJailAttempt, taxForSpace } from '../../../shared/game.js'
+import { AUCTION_MIN_INCREMENT, AUCTION_SECONDS, CLASSIC_MATCH_SECONDS, EXPRESS_PHASE_SECONDS, EXPRESS_ROUNDS, JAIL_FINE, START_BONUS, STARTING_CASH, buildingSaleValue, calculateNetWorth, calculateRent, canBuildProperty, canMortgageProperty, canRedeemMortgage, canSellBuilding, constructionCost, describeLanding, hasLiquidatableAssets, mortgageRedemptionCost, mortgageValue, movePosition, resolveJailAttempt, taxForSpace } from '../../../shared/game.js'
 import { boardSpaces } from '../../../shared/board.js'
 import { EVENT_CARDS } from '../../../shared/cards.js'
 import { LobbyPlayerState, LobbyState, PropertyState } from './schema/LobbyState.js'
@@ -33,6 +33,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
   private auctionInterval?: ReturnType<typeof setInterval>
   private auctionPassed = new Set<string>()
   private tradeInterval?: ReturnType<typeof setInterval>
+  private matchClockInterval?: ReturnType<typeof setInterval>
   private tradeOfferSequence = 0
 
   async onCreate(options: { mode?: unknown }) {
@@ -80,10 +81,17 @@ export class GameRoom extends Room<{ state: LobbyState }> {
         player.isJailed = false
         player.jailTurns = 0
         player.isBankrupt = false
+        player.finalCash = 0
+        player.finalNetWorth = 0
+        player.tieBreakRoll = 0
       }
       this.state.turnPhase = 'roll'
       this.state.activePlayerSessionId = this.state.players.keys().next().value ?? ''
       this.state.turnNumber = 1
+      this.state.matchSeconds = this.state.mode === 'classic' ? CLASSIC_MATCH_SECONDS : 0
+      this.state.matchEnding = false
+      this.state.expressRound = this.state.mode === 'express' ? 1 : 0
+      this.state.phaseSeconds = this.state.mode === 'express' ? EXPRESS_PHASE_SECONDS : 0
       this.state.diceOne = 0
       this.state.diceTwo = 0
       this.state.landingDescription = ''
@@ -99,6 +107,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       this.state.debtReason = ''
       this.state.winnerSessionId = ''
       this.startTradeWindow()
+      this.startMatchClock()
       this.broadcast('game:started', { mode: this.state.mode })
     },
     roll: (client: Client) => {
@@ -138,6 +147,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       this.state.pendingPropertyId = 255
       this.state.turnPhase = 'resolve'
       this.state.landingDescription = `${space.name} comprada por ${space.price.toLocaleString('pt-BR')}.`
+      this.finishExpiredPhaseIfReady()
     },
     declinePurchase: (client: Client) => {
       if (this.state.status !== 'playing' || this.state.turnPhase !== 'purchase' || client.sessionId !== this.state.activePlayerSessionId) return
@@ -222,6 +232,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       this.clearDebt()
       this.state.turnPhase = 'resolve'
       this.state.landingDescription = `Dívida paga (${reason}): ${amount.toLocaleString('pt-BR')}.`
+      this.finishExpiredPhaseIfReady()
     },
     declareBankruptcy: (client: Client) => {
       if (this.state.status !== 'playing' || this.state.turnPhase !== 'debt' || client.sessionId !== this.state.activePlayerSessionId) return
@@ -250,10 +261,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       this.clearDebt()
       const survivors = Array.from(this.state.players.entries()).filter(([, player]) => !player.isBankrupt)
       if (survivors.length <= 1) {
-        this.state.status = 'ended'
-        this.state.turnPhase = 'ended'
-        this.state.winnerSessionId = survivors[0]?.[0] ?? ''
-        this.stopTradeWindow()
+        this.finishMatch(survivors[0]?.[0])
         this.state.landingDescription = survivors.length ? `${name} faliu. ${survivors[0][1].name} venceu a partida.` : `${name} faliu. A partida terminou sem vencedor.`
         return
       }
@@ -273,6 +281,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       if (!result.move) {
         this.state.turnPhase = 'resolve'
         this.state.landingDescription = `Sem duplas: tentativa ${result.jailTurns} de 3. Sua vez termina na prisão.`
+        this.finishExpiredPhaseIfReady()
         return
       }
       const releaseText = result.outcome === 'doubles'
@@ -283,6 +292,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       this.state.activeCardDescription = ''
       this.resolveSpace(player)
       this.state.landingDescription = `${releaseText} ${this.state.landingDescription}`
+      this.finishExpiredPhaseIfReady()
     },
     jailPay: (client: Client) => {
       const player = this.state.players.get(client.sessionId)
@@ -436,7 +446,8 @@ export class GameRoom extends Room<{ state: LobbyState }> {
         client.send('room:error', { message: 'Somente a pessoa da vez pode concluir a jogada.' })
         return
       }
-      this.advanceTurn()
+      if (this.state.mode === 'classic' && this.state.matchEnding) this.finishMatch()
+      else this.advanceTurn()
     },
   }
 
@@ -488,6 +499,114 @@ export class GameRoom extends Room<{ state: LobbyState }> {
     this.clearTradeOffer()
   }
 
+  private startMatchClock() {
+    this.stopMatchClock()
+    this.matchClockInterval = setInterval(() => {
+      if (this.state.status !== 'playing') return this.stopMatchClock()
+      if (this.state.mode === 'classic') {
+        if (this.state.matchSeconds > 0) this.state.matchSeconds -= 1
+        if (this.state.matchSeconds === 0) {
+          this.state.matchEnding = true
+          if (['roll', 'resolve', 'jail'].includes(this.state.turnPhase)) this.finishMatch()
+        }
+        return
+      }
+
+      if (this.state.phaseSeconds > 0) this.state.phaseSeconds -= 1
+      if (this.state.phaseSeconds === 0) this.expireExpressPhase()
+    }, 1000)
+  }
+
+  private stopMatchClock() {
+    if (this.matchClockInterval) clearInterval(this.matchClockInterval)
+    this.matchClockInterval = undefined
+  }
+
+  private expireExpressPhase() {
+    if (this.state.status !== 'playing' || this.state.mode !== 'express') return
+    if (this.state.turnPhase === 'purchase') {
+      this.startAuction(this.state.pendingPropertyId)
+      return
+    }
+    if (this.state.turnPhase === 'auction') {
+      return
+    }
+    if (this.state.turnPhase === 'debt') return
+    const player = this.state.players.get(this.state.activePlayerSessionId)
+    this.state.landingDescription = `${player?.name ?? 'A pessoa da vez'} encerrou a fase de 40 segundos.`
+    this.advanceTurn()
+  }
+
+  private finishExpiredPhaseIfReady() {
+    if (this.state.status !== 'playing') return
+    if (this.state.mode === 'classic' && this.state.matchEnding && this.state.turnPhase === 'resolve') {
+      this.finishMatch()
+    } else if (this.state.mode === 'express' && this.state.phaseSeconds === 0 && this.state.turnPhase === 'resolve') {
+      this.advanceTurn()
+    }
+  }
+
+  private stopClocks() {
+    this.stopMatchClock()
+    this.stopTradeWindow()
+  }
+
+  private finishMatch(forcedWinnerSessionId?: string) {
+    if (this.state.status === 'ended') return
+    const activePlayers = Array.from(this.state.players.entries()).filter(([, player]) => !player.isBankrupt)
+    const holdings = this.getHoldings()
+    const ranked = activePlayers.map(([sessionId, player]) => ({
+      sessionId,
+      player,
+      netWorth: calculateNetWorth(sessionId, player.cash, holdings),
+    }))
+    for (const [sessionId, player] of this.state.players.entries()) {
+      player.finalCash = player.cash
+      player.finalNetWorth = Math.min(MAX_SCHEMA_CASH, calculateNetWorth(sessionId, player.cash, holdings))
+      player.tieBreakRoll = 0
+    }
+
+    let winner = ranked.find(({ sessionId }) => sessionId === forcedWinnerSessionId)
+    if (!winner && ranked.length > 0) {
+      ranked.sort((first, second) => this.compareScores(first, second))
+      let tied = ranked.filter((candidate) => this.compareScores(candidate, ranked[0]) === 0)
+      while (tied.length > 1) {
+        for (const candidate of tied) candidate.player.tieBreakRoll = randomInt(1, 7) + randomInt(1, 7)
+        const highestRoll = Math.max(...tied.map((candidate) => candidate.player.tieBreakRoll))
+        tied = tied.filter((candidate) => candidate.player.tieBreakRoll === highestRoll)
+        if (tied.length > 1) {
+          // Equal dice are rare; the server resolves the remaining dead heat uniformly.
+          const selected = tied[randomInt(tied.length)]
+          tied = [selected]
+        }
+      }
+      winner = tied[0]
+    }
+
+    this.state.status = 'ended'
+    this.state.turnPhase = 'ended'
+    this.state.winnerSessionId = winner?.sessionId ?? ''
+    this.stopClocks()
+    const endingReason = forcedWinnerSessionId
+      ? 'Partida encerrada após falência.'
+      : this.state.matchEnding
+        ? 'Tempo esgotado.'
+        : this.state.mode === 'express'
+          ? `Fim da rodada ${EXPRESS_ROUNDS}.`
+          : 'Partida encerrada.'
+    const tieBreak = winner?.player.tieBreakRoll ? ` Desempate nos dados: ${winner.player.tieBreakRoll}.` : ''
+    this.state.landingDescription = winner
+      ? this.state.mode === 'classic'
+        ? `${endingReason} ${winner.player.name} venceu por patrimônio de ${winner.player.finalNetWorth.toLocaleString('pt-BR')}; dinheiro disponível: ${winner.player.finalCash.toLocaleString('pt-BR')}.${tieBreak}`
+        : `${endingReason} ${winner.player.name} venceu com saldo de ${winner.player.finalCash.toLocaleString('pt-BR')}; patrimônio de ${winner.player.finalNetWorth.toLocaleString('pt-BR')}.${tieBreak}`
+      : 'A partida terminou sem jogadores solventes.'
+  }
+
+  private compareScores(first: { player: LobbyPlayerState; netWorth: number }, second: { player: LobbyPlayerState; netWorth: number }) {
+    if (this.state.mode === 'express' && first.player.cash !== second.player.cash) return second.player.cash - first.player.cash
+    return second.netWorth - first.netWorth
+  }
+
   private startTradeWindow() {
     this.stopTradeWindow()
     this.state.tradeSeconds = this.state.mode === 'express' ? 40 : 45
@@ -505,18 +624,39 @@ export class GameRoom extends Room<{ state: LobbyState }> {
   }
 
   private advanceTurn() {
-    const playerIds = Array.from(this.state.players.entries()).filter(([, player]) => !player.isBankrupt).map(([sessionId]) => sessionId)
+    const roomPlayerIds = Array.from(this.state.players.entries()).map(([sessionId]) => sessionId)
     this.stopTradeWindow()
-    if (playerIds.length <= 1) {
-      this.state.status = 'ended'
-      this.state.turnPhase = 'ended'
-      this.state.winnerSessionId = playerIds[0] ?? ''
+    const solventPlayers = roomPlayerIds.filter((sessionId) => !this.state.players.get(sessionId)?.isBankrupt)
+    if (solventPlayers.length <= 1) {
+      this.finishMatch(solventPlayers[0])
       return
     }
-    const activeIndex = playerIds.indexOf(this.state.activePlayerSessionId)
-    this.state.activePlayerSessionId = playerIds[(activeIndex + 1 + playerIds.length) % playerIds.length]
+    const activeIndex = roomPlayerIds.indexOf(this.state.activePlayerSessionId)
+    const startIndex = activeIndex >= 0 ? activeIndex : roomPlayerIds.length - 1
+    let nextIndex = -1
+    for (let step = 1; step <= roomPlayerIds.length; step += 1) {
+      const candidateIndex = (startIndex + step) % roomPlayerIds.length
+      if (!this.state.players.get(roomPlayerIds[candidateIndex])?.isBankrupt) {
+        nextIndex = candidateIndex
+        break
+      }
+    }
+    if (nextIndex < 0) {
+      this.finishMatch()
+      return
+    }
+    if (this.state.mode === 'express' && nextIndex <= activeIndex && activeIndex >= 0) {
+      this.state.expressRound += 1
+      if (this.state.expressRound > EXPRESS_ROUNDS) {
+        this.state.expressRound = EXPRESS_ROUNDS
+        this.finishMatch()
+        return
+      }
+    }
+    this.state.activePlayerSessionId = roomPlayerIds[nextIndex]
     const nextPlayer = this.state.players.get(this.state.activePlayerSessionId)
     this.state.turnNumber += 1
+    this.state.phaseSeconds = this.state.mode === 'express' ? EXPRESS_PHASE_SECONDS : 0
     this.state.turnPhase = nextPlayer?.isJailed ? 'jail' : 'roll'
     this.state.diceOne = 0
     this.state.diceTwo = 0
@@ -639,6 +779,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
     this.state.auctionHighestBidderSessionId = ''
     this.state.auctionSeconds = 0
     this.auctionPassed.clear()
+    this.finishExpiredPhaseIfReady()
   }
 
   private clearAuctionTimer() {
@@ -647,7 +788,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
   }
 
   onLeave(client: Client) {
-    if (this.state.status === 'playing') this.stopTradeWindow()
+    if (this.state.status === 'playing') this.stopClocks()
     this.state.players.delete(client.sessionId)
     if (this.state.status === 'playing') this.state.status = 'waiting'
     if (![...this.state.players.values()].some((player) => player.isHost)) {
@@ -662,7 +803,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
 
   async onDispose() {
     this.clearAuctionTimer()
-    this.stopTradeWindow()
+    this.stopClocks()
     await this.presence.srem(ROOM_CODES_CHANNEL, this.roomId)
   }
 }
