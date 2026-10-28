@@ -40,6 +40,7 @@
 - Detalhes de reconexão/retorno após o prazo de 60 segundos e de saída voluntária.
 - Opções visuais de avatares, cores e acessibilidade.
 - Escolha final do provedor Node para hospedar o servidor, depois de validar Colyseus com salas reais.
+- **Proposta para negociação:** uma oferta pendente por sala; aceitar/rejeitar somente pelo destinatário antes de acabar a janela de 45 segundos do Clássico ou 40 segundos do Express; títulos hipotecados podem ser trocados e permanecem hipotecados, sem cobrança automática ao transferir; construções de todo o grupo de cor precisam ser vendidas antes da troca de um título desse grupo. Ainda não é decisão de produto aprovada.
 
 ## Base de regras Express
 
@@ -54,3 +55,4 @@ A página oficial da Estrela confirma a presença de oito cartas de objetivo e d
 - 2026-10-27: definição do baralho autoral Sorte ou Revés e das tentativas para sair da prisão.
 - 2026-10-28: definição e implementação de hipotecas por 50% do preço e resgate por 110% do adiantamento.
 - 2026-10-27: refinamento da composição do HUD da partida com participantes nas bordas e ação contextual separada, inspirado na hierarquia de leitura das capturas oficiais de *Business Tour*.
+- 2026-10-27: implementação inicial da negociação sincronizada de dinheiro e títulos; janela de 45 segundos no Clássico e 40 segundos no Express. Limite de uma oferta pendente por sala, tratamento de hipotecas e exigência de vender as construções do grupo foram registrados como propostas, não como decisões aprovadas.

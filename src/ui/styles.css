@@ -203,3 +203,34 @@ button:disabled{opacity:.55;cursor:not-allowed}
   .game-bottom{font-size:6px}
   .asset-panel{max-height:56vh}
 }
+.game-topline{gap:10px}
+.game-tools{display:flex;align-items:center;gap:7px}
+.trade-panel{width:min(550px,calc(100vw - 36px));max-height:min(72vh,650px);overflow:auto;overscroll-behavior:contain}
+.trade-panel .asset-panel-heading{flex:none}
+.trade-panel h2{margin:8px 0 5px}
+.trade-panel>p{line-height:1.5}
+.trade-close{width:26px;height:26px;border:1px solid #d1d7c8;border-radius:50%;background:#fffef7;color:#516652;font-size:16px;line-height:1}
+.trade-label{display:grid;gap:5px;margin:9px 0;color:#7e8c78;font-size:7px;font-weight:700;letter-spacing:.1em}
+.trade-select,.trade-input{width:100%;min-height:34px;padding:0 9px;border:1px solid #d1d7c8;border-radius:8px;background:#fffef7;color:#33483a;font-size:10px;letter-spacing:normal}
+.trade-columns{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:4px}
+.trade-columns>div{min-width:0}
+.trade-property-list{display:grid;gap:3px;max-height:118px;overflow:auto;padding:3px;border:1px solid #e0e3d7;border-radius:8px;background:rgba(237,240,226,.52)}
+.trade-property{display:flex;align-items:center;gap:6px;min-width:0;color:#52654f;font-size:8px;line-height:1.3}
+.trade-property input{accent-color:#779675;flex:none}
+.trade-property span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.trade-property-list>small{padding:4px;color:#879285;font-size:8px}
+.trade-note{margin:8px 0!important;color:#859082!important;font-size:8px!important}
+.trade-actions{display:flex;gap:7px;margin-top:10px}
+.trade-actions>*{flex:1}
+.trade-full-button{width:100%;min-height:36px;margin:8px 0 0}
+.trade-panel .form-error{margin:5px 0;color:#a14f38}
+@media(max-width:640px){
+  .game-topline{gap:4px}
+  .game-tools{gap:4px}
+  .game-tools .portfolio-toggle{padding:0 6px;font-size:6px}
+  .trade-panel{width:calc(100vw - 20px);max-height:62vh;padding:11px}
+  .trade-columns{gap:7px}
+  .trade-property-list{max-height:92px}
+  .trade-label{font-size:6px}
+  .trade-select,.trade-input{min-height:31px;font-size:9px}
+}

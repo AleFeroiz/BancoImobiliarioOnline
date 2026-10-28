@@ -10,6 +10,18 @@ import { LobbyPlayerState, LobbyState, PropertyState } from './schema/LobbyState
 const ROOM_CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
 const ROOM_CODE_LENGTH = 5
 const ROOM_CODES_CHANNEL = '$banco-imobiliario-room-codes'
+const MAX_SCHEMA_CASH = 2_147_483_647
+
+function parseTradePropertyIds(value: unknown): number[] | null {
+  if (value === undefined) return []
+  if (!Array.isArray(value) || value.length > boardSpaces.length) return null
+  const ids = value as unknown[]
+  if (ids.some((id) => typeof id !== 'number' || !Number.isSafeInteger(id) || id < 0 || id >= boardSpaces.length)) return null
+  const normalized = ids as number[]
+  if (new Set(normalized).size !== normalized.length) return null
+  if (normalized.some((id) => boardSpaces[id].kind !== 'property')) return null
+  return normalized
+}
 
 function createRoomCode() {
   return Array.from({ length: ROOM_CODE_LENGTH }, () => ROOM_CODE_ALPHABET[randomInt(ROOM_CODE_ALPHABET.length)]).join('')
@@ -20,6 +32,8 @@ export class GameRoom extends Room<{ state: LobbyState }> {
   state = new LobbyState()
   private auctionInterval?: ReturnType<typeof setInterval>
   private auctionPassed = new Set<string>()
+  private tradeInterval?: ReturnType<typeof setInterval>
+  private tradeOfferSequence = 0
 
   async onCreate(options: { mode?: unknown }) {
     const mode: GameMode = isGameMode(options.mode) ? options.mode : 'classic'
@@ -84,6 +98,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       this.state.debtCreditorSessionId = ''
       this.state.debtReason = ''
       this.state.winnerSessionId = ''
+      this.startTradeWindow()
       this.broadcast('game:started', { mode: this.state.mode })
     },
     roll: (client: Client) => {
@@ -238,6 +253,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
         this.state.status = 'ended'
         this.state.turnPhase = 'ended'
         this.state.winnerSessionId = survivors[0]?.[0] ?? ''
+        this.stopTradeWindow()
         this.state.landingDescription = survivors.length ? `${name} faliu. ${survivors[0][1].name} venceu a partida.` : `${name} faliu. A partida terminou sem vencedor.`
         return
       }
@@ -302,6 +318,118 @@ export class GameRoom extends Room<{ state: LobbyState }> {
         .every((sessionId) => this.auctionPassed.has(sessionId))
       if (allOtherPlayersPassed) this.finishAuction()
     },
+    tradeOffer: (client: Client, payload: {
+      toSessionId?: unknown
+      cashOffered?: unknown
+      cashRequested?: unknown
+      propertiesOffered?: unknown
+      propertiesRequested?: unknown
+    }) => {
+      if (!this.isTradeWindowOpen() || client.sessionId !== this.state.activePlayerSessionId) {
+        client.send('room:error', { message: 'A negociação só pode ser iniciada pela pessoa da vez durante a janela aberta.' })
+        return
+      }
+      if (this.state.tradeOfferId > 0) {
+        client.send('room:error', { message: 'Já existe uma oferta de troca aguardando resposta.' })
+        return
+      }
+      const sender = this.state.players.get(client.sessionId)
+      const targetId = typeof payload?.toSessionId === 'string' ? payload.toSessionId : ''
+      const target = this.state.players.get(targetId)
+      const cashOffered = payload?.cashOffered
+      const cashRequested = payload?.cashRequested
+      const propertiesOffered = parseTradePropertyIds(payload?.propertiesOffered)
+      const propertiesRequested = parseTradePropertyIds(payload?.propertiesRequested)
+      if (!sender || sender.isBankrupt || !target || targetId === client.sessionId || target.isBankrupt) {
+        client.send('room:error', { message: 'Escolha outra pessoa ativa da sala para negociar.' })
+        return
+      }
+      if (typeof cashOffered !== 'number' || !Number.isSafeInteger(cashOffered) || cashOffered < 0 || cashOffered > MAX_SCHEMA_CASH
+        || typeof cashRequested !== 'number' || !Number.isSafeInteger(cashRequested) || cashRequested < 0 || cashRequested > MAX_SCHEMA_CASH
+        || !propertiesOffered || !propertiesRequested) {
+        client.send('room:error', { message: 'A oferta contém valores ou imóveis inválidos.' })
+        return
+      }
+      if (cashOffered + cashRequested === 0 && propertiesOffered.length === 0 && propertiesRequested.length === 0) {
+        client.send('room:error', { message: 'Inclua dinheiro ou pelo menos um imóvel na proposta.' })
+        return
+      }
+      if (cashOffered > sender.cash || cashRequested > target.cash) {
+        client.send('room:error', { message: 'Uma das pessoas não tem saldo suficiente para essa proposta.' })
+        return
+      }
+      const validateTitles = (ids: number[], ownerSessionId: string) => ids.every((id) => {
+        return this.canTradeTitle(id, ownerSessionId)
+      })
+      if (!validateTitles(propertiesOffered, client.sessionId) || !validateTitles(propertiesRequested, targetId)) {
+        client.send('room:error', { message: 'Só é possível trocar imóveis próprios e sem casas ou hotéis. Venda as construções primeiro.' })
+        return
+      }
+      this.tradeOfferSequence = (this.tradeOfferSequence % MAX_SCHEMA_CASH) + 1
+      this.state.tradeOfferId = this.tradeOfferSequence
+      this.state.tradeOfferFromSessionId = client.sessionId
+      this.state.tradeOfferToSessionId = targetId
+      this.state.tradeOfferCashOffered = cashOffered
+      this.state.tradeOfferCashRequested = cashRequested
+      this.state.tradeOfferPropertiesOffered = propertiesOffered.join(',')
+      this.state.tradeOfferPropertiesRequested = propertiesRequested.join(',')
+      this.state.landingDescription = `${sender.name} enviou uma proposta de troca para ${target.name}.`
+    },
+    tradeAccept: (client: Client, payload: { offerId?: unknown }) => {
+      const offerId = payload?.offerId
+      if (!this.isTradeWindowOpen() || offerId !== this.state.tradeOfferId || client.sessionId !== this.state.tradeOfferToSessionId) {
+        client.send('room:error', { message: 'Essa oferta não está mais disponível para você.' })
+        return
+      }
+      if (this.state.activePlayerSessionId !== this.state.tradeOfferFromSessionId) {
+        client.send('room:error', { message: 'A vez mudou; a proposta expirou.' })
+        this.clearTradeOffer()
+        return
+      }
+      const senderSessionId = this.state.tradeOfferFromSessionId
+      const recipientSessionId = this.state.tradeOfferToSessionId
+      const sender = this.state.players.get(senderSessionId)
+      const recipient = this.state.players.get(recipientSessionId)
+      const offeredIds = this.state.tradeOfferPropertiesOffered ? this.state.tradeOfferPropertiesOffered.split(',').map(Number) : []
+      const requestedIds = this.state.tradeOfferPropertiesRequested ? this.state.tradeOfferPropertiesRequested.split(',').map(Number) : []
+      const validTitles = (ids: number[], ownerSessionId: string) => ids.every((id) => {
+        return this.canTradeTitle(id, ownerSessionId)
+      })
+      const cashFromSender = this.state.tradeOfferCashOffered
+      const cashFromRecipient = this.state.tradeOfferCashRequested
+      if (!sender || !recipient || sender.isBankrupt || recipient.isBankrupt
+        || sender.cash < cashFromSender || recipient.cash < cashFromRecipient
+        || sender.cash - cashFromSender + cashFromRecipient > MAX_SCHEMA_CASH
+        || recipient.cash - cashFromRecipient + cashFromSender > MAX_SCHEMA_CASH
+        || !validTitles(offeredIds, senderSessionId) || !validTitles(requestedIds, recipientSessionId)) {
+        client.send('room:error', { message: 'A oferta mudou e não pode mais ser concluída. Confira saldos e imóveis.' })
+        return
+      }
+      sender.cash = sender.cash - cashFromSender + cashFromRecipient
+      recipient.cash = recipient.cash - cashFromRecipient + cashFromSender
+      for (const id of offeredIds) this.state.properties.get(String(id))!.ownerSessionId = recipientSessionId
+      for (const id of requestedIds) this.state.properties.get(String(id))!.ownerSessionId = senderSessionId
+      this.state.landingDescription = `${recipient.name} aceitou a troca proposta por ${sender.name}. As hipotecas permanecem vinculadas aos respectivos imóveis.`
+      this.clearTradeOffer()
+    },
+    tradeReject: (client: Client, payload: { offerId?: unknown }) => {
+      if (payload?.offerId !== this.state.tradeOfferId || client.sessionId !== this.state.tradeOfferToSessionId) {
+        client.send('room:error', { message: 'Só a pessoa destinatária pode recusar essa oferta.' })
+        return
+      }
+      const sender = this.state.players.get(this.state.tradeOfferFromSessionId)
+      const recipient = this.state.players.get(client.sessionId)
+      this.clearTradeOffer()
+      this.state.landingDescription = `${recipient?.name ?? 'A pessoa destinatária'} recusou a proposta${sender ? ` de ${sender.name}` : ''}.`
+    },
+    tradeCancel: (client: Client, payload: { offerId?: unknown }) => {
+      if (payload?.offerId !== this.state.tradeOfferId || client.sessionId !== this.state.tradeOfferFromSessionId) {
+        client.send('room:error', { message: 'Só quem enviou a oferta pode cancelá-la.' })
+        return
+      }
+      this.clearTradeOffer()
+      this.state.landingDescription = 'A proposta de troca foi cancelada.'
+    },
     finishTurn: (client: Client) => {
       if (this.state.status !== 'playing' || this.state.turnPhase !== 'resolve') return
       if (client.sessionId !== this.state.activePlayerSessionId) {
@@ -326,8 +454,59 @@ export class GameRoom extends Room<{ state: LobbyState }> {
     this.state.debtReason = ''
   }
 
+  private canTradeTitle(propertyId: number, ownerSessionId: string) {
+    const space = boardSpaces[propertyId]
+    const title = this.state.properties.get(String(propertyId))
+    if (!space || space.kind !== 'property' || title?.ownerSessionId !== ownerSessionId) return false
+    return !boardSpaces.some((groupSpace) => {
+      if (groupSpace.kind !== 'property' || groupSpace.color !== space.color) return false
+      return (this.state.properties.get(String(groupSpace.id))?.houses ?? 0) > 0
+    })
+  }
+
+  private isTradeWindowOpen() {
+    return this.state.status === 'playing'
+      && this.state.tradeSeconds > 0
+      && Boolean(this.state.activePlayerSessionId)
+      && !this.state.players.get(this.state.activePlayerSessionId)?.isBankrupt
+  }
+
+  private clearTradeOffer() {
+    this.state.tradeOfferId = 0
+    this.state.tradeOfferFromSessionId = ''
+    this.state.tradeOfferToSessionId = ''
+    this.state.tradeOfferCashOffered = 0
+    this.state.tradeOfferCashRequested = 0
+    this.state.tradeOfferPropertiesOffered = ''
+    this.state.tradeOfferPropertiesRequested = ''
+  }
+
+  private stopTradeWindow() {
+    if (this.tradeInterval) clearInterval(this.tradeInterval)
+    this.tradeInterval = undefined
+    this.state.tradeSeconds = 0
+    this.clearTradeOffer()
+  }
+
+  private startTradeWindow() {
+    this.stopTradeWindow()
+    this.state.tradeSeconds = this.state.mode === 'express' ? 40 : 45
+    this.tradeInterval = setInterval(() => {
+      if (this.state.status !== 'playing') {
+        this.stopTradeWindow()
+        return
+      }
+      if (this.state.tradeSeconds <= 1) {
+        this.stopTradeWindow()
+        return
+      }
+      this.state.tradeSeconds -= 1
+    }, 1000)
+  }
+
   private advanceTurn() {
     const playerIds = Array.from(this.state.players.entries()).filter(([, player]) => !player.isBankrupt).map(([sessionId]) => sessionId)
+    this.stopTradeWindow()
     if (playerIds.length <= 1) {
       this.state.status = 'ended'
       this.state.turnPhase = 'ended'
@@ -344,6 +523,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
     this.state.landingDescription = nextPlayer?.isJailed ? 'Você está preso. Pague a fiança ou tente tirar duplas.' : ''
     this.state.activeCardTitle = ''
     this.state.activeCardDescription = ''
+    this.startTradeWindow()
   }
 
   private collectPayment(debtor: LobbyPlayerState, amount: number, creditorSessionId: string, reason: string) {
@@ -467,6 +647,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
   }
 
   onLeave(client: Client) {
+    if (this.state.status === 'playing') this.stopTradeWindow()
     this.state.players.delete(client.sessionId)
     if (this.state.status === 'playing') this.state.status = 'waiting'
     if (![...this.state.players.values()].some((player) => player.isHost)) {
@@ -481,6 +662,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
 
   async onDispose() {
     this.clearAuctionTimer()
+    this.stopTradeWindow()
     await this.presence.srem(ROOM_CODES_CHANNEL, this.roomId)
   }
 }
