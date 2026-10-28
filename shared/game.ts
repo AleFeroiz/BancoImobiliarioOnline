@@ -101,9 +101,18 @@ export function hasLiquidatableAssets(
   ownerSessionId: string,
   holdings: ReadonlyMap<number, PropertyHolding>,
 ) {
-  return Array.from(holdings.keys()).some((spaceId) =>
-    canSellBuilding(spaceId, ownerSessionId, holdings) || canMortgageProperty(spaceId, ownerSessionId, holdings),
-  )
+  return liquidatablePropertyIds(ownerSessionId, holdings).length > 0
+}
+
+export function liquidatablePropertyIds(
+  ownerSessionId: string,
+  holdings: ReadonlyMap<number, PropertyHolding>,
+) {
+  return Array.from(holdings.keys())
+    .filter((spaceId) =>
+      canSellBuilding(spaceId, ownerSessionId, holdings) || canMortgageProperty(spaceId, ownerSessionId, holdings),
+    )
+    .sort((first, second) => first - second)
 }
 
 export function mortgageValue(spaceId: number) {

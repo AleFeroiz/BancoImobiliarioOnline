@@ -138,3 +138,10 @@
 - Em 1440 × 813, o marcador ficou visível junto à peça no canto do tabuleiro. Em viewport de celular de 390 × 844, as quatro bordas do tabuleiro couberam na largura e `document.documentElement.scrollWidth` permaneceu igual a `innerWidth` (sem rolagem horizontal). O segundo cliente viu o estado de compra sincronizado, com as ações desabilitadas quando não era sua vez.
 - Capturas inspecionadas: `/tmp/banco-game-review.png` e `/tmp/banco-game-mobile-review.png`.
 - `vitest`: 72 testes passaram em 10 arquivos; build do cliente e build do servidor passaram. O Chrome headless emitiu os avisos conhecidos de WebGL por software/GPU.
+
+## 2026-10-28 — Destaques dos bens durante dívida
+
+- O Chrome percorreu uma partida real de dois jogadores até uma dívida de R$ 125.000 com saldo de R$ 37.000. Ao abrir “Ver bens para liquidar”, a carteira mostrou seis títulos hipotecáveis e seis aros dourados nas mesmas casas; nenhum bem do adversário foi realçado. Não houve exceções JavaScript.
+- Em 1440 × 813, o tabuleiro permaneceu visível ao lado do painel de liquidação. Em 390 × 844, o painel ocupou a borda inferior e deixou a parte superior do tabuleiro visível; o documento não teve rolagem horizontal.
+- Capturas inspecionadas: `/tmp/banco-debt-desktop-recheck.png` e `/tmp/banco-debt-auto-mobile.png`.
+- Testes unitários verificam construções vendáveis em ordem equilibrada, estações hipotecáveis, bens do adversário e títulos já hipotecados. A suíte completa passou com 74 testes, e os builds do cliente e do servidor passaram.

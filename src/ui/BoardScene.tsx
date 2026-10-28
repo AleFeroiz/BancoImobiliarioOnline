@@ -63,7 +63,7 @@ function SpaceLabel({ name, price, size }: { name: string; price?: number; size:
   )
 }
 
-function Board({ playerPositions, propertyBuildings, highlightedSpaceId }: { playerPositions: number[]; propertyBuildings: PropertyBuilding[]; highlightedSpaceId: number | null }) {
+function Board({ playerPositions, propertyBuildings, highlightedSpaceIds }: { playerPositions: number[]; propertyBuildings: PropertyBuilding[]; highlightedSpaceIds: readonly number[] }) {
   return (
     <group>
       <mesh position={[0, -0.25, 0]} receiveShadow>
@@ -113,7 +113,7 @@ function Board({ playerPositions, propertyBuildings, highlightedSpaceId }: { pla
               <meshStandardMaterial color={space.color} roughness={0.7} />
             </mesh>
             <SpaceLabel name={space.name} price={space.price} size={size} />
-            {space.id === highlightedSpaceId && (
+            {highlightedSpaceIds.includes(space.id) && (
               <mesh position={[0, 0.092, 0]} rotation={[-Math.PI / 2, 0, 0]}>
                 <ringGeometry args={[size * 0.38, size * 0.47, 40]} />
                 <meshBasicMaterial color="#e5af3f" transparent opacity={0.96} toneMapped={false} />
@@ -182,7 +182,7 @@ function Board({ playerPositions, propertyBuildings, highlightedSpaceId }: { pla
   )
 }
 
-export default function BoardScene({ playerPositions, propertyBuildings, highlightedSpaceId = null }: { playerPositions: number[]; propertyBuildings: PropertyBuilding[]; highlightedSpaceId?: number | null }) {
+export default function BoardScene({ playerPositions, propertyBuildings, highlightedSpaceIds = [] }: { playerPositions: number[]; propertyBuildings: PropertyBuilding[]; highlightedSpaceIds?: readonly number[] }) {
   return (
     <Canvas camera={{ position: [12.5, 15.5, 15.5], fov: 34 }} shadows dpr={[1, 1.6]}>
       <color attach="background" args={['#9bbcc1']} />
@@ -190,7 +190,7 @@ export default function BoardScene({ playerPositions, propertyBuildings, highlig
       <ambientLight intensity={0.72} />
       <directionalLight position={[7, 13, 5]} intensity={1.55} castShadow shadow-mapSize={[1024, 1024]} />
       <ResponsiveCamera />
-      <Board playerPositions={playerPositions} propertyBuildings={propertyBuildings} highlightedSpaceId={highlightedSpaceId} />
+      <Board playerPositions={playerPositions} propertyBuildings={propertyBuildings} highlightedSpaceIds={highlightedSpaceIds} />
       <ContactShadows position={[0, -0.46, 0]} opacity={0.25} scale={18} blur={2.5} far={5} />
     </Canvas>
   )

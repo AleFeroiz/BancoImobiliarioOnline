@@ -7,7 +7,7 @@ import { scoreCriteria } from './scoreCriteria'
 import { getLobbyPlayerEntries } from './lobbySnapshot'
 import { canAffordPurchase } from './purchaseActions'
 import { boardSpaces, formatMoney } from '../game/board'
-import { buildingSaleValue, canBuildProperty, canMortgageProperty, canRedeemMortgage, canSellBuilding, constructionCost, hasLiquidatableAssets, mortgageRedemptionCost, mortgageValue, type PropertyHolding } from '../../shared/game'
+import { buildingSaleValue, canBuildProperty, canMortgageProperty, canRedeemMortgage, canSellBuilding, constructionCost, hasLiquidatableAssets, liquidatablePropertyIds, mortgageRedemptionCost, mortgageValue, type PropertyHolding } from '../../shared/game'
 import type { ExpressObjectiveUpdate } from '../../shared/objectives'
 
 type Mode = GameMode
@@ -90,7 +90,11 @@ function App() {
   }
   const localPlayer = roomPlayers.find((player) => player.sessionId === room?.sessionId)
   const pendingPurchasePrice = boardSpaces[pendingPropertyId]?.price ?? 0
-  const highlightedSpaceId = turnPhase === 'purchase' || turnPhase === 'auction' ? pendingPropertyId : null
+  const highlightedSpaceIds = turnPhase === 'purchase' || turnPhase === 'auction'
+    ? [pendingPropertyId]
+    : turnPhase === 'debt' && showPropertyPanel && isMyTurn
+      ? liquidatablePropertyIds(room?.sessionId ?? '', holdingsById)
+      : []
   const canAffordPendingPurchase = canAffordPurchase(localPlayer?.cash ?? 0, pendingPurchasePrice)
   const myProperties = Array.from(roomProperties.entries())
     .filter(([_, holding]) => holding.ownerSessionId === room?.sessionId)
@@ -301,7 +305,7 @@ function App() {
 
   return (
     <main className={`app-shell screen-${screen}`}>
-      <div className="scene-backdrop"><BoardScene playerPositions={playerPositions} propertyBuildings={propertyBuildings} highlightedSpaceId={highlightedSpaceId} /></div>
+      <div className="scene-backdrop"><BoardScene playerPositions={playerPositions} propertyBuildings={propertyBuildings} highlightedSpaceIds={highlightedSpaceIds} /></div>
       <header className="topbar">
         <button className="brand" onClick={() => { if (room) void leaveRoom(); else setScreen('home') }} aria-label="Voltar ao início">
           <span className="brand-mark">B</span><span>BANCO<span className="brand-light">IMOBILIÁRIO</span></span>
@@ -416,9 +420,9 @@ function App() {
             </aside>
           ) : showPropertyPanel && turnPhase !== 'ended' ? (
             <aside className="turn-card asset-panel" aria-label="Minha carteira de imóveis">
-              <div className="asset-panel-heading"><span className="turn-label">CARTEIRA DA PARTIDA</span><span>{formatMoney(localPlayer?.cash ?? 0)}</span></div>
-              <h2>Meus imóveis</h2>
-              <p>Hipoteque para receber metade do valor. O resgate custa 10% a mais.</p>
+              <div className="asset-panel-heading"><span className="turn-label">{turnPhase === 'debt' ? 'LIQUIDAÇÃO DE DÍVIDA' : 'CARTEIRA DA PARTIDA'}</span>{turnPhase === 'debt' ? <button className="trade-close" onClick={() => setShowPropertyPanel(false)} aria-label="Voltar para a dívida">×</button> : <span>{formatMoney(localPlayer?.cash ?? 0)}</span>}</div>
+              <h2>{turnPhase === 'debt' ? 'Bens para quitar a dívida' : 'Meus imóveis'}</h2>
+              <p>{turnPhase === 'debt' ? `Falta pagar ${formatMoney(debtAmount)}. Seu saldo é ${formatMoney(localPlayer?.cash ?? 0)}; os aros dourados indicam bens que podem ser liquidados.` : 'Hipoteque para receber metade do valor. O resgate custa 10% a mais.'}</p>
               <div className="asset-list">
                 {myProperties.length === 0 ? <span className="asset-empty">Você ainda não tem propriedades.</span> : myProperties.map(({ spaceId, holding, space }) => {
                   const canMortgage = canMortgageProperty(spaceId, room?.sessionId ?? '', holdingsById)
