@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { boardSpaces } from './board.js'
 import { calculateNetWorth } from './game.js'
 
 describe('patrimônio final', () => {
@@ -9,7 +10,7 @@ describe('patrimônio final', () => {
     ])
 
     expect(calculateNetWorth('ana', 500_000, holdings)).toBe(560_000)
-    expect(calculateNetWorth('bia', 500_000, holdings)).toBe(610_000)
+    expect(calculateNetWorth('bia', 500_000, holdings)).toBe(500_000 + (boardSpaces[3]?.price ?? 0))
   })
 
   it('ignora saldo e títulos negativos ou inválidos na avaliação', () => {

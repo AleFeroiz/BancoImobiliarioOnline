@@ -712,7 +712,7 @@ describe('sala privada', () => {
     await waitFor(() => room.state.status === 'ended')
 
     expect(room.state.winnerSessionId).toBe(host.sessionId)
-    expect(room.state.players.get(host.sessionId)?.finalNetWorth).toBe(1_310_000)
+    expect(room.state.players.get(host.sessionId)?.finalNetWorth).toBe(1_200_000 + (boardSpaces[3]?.price ?? 0))
     expect(room.state.players.get(host.sessionId)?.tieBreakRoll).toBe(0)
     expect(room.state.landingDescription).toContain('patrimônio')
   })

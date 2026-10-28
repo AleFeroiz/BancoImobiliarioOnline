@@ -26,21 +26,25 @@ describe('objetivos do modo Express', () => {
     expect(getExpressObjectiveProgress(objectiveId, 'bia', holdings)).toBe(0)
   })
 
-  it('só conta o grupo residencial de duas ruas quando ambas pertencem à pessoa', () => {
-    const group = new Map<string, number[]>()
+  it('usa o grupo residencial mais barato e exige a posse de todas as ruas', () => {
+    const groups = new Map<string, Array<{ id: number; price: number }>>()
     for (const space of boardSpaces.filter((entry) => entry.kind === 'property' && entry.buildable)) {
-      const ids = group.get(space.color) ?? []
-      ids.push(space.id)
-      group.set(space.color, ids)
+      const properties = groups.get(space.color) ?? []
+      properties.push({ id: space.id, price: space.price ?? 0 })
+      groups.set(space.color, properties)
     }
-    const smallestGroup = [...group.values()].sort((first, second) => first.length - second.length)[0] ?? []
+    const cheapestGroup = [...groups.values()].sort((first, second) =>
+      first.reduce((total, property) => total + property.price, 0) - second.reduce((total, property) => total + property.price, 0),
+    )[0] ?? []
     const groupObjective = EXPRESS_OBJECTIVES.find((objective) => objective.id === 'complete-color-group')!
-    expect(smallestGroup).toHaveLength(groupObjective.target)
+    expect(groupObjective.target).toBe(3)
+    expect(groupObjective.description).toContain('mais barato')
 
-    const holdings = new Map<number, ObjectiveHolding>(smallestGroup.map((id) => [id, { ownerSessionId: 'ana', houses: 0 }]))
-    expect(getExpressObjectiveProgress('complete-color-group', 'ana', holdings)).toBe(smallestGroup.length)
-    holdings.get(smallestGroup[0]!)!.ownerSessionId = 'bia'
-    expect(getExpressObjectiveProgress('complete-color-group', 'ana', holdings)).toBe(smallestGroup.length - 1)
+    const holdings = new Map<number, ObjectiveHolding>(cheapestGroup.map(({ id }) => [id, { ownerSessionId: 'ana', houses: 0 }]))
+    expect(cheapestGroup).toHaveLength(groupObjective.target)
+    expect(getExpressObjectiveProgress('complete-color-group', 'ana', holdings)).toBe(cheapestGroup.length)
+    holdings.get(cheapestGroup[0]!.id)!.ownerSessionId = 'bia'
+    expect(getExpressObjectiveProgress('complete-color-group', 'ana', holdings)).toBe(cheapestGroup.length - 1)
   })
 
   it('conta níveis residenciais, hotel e estações conforme seus critérios', () => {

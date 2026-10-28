@@ -36,13 +36,17 @@ const residentialGroups = Array.from(
   ([color, spaces]) => ({ color, spaces }),
 ).sort((first, second) => first.spaces.length - second.spaces.length || first.color.localeCompare(second.color))
 
-const easiestColorGroup = residentialGroups[0]
+const easiestColorGroup = residentialGroups.sort((first, second) => {
+  const firstCost = first.spaces.reduce((total, spaceId) => total + (boardSpaces[spaceId]?.price ?? 0), 0)
+  const secondCost = second.spaces.reduce((total, spaceId) => total + (boardSpaces[spaceId]?.price ?? 0), 0)
+  return firstCost - secondCost || first.color.localeCompare(second.color)
+})[0]
 
 export const EXPRESS_OBJECTIVES: readonly ExpressObjectiveDefinition[] = [
   { id: 'own-one-property', title: 'Primeira escritura', description: 'Tenha pelo menos um imóvel ou estação.', target: 1, reward: 50_000 },
   { id: 'own-three-properties', title: 'Pequeno portfólio', description: 'Tenha três imóveis ou estações.', target: 3, reward: 100_000 },
   { id: 'own-five-properties', title: 'Expansão urbana', description: 'Tenha cinco imóveis ou estações.', target: 5, reward: 150_000 },
-  { id: 'complete-color-group', title: 'Feche um grupo de cor', description: 'Tenha todas as propriedades do grupo de cor com duas ruas.', target: easiestColorGroup?.spaces.length ?? 2, reward: 150_000 },
+  { id: 'complete-color-group', title: 'Feche um grupo de cor', description: 'Complete o grupo residencial mais barato do tabuleiro.', target: easiestColorGroup?.spaces.length ?? 3, reward: 150_000 },
   { id: 'build-one-level', title: 'Uma casa para chamar de sua', description: 'Construa ao menos um nível em uma propriedade residencial.', target: 1, reward: 75_000 },
   { id: 'build-three-levels', title: 'Bairro em crescimento', description: 'Some três níveis de construção nas suas propriedades.', target: 3, reward: 150_000 },
   { id: 'build-hotel', title: 'Hospedagem completa', description: 'Construa um hotel em uma propriedade residencial.', target: 1, reward: 200_000 },

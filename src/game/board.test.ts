@@ -25,6 +25,21 @@ describe('tabuleiro', () => {
     expect(properties.every(({ price }) => typeof price === 'number' && price > 0)).toBe(true)
   })
 
+  it('mantém 24 ruas únicas em oito grupos residenciais de três', () => {
+    const residential = boardSpaces.filter((space) => space.kind === 'property' && space.buildable)
+    const groups = new Map<string, number[]>()
+    for (const space of residential) {
+      const group = groups.get(space.color) ?? []
+      group.push(space.id)
+      groups.set(space.color, group)
+    }
+
+    expect(residential).toHaveLength(24)
+    expect(new Set(residential.map((space) => space.name)).size).toBe(24)
+    expect(groups.size).toBe(8)
+    expect(Array.from(groups.values()).map((group) => group.length)).toEqual(Array(8).fill(3))
+  })
+
   it('move pelo resultado dos dados e volta ao início ao completar uma volta', () => {
     expect(movePosition(37, [2, 3])).toBe(2)
     expect(movePosition(10, [1, 1])).toBe(12)

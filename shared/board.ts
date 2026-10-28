@@ -9,7 +9,7 @@ export type BoardSpace = {
   buildable?: boolean
 }
 
-const colorGroups = ['#d66b55', '#e0ad51', '#6da998', '#8295ca', '#c8789a', '#6f9c73', '#53a6bd']
+const colorGroups = ['#d66b55', '#e0ad51', '#6da998', '#8295ca', '#c8789a', '#6f9c73', '#53a6bd', '#a979b2']
 const properties: Array<[string, number]> = [
   ['Vila do Sol', 60000], ['Jardim das Flores', 80000], ['Praça Central', 110000],
   ['Rua das Palmeiras', 120000], ['Alameda Azul', 140000], ['Porto Dourado', 160000],
@@ -19,8 +19,6 @@ const properties: Array<[string, number]> = [
   ['Ilha das Palmeiras', 430000], ['Vale das Nuvens', 460000], ['Distrito Solar', 500000],
   ['Alameda Real', 540000], ['Morro do Farol', 580000], ['Jardim Imperial', 620000],
   ['Porto das Estrelas', 660000], ['Avenida do Horizonte', 720000], ['Parque Imperial', 780000],
-  ['Cidade Alta', 840000], ['Costa Esmeralda', 900000], ['Praça das Nações', 960000],
-  ['Ilha do Tesouro', 1040000], ['Mirante das Estrelas', 1120000], ['Avenida das Artes', 1200000],
 ]
 
 const specialSpaces: Record<number, Omit<BoardSpace, 'id'>> = {
@@ -42,16 +40,21 @@ const specialSpaces: Record<number, Omit<BoardSpace, 'id'>> = {
   38: { name: 'Imposto especial', kind: 'tax', color: '#c56f59' },
 }
 
+let residentialIndex = 0
+
 export const boardSpaces: BoardSpace[] = Array.from({ length: 40 }, (_, id) => {
   const special = specialSpaces[id]
   if (special) return { id, ...special }
-  const propertyIndex = Math.max(0, id - Math.floor(id / 10) * 2 - 1)
-  const [name, price] = properties[propertyIndex % properties.length]
+  const property = properties[residentialIndex]
+  const color = colorGroups[Math.floor(residentialIndex / 3)]
+  if (!property || !color) throw new Error(`Configuração incompleta da casa residencial ${id}.`)
+  residentialIndex += 1
+  const [name, price] = property
   return {
     id,
     name,
     kind: 'property',
-    color: colorGroups[Math.floor(propertyIndex / 2) % colorGroups.length],
+    color,
     price,
     buildable: true,
   }
