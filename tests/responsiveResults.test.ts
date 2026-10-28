@@ -26,3 +26,13 @@ describe('placar responsivo', () => {
     expect(mobileRule?.[1] ?? '').toMatch(/margin\s*:\s*auto\s+auto\s+12px\s*;?$/)
   })
 })
+
+describe('cartão de jogada', () => {
+  it('preserva mais área do tabuleiro ao limitar o cartão em desktop', () => {
+    const turnCardRule = [...styles.matchAll(/\.turn-card\s*\{([^}]*)\}/g)]
+      .find((match) => match[1]?.includes('width:min(350px,calc(100vw - 36px))'))
+
+    expect(turnCardRule).not.toBeNull()
+    expect(turnCardRule?.[1] ?? '').toMatch(/padding\s*:\s*12px\s+15px/)
+  })
+})

@@ -1,17 +1,17 @@
 # Graph Report - BancoImobiliario  (2026-10-28)
 
 ## Corpus Check
-- 51 files · ~31,633 words
+- 51 files · ~32,289 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 4 file(s) not represented in the graph (top: (none) 2, .example 1, .css 1)
 
 ## Summary
-- 409 nodes · 678 edges · 25 communities (24 shown, 1 thin omitted)
+- 413 nodes · 682 edges · 25 communities (24 shown, 1 thin omitted)
 - Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS · INFERRED: 1 edges (avg confidence: 0.85)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `67fd2abb`
+- Built from commit: `a60a91ca`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -43,8 +43,8 @@
 - engines
 
 ## God Nodes (most connected - your core abstractions)
-1. `GameRoom` - 35 edges
-2. `Validação visual e de navegador` - 32 edges
+1. `Validação visual e de navegador` - 36 edges
+2. `GameRoom` - 35 edges
 3. `App()` - 26 edges
 4. `compilerOptions` - 18 edges
 5. `compilerOptions` - 15 edges
@@ -73,7 +73,7 @@
 
 ### Community 0 - "App.tsx"
 Cohesion: 0.07
-Nodes (27): @colyseus/sdk@^0.18.8, @colyseus/sdk, vitest, PropertyHolding, GameMode, LobbyPlayer, LobbyStatus, App() (+19 more)
+Nodes (29): @colyseus/sdk@^0.18.8, @colyseus/sdk, vitest, PropertyHolding, GameMode, LobbyPlayer, LobbyStatus, formatMoney() (+21 more)
 
 ### Community 1 - "devDependencies"
 Cohesion: 0.12
@@ -85,11 +85,11 @@ Nodes (5): createRoomCode(), GameRoom, LobbyPlayerState, isGameMode(), normalize
 
 ### Community 3 - "Validação visual e de navegador"
 Cohesion: 0.06
-Nodes (32): 2026-10-27 — Chrome: cartas Sorte ou Revés e prisão, 2026-10-27 — Chrome: dívida, sala e layout responsivo, 2026-10-27 — Chrome: estado de construções, 2026-10-27 — Chrome: hipoteca, resgate e carteira, 2026-10-27 — Chrome: sala, entrada de jogador e primeira compra, 2026-10-27 — Encerramento Express e placar final, 2026-10-27 — Lobby de sala, 2026-10-27 — Negociação entre participantes (+24 more)
+Nodes (36): 2026-10-27 — Chrome: cartas Sorte ou Revés e prisão, 2026-10-27 — Chrome: dívida, sala e layout responsivo, 2026-10-27 — Chrome: estado de construções, 2026-10-27 — Chrome: hipoteca, resgate e carteira, 2026-10-27 — Chrome: sala, entrada de jogador e primeira compra, 2026-10-27 — Encerramento Express e placar final, 2026-10-27 — Lobby de sala, 2026-10-27 — Negociação entre participantes (+28 more)
 
 ### Community 4 - "GameRoom.test.ts"
 Cohesion: 0.08
-Nodes (47): PrivateObjectiveState, LobbyState, PropertyState, boardSpaces, colorGroups, properties, specialSpaces, applyCardCashEffect() (+39 more)
+Nodes (49): PrivateObjectiveState, LobbyState, PropertyState, BoardSpace, boardSpaces, colorGroups, properties, SpaceKind (+41 more)
 
 ### Community 5 - "Regras do jogo"
 Cohesion: 0.05
@@ -112,8 +112,8 @@ Cohesion: 0.12
 Nodes (15): jobs, verify, name, on, pull_request, push, branches, branches (+7 more)
 
 ### Community 10 - "BoardScene.tsx"
-Cohesion: 0.16
-Nodes (14): BoardSpace, SpaceKind, formatMoney(), positionOnBoard(), BoardScene, Board(), BoardScene(), playerColors (+6 more)
+Cohesion: 0.23
+Nodes (10): positionOnBoard(), Board(), BoardScene(), playerColors, PropertyBuilding, ResponsiveCamera(), SpaceLabel(), CameraFraming (+2 more)
 
 ### Community 11 - "compilerOptions"
 Cohesion: 0.14
@@ -174,11 +174,11 @@ Nodes (3): engines, node, npm
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `GameRoom` connect `GameRoom` to `GameRoom.test.ts`, `app.config.ts`?**
-  _High betweenness centrality (0.063) - this node is a cross-community bridge._
+  _High betweenness centrality (0.061) - this node is a cross-community bridge._
 - **Should `App.tsx` be split into smaller, more focused modules?**
-  _Cohesion score 0.07342995169082125 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.07092198581560284 - nodes in this community are weakly interconnected._
 - **Why does `vitest` connect `App.tsx` to `devDependencies`, `BoardScene.tsx`, `GameRoom.test.ts`, `package.json`?**
-  _High betweenness centrality (0.048) - this node is a cross-community bridge._
+  _High betweenness centrality (0.047) - this node is a cross-community bridge._
 - **Should `devDependencies` be split into smaller, more focused modules?**
   _Cohesion score 0.125 - nodes in this community are weakly interconnected._
 - **Why does `@colyseus/core` connect `app.config.ts` to `GameRoom.test.ts`, `package.json`?**
@@ -186,4 +186,4 @@ _Questions this graph is uniquely positioned to answer:_
 - **Should `GameRoom` be split into smaller, more focused modules?**
   _Cohesion score 0.11379800853485064 - nodes in this community are weakly interconnected._
 - **Should `Validação visual e de navegador` be split into smaller, more focused modules?**
-  _Cohesion score 0.0625 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.05555555555555555 - nodes in this community are weakly interconnected._

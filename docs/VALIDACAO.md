@@ -250,3 +250,9 @@
 - Abri o cartão privado da anfitriã: “Primeira escritura”, progresso 0/1 e bônus de R$ 50.000. O elemento de progresso expôs corretamente o valor acessível `aria-valuenow=0` e alvo 1. O documento permaneceu sem rolagem horizontal em 1366 px.
 - Ao expirar a fase de 40 segundos sem ação, o turno avançou automaticamente para a segunda pessoa e o contador reiniciou. A inspeção do cartão consumiu a fase da anfitriã; por isso, esta sessão não validou compra nem conclusão de objetivo no navegador. Esses comportamentos continuam cobertos pelos testes de integração do servidor.
 - Captura inspecionada: `/tmp/banco-firefox-express-objective.png`. A renderização WebGL por software exibiu a cena; a validação do placar após seis rodadas não foi feita nesta sessão.
+
+## 2026-10-28 — Cartão de jogada compacto
+
+- Reduzi a largura máxima do cartão de jogada desktop de 390 para 350 px e o espaçamento interno de 15 × 17 para 12 × 15 px; a regra móvel mantém a largura quase completa da viewport.
+- No Firefox headless em 1366 × 682, o cartão ficou em 350 × 143 px, a cena 3D permaneceu visível e não houve rolagem horizontal. Em uma segunda captura, o viewport informado pelo Firefox foi 500 × 758 apesar da solicitação de 390 × 844; o cartão móvel ocupou 480 px e o documento continuou sem overflow.
+- Capturas inspecionadas: `/tmp/banco-firefox-compact-turn-card.png` e `/tmp/banco-firefox-compact-turn-card-mobile.png`. A versão móvel preservou a largura fluida; o viewport limitado do Firefox não substitui a validação móvel anterior em Chrome 390 × 844.
