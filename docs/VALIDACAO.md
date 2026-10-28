@@ -20,7 +20,15 @@
 - A simulação anterior de 80 partidas indicou baixa ocorrência para completar grupos, construir e possuir duas estações. Substituí essas metas por quatro propriedades, uma estação, receber/pagar aluguel, tirar uma carta e cruzar a Partida; as duas metas mais simples de posse foram mantidas.
 - Os testes de integração confirmam que cruzar a Partida conta junto do bônus de passagem, cartas e aluguéis atualizam somente a carta privada correspondente, e um aluguel em dívida só progride após a quitação integral.
 - Os objetivos permanecem no servidor fora do estado público da sala e continuam pagando uma única vez. A suíte direcionada passou: `shared/objectives.test.ts` e `server/test/GameRoom.test.ts` (38 testes no total).
-- Ainda falta repetir a simulação Monte Carlo com o novo baralho e fazer playtests humanos direcionados antes de considerar os bônus calibrados.
+- A simulação atualizada está registrada na seção abaixo. Ainda faltam playtests humanos direcionados antes de considerar os bônus calibrados.
+
+## 2026-10-28 — Simulação do baralho Express recalibrado
+
+- Executei 80 partidas completas pelo servidor Colyseus autoritativo: 40 com duas pessoas e 40 com quatro. Todas terminaram sem falhas e distribuíram 240 cartas de objetivo sem repetição dentro de cada sala.
+- Estratégia simulada: comprar um imóvel quando a compra deixa pelo menos R$ 200.000 em caixa; caso contrário, recusar e passar no leilão. A simulação tenta duplas na prisão e liquida dívidas pagando, vendendo construções ou hipotecando bens disponíveis. Não constrói e não negocia, portanto mede uma estratégia simples, não o limite de jogo intencional.
+- Conclusões entre as cartas distribuídas: primeira propriedade 16/17 (94%); três propriedades 23/33 (70%); quatro propriedades 13/30 (43%); uma estação 14/33 (42%); receber aluguel 14/30 (47%); pagar aluguel 13/30 (43%); tirar carta 13/34 (38%); cruzar a Partida 23/33 (70%).
+- Nenhum objetivo ficou sem possibilidade observada de conclusão, e todas as partidas simuladas terminaram. As amostras por objetivo variam de 17 a 34 cartas; isso serve como verificação de alcance, não como prova de equilíbrio dos bônus. Playtests humanos ainda são necessários.
+- Roteiro usado: `/tmp/banco-express-balance-sim-current.mts`; o limite aumentado de passos corrige interrupções prematuras do roteiro anterior, sem modificar o servidor do jogo.
 
 ## 2026-10-28 — Dados no centro da partida
 
