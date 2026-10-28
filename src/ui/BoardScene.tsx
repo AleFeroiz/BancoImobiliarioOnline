@@ -4,6 +4,7 @@ import { useEffect, useMemo } from 'react'
 import { CanvasTexture, Fog, PerspectiveCamera, SRGBColorSpace } from 'three'
 import { useThree } from '@react-three/fiber'
 import { boardSpaces, positionOnBoard } from '../game/board'
+import { wrapSpaceLabel } from './spaceLabel'
 
 const playerColors = ['#e7785f', '#54aec0', '#e7bd62', '#8775bd']
 
@@ -38,14 +39,23 @@ function SpaceLabel({ name, price, size }: { name: string; price?: number; size:
       context.textAlign = 'center'
       context.textBaseline = 'middle'
       context.fillStyle = '#2f4536'
-      context.font = '700 112px system-ui, sans-serif'
-      let label = name.toLocaleUpperCase('pt-BR')
-      while (context.measureText(label).width > 710 && label.length > 10) label = `${label.slice(0, -4)}…`
-      context.fillText(label, 384, price ? 145 : 198)
+      let fontSize = 138
+      context.font = `700 ${fontSize}px system-ui, sans-serif`
+      let lines = wrapSpaceLabel(name, 710, (text) => context.measureText(text).width)
+      while (lines.length > 2 && fontSize > 96) {
+        fontSize -= 6
+        context.font = `700 ${fontSize}px system-ui, sans-serif`
+        lines = wrapSpaceLabel(name, 710, (text) => context.measureText(text).width)
+      }
+      const lineSpacing = lines.length > 1 ? 94 : 0
+      const firstLineY = price
+        ? lines.length > 1 ? 100 : 148
+        : lines.length > 1 ? 136 : 198
+      lines.forEach((line, index) => context.fillText(line, 384, firstLineY + lineSpacing * index))
       if (price) {
         context.fillStyle = '#52664c'
-        context.font = '700 92px system-ui, sans-serif'
-        context.fillText(`R$ ${new Intl.NumberFormat('pt-BR').format(price)}`, 384, 284)
+        context.font = '700 112px system-ui, sans-serif'
+        context.fillText(`R$ ${new Intl.NumberFormat('pt-BR').format(price)}`, 384, 304)
       }
     }
     const map = new CanvasTexture(canvas)
@@ -57,7 +67,7 @@ function SpaceLabel({ name, price, size }: { name: string; price?: number; size:
 
   return (
     <mesh position={[0, 0.085, size * 0.12]} rotation={[-Math.PI / 2, 0, 0]}>
-      <planeGeometry args={[size * 0.9, size * 0.48]} />
+      <planeGeometry args={[size * 0.94, size * 0.58]} />
       <meshBasicMaterial map={texture} transparent toneMapped={false} />
     </mesh>
   )
