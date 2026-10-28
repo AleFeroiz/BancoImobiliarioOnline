@@ -4,6 +4,7 @@ import { useEffect, useMemo } from 'react'
 import { CanvasTexture, Fog, PerspectiveCamera, SRGBColorSpace } from 'three'
 import { useThree } from '@react-three/fiber'
 import { boardSpaces, positionOnBoard } from '../game/board'
+import { getCameraFraming } from './cameraFraming'
 import { wrapSpaceLabel } from './spaceLabel'
 
 const playerColors = ['#e7785f', '#54aec0', '#e7bd62', '#8775bd']
@@ -14,15 +15,14 @@ function ResponsiveCamera() {
   const { camera, scene, size } = useThree()
   useEffect(() => {
     if (!(camera instanceof PerspectiveCamera)) return
-    const aspect = size.width / size.height
-    const distance = aspect < 0.7 ? 1.5 : aspect < 1.1 ? 1.15 : 1
-    camera.position.set(12.5 * distance, 15.5 * distance, 15.5 * distance)
+    const framing = getCameraFraming(size.width, size.height)
+    camera.position.set(...framing.position)
     camera.lookAt(0, 0, 0)
-    camera.fov = size.width < 640 ? 49 : size.width < 900 ? 40 : 34
+    camera.fov = framing.fov
     camera.updateProjectionMatrix()
     if (scene.fog instanceof Fog) {
-      scene.fog.near = 21 * distance
-      scene.fog.far = 38 * distance
+      scene.fog.near = 21 * framing.fogScale
+      scene.fog.far = 38 * framing.fogScale
     }
   }, [camera, scene, size.width, size.height])
   return null

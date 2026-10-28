@@ -160,3 +160,10 @@
 - Em uma sala Express Chrome com duas pessoas, conferi a mesa em 1440 × 900 e 390 × 844. No desktop, nomes de duas linhas e preços ficaram mais fáceis de distinguir. No celular, a mesa inteira continua enquadrada e não há rolagem horizontal; a perspectiva ainda reduz os nomes pequenos, enquanto a casa ativa e o preço aparecem por extenso no painel DOM do turno.
 - Capturas inspecionadas: `/tmp/banco-labels-desktop.png` e `/tmp/banco-labels-mobile.png`. A primeira captura desktop após resize foi feita antes de o WebGL headless concluir o próximo frame; aguardei o render e confirmei a cena na captura registrada.
 - `npm run verify`: 82 testes passaram; builds do cliente e servidor passaram. A suíte precisa da permissão de loopback para o servidor de testes. O build mantém o aviso conhecido do bundle cliente acima de 500 kB.
+
+## 2026-10-28 — Enquadramento móvel do tabuleiro
+
+- Em uma sala Express com dois clientes Chrome, alinhei a câmera em retrato para projetar as quatro bordas do tabuleiro paralelas aos limites da tela. A câmera ainda olha de cima em perspectiva; no desktop a vista diagonal permanece igual.
+- Em 390 × 844, o tabuleiro coube na largura, a borda mais próxima e seus nomes/preços ficaram mais legíveis, e `document.documentElement.scrollWidth` permaneceu em 390. As casas no lado oposto continuam menores por causa da perspectiva; o cartão da jogada mostra nome e preço da casa ativa em texto DOM.
+- Captura inspecionada: `/tmp/banco-labels-mobile.png`.
+- A suíte inclui testes para enquadramentos móvel, desktop e janela estreita. `npm run verify` passou com 85 testes e builds do cliente e servidor.
