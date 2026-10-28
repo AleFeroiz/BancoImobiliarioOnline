@@ -90,6 +90,7 @@ function App() {
   }
   const localPlayer = roomPlayers.find((player) => player.sessionId === room?.sessionId)
   const pendingPurchasePrice = boardSpaces[pendingPropertyId]?.price ?? 0
+  const highlightedSpaceId = turnPhase === 'purchase' || turnPhase === 'auction' ? pendingPropertyId : null
   const canAffordPendingPurchase = canAffordPurchase(localPlayer?.cash ?? 0, pendingPurchasePrice)
   const myProperties = Array.from(roomProperties.entries())
     .filter(([_, holding]) => holding.ownerSessionId === room?.sessionId)
@@ -300,7 +301,7 @@ function App() {
 
   return (
     <main className={`app-shell screen-${screen}`}>
-      <div className="scene-backdrop"><BoardScene playerPositions={playerPositions} propertyBuildings={propertyBuildings} /></div>
+      <div className="scene-backdrop"><BoardScene playerPositions={playerPositions} propertyBuildings={propertyBuildings} highlightedSpaceId={highlightedSpaceId} /></div>
       <header className="topbar">
         <button className="brand" onClick={() => { if (room) void leaveRoom(); else setScreen('home') }} aria-label="Voltar ao início">
           <span className="brand-mark">B</span><span>BANCO<span className="brand-light">IMOBILIÁRIO</span></span>
