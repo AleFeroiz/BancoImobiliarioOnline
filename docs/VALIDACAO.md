@@ -216,3 +216,11 @@
 - Capturas inspecionadas: `/tmp/banco-chrome-firefox-match.png`, `/tmp/banco-firefox-final.png`, `/tmp/banco-chrome-firefox-mobile.png` e `/tmp/banco-firefox-mobile-final.png`.
 - Chrome e Firefox headless usaram renderização WebGL por software. A tela carregou e os dois estados finais coincidiram; o Firefox exibiu avisos do backend gráfico por falta de acesso ao dispositivo GPU.
 - `npm run verify`: 91 testes passaram; build web e build do servidor passaram. O bundle cliente continua acima do limite de 500 kB.
+
+## 2026-10-28 — Carregamento adiado da cena 3D
+
+- O grafo Graphify apontou a ligação direta `App() → BoardScene()`. A cena agora é um chunk dinâmico e só começa a montar depois da primeira tela, em tempo ocioso; ao entrar na partida, ela é habilitada imediatamente. O fallback de 1,8 s cobre navegadores sem `requestIdleCallback`.
+- Build de produção: chunk inicial de 428,50 kB (134,16 kB gzip); cena de 892,77 kB (241,03 kB gzip). O HTML inicial referencia apenas o chunk principal. A cena continua acima do aviso de 500 kB, mas sai do caminho de carregamento da entrada.
+- No navegador interno, revisei a tela inicial em viewport estreito e confirmei o tabuleiro aparecendo após a carga adiada. No Chrome headless, com SwiftShader/WebGL habilitado e espera de 6 s, o canvas montou e a cena ficou visível atrás da interface. A captura correspondente está em `/tmp/banco-lazy-load-chrome.png`.
+- O Firefox headless capturou a tela antes do timer da cena; não há perfil Firefox conectado ao controlador visual desta sessão para aguardar o carregamento e confirmar a cena pós-idle. Portanto, a validação visual desta mudança no Firefox segue pendente.
+- Testes cobrem o agendamento em tempo ocioso, fallback por timer e execução única; `npm run test`: 93 testes passaram. O build web passou. O primeiro teste no sandbox não conseguiu abrir o socket local do Colyseus; a repetição com acesso a loopback passou.

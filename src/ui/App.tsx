@@ -1,7 +1,7 @@
-import { useEffect, useRef, useState } from 'react'
+import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import type { Room } from '@colyseus/sdk'
 import type { GameMode, LobbyPlayer } from '../../shared/lobby'
-import BoardScene from './BoardScene'
+import { scheduleSceneLoad } from './sceneLoading'
 import { roomClient } from './roomClient'
 import { finalScoreMetrics, rankFinalScore, scoreCriteria } from './scoreCriteria'
 import { getLobbyPlayerEntries } from './lobbySnapshot'
@@ -15,6 +15,7 @@ type Screen = 'home' | 'room' | 'game'
 type TurnPhase = 'roll' | 'resolve' | 'purchase' | 'auction' | 'jail' | 'debt' | 'ended'
 type SyncedPlayer = LobbyPlayer & { sessionId: string; cash: number; isJailed: boolean; jailTurns: number; isBankrupt: boolean; finalCash: number; finalNetWorth: number; tieBreakRoll: number }
 type TradeOfferView = { id: number; fromSessionId: string; toSessionId: string; cashOffered: number; cashRequested: number; propertiesOffered: number[]; propertiesRequested: number[] }
+const BoardScene = lazy(() => import('./BoardScene'))
 
 function parseTradeIds(value: string) {
   return value ? value.split(',').map(Number).filter(Number.isInteger) : []
@@ -33,6 +34,7 @@ const modeDetails: Record<Mode, { title: string; duration: string; detail: strin
 
 function App() {
   const [screen, setScreen] = useState<Screen>('home')
+  const [sceneReady, setSceneReady] = useState(false)
   const [name, setName] = useState('')
   const [roomCode, setRoomCode] = useState('')
   const [mode, setMode] = useState<Mode>('classic')
@@ -113,6 +115,15 @@ function App() {
     ? Array.from(roomProperties.keys()).map(Number).filter((id) => canBuildProperty(id, activePlayerSessionId, holdingsById, activePlayer.cash))
     : []
   const propertyBuildings = Array.from(roomProperties.entries()).map(([id, holding]) => ({ spaceId: Number(id), houses: holding.houses, isMortgaged: holding.isMortgaged ?? false }))
+
+  useEffect(() => {
+    if (sceneReady || screen === 'game') {
+      setSceneReady(true)
+      return
+    }
+
+    return scheduleSceneLoad(() => setSceneReady(true))
+  }, [sceneReady, screen])
 
   useEffect(() => {
     const currentId = tradeOffer?.id ?? null
@@ -316,7 +327,13 @@ function App() {
 
   return (
     <main className={`app-shell screen-${screen}${screen === 'game' && turnPhase === 'ended' ? ' screen-ended' : ''}`}>
-      <div className="scene-backdrop"><BoardScene playerPositions={playerPositions} propertyBuildings={propertyBuildings} highlightedSpaceIds={highlightedSpaceIds} /></div>
+      <div className="scene-backdrop">
+        {sceneReady && (
+          <Suspense fallback={<div className="scene-placeholder" aria-hidden="true" />}>
+            <BoardScene playerPositions={playerPositions} propertyBuildings={propertyBuildings} highlightedSpaceIds={highlightedSpaceIds} />
+          </Suspense>
+        )}
+      </div>
       <header className="topbar">
         <button className="brand" onClick={() => { if (room) void leaveRoom(); else setScreen('home') }} aria-label="Voltar ao início">
           <span className="brand-mark">B</span><span>BANCO<span className="brand-light">IMOBILIÁRIO</span></span>

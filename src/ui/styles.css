@@ -9,6 +9,8 @@
 
 button:disabled{opacity:.55;cursor:not-allowed}
 
+.scene-placeholder{position:absolute;inset:0;background:radial-gradient(ellipse at 54% 43%,rgba(117,144,99,.2),transparent 54%)}
+
 /* A sala deve parecer uma mesa pronta para receber a turma, sem apertar o painel em telas médias. */
 .screen-room{background:#dce7d9;color:#263d34}
 .screen-room .scene-backdrop{inset:0;opacity:.58;filter:saturate(.92)}
