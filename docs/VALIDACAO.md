@@ -206,3 +206,12 @@
 - Revisei a partida após o timeout em 1440 × 900 e 390 × 844; a mesa, a pessoa ativa e a mensagem de turno ficaram visíveis sem rolagem horizontal. Capturas: `/tmp/banco-reconnect-expired-desktop.png` e `/tmp/banco-reconnect-expired-mobile.png`.
 - O tratamento de desconexão durante dívida permanece sem regra aprovada: atualmente a dívida fica aberta e a partida aguarda. Foi solicitada decisão sobre preservar a dívida com retorno à mesma cadeira, manter a dívida sem retorno ou declarar falência ao vencer o prazo.
 - `npm run verify`: 89 testes passaram; builds web e de servidor passaram. O build mantém o aviso conhecido de bundle cliente acima de 500 kB.
+
+## 2026-10-28 — Placar móvel e repetição Chrome–Firefox
+
+- Repeti uma partida Express real entre Chrome (1280 × 720) e Firefox (1366 × 682). Os dois clientes encerraram após a sexta rodada com a mesma classificação e critério; o cliente Chrome não reportou alertas de erro.
+- Na revisão em Chrome móvel (390 × 844), o placar central cobria a área mais legível do tabuleiro. Posicionei o cartão final abaixo da área principal em telas estreitas. Na nova captura, o cartão ocupa x=10–380 e y=459–788, deixando a parte superior da mesa visível; `scrollWidth` permaneceu em 390.
+- Adicionei um teste de regressão para manter a regra de posição no breakpoint móvel e conferi o resultado visual na captura real, pois o teste de CSS não mede a cena WebGL.
+- Capturas inspecionadas: `/tmp/banco-chrome-firefox-match.png`, `/tmp/banco-firefox-final.png` e `/tmp/banco-chrome-firefox-mobile.png`.
+- Chrome e Firefox headless usaram renderização WebGL por software. A tela carregou e os dois estados finais coincidiram; o Firefox exibiu avisos do backend gráfico por falta de acesso ao dispositivo GPU.
+- `npm run verify`: 91 testes passaram; build web e build do servidor passaram. O bundle cliente continua acima do limite de 500 kB.

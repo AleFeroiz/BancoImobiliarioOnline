@@ -302,6 +302,7 @@ button:disabled{opacity:.55;cursor:not-allowed}
 }
 @media(prefers-reduced-motion:reduce){.dice-result,.connection-dot-retrying{animation:none}}
 @media(max-width:640px){
+  .screen-ended .final-result-card{margin:auto auto 12px}
   .final-result-card{width:calc(100vw - 20px);max-height:calc(100dvh - 96px);padding:15px 14px}
   .final-result-card>h2{font-size:25px;margin:4px 0 9px}
   .final-result-content{gap:8px}
