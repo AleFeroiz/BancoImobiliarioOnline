@@ -236,3 +236,10 @@
 - Em Chrome headless com WebGL por SwiftShader, abri uma sala Clássica com quatro conexões Colyseus reais em 390 × 844. O lobby exibiu 4/4 lugares e o botão de início; no jogo, os cartões dos quatro participantes ficaram em grade 2 × 2, o tabuleiro permaneceu visível e a ação do turno coube abaixo dele.
 - A viewport e o `documentElement.scrollWidth` ficaram em 390 px tanto no lobby quanto na partida. Os cartões ocuparam x=9–381 px e y=97–201 px na partida, sem rolagem horizontal.
 - Capturas: `/tmp/banco-four-player-mobile-lobby.png` e `/tmp/banco-four-player-mobile-game.png`.
+
+## 2026-10-28 — Partida completa no Firefox
+
+- No Firefox 156.0.1 headless, criei uma sala Clássica, conectei quatro clientes Colyseus, iniciei a partida e confirmei que os quatro cartões e o tabuleiro 3D apareceram. A viewport e o canvas ficaram em 1366 × 682; `scrollWidth` permaneceu igual a `clientWidth`, sem rolagem horizontal.
+- Lancei os dados (5 + 4), comprei Porto Dourado por R$ 160.000 e confirmei o saldo sincronizado de R$ 1.340.000. Ao concluir a vez, o estado mudou para turno 2 de Teste Bia; os outros três saldos permaneceram em R$ 1.500.000.
+- Uma primeira tentativa de usar a quarta vaga numa sala de teste foi recusada porque uma conexão anterior havia encerrado sem sair e ainda ocupava a janela de reconexão de 60 segundos. Em uma sala nova, os quatro clientes entraram e iniciaram normalmente.
+- Capturas inspecionadas: `/tmp/banco-firefox-four-player-game.png` e `/tmp/banco-firefox-four-player-synced.png`. O Firefox usou WebGL por software e registrou aviso do backend gráfico, mas a cena carregou e as ações foram aplicadas.
