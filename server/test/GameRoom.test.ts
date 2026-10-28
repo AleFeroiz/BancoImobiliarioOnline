@@ -606,6 +606,32 @@ describe('sala privada', () => {
     expect(room.state.diceOne).toBeGreaterThanOrEqual(1)
   })
 
+  it('exige a fiança completa e mantém a pessoa presa se o saldo for insuficiente', async () => {
+    const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
+    const host = await colyseus.connectTo(room, { name: 'Ana' })
+    await colyseus.connectTo(room, { name: 'Bia' })
+    const started = new Promise<void>((resolve) => host.onMessage('game:started', () => resolve()))
+    host.send('start')
+    await started
+
+    const player = room.state.players.get(host.sessionId)!
+    player.isJailed = true
+    player.jailTurns = 1
+    player.cash = 49_999
+    room.state.turnPhase = 'jail'
+    const insufficientFine = new Promise<{ message: string }>((resolve) => host.onMessage('room:error', resolve))
+
+    host.send('jailPay')
+    await expect(insufficientFine).resolves.toMatchObject({ message: expect.stringContaining('A fiança custa 50.000') })
+    expect(player).toMatchObject({ isJailed: true, jailTurns: 1, cash: 49_999 })
+    expect(room.state.turnPhase).toBe('jail')
+
+    player.cash = 50_000
+    host.send('jailPay')
+    await waitFor(() => room.state.turnPhase === 'roll')
+    expect(player).toMatchObject({ isJailed: false, jailTurns: 0, cash: 0 })
+  })
+
   it('autoriza apenas a pessoa da vez a rolar e só avança após concluir a casa', async () => {
     const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
     const host = await colyseus.connectTo(room, { name: 'Ana' })

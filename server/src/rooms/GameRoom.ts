@@ -321,12 +321,15 @@ export class GameRoom extends Room<{ state: LobbyState }> {
     jailPay: (client: Client) => {
       const player = this.state.players.get(client.sessionId)
       if (this.state.status !== 'playing' || this.state.turnPhase !== 'jail' || client.sessionId !== this.state.activePlayerSessionId || !player?.isJailed) return
-      const finePaid = Math.min(player.cash, JAIL_FINE)
-      player.cash -= finePaid
+      if (player.cash < JAIL_FINE) {
+        client.send('room:error', { message: `A fiança custa ${JAIL_FINE.toLocaleString('pt-BR')}. Tente tirar duplas.` })
+        return
+      }
+      player.cash -= JAIL_FINE
       player.isJailed = false
       player.jailTurns = 0
       this.state.turnPhase = 'roll'
-      this.state.landingDescription = `Fiança paga: ${finePaid.toLocaleString('pt-BR')}. Role os dados para avançar.`
+      this.state.landingDescription = `Fiança paga: ${JAIL_FINE.toLocaleString('pt-BR')}. Role os dados para avançar.`
     },
     bid: (client: Client, payload: { amount?: unknown }) => {
       if (this.state.status !== 'playing' || this.state.turnPhase !== 'auction') return
