@@ -96,6 +96,7 @@ button:disabled{opacity:.55;cursor:not-allowed}
 .build-actions{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:9px}
 .build-actions>span{grid-column:1/-1;color:#839078;font-size:7px;letter-spacing:.13em}
 .build-actions .secondary-action{min-width:0;padding:5px 7px;font-size:8px}
+.jail-actions{display:grid;grid-template-columns:1fr 1fr;gap:7px}
 .game-bottom{color:#475d4b}
 .leave-button{border-color:rgba(81,110,82,.35);border-radius:8px;background:rgba(250,248,237,.82);color:#455c48}
 @media(max-width:640px){

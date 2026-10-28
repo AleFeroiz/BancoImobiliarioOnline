@@ -7,8 +7,27 @@ export const START_BONUS = 200_000
 export const AUCTION_SECONDS = 20
 export const AUCTION_MIN_INCREMENT = 10_000
 export const PROPERTY_BUILD_LEVELS = 5
+export const JAIL_FINE = 50_000
+export const MAX_JAIL_ATTEMPTS = 3
 
 export type PropertyHolding = { ownerSessionId: string; houses: number }
+
+export type JailAttemptResult = {
+  isJailed: boolean
+  jailTurns: number
+  cash: number
+  move: boolean
+  outcome: 'doubles' | 'failed' | 'forced-release'
+  finePaid: number
+}
+
+export function resolveJailAttempt(dice: DiceRoll, jailTurns: number, cash: number): JailAttemptResult {
+  if (dice[0] === dice[1]) return { isJailed: false, jailTurns: 0, cash, move: true, outcome: 'doubles', finePaid: 0 }
+  const nextAttempt = jailTurns + 1
+  if (nextAttempt < MAX_JAIL_ATTEMPTS) return { isJailed: true, jailTurns: nextAttempt, cash, move: false, outcome: 'failed', finePaid: 0 }
+  const finePaid = Math.min(cash, JAIL_FINE)
+  return { isJailed: false, jailTurns: 0, cash: cash - finePaid, move: true, outcome: 'forced-release', finePaid }
+}
 
 export function movePosition(position: number, dice: DiceRoll) {
   const spaces = boardSpaces.length

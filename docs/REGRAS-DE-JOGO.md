@@ -16,7 +16,9 @@ Como referência de regras clássicas e jogo curto, o [manual oficial do Super B
 - Completar grupo de cor permite construir casas e hotéis. Construções seguem a regra de equilíbrio definida para o tabuleiro.
 - Jogadores podem negociar dinheiro e títulos durante a vez ativa, em janela de 45 segundos. Construções devem ser vendidas antes da transferência do título.
 - Hipotecas geram dinheiro, suspendem aluguel do título e têm custo de resgate.
-- Prisão, Sorte ou Revés, dívidas e falência são resolvidas pelas cartas e regras da casa.
+- Sorte ou Revés tem oito cartas digitais autorais, sorteadas com reposição pelo servidor: três créditos, três cobranças, avançar três casas e ir para a prisão. Créditos e cobranças variam entre R$ 50.000 e R$ 150.000.
+- Cair em “Vá para a prisão” ou receber a carta leva à casa de visita e encerra a vez. Na vez presa, pode-se pagar R$ 50.000 e rolar ou tentar duplas; falhar encerra a vez. Após três tentativas sem duplas, paga-se até R$ 50.000 do saldo, sai da prisão e move pelo resultado da terceira rolagem. Até a mecânica de dívidas e falência entrar, pagamentos não reduzem o saldo abaixo de zero.
+- Dívidas e falência serão concluídas na próxima etapa de economia.
 - Ao completar 30 minutos, resolve-se a ação e os pagamentos em andamento. Compara-se patrimônio após liquidar bens e construções; empate vai aos dados.
 - A partida também pode terminar antes se restar apenas um jogador solvente.
 
@@ -40,7 +42,7 @@ Como referência de regras clássicas e jogo curto, o [manual oficial do Super B
 
 - A primeira pessoa a entrar na sala começa. O servidor rola dois dados de seis lados e move a peça pelo percurso de 40 casas; todas as pessoas recebem o mesmo estado.
 - Depois da exibição da casa alcançada, a pessoa da vez confirma para passar o turno à próxima pessoa. O servidor rejeita rolagens e confirmações fora da vez.
-- Esta etapa apenas identifica e mostra a casa. Não concede bônus ao passar pela Partida e ainda não executa compra, aluguel, taxa, evento ou movimento para a prisão; esses efeitos dependem das regras econômicas e cartas a fechar nas fases seguintes.
+- O servidor resolve compras, aluguel, taxas, cartas Sorte ou Revés e movimento para a prisão. Dívidas e falência ainda não são aplicadas; até essa etapa, cobranças são limitadas ao saldo disponível.
 - Os relógios de 30 minutos e de seis rodadas Express ainda não estão ativos no ciclo básico; entram com a implementação dos presets e da resolução de fim de partida.
 
 ## Economia inicial implementada
@@ -54,4 +56,4 @@ Como referência de regras clássicas e jogo curto, o [manual oficial do Super B
 
 ## Fora do que está especificado
 
-O tabuleiro, textos completos das cartas, valores econômicos e procedimentos detalhados de prisão, hipoteca, falência e construção ainda precisam ser escritos como regras autorais e implementados. Não temos o texto público das cartas Express. Esses detalhes não alteram as decisões de duração, vitória e número de jogadores acima; serão definidos e registrados antes de fechar cada sistema.
+Os textos e efeitos das cartas Express, hipoteca, falência e resolução completa de dívidas ainda precisam ser escritos como regras autorais e implementados. Não temos o texto público das cartas Express. Esses detalhes não alteram as decisões de duração, vitória e número de jogadores acima; serão definidos e registrados antes de fechar cada sistema.

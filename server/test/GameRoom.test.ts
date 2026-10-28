@@ -147,6 +147,29 @@ describe('sala privada', () => {
     expect(room.state.properties.get(String(first.id))?.houses).toBe(1)
   })
 
+  it('libera a pessoa presa após cobrar a fiança e permite rolar no mesmo turno', async () => {
+    const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
+    const host = await colyseus.connectTo(room, { name: 'Ana' })
+    await colyseus.connectTo(room, { name: 'Bia' })
+    host.send('start')
+    await new Promise((resolve) => setTimeout(resolve, 30))
+
+    const player = room.state.players.get(host.sessionId)!
+    player.isJailed = true
+    player.cash = 80_000
+    room.state.turnPhase = 'jail'
+    host.send('jailPay')
+    await new Promise((resolve) => setTimeout(resolve, 30))
+
+    expect(player.isJailed).toBe(false)
+    expect(player.cash).toBe(30_000)
+    expect(room.state.turnPhase).toBe('roll')
+    host.send('roll')
+    await new Promise((resolve) => setTimeout(resolve, 30))
+    expect(['resolve', 'purchase']).toContain(room.state.turnPhase)
+    expect(room.state.diceOne).toBeGreaterThanOrEqual(1)
+  })
+
   it('autoriza apenas a pessoa da vez a rolar e só avança após concluir a casa', async () => {
     const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
     const host = await colyseus.connectTo(room, { name: 'Ana' })

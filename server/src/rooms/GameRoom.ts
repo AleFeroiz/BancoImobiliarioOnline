@@ -2,8 +2,9 @@ import { randomInt } from 'node:crypto'
 import { CloseCode, Client, Room } from '@colyseus/core'
 import type { GameMode } from '../../../shared/lobby.js'
 import { isGameMode, normalizePlayerName } from '../../../shared/lobby.js'
-import { AUCTION_MIN_INCREMENT, AUCTION_SECONDS, START_BONUS, STARTING_CASH, calculateRent, canBuildProperty, constructionCost, describeLanding, movePosition, taxForSpace } from '../../../shared/game.js'
+import { AUCTION_MIN_INCREMENT, AUCTION_SECONDS, JAIL_FINE, START_BONUS, STARTING_CASH, calculateRent, canBuildProperty, constructionCost, describeLanding, movePosition, resolveJailAttempt, taxForSpace } from '../../../shared/game.js'
 import { boardSpaces } from '../../../shared/board.js'
+import { applyCardCashEffect, EVENT_CARDS } from '../../../shared/cards.js'
 import { LobbyPlayerState, LobbyState, PropertyState } from './schema/LobbyState.js'
 
 const ROOM_CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
@@ -62,6 +63,8 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       for (const player of this.state.players.values()) {
         player.position = 0
         player.cash = STARTING_CASH
+        player.isJailed = false
+        player.jailTurns = 0
       }
       this.state.turnPhase = 'roll'
       this.state.activePlayerSessionId = this.state.players.keys().next().value ?? ''
@@ -69,6 +72,8 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       this.state.diceOne = 0
       this.state.diceTwo = 0
       this.state.landingDescription = ''
+      this.state.activeCardTitle = ''
+      this.state.activeCardDescription = ''
       this.state.pendingPropertyId = 255
       this.state.auctionPropertyId = 255
       this.state.auctionHighestBid = 0
@@ -84,39 +89,19 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       }
       const player = this.state.players.get(client.sessionId)
       if (!player) return
+      if (player.isJailed) {
+        client.send('room:error', { message: 'Escolha como sair da prisão antes de rolar os dados.' })
+        return
+      }
 
       const diceOne = randomInt(1, 7)
       const diceTwo = randomInt(1, 7)
-      const previousPosition = player.position
-      player.position = movePosition(player.position, [diceOne, diceTwo])
-      if (player.position < previousPosition) player.cash += START_BONUS
       this.state.diceOne = diceOne
       this.state.diceTwo = diceTwo
-      this.state.landingDescription = describeLanding(player.position)
-      const space = boardSpaces[player.position]
-      this.state.turnPhase = 'resolve'
-      if (space.kind === 'property') {
-        const property = this.state.properties.get(String(space.id))
-        if (!property?.ownerSessionId) {
-          this.state.pendingPropertyId = space.id
-          this.state.turnPhase = 'purchase'
-        } else if (property.ownerSessionId !== client.sessionId) {
-          const owner = this.state.players.get(property.ownerSessionId)
-          const ownership = new Map(Array.from(this.state.properties.entries()).map(([id, item]) => [Number(id), item.ownerSessionId]))
-          const rent = calculateRent(space.id, ownership, property.houses)
-          if (owner) {
-            const amountPaid = Math.min(player.cash, rent)
-            player.cash -= amountPaid
-            owner.cash += amountPaid
-            this.state.landingDescription += ` Aluguel de ${amountPaid.toLocaleString('pt-BR')} pago a ${owner.name}.`
-          }
-        }
-      } else if (space.kind === 'tax') {
-        const tax = taxForSpace(space.id)
-        const amountPaid = Math.min(player.cash, tax)
-        player.cash -= amountPaid
-        this.state.landingDescription += ` Taxa de ${amountPaid.toLocaleString('pt-BR')} paga ao banco.`
-      }
+      this.movePlayer(player, diceOne + diceTwo)
+      this.state.activeCardTitle = ''
+      this.state.activeCardDescription = ''
+      this.resolveSpace(player)
     },
     buy: (client: Client) => {
       if (this.state.status !== 'playing' || this.state.turnPhase !== 'purchase' || client.sessionId !== this.state.activePlayerSessionId) return
@@ -160,6 +145,40 @@ export class GameRoom extends Room<{ state: LobbyState }> {
         ? `Hotel construído em ${space.name} por ${cost.toLocaleString('pt-BR')}.`
         : `Casa ${property.houses}/4 construída em ${space.name} por ${cost.toLocaleString('pt-BR')}.`
     },
+    jailRoll: (client: Client) => {
+      const player = this.state.players.get(client.sessionId)
+      if (this.state.status !== 'playing' || this.state.turnPhase !== 'jail' || client.sessionId !== this.state.activePlayerSessionId || !player?.isJailed) return
+      const dice: [number, number] = [randomInt(1, 7), randomInt(1, 7)]
+      const result = resolveJailAttempt(dice, player.jailTurns, player.cash)
+      this.state.diceOne = dice[0]
+      this.state.diceTwo = dice[1]
+      player.isJailed = result.isJailed
+      player.jailTurns = result.jailTurns
+      player.cash = result.cash
+      if (!result.move) {
+        this.state.turnPhase = 'resolve'
+        this.state.landingDescription = `Sem duplas: tentativa ${result.jailTurns} de 3. Sua vez termina na prisão.`
+        return
+      }
+      const releaseText = result.outcome === 'doubles'
+        ? 'Duplas! Você saiu da prisão.'
+        : `Após três tentativas, saiu da prisão e pagou ${result.finePaid.toLocaleString('pt-BR')}.`
+      this.movePlayer(player, dice[0] + dice[1])
+      this.state.activeCardTitle = ''
+      this.state.activeCardDescription = ''
+      this.resolveSpace(player)
+      this.state.landingDescription = `${releaseText} ${this.state.landingDescription}`
+    },
+    jailPay: (client: Client) => {
+      const player = this.state.players.get(client.sessionId)
+      if (this.state.status !== 'playing' || this.state.turnPhase !== 'jail' || client.sessionId !== this.state.activePlayerSessionId || !player?.isJailed) return
+      const finePaid = Math.min(player.cash, JAIL_FINE)
+      player.cash -= finePaid
+      player.isJailed = false
+      player.jailTurns = 0
+      this.state.turnPhase = 'roll'
+      this.state.landingDescription = `Fiança paga: ${finePaid.toLocaleString('pt-BR')}. Role os dados para avançar.`
+    },
     bid: (client: Client, payload: { amount?: unknown }) => {
       if (this.state.status !== 'playing' || this.state.turnPhase !== 'auction') return
       const player = this.state.players.get(client.sessionId)
@@ -194,12 +213,76 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       if (playerIds.length < 2) return
       const activeIndex = playerIds.indexOf(this.state.activePlayerSessionId)
       this.state.activePlayerSessionId = playerIds[(activeIndex + 1) % playerIds.length]
+      const nextPlayer = this.state.players.get(this.state.activePlayerSessionId)
       this.state.turnNumber += 1
-      this.state.turnPhase = 'roll'
+      this.state.turnPhase = nextPlayer?.isJailed ? 'jail' : 'roll'
       this.state.diceOne = 0
       this.state.diceTwo = 0
-      this.state.landingDescription = ''
+      this.state.landingDescription = nextPlayer?.isJailed ? 'Você está preso. Pague a fiança ou tente tirar duplas.' : ''
+      this.state.activeCardTitle = ''
+      this.state.activeCardDescription = ''
     },
+  }
+
+  private movePlayer(player: LobbyPlayerState, spaces: number) {
+    const previousPosition = player.position
+    player.position = movePosition(player.position, [spaces, 0])
+    if (player.position < previousPosition) player.cash += START_BONUS
+  }
+
+  private sendToJail(player: LobbyPlayerState) {
+    player.position = 10
+    player.isJailed = true
+    player.jailTurns = 0
+    this.state.pendingPropertyId = 255
+    this.state.turnPhase = 'resolve'
+  }
+
+  private resolveSpace(player: LobbyPlayerState, drawEvent = true) {
+    const space = boardSpaces[player.position]
+    this.state.pendingPropertyId = 255
+    this.state.turnPhase = 'resolve'
+    this.state.landingDescription = describeLanding(player.position)
+    if (space.kind === 'property') {
+      const property = this.state.properties.get(String(space.id))
+      if (!property?.ownerSessionId) {
+        this.state.pendingPropertyId = space.id
+        this.state.turnPhase = 'purchase'
+      } else if (property.ownerSessionId !== this.state.activePlayerSessionId) {
+        const owner = this.state.players.get(property.ownerSessionId)
+        const ownership = new Map(Array.from(this.state.properties.entries()).map(([id, item]) => [Number(id), item.ownerSessionId]))
+        const rent = calculateRent(space.id, ownership, property.houses)
+        if (owner) {
+          const amountPaid = Math.min(player.cash, rent)
+          player.cash -= amountPaid
+          owner.cash += amountPaid
+          this.state.landingDescription += ` Aluguel de ${amountPaid.toLocaleString('pt-BR')} pago a ${owner.name}.`
+        }
+      }
+    } else if (space.kind === 'tax') {
+      const tax = taxForSpace(space.id)
+      const amountPaid = Math.min(player.cash, tax)
+      player.cash -= amountPaid
+      this.state.landingDescription += ` Taxa de ${amountPaid.toLocaleString('pt-BR')} paga ao banco.`
+    } else if (space.kind === 'go-to-prison') {
+      this.sendToJail(player)
+      this.state.landingDescription = 'Vá para a prisão: sua peça foi enviada à casa de visita e sua vez termina.'
+    } else if (space.kind === 'event' && drawEvent) {
+      const card = EVENT_CARDS[randomInt(EVENT_CARDS.length)]
+      this.state.activeCardTitle = card.title
+      this.state.activeCardDescription = card.description
+      this.state.landingDescription = card.description
+      if (card.effect.kind === 'cash') {
+        player.cash = applyCardCashEffect(player.cash, card.effect.amount)
+      } else if (card.effect.kind === 'move') {
+        this.movePlayer(player, card.effect.spaces)
+        this.resolveSpace(player, false)
+        this.state.landingDescription = `${card.description} ${this.state.landingDescription}`
+      } else {
+        this.sendToJail(player)
+        this.state.landingDescription = `${card.description} Sua peça foi enviada à casa de visita.`
+      }
+    }
   }
 
   private startAuction(propertyId: number) {

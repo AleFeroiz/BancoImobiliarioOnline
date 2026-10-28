@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { boardSpaces, positionOnBoard } from './board'
-import { STARTING_CASH, calculateRent, canBuildProperty, constructionCost, describeLanding, movePosition, taxForSpace } from '../../shared/game'
+import { JAIL_FINE, MAX_JAIL_ATTEMPTS, STARTING_CASH, calculateRent, canBuildProperty, constructionCost, describeLanding, movePosition, resolveJailAttempt, taxForSpace } from '../../shared/game'
+import { EVENT_CARDS, applyCardCashEffect } from '../../shared/cards'
 
 describe('tabuleiro', () => {
   it('tem 40 casas com identificadores únicos e em ordem', () => {
@@ -76,5 +77,25 @@ describe('tabuleiro', () => {
   it('usa taxas fixas nas quatro casas de taxa', () => {
     expect([4, 18, 28, 38].map(taxForSpace)).toEqual([50_000, 75_000, 100_000, 125_000])
     expect(taxForSpace(0)).toBe(0)
+  })
+
+  it('mantém oito cartas autorais e limita cobranças ao saldo disponível', () => {
+    expect(EVENT_CARDS).toHaveLength(8)
+    expect(new Set(EVENT_CARDS.map((card) => card.id)).size).toBe(8)
+    expect(EVENT_CARDS.filter((card) => card.effect.kind === 'cash' && card.effect.amount > 0)).toHaveLength(3)
+    expect(EVENT_CARDS.filter((card) => card.effect.kind === 'cash' && card.effect.amount < 0)).toHaveLength(3)
+    expect(EVENT_CARDS.filter((card) => card.effect.kind === 'move')).toHaveLength(1)
+    expect(EVENT_CARDS.filter((card) => card.effect.kind === 'jail')).toHaveLength(1)
+    expect(applyCardCashEffect(120_000, -150_000)).toBe(0)
+    expect(applyCardCashEffect(120_000, 50_000)).toBe(170_000)
+  })
+
+  it('libera da prisão com duplas ou na terceira tentativa e cobra até a fiança', () => {
+    expect(MAX_JAIL_ATTEMPTS).toBe(3)
+    expect(JAIL_FINE).toBe(50_000)
+    expect(resolveJailAttempt([4, 4], 0, 100_000)).toMatchObject({ isJailed: false, move: true, outcome: 'doubles', cash: 100_000 })
+    expect(resolveJailAttempt([2, 5], 0, 100_000)).toMatchObject({ isJailed: true, jailTurns: 1, move: false, outcome: 'failed' })
+    expect(resolveJailAttempt([1, 6], 1, 100_000)).toMatchObject({ isJailed: true, jailTurns: 2, move: false, outcome: 'failed' })
+    expect(resolveJailAttempt([1, 2], 2, 20_000)).toMatchObject({ isJailed: false, jailTurns: 0, cash: 0, move: true, outcome: 'forced-release', finePaid: 20_000 })
   })
 })
