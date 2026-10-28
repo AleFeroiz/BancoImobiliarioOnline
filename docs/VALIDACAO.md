@@ -230,3 +230,9 @@
 - A sala já declara `maxClients = 4`; acrescentei um teste de integração com quatro conexões reais e uma quinta tentativa. As quatro primeiras entram, a quinta é rejeitada e os quatro jogadores continuam no estado sincronizado.
 - `server/test/GameRoom.test.ts`: 35 testes passaram, incluindo o novo caso de capacidade.
 - No navegador, quatro clientes ocuparam os lugares, o anfitrião iniciou a partida, a tela mostrou os quatro participantes nos cantos e o tabuleiro no centro. Após rolar e comprar Lago Sereno por R$ 180.000, o saldo do anfitrião caiu para R$ 1.320.000 e a vez avançou para a segunda pessoa. Inspecionei a captura no navegador interno a 1265 × 711.
+
+## 2026-10-28 — Sala cheia em viewport móvel
+
+- Em Chrome headless com WebGL por SwiftShader, abri uma sala Clássica com quatro conexões Colyseus reais em 390 × 844. O lobby exibiu 4/4 lugares e o botão de início; no jogo, os cartões dos quatro participantes ficaram em grade 2 × 2, o tabuleiro permaneceu visível e a ação do turno coube abaixo dele.
+- A viewport e o `documentElement.scrollWidth` ficaram em 390 px tanto no lobby quanto na partida. Os cartões ocuparam x=9–381 px e y=97–201 px na partida, sem rolagem horizontal.
+- Capturas: `/tmp/banco-four-player-mobile-lobby.png` e `/tmp/banco-four-player-mobile-game.png`.
