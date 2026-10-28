@@ -4,11 +4,22 @@ Este documento traduz a hierarquia visual observada em capturas públicas de *Bu
 
 ## Fontes consultadas
 
-- [Página oficial de *Business Tour* na Steam](https://store.steampowered.com/app/397900/Business_Tour__Board_Game_with_Online_Multiplayer/), incluindo as imagens de gameplay da galeria.
-- [Galeria de capturas indexada pelo SteamDB](https://steamdb.info/app/397900/screenshots/), usada para localizar outras imagens públicas da partida.
+- [Página oficial de *Business Tour* na Steam](https://store.steampowered.com/app/397900/Business_Tour__Board_Game_with_Online_Multiplayer/), incluindo capturas oficiais da partida.
+- [Galeria da interface de *Business Tour* no Interface In Game](https://interfaceingame.com/games/business-tour/), que organiza capturas por estado, como tabuleiro, rolagem, venda, sala privada e placar.
+- [Galeria de capturas indexada pelo SteamDB](https://steamdb.info/app/397900/screenshots/), usada para localizar exemplos públicos adicionais.
 - Captura enviada pelo usuário nesta conversa, usada somente como referência visual.
 
-As imagens mostram uma partida com tabuleiro quadrado em perspectiva inclinada, casas residenciais distribuídas pelo perímetro, área central livre para dados e feedback, e jogadores organizados ao redor do tabuleiro. O saldo é visível nos cartões dos jogadores; a vez e a situação atual recebem destaque; dados e mensagens curtas aparecem próximos à área central. Essa leitura é uma análise das imagens, não uma especificação oficial da interface.
+### Capturas de referência por estado
+
+| Estado | Referência | O que observar |
+|---|---|---|
+| Partida normal | [Captura oficial na Steam](https://cdn.cloudflare.steamstatic.com/steam/apps/397900/ss_0a4f490446cb091de93e8eef7b239eb3a530937f.1920x1080.jpg) · [Captura do tabuleiro](https://interfaceingame.com/wp-content/uploads/business-tour/business-tour-board-500x281.png) | Tabuleiro quadrado em perspectiva inclinada no centro; quatro cartões de jogador nos cantos com avatar e saldo; relógio sobre a área do tabuleiro; controles secundários em uma coluna curta na lateral. |
+| Rolagem | [Dados e mensagem de turno](https://interfaceingame.com/wp-content/uploads/business-tour/business-tour-rolling-dice-500x281.png) | Dados grandes no espaço negativo central e fala curta perto do jogador ativo; o evento aparece onde o olhar já está, sem substituir o HUD. |
+| Decisão durante dívida | [Escolher propriedade para vender](https://interfaceingame.com/wp-content/uploads/business-tour/business-tour-select-a-city-to-sell-500x281.png) | O tabuleiro escurece levemente, a propriedade relevante fica realçada, e um painel central explica saldo, dívida e ações disponíveis. |
+| Resultado | [Placar final](https://interfaceingame.com/wp-content/uploads/business-tour/business-tour-scoreboard-500x281.png) | Cartão de resultado sobre a partida ainda reconhecível, com classificação em tabela e uma ação principal para fechar. |
+| Sala privada | [Captura de sala](https://interfaceingame.com/wp-content/uploads/business-tour/business-tour-private-table-500x281.png) | A preparação da partida continua usando os mesmos retratos, cores e linguagem de mesa vistos na partida. |
+
+As observações acima descrevem as capturas públicas consultadas; não são especificações oficiais do jogo. O padrão de apresentação é consistente: a mesa e a posição dos participantes permanecem legíveis, a vez atual tem um marcador claro e a ação específica aparece junto ao contexto que a motivou.
 
 ## Direção visual para o nosso jogo
 
@@ -19,6 +30,9 @@ As imagens mostram uma partida com tabuleiro quadrado em perspectiva inclinada, 
 - Destacar quem está na vez com contorno, cor de acento e rótulo curto; não depender apenas da cor para comunicar o estado.
 - Deixar a ação principal em um painel contextual compacto na borda inferior. Mostrar nele apenas a decisão atual, como lançar, comprar, ofertar ou pagar.
 - Apresentar o modo e o relógio numa cápsula curta na faixa superior. A carteira, regras longas e negociação ficam em painéis que abrem sob demanda.
+- Em ações com alvo no tabuleiro, marcar a propriedade ou casa envolvida e mostrar motivo, valor e opções no mesmo cartão; usar um escurecimento leve apenas enquanto a decisão estiver aberta.
+- Para dados e mudanças de vez, levar o feedback visual ao espaço central ou ao jogador ativo e manter uma legenda de texto acessível no HUD.
+- No resultado, manter a cena ao fundo com contraste reduzido e exibir uma classificação concisa; mostrar o critério da vitória, o saldo e o patrimônio quando forem relevantes para o modo.
 - Em telas estreitas, reduzir o tamanho dos cartões e organizá-los em duas colunas no topo; manter o tabuleiro visível e a ação alcançável sem rolagem horizontal.
 
 ### Linguagem visual própria
@@ -40,6 +54,12 @@ As imagens mostram uma partida com tabuleiro quadrado em perspectiva inclinada, 
 | Dívida ou falência | Valor devido e formas válidas de liquidar | Painel contextual mais forte, com ações disponíveis explícitas |
 | Negociação | O que cada lado oferece e pede, relógio e aceite | Painel modal compacto; tabuleiro e cartões continuam reconhecíveis |
 | Resultado final | Vencedor, critério e patrimônio/saldo final | Cartão de resultado claro sobre a cena, sem esconder a causa da vitória |
+
+## Aplicação e limites
+
+O HUD atual já segue a composição principal: jogadores nas bordas, modo/relógio no topo e ação no rodapé. A próxima revisão visual deve concentrar-se em estados contextuais: ligar avisos e dados à casa/jogador que os provocou, destacar o espaço selecionado durante compra/leilão/dívida e apresentar um placar final com o critério de vitória. Esses ajustes devem ser verificados em captura de tela, com tabuleiro visível, em desktop e celular.
+
+Usar as capturas acima apenas como referência visual durante design e revisão. Não salvá-las no pacote do jogo, nem reutilizar logotipo, nomes, ilustrações, formas de peças, tipografia ou organização exata dos painéis de *Business Tour*.
 
 ## Limites da referência
 

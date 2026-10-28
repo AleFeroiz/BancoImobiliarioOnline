@@ -515,7 +515,12 @@ describe('sala privada', () => {
     expect(room.state.diceOne).toBeLessThanOrEqual(6)
     expect(room.state.diceTwo).toBeGreaterThanOrEqual(1)
     expect(room.state.diceTwo).toBeLessThanOrEqual(6)
-    expect(room.state.players.get(host.sessionId)?.position).toBe(room.state.diceOne + room.state.diceTwo)
+    const landedPosition = room.state.players.get(host.sessionId)?.position
+    expect(landedPosition).toBeGreaterThanOrEqual(0)
+    expect(landedPosition).toBeLessThan(boardSpaces.length)
+    if (!room.state.activeCardTitle) {
+      expect(landedPosition).toBe(room.state.diceOne + room.state.diceTwo)
+    }
     expect(room.state.landingDescription.length).toBeGreaterThan(0)
 
     if (room.state.turnPhase === 'purchase') {
