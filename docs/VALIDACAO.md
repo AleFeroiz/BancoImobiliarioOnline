@@ -1,6 +1,13 @@
 # Validação visual e de navegador
 
-> As entradas anteriores registram testes da versão existente naquele dia. A escolha atual é **comprar ou não comprar**; referências a leilões abaixo são históricas e não descrevem a regra vigente.
+> As entradas anteriores registram testes da versão existente naquele dia. A escolha ao cair em uma propriedade livre continua sendo **comprar ou não comprar**; leilão é uma ação voluntária separada para vender um título que o jogador já possui.
+
+## 2026-10-28 — Leilão voluntário entre jogadores
+
+- Em uma sala local com dois clientes no Chromium integrado, comprei Rua das Palmeiras por R$ 120.000 e abri a carteira. O dono escolheu R$ 120.000 como lance inicial e iniciou o leilão mesmo com outro jogador fora da vez.
+- O segundo cliente viu o nome do vendedor, o imóvel, o preço inicial, o contador e o campo de lance. Deu o lance mínimo; o valor foi reservado do saldo durante os segundos restantes e, ao terminar, a propriedade passou para o licitante e o vendedor recebeu o valor.
+- A carteira mostra os controles de hipoteca e lance inicial sem esconder o tabuleiro. O painel de disputa cabe no viewport, usa a mesma identidade visual leve da HUD e é recolhível.
+- A suíte completa valida também lance superado com devolução do valor reservado, permanência da hipoteca no título transferido, lance proibido do vendedor, início fora da vez e bloqueio de imóvel livre ou com construções no grupo.
 
 ## 2026-10-28 — Recusa de compra e leitura das casas
 

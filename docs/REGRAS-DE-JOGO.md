@@ -17,6 +17,7 @@ Como referência de regras clássicas e jogo curto, o [manual oficial do Super B
 
 - Jogo por turnos em tabuleiro fechado. Rola-se dado e move-se a peça; casas e cartas resolvem seus efeitos.
 - Ao cair em uma propriedade livre, a pessoa da vez escolhe entre comprar pelo preço indicado ou não comprar. Ao recusar, a propriedade permanece sem dono e a jogada continua; não há leilão.
+- Separadamente, qualquer jogador solvente pode iniciar, fora da própria vez, um leilão voluntário para vender uma propriedade que já possui, desde que a partida não esteja resolvendo uma compra ou dívida. O dono define o lance inicial e os demais jogadores podem ofertar durante 20 segundos; cada novo lance deve superar o anterior em pelo menos R$ 10.000. O valor do maior lance fica reservado enquanto o leilão está aberto. Sem ofertas, o título continua com o dono; com ofertas, o maior lance paga ao vendedor e recebe o título. Hipoteca acompanha o título. Antes de vender um título de grupo com casas ou hotel, é necessário vender as construções do grupo.
 - Ao parar em propriedade de outra pessoa, paga-se aluguel conforme títulos e construções. Companhias usam a regra indicada no título.
 - Completar grupo de cor sem hipotecas permite construir casas e hotéis. Construções seguem a regra de equilíbrio definida para o tabuleiro.
 - Jogadores podem negociar dinheiro e títulos durante a vez ativa, em janela de 45 segundos. Construções devem ser vendidas antes da transferência do título.
@@ -59,6 +60,7 @@ Como referência de regras clássicas e jogo curto, o [manual oficial do Super B
 
 - Cada pessoa começa com R$ 1.500.000. Ao cruzar a Partida, recebe R$ 200.000.
 - Ao parar em propriedade livre, a pessoa da vez escolhe comprar pelo preço impresso no espaço ou recusar. Se recusar, o imóvel permanece livre; ninguém compra por ela e a vez segue para a próxima ação.
+- Leilões voluntários são uma ação separada da compra por aterrissagem. Podem ser iniciados por qualquer pessoa solvente em um momento livre, usando um título próprio; recusar uma propriedade livre não a coloca em leilão.
 - O aluguel base corresponde a 10% do preço da propriedade, com mínimo de R$ 10.000; completar o grupo de cor dobra esse valor. Quando o saldo não cobre aluguel ou taxa, a partida entra na fase de dívida descrita acima.
 - Ao possuir todas as propriedades residenciais de uma cor, o dono pode construir. Cada casa ou hotel custa metade do preço do imóvel e soma 10% desse preço ao aluguel; o bônus de grupo continua valendo. Os níveis 1–4 são casas e o nível 5 substitui as casas por um hotel. A construção deve ficar equilibrada: o nível de um imóvel não pode ultrapassar em mais de um o nível mais baixo do grupo. Estações não recebem casas ou hotéis.
 - Hipotecar rende metade do preço do título; resgatar custa 110% desse adiantamento. O título hipotecado não gera aluguel. Não se hipoteca um grupo que ainda tenha casas ou hotel; nenhum título de um grupo hipotecado recebe construção.
