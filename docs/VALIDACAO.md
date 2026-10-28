@@ -229,3 +229,4 @@
 
 - A sala já declara `maxClients = 4`; acrescentei um teste de integração com quatro conexões reais e uma quinta tentativa. As quatro primeiras entram, a quinta é rejeitada e os quatro jogadores continuam no estado sincronizado.
 - `server/test/GameRoom.test.ts`: 35 testes passaram, incluindo o novo caso de capacidade.
+- No navegador, quatro clientes ocuparam os lugares, o anfitrião iniciou a partida, a tela mostrou os quatro participantes nos cantos e o tabuleiro no centro. Após rolar e comprar Lago Sereno por R$ 180.000, o saldo do anfitrião caiu para R$ 1.320.000 e a vez avançou para a segunda pessoa. Inspecionei a captura no navegador interno a 1265 × 711.
