@@ -37,10 +37,11 @@
 
 - Balanço dos alvos e bônus das oito cartas de objetivo Express após playtests.
 - Balanço da economia do tabuleiro para sustentar partidas nos tempos definidos; as hipotecas começam em 50% do preço com resgate a 110% do valor recebido.
-- Detalhes de reconexão/retorno após o prazo de 60 segundos e de saída voluntária.
+- Comportamento após o timeout enquanto há dívida pendente, possibilidade de voltar à mesma cadeira após expirar a janela de 60 segundos e saída voluntária durante uma partida.
 - Opções visuais de avatares, cores e acessibilidade.
 - Escolha final do provedor Node para hospedar o servidor, depois de validar Colyseus com salas reais.
 - **Proposta para negociação:** uma oferta pendente por sala; aceitar/rejeitar somente pelo destinatário antes de acabar a janela de 45 segundos do Clássico ou 40 segundos do Express; títulos hipotecados podem ser trocados e permanecem hipotecados, sem cobrança automática ao transferir; construções de todo o grupo de cor precisam ser vendidas antes da troca de um título desse grupo. Ainda não é decisão de produto aprovada.
+- **Proposta para timeout de desconexão:** manter a cadeira e os títulos; pular a ação/vez quando os 60 segundos expirarem; cancelar uma compra pendente e encerrar um leilão ativo sem venda automática. A implementação inicial segue essa interpretação de “sem ações automáticas”; validar em playtest. O caso de dívida e a volta à sala após o prazo continuam pendentes.
 - **Proposta de cálculo final implementada para playtest:** patrimônio = dinheiro disponível + preço de compra dos imóveis - saldo de hipoteca (50% do preço) + valor de venda das construções (50% do custo por nível). Se jogadores também empatarem nos dados, o servidor escolhe um deles aleatoriamente. Rever após playtests.
 
 ## Base de regras Express

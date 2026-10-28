@@ -40,6 +40,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
   private tradeOfferSequence = 0
   private privateObjectives = new Map<string, PrivateObjectiveState>()
   private expressActivity = new Map<string, ObjectiveActivity>()
+  private expiredReconnections = new Set<string>()
 
   async onCreate(options: { mode?: unknown }) {
     const mode: GameMode = isGameMode(options.mode) ? options.mode : 'classic'
@@ -63,6 +64,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
     player.name = normalizePlayerName(options.name) ?? 'Jogador'
     player.isHost = this.state.players.size === 0
     player.isConnected = true
+    player.reconnectionExpired = false
     this.state.players.set(client.sessionId, player)
   }
 
@@ -599,6 +601,9 @@ export class GameRoom extends Room<{ state: LobbyState }> {
         return
       }
 
+      const activePlayer = this.state.players.get(this.state.activePlayerSessionId)
+      if (activePlayer && !activePlayer.isConnected && !this.expiredReconnections.has(this.state.activePlayerSessionId)) return
+
       if (this.state.phaseSeconds > 0) this.state.phaseSeconds -= 1
       if (this.state.phaseSeconds === 0) this.expireExpressPhase()
     }, 1000)
@@ -718,6 +723,13 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       this.finishMatch(solventPlayers[0])
       return
     }
+    if (!roomPlayerIds.some((sessionId) => {
+      const player = this.state.players.get(sessionId)
+      return player && !player.isBankrupt && player.isConnected
+    })) {
+      this.state.landingDescription = 'Aguardando a reconexão de uma pessoa para continuar a partida.'
+      return
+    }
     const activeIndex = roomPlayerIds.indexOf(this.state.activePlayerSessionId)
     const startIndex = activeIndex >= 0 ? activeIndex : roomPlayerIds.length - 1
     let nextIndex = -1
@@ -751,6 +763,13 @@ export class GameRoom extends Room<{ state: LobbyState }> {
     this.state.activeCardTitle = ''
     this.state.activeCardDescription = ''
     this.startTradeWindow()
+    if (nextPlayer && !nextPlayer.isConnected && this.expiredReconnections.has(this.state.activePlayerSessionId)) {
+      const skippedName = nextPlayer.name
+      this.advanceTurn()
+      if (this.state.status === 'playing') {
+        this.state.landingDescription = `A vez de ${skippedName} foi pulada porque a conexão expirou.`
+      }
+    }
   }
 
   private collectPayment(debtorSessionId: string, debtor: LobbyPlayerState, amount: number, creditorSessionId: string, reason: string) {
@@ -884,6 +903,37 @@ export class GameRoom extends Room<{ state: LobbyState }> {
   }
 
   onLeave(client: Client) {
+    const player = this.state.players.get(client.sessionId)
+    if (this.state.status === 'playing' && player && !player.isConnected) {
+      this.expiredReconnections.add(client.sessionId)
+      player.reconnectionExpired = true
+      if (this.state.activePlayerSessionId === client.sessionId) {
+        if (this.state.turnPhase === 'debt') {
+          this.state.landingDescription = `${player.name} desconectou durante uma dívida. A partida aguarda a regra de retorno para esta situação.`
+          return
+        }
+        let skipDescription: string
+        if (this.state.turnPhase === 'purchase') {
+          this.state.pendingPropertyId = 255
+          this.state.turnPhase = 'resolve'
+          skipDescription = `${player.name} desconectou antes de decidir a compra; a propriedade fica livre.`
+        } else if (this.state.turnPhase === 'auction') {
+          this.clearAuctionTimer()
+          this.state.auctionPropertyId = 255
+          this.state.auctionHighestBid = 0
+          this.state.auctionHighestBidderSessionId = ''
+          this.state.auctionSeconds = 0
+          this.auctionPassed.clear()
+          this.state.turnPhase = 'resolve'
+          skipDescription = `${player.name} desconectou durante o leilão; ele foi encerrado sem venda.`
+        } else {
+          skipDescription = `${player.name} desconectou; sua vez foi pulada.`
+        }
+        this.advanceTurn()
+        if (this.state.status === 'playing') this.state.landingDescription = skipDescription
+      }
+      return
+    }
     this.privateObjectives.delete(client.sessionId)
     this.expressActivity.delete(client.sessionId)
     if (this.state.status === 'playing') this.stopClocks()
@@ -897,13 +947,20 @@ export class GameRoom extends Room<{ state: LobbyState }> {
 
   onDrop(client: Client, _code: CloseCode) {
     const player = this.state.players.get(client.sessionId)
-    if (player) player.isConnected = false
+    if (player) {
+      player.isConnected = false
+      player.reconnectionExpired = false
+    }
     this.allowReconnection(client, 60).catch(() => {})
   }
 
   onReconnect(client: Client) {
     const player = this.state.players.get(client.sessionId)
-    if (player) player.isConnected = true
+    if (player) {
+      player.isConnected = true
+      player.reconnectionExpired = false
+    }
+    this.expiredReconnections.delete(client.sessionId)
   }
 
   async onDispose() {

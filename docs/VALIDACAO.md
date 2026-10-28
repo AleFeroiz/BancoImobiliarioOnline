@@ -175,3 +175,11 @@
 - Capturas inspecionadas: `/tmp/banco-labels-desktop.png` e `/tmp/banco-labels-mobile.png`.
 - O teste de integração Colyseus simula queda, sincroniza o estado offline, bloqueia o início da sala, reconecta o cliente e confirma que a partida pode começar. A regra após expirar os 60 segundos ainda diverge do documento: o `onLeave` remove a pessoa e interrompe a partida; essa pendência está registrada em [PLANO.md](PLANO.md).
 - `npm run verify`: 86 testes passaram; build web e build do servidor passaram. O build mantém o aviso conhecido de bundle cliente acima de 500 kB. O Chrome headless emitiu avisos de fallback WebGL por software durante a captura.
+
+## 2026-10-28 — Timeout e avanço de turno após desconexão
+
+- O servidor preserva a cadeira e os títulos da pessoa depois que a reconexão expira, continua os relógios e pula o turno já expirado. Uma compra pendente é cancelada sem abrir leilão; um leilão ativo termina sem atribuir a propriedade.
+- O teste de regressão usa o SDK real para derrubar uma conexão e simula o vencimento da janela no servidor; verifica partida em andamento, propriedade preservada, turno atual pulado e relógio Clássico ativo. Outros casos verificam turno futuro expirado pulado e compra cancelada sem venda automática. O timeout completo de 60 segundos também foi exercitado em Chrome com dois clientes: o cliente ativo recebeu a vez, enquanto a ficha desconectada passou de “Reconectando” para “Offline”.
+- Revisei a partida após o timeout em 1440 × 900 e 390 × 844; a mesa, a pessoa ativa e a mensagem de turno ficaram visíveis sem rolagem horizontal. Capturas: `/tmp/banco-reconnect-expired-desktop.png` e `/tmp/banco-reconnect-expired-mobile.png`.
+- O tratamento de desconexão durante dívida permanece sem regra aprovada: atualmente a dívida fica aberta e a partida aguarda. Foi solicitada decisão sobre preservar a dívida com retorno à mesma cadeira, manter a dívida sem retorno ou declarar falência ao vencer o prazo.
+- `npm run verify`: 89 testes passaram; builds web e de servidor passaram. O build mantém o aviso conhecido de bundle cliente acima de 500 kB.

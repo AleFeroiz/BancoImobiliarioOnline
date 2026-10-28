@@ -5,6 +5,7 @@ export type LobbyPlayer = {
   name: string
   isHost: boolean
   isConnected?: boolean
+  reconnectionExpired?: boolean
   position: number
   isBankrupt?: boolean
 }

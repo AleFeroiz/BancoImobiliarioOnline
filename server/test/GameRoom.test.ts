@@ -107,6 +107,7 @@ describe('sala privada', () => {
     await dropped
     await waitFor(() => room.state.players.get(guest.sessionId)?.isConnected === false)
     await waitFor(() => host.state.players.get(guest.sessionId)?.isConnected === false)
+    expect(room.state.players.get(guest.sessionId)?.reconnectionExpired).toBe(false)
     const offlineStartMessage = new Promise<{ message: string }>((resolve) => host.onMessage('room:error', resolve))
     host.send('start')
     await expect(offlineStartMessage).resolves.toMatchObject({ message: expect.stringContaining('Aguarde a reconexão') })
@@ -115,6 +116,7 @@ describe('sala privada', () => {
     await reconnected
     await waitFor(() => room.state.players.get(guest.sessionId)?.isConnected === true)
     await waitFor(() => host.state.players.get(guest.sessionId)?.isConnected === true)
+    expect(room.state.players.get(guest.sessionId)?.reconnectionExpired).toBe(false)
     const started = Promise.all([
       new Promise<void>((resolve) => host.onMessage('game:started', () => resolve())),
       new Promise<void>((resolve) => guest.onMessage('game:started', () => resolve())),
@@ -124,6 +126,73 @@ describe('sala privada', () => {
 
     expect(room.state.status).toBe('playing')
     expect(room.state.players.has(guest.sessionId)).toBe(true)
+  })
+
+  it('mantém a partida e os imóveis quando a reconexão expira durante uma jogada normal', async () => {
+    const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
+    const host = await colyseus.connectTo(room, { name: 'Lia' })
+    const guest = await colyseus.connectTo(room, { name: 'Nina' })
+    const started = new Promise<void>((resolve) => host.onMessage('game:started', () => resolve()))
+    host.send('start')
+    await started
+
+    const ownedProperty = new PropertyState()
+    ownedProperty.ownerSessionId = host.sessionId
+    room.state.properties.set('1', ownedProperty)
+    host.reconnection.enabled = false
+    const serverRoom = room as unknown as { allowReconnection: (...args: unknown[]) => Promise<never> }
+    serverRoom.allowReconnection = () => Promise.reject(new Error('Simulated expired reconnection window.'))
+    void host.leave(false)
+    await waitFor(() => room.state.turnNumber === 2)
+
+    expect(room.state.status).toBe('playing')
+    expect(room.state.players.get(host.sessionId)).toMatchObject({ name: 'Lia', isConnected: false, reconnectionExpired: true, isHost: true })
+    expect(room.state.properties.get('1')?.ownerSessionId).toBe(host.sessionId)
+    expect(room.state.activePlayerSessionId).toBe(guest.sessionId)
+    expect(room.state.turnNumber).toBe(2)
+    expect(room.state.landingDescription).toContain('Lia desconectou')
+    await waitFor(() => room.state.matchSeconds < 30 * 60, 1500)
+  })
+
+  it('pula a vez futura de quem já expirou a reconexão sem remover seu lugar', async () => {
+    const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'express' })
+    const host = await colyseus.connectTo(room, { name: 'Lia' })
+    const guest = await colyseus.connectTo(room, { name: 'Nina' })
+    const started = new Promise<void>((resolve) => host.onMessage('game:started', () => resolve()))
+    host.send('start')
+    await started
+
+    room.state.players.get(guest.sessionId)!.isConnected = false
+    room.onLeave({ sessionId: guest.sessionId } as never)
+    room.state.turnPhase = 'resolve'
+    host.send('finishTurn')
+    await waitFor(() => room.state.turnNumber === 3)
+
+    expect(room.state.status).toBe('playing')
+    expect(room.state.players.has(guest.sessionId)).toBe(true)
+    expect(room.state.activePlayerSessionId).toBe(host.sessionId)
+    expect(room.state.expressRound).toBe(2)
+    expect(room.state.phaseSeconds).toBe(40)
+    expect(room.state.landingDescription).toContain('A vez de Nina foi pulada')
+  })
+
+  it('cancela uma compra pendente ao pular a vez de quem perdeu a conexão', async () => {
+    const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
+    const host = await colyseus.connectTo(room, { name: 'Lia' })
+    const guest = await colyseus.connectTo(room, { name: 'Nina' })
+    const started = new Promise<void>((resolve) => host.onMessage('game:started', () => resolve()))
+    host.send('start')
+    await started
+    room.state.turnPhase = 'purchase'
+    room.state.pendingPropertyId = 1
+    room.state.players.get(host.sessionId)!.isConnected = false
+    room.onLeave({ sessionId: host.sessionId } as never)
+
+    expect(room.state.status).toBe('playing')
+    expect(room.state.pendingPropertyId).toBe(255)
+    expect(room.state.properties.has('1')).toBe(false)
+    expect(room.state.activePlayerSessionId).toBe(guest.sessionId)
+    expect(room.state.landingDescription).toContain('a propriedade fica livre')
   })
 
   it('abre a janela de negociação de 45 segundos e troca dinheiro e títulos entre as duas pessoas', async () => {
