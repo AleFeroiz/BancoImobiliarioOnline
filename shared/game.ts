@@ -10,6 +10,19 @@ export const DICE_ANIMATION_DURATION_MS = 2_800
 export const PAWN_STEP_ANIMATION_DURATION_MS = 750
 export const PAWN_TELEPORT_ANIMATION_DURATION_MS = 1_800
 export const BUILDING_ANIMATION_DURATION_MS = 1_400
+export const ANIMATION_SPEEDS = [0.5, 1, 2] as const
+export type AnimationSpeed = (typeof ANIMATION_SPEEDS)[number]
+export const DEFAULT_ANIMATION_SPEED: AnimationSpeed = 0.5
+
+export function isAnimationSpeed(value: unknown): value is AnimationSpeed {
+  return typeof value === 'number' && ANIMATION_SPEEDS.some((speed) => speed === value)
+}
+
+export function getAnimationDuration(durationMs: number, speed: number) {
+  const validSpeed = isAnimationSpeed(speed) ? speed : DEFAULT_ANIMATION_SPEED
+  return Math.max(1, Math.round(durationMs * DEFAULT_ANIMATION_SPEED / validSpeed))
+}
+
 export const LANDING_PULSE_DURATION_MS = 2_200
 export const JAIL_FINE = 50_000
 export const MAX_JAIL_ATTEMPTS = 3

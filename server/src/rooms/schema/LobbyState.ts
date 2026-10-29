@@ -1,4 +1,5 @@
 import { schema, t, type SchemaType } from '@colyseus/schema'
+import { DEFAULT_ANIMATION_SPEED } from '../../../../shared/game.js'
 
 export const LobbyPlayerState = schema({
   name: t.string().default(''),
@@ -32,6 +33,8 @@ export const LobbyState = schema({
   properties: t.map(PropertyState),
   roomCode: t.string().default(''),
   mode: t.string().default('classic'),
+  animationSpeed: t.float32().default(DEFAULT_ANIMATION_SPEED),
+  presentationSpeed: t.float32().default(DEFAULT_ANIMATION_SPEED),
   status: t.string().default('waiting'),
   turnPhase: t.string().default('roll'),
   activePlayerSessionId: t.string().default(''),

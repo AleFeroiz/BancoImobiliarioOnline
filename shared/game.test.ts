@@ -1,6 +1,24 @@
 import { describe, expect, it } from 'vitest'
 import { boardSpaces } from './board.js'
-import { calculateNetWorth, liquidatablePropertyIds } from './game.js'
+import { ANIMATION_SPEEDS, DEFAULT_ANIMATION_SPEED, DICE_ANIMATION_DURATION_MS, PAWN_STEP_ANIMATION_DURATION_MS, calculateNetWorth, getAnimationDuration, isAnimationSpeed, liquidatablePropertyIds } from './game.js'
+
+describe('velocidade da apresentação', () => {
+  it('mantém o ritmo atual em 0,5x e reduz proporcionalmente a 1x e 2x', () => {
+    expect(DEFAULT_ANIMATION_SPEED).toBe(0.5)
+    expect(ANIMATION_SPEEDS).toEqual([0.5, 1, 2])
+    expect(getAnimationDuration(DICE_ANIMATION_DURATION_MS, 0.5)).toBe(2_800)
+    expect(getAnimationDuration(DICE_ANIMATION_DURATION_MS, 1)).toBe(1_400)
+    expect(getAnimationDuration(DICE_ANIMATION_DURATION_MS, 2)).toBe(700)
+    expect(getAnimationDuration(PAWN_STEP_ANIMATION_DURATION_MS, 2)).toBe(188)
+    expect(getAnimationDuration(DICE_ANIMATION_DURATION_MS, 0.75)).toBe(2_800)
+  })
+
+  it('aceita somente as três velocidades disponíveis', () => {
+    expect(ANIMATION_SPEEDS.every(isAnimationSpeed)).toBe(true)
+    expect(isAnimationSpeed(0.75)).toBe(false)
+    expect(isAnimationSpeed('1')).toBe(false)
+  })
+})
 
 describe('patrimônio final', () => {
   it('soma apenas os imóveis da pessoa, desconta hipoteca e inclui valor de liquidação das construções', () => {

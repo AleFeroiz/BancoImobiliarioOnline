@@ -9,7 +9,7 @@ Um jogo de tabuleiro para abrir no navegador e jogar com amigos, sem cadastro. C
 - Tela inicial para escolher nome e criar/entrar em sala.
 - Ao criar, anfitrião escolhe Clássico Rápido ou Express; quem entra vê o modo antes de confirmar.
 - Lobby lista até quatro participantes, anfitrião e estado de preparação; anfitrião inicia.
-- Tabuleiro 3D de câmera inclinada alta, espaços legíveis, peças e dados; cada jogada mostra os dados, depois o percurso do peão e por fim a ação de chegada; HUD em HTML responsivo para desktop e celular.
+- Tabuleiro 3D de câmera inclinada alta, espaços legíveis, peças e dados; cada jogada mostra os dados, depois o percurso do peão e por fim a ação de chegada; o anfitrião controla a velocidade das animações (0,5×, 1× ou 2×), e observadores acompanham as fases por balão junto ao peão; HUD em HTML responsivo para desktop e celular.
 - Ações disponíveis e resultados da jogada ficam claros em cada turno.
 - O botão “?” abre um guia rápido. A pessoa tem 20 segundos para rolar e 10 segundos para uma decisão; expiração recusa compras, confirma resoluções obrigatórias, tenta duplas na prisão e avança a liquidação de dívidas.
 - Partidas temporárias, sem conta ou progresso persistente.

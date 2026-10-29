@@ -2,6 +2,14 @@
 
 > As entradas anteriores registram testes da versão existente naquele dia. A escolha ao cair em uma propriedade livre continua sendo **comprar ou não comprar**; leilão é uma ação voluntária separada para vender um título que o jogador já possui.
 
+## 2026-10-29 — Velocidade e observação de jogadas
+
+- `npm run verify`: 143 testes em 22 arquivos passaram; build web e build do servidor passaram. O build web continua registrando o aviso conhecido do chunk 3D acima de 500 kB.
+- Em uma partida Clássica no navegador local, com três bots, o controle do anfitrião apareceu em 0,5× e aceitou 2×. Os dados 3D ficaram visíveis na área central enquanto rolavam, sem o cartão de ação encobrindo a cena.
+- Após a jogada humana, o turno do Bot 1 manteve o cartão central oculto. A bolha sobre o peão anunciou “Movendo o peão”; a cena mostrou os dados durante a rolagem do bot e o percurso sem caixa modal.
+- A validação foi feita na viewport apresentada pelo navegador integrado (690 × 880). Não foi feita nesta sessão uma verificação em aparelho físico ou Firefox.
+- `git diff --check` passou.
+
 ## 2026-10-28 — Sequência de jogada, liquidação e câmera alta
 
 - A partida agora publica uma sequência de dados autoritativa que anima também rolagens repetidas com o mesmo resultado. O cliente segura o peão durante a animação dos dados; depois da rolagem, anima os passos e só então libera a ação da casa.

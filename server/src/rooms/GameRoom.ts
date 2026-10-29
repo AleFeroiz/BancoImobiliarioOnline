@@ -2,7 +2,7 @@ import { randomInt } from 'node:crypto'
 import { CloseCode, Client, Room } from '@colyseus/core'
 import type { GameMode } from '../../../shared/lobby.js'
 import { isGameMode, normalizePlayerName } from '../../../shared/lobby.js'
-import { AUCTION_DURATION_SECONDS, AUCTION_MIN_BID_INCREMENT, CLASSIC_MATCH_SECONDS, DICE_ANIMATION_DURATION_MS, EXPRESS_PHASE_SECONDS, EXPRESS_ROUNDS, JAIL_FINE, PAWN_STEP_ANIMATION_DURATION_MS, PAWN_TELEPORT_ANIMATION_DURATION_MS, PROPERTY_BUILD_LEVELS, PROPERTY_HOTEL_LEVEL, START_BONUS, STARTING_CASH, TURN_DECISION_SECONDS, TURN_ROLL_SECONDS, buildingSaleValue, calculateNetWorth, calculateRent, canBuildHotel, canBuildProperty, canMortgageProperty, canRedeemMortgage, canSellBuilding, constructionCost, describeLanding, hasLiquidatableAssets, hotelConstructionCost, mortgageRedemptionCost, mortgageValue, movePosition, resolveJailAttempt, taxForSpace } from '../../../shared/game.js'
+import { AUCTION_DURATION_SECONDS, AUCTION_MIN_BID_INCREMENT, CLASSIC_MATCH_SECONDS, DEFAULT_ANIMATION_SPEED, DICE_ANIMATION_DURATION_MS, EXPRESS_PHASE_SECONDS, EXPRESS_ROUNDS, JAIL_FINE, PAWN_STEP_ANIMATION_DURATION_MS, PAWN_TELEPORT_ANIMATION_DURATION_MS, PROPERTY_BUILD_LEVELS, PROPERTY_HOTEL_LEVEL, START_BONUS, STARTING_CASH, TURN_DECISION_SECONDS, TURN_ROLL_SECONDS, buildingSaleValue, calculateNetWorth, calculateRent, canBuildHotel, canBuildProperty, canMortgageProperty, canRedeemMortgage, canSellBuilding, constructionCost, describeLanding, getAnimationDuration, hasLiquidatableAssets, hotelConstructionCost, isAnimationSpeed, mortgageRedemptionCost, mortgageValue, movePosition, resolveJailAttempt, taxForSpace } from '../../../shared/game.js'
 import { boardSpaces } from '../../../shared/board.js'
 import { EVENT_CARDS } from '../../../shared/cards.js'
 import { EMPTY_OBJECTIVE_ACTIVITY, EXPRESS_OBJECTIVES, getExpressObjectiveProgress, type ExpressObjectiveId, type ExpressObjectiveUpdate, type ObjectiveActivity } from '../../../shared/objectives.js'
@@ -58,6 +58,8 @@ export class GameRoom extends Room<{ state: LobbyState }> {
     this.roomId = roomCode
     this.state.roomCode = roomCode
     this.state.mode = mode
+    this.state.animationSpeed = DEFAULT_ANIMATION_SPEED
+    this.state.presentationSpeed = DEFAULT_ANIMATION_SPEED
     await this.setMatchmaking({ private: true })
   }
 
@@ -77,6 +79,18 @@ export class GameRoom extends Room<{ state: LobbyState }> {
   }
 
   messages = {
+    setAnimationSpeed: (client: Client, payload: { speed?: unknown }) => {
+      const requester = this.state.players.get(client.sessionId)
+      if (!requester?.isHost) {
+        client.send('room:error', { message: 'Só a pessoa anfitriã pode alterar a velocidade das animações.' })
+        return
+      }
+      if (this.state.status !== 'playing' || !isAnimationSpeed(payload?.speed)) {
+        client.send('room:error', { message: 'Escolha 0,5x, 1x ou 2x durante a partida.' })
+        return
+      }
+      this.state.animationSpeed = payload.speed
+    },
     addBot: (client: Client) => {
       const requester = this.state.players.get(client.sessionId)
       if (this.state.status !== 'waiting' || !requester?.isHost || this.state.players.size >= this.maxClients) {
@@ -123,6 +137,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       }
 
       this.state.status = 'playing'
+      this.state.presentationSpeed = this.state.animationSpeed
       this.privateObjectives.clear()
       this.expressActivity.clear()
       this.state.properties.clear()
@@ -188,6 +203,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
         client.send('room:error', { message: 'Seu saldo não cobre o terreno e as construções selecionadas.' })
         return
       }
+      this.state.presentationSpeed = this.state.animationSpeed
       player.cash -= totalCost
       const property = new PropertyState()
       property.ownerSessionId = client.sessionId
@@ -226,6 +242,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
           client.send('room:error', { message: 'O hotel só pode ser comprado ao cair num imóvel com três casas e ter saldo suficiente.' })
           return
         }
+        this.state.presentationSpeed = this.state.animationSpeed
         const cost = hotelConstructionCost(propertyId)
         player.cash -= cost
         property.houses = PROPERTY_HOTEL_LEVEL
@@ -236,6 +253,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
           client.send('room:error', { message: 'Escolha um total de uma a três casas maior que o atual e tenha saldo suficiente.' })
           return
         }
+        this.state.presentationSpeed = this.state.animationSpeed
         const cost = (targetHouses - property.houses) * constructionCost(propertyId)
         player.cash -= cost
         property.houses = targetHouses
@@ -259,6 +277,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
         return
       }
       const previousLevel = property.houses
+      this.state.presentationSpeed = this.state.animationSpeed
       const amount = buildingSaleValue(propertyId, previousLevel)
       property.houses -= 1
       player.cash += amount
@@ -283,6 +302,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
         return
       }
       const amount = mortgageValue(propertyId)
+      this.state.presentationSpeed = this.state.animationSpeed
       property.isMortgaged = true
       player.cash += amount
       this.state.landingDescription = `${boardSpaces[propertyId].name} hipotecada. Você recebeu ${amount.toLocaleString('pt-BR')}; ela não gera aluguel até o resgate.`
@@ -298,6 +318,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
         return
       }
       const amount = mortgageRedemptionCost(propertyId)
+      this.state.presentationSpeed = this.state.animationSpeed
       property.isMortgaged = false
       player.cash -= amount
       this.state.landingDescription = `Hipoteca de ${boardSpaces[propertyId].name} resgatada por ${amount.toLocaleString('pt-BR')}. O aluguel volta a valer.`
@@ -369,8 +390,9 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       player.cash = result.cash
       this.state.pawnMoveMode = 'walk'
       this.state.turnPhase = 'rolling'
+      this.state.presentationSpeed = this.state.animationSpeed
       if (!result.move) {
-        this.schedulePresentation(DICE_ANIMATION_DURATION_MS, () => {
+        this.schedulePresentation(getAnimationDuration(DICE_ANIMATION_DURATION_MS, this.state.presentationSpeed), () => {
           if (this.state.turnPhase !== 'rolling' || this.state.activePlayerSessionId !== client.sessionId) return
           this.state.turnPhase = 'resolve'
           this.state.landingDescription = `Sem duplas: tentativa ${result.jailTurns} de 3. Sua vez termina na prisão.`
@@ -384,7 +406,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       const startPosition = player.position
       this.state.activeCardTitle = ''
       this.state.activeCardDescription = ''
-      this.schedulePresentation(DICE_ANIMATION_DURATION_MS, () => {
+      this.schedulePresentation(getAnimationDuration(DICE_ANIMATION_DURATION_MS, this.state.presentationSpeed), () => {
         if (this.state.turnPhase !== 'rolling' || this.state.activePlayerSessionId !== client.sessionId) return
         this.movePlayer(client.sessionId, player, dice[0] + dice[1])
         this.startPawnMovement(client.sessionId, player, startPosition, releaseText)
@@ -815,9 +837,10 @@ export class GameRoom extends Room<{ state: LobbyState }> {
     this.state.diceTwo = diceTwo
     this.state.pawnMoveMode = 'walk'
     this.state.turnPhase = 'rolling'
+    this.state.presentationSpeed = this.state.animationSpeed
     this.state.activeCardTitle = ''
     this.state.activeCardDescription = ''
-    this.schedulePresentation(DICE_ANIMATION_DURATION_MS, () => {
+    this.schedulePresentation(getAnimationDuration(DICE_ANIMATION_DURATION_MS, this.state.presentationSpeed), () => {
       if (this.state.turnPhase !== 'rolling' || this.state.activePlayerSessionId !== sessionId) return
       this.movePlayer(sessionId, player, diceOne + diceTwo)
       this.startPawnMovement(sessionId, player, startPosition)
@@ -1190,7 +1213,8 @@ export class GameRoom extends Room<{ state: LobbyState }> {
     this.state.turnPhase = 'moving'
     this.state.pawnMoveMode = 'teleport'
     this.state.landingDescription = description
-    this.schedulePresentation(PAWN_TELEPORT_ANIMATION_DURATION_MS, () => {
+    this.state.presentationSpeed = this.state.animationSpeed
+    this.schedulePresentation(getAnimationDuration(PAWN_TELEPORT_ANIMATION_DURATION_MS, this.state.presentationSpeed), () => {
       if (this.state.turnPhase !== 'moving' || this.state.activePlayerSessionId !== sessionId) return
       this.state.pawnMoveMode = 'walk'
       this.state.turnPhase = 'resolve'
@@ -1257,7 +1281,8 @@ export class GameRoom extends Room<{ state: LobbyState }> {
     const steps = (player.position - startPosition + boardSpaces.length) % boardSpaces.length
     this.state.pawnMoveMode = 'walk'
     this.state.turnPhase = 'moving'
-    this.schedulePresentation(Math.max(1, steps) * PAWN_STEP_ANIMATION_DURATION_MS, () => {
+    this.state.presentationSpeed = this.state.animationSpeed
+    this.schedulePresentation(Math.max(1, steps) * getAnimationDuration(PAWN_STEP_ANIMATION_DURATION_MS, this.state.presentationSpeed), () => {
       if (this.state.turnPhase !== 'moving' || this.state.activePlayerSessionId !== sessionId) return
       this.resolveSpace(sessionId, player, drawEvent, descriptionPrefix)
       this.finishExpiredPhaseIfReady()

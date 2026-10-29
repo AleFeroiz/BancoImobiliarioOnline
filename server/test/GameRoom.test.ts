@@ -121,6 +121,32 @@ describe('sala privada', () => {
     expect(room.state.players.get(guest.sessionId)?.cash).toBe(1_500_000)
   })
 
+  it('sincroniza a velocidade das animações e aceita a alteração apenas da anfitriã', async () => {
+    const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
+    const host = await colyseus.connectTo(room, { name: 'Caio' })
+    const guest = await colyseus.connectTo(room, { name: 'Duda' })
+    const started = Promise.all([
+      new Promise<void>((resolve) => host.onMessage('game:started', () => resolve())),
+      new Promise<void>((resolve) => guest.onMessage('game:started', () => resolve())),
+    ])
+    host.send('start')
+    await started
+
+    expect(room.state.animationSpeed).toBe(0.5)
+    expect(room.state.presentationSpeed).toBe(0.5)
+    const unauthorized = new Promise<{ message: string }>((resolve) => guest.onMessage('room:error', resolve))
+    guest.send('setAnimationSpeed', { speed: 2 })
+    await expect(unauthorized).resolves.toMatchObject({ message: 'Só a pessoa anfitriã pode alterar a velocidade das animações.' })
+    expect(room.state.animationSpeed).toBe(0.5)
+
+    host.send('setAnimationSpeed', { speed: 2 })
+    await waitFor(() => room.state.animationSpeed === 2)
+    expect(room.state.presentationSpeed).toBe(0.5)
+    host.send('roll')
+    await waitFor(() => room.state.turnPhase === 'rolling')
+    expect(room.state.presentationSpeed).toBe(2)
+  })
+
   it('sincroniza a reconexão e bloqueia o início enquanto alguém está offline', async () => {
     const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'express' })
     const host = await colyseus.connectTo(room, { name: 'Lia' })
