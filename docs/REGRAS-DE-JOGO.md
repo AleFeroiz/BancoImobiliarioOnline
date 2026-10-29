@@ -11,6 +11,7 @@ Como referência de regras clássicas e jogo curto, o [manual oficial do Super B
 ## Tabuleiro implementado
 
 - O percurso tem 40 casas: 24 ruas residenciais únicas em oito grupos de três, três estações e as casas de Partida, Sorte ou Revés, taxas, descanso e prisão.
+- As ruas de cada grupo ocupam três casas consecutivas. Cada trecho entre cantos reúne dois grupos; espaços especiais ficam entre eles. Completar um grupo continua dobrando o aluguel base de suas ruas.
 - O objetivo Express de grupo usa o grupo residencial com menor custo total de compra. Construções podem ser compradas em qualquer terreno residencial próprio e não hipotecado, mesmo sem completar o grupo.
 
 ## Clássico Rápido — 30 minutos

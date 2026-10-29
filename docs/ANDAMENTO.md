@@ -10,6 +10,15 @@
 - A negociação de títulos ainda tem propostas abertas em `docs/DECISOES.md`; não as trate como comportamento aprovado sem nova decisão.
 - Evidências de automação, simulação e revisão visual estão em `docs/VALIDACAO.md`. Elas descrevem estados específicos e não substituem uma conferência do código e do ambiente atuais.
 
+## Frente concluída — bairros em sequência e identidade visual da Sorte (2026-10-29)
+
+- Nota de retomada: [bairros em sequência e tema da Sorte](trabalho/bairros-sequencia-sorte.md).
+- Pedido confirmado: reunir as três propriedades de cada grupo em sequência no percurso; preservar o bônus de aluguel por grupo completo; transformar o piso dos espaços “Sorte ou Revés” e dar a eles uma roleta claramente reconhecível.
+- Implementação: oito grupos residenciais agora ocupam blocos contíguos de três casas, dois por lado. Os quatro pisos de Sorte usam tema dourado e uma roleta low-poly autoral; a mecânica existente de bônus de aluguel foi preservada.
+- Validação automatizada: `npm run verify` passou com 145 testes em 22 arquivos, build web e build do servidor. `git diff --check` passou. O build mantém o aviso conhecido do chunk 3D acima de 500 kB.
+- Revisão visual: não concluída. O navegador integrado está desativado nas configurações de Work; o CUA interrompeu o acesso ao Chrome por não conseguir validar a URL atual. Não há Playwright instalado no projeto, e a tentativa headless não produziu captura. O teste visual precisa ser repetido quando o navegador estiver habilitado.
+- Próximo passo: conferir a vista desktop e móvel no navegador habilitado e registrar as capturas dos grupos e das roletas.
+
 ## Frente atual — velocidade de animação e observação de turnos (2026-10-29)
 
 - Pedido confirmado: deixar o ritmo atual como 0,5×, oferecer 1× e 2× com controle exclusivo da anfitriã, mostrar os dados sem sobreposição e substituir o cartão central nos turnos alheios por um balão de atividade sobre o peão.

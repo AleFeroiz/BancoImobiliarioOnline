@@ -166,6 +166,20 @@ const dicePips: Record<number, [number, number][]> = {
   6: [[-0.1, -0.1], [0.1, -0.1], [-0.1, 0], [0.1, 0], [-0.1, 0.1], [0.1, 0.1]],
 }
 
+const rouletteColors = ['#e95768', '#f1c747', '#4ea981', '#4da9c4', '#7d71bd', '#ed8a43', '#d85f97', '#86a444']
+
+function ChanceRoulette({ size, trim }: { size: number; trim: string }) {
+  const radius = size * 0.145
+  return (
+    <group position={[size * 0.31, 0.112, size * 0.3]}>
+      <mesh rotation={[-Math.PI / 2, 0, 0]}><circleGeometry args={[radius * 1.13, 24]} /><meshStandardMaterial color={trim} roughness={0.5} /></mesh>
+      {rouletteColors.map((color, index) => <mesh key={color} position={[0, 0.009, 0]} rotation={[-Math.PI / 2, 0, 0]}><circleGeometry args={[radius, 3, index * Math.PI / 4, Math.PI / 4]} /><meshStandardMaterial color={color} roughness={0.46} /></mesh>)}
+      <mesh position={[0, 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]}><circleGeometry args={[radius * 0.19, 12]} /><meshStandardMaterial color="#fff3cf" roughness={0.38} /></mesh>
+      <mesh position={[radius * 0.18, 0.029, -radius * 0.44]}><sphereGeometry args={[radius * 0.095, 8, 6]} /><meshStandardMaterial color="#fffdf4" roughness={0.28} /></mesh>
+    </group>
+  )
+}
+
 function AnimatedDie({ position, rotation, sequence, value, reducedMotion, visible, presentationSpeed }: { position: [number, number, number]; rotation: [number, number, number]; sequence: number; value: number; reducedMotion: boolean; visible: boolean; presentationSpeed: AnimationSpeed }) {
   const group = useRef<Group>(null)
   const elapsed = useRef(0)
@@ -462,7 +476,7 @@ function Board({ players, propertyBuildings, highlightedSpaceIds, landingPulseSp
               </mesh>,
             ])}
             {space.kind === 'tax' && <mesh position={[size * 0.31, 0.112, size * 0.3]}><cylinderGeometry args={[0.075, 0.075, 0.025, 8]} /><meshStandardMaterial color={theme.trim} roughness={0.48} /></mesh>}
-            {space.kind === 'event' && [-1, 0, 1].map((offset) => <mesh key={offset} position={[size * 0.28 + offset * 0.075, 0.115, size * 0.3]} rotation={[0, Math.PI / 4, 0]}><boxGeometry args={[0.075, 0.03, 0.075]} /><meshStandardMaterial color={theme.trim} roughness={0.52} /></mesh>)}
+            {space.kind === 'event' && <ChanceRoulette size={size} trim={theme.trim} />}
             {space.kind === 'prison' && [-1, 0, 1].map((offset) => <mesh key={offset} position={[offset * 0.09, 0.11, size * 0.34]}><boxGeometry args={[0.035, 0.035, 0.19]} /><meshStandardMaterial color={theme.trim} roughness={0.55} /></mesh>)}
             {space.kind === 'go-to-prison' && <mesh position={[size * 0.31, 0.12, size * 0.3]} rotation={[0, Math.PI / 4, 0]}><boxGeometry args={[0.17, 0.05, 0.17]} /><meshStandardMaterial color={theme.trim} roughness={0.55} /></mesh>}
             {space.kind === 'rest' && <mesh position={[size * 0.31, 0.11, size * 0.3]}><cylinderGeometry args={[0.07, 0.09, 0.035, 6]} /><meshStandardMaterial color={theme.trim} roughness={0.62} /></mesh>}

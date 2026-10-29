@@ -32,8 +32,10 @@ describe('patrimônio final', () => {
   })
 
   it('ignora saldo e títulos negativos ou inválidos na avaliação', () => {
+    const nonProperty = boardSpaces.find((space) => space.kind !== 'property')
+    if (!nonProperty) throw new Error('Tabuleiro sem casas especiais para o teste.')
     const holdings = new Map([
-      [2, { ownerSessionId: 'ana', houses: 4, isMortgaged: false }],
+      [nonProperty.id, { ownerSessionId: 'ana', houses: 4, isMortgaged: false }],
       [999, { ownerSessionId: 'ana', houses: 2, isMortgaged: false }],
     ])
 

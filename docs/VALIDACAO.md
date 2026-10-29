@@ -2,6 +2,13 @@
 
 > As entradas anteriores registram testes da versão existente naquele dia. A escolha ao cair em uma propriedade livre continua sendo **comprar ou não comprar**; leilão é uma ação voluntária separada para vender um título que o jogador já possui.
 
+## 2026-10-29 — Bairros em sequência e casas de Sorte
+
+- `npm run verify`: 145 testes em 22 arquivos passaram; build web e build do servidor passaram. O build web mantém o aviso conhecido do chunk 3D acima de 500 kB.
+- Testes cobrem os oito grupos residenciais com três IDs consecutivos por grupo, dois grupos por lado, a localização das quatro casas Sorte e o tema dourado distinto. O bônus de aluguel por grupo completo continua coberto pela suíte de regras.
+- A revisão manual desktop/móvel não foi concluída: o navegador integrado retornou `Local browser use is disabled in Work settings`; ao tentar selecionar o Chrome do sistema, o CUA interrompeu a ação por não conseguir confirmar a URL atual. O projeto não tem Playwright instalado; a tentativa de captura pelo Chrome headless não gerou arquivo de imagem. Nenhuma captura é apresentada como evidência desta mudança.
+- `git diff --check` passou.
+
 ## 2026-10-29 — Velocidade e observação de jogadas
 
 - `npm run verify`: 143 testes em 22 arquivos passaram; build web e build do servidor passaram. O build web continua registrando o aviso conhecido do chunk 3D acima de 500 kB.

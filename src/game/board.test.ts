@@ -38,6 +38,19 @@ describe('tabuleiro', () => {
     expect(new Set(residential.map((space) => space.name)).size).toBe(24)
     expect(groups.size).toBe(8)
     expect(Array.from(groups.values()).map((group) => group.length)).toEqual(Array(8).fill(3))
+    const groupsPerSide = new Map<number, number>()
+    for (const group of groups.values()) {
+      expect(group[1]).toBe(group[0]! + 1)
+      expect(group[2]).toBe(group[0]! + 2)
+      const side = Math.floor(group[0]! / 10)
+      expect(side).toBe(Math.floor(group[2]! / 10))
+      groupsPerSide.set(side, (groupsPerSide.get(side) ?? 0) + 1)
+    }
+    expect(Array.from(groupsPerSide.values())).toEqual([2, 2, 2, 2])
+  })
+
+  it('distribui uma casa Sorte ou Revés em cada lado do tabuleiro', () => {
+    expect(boardSpaces.filter((space) => space.kind === 'event').map((space) => space.id)).toEqual([8, 14, 24, 34])
   })
 
   it('move pelo resultado dos dados e volta ao início ao completar uma volta', () => {
@@ -46,8 +59,8 @@ describe('tabuleiro', () => {
   })
 
   it('descreve a casa alcançada sem aplicar efeitos econômicos ainda não definidos', () => {
-    expect(describeLanding(15)).toContain('Estação Central')
-    expect(describeLanding(15)).toContain('Você parou em uma propriedade')
+    expect(describeLanding(19)).toContain('Estação Central')
+    expect(describeLanding(19)).toContain('Você parou em uma propriedade')
     expect(() => describeLanding(40)).toThrow(RangeError)
   })
 
@@ -86,8 +99,8 @@ describe('tabuleiro', () => {
     holdings.get(first.id)!.houses = 4
     expect(canBuildHotel(first.id, 'p1', holdings, 1_000_000)).toBe(false)
 
-    expect(constructionCost(15)).toBe(0)
-    expect(canBuildProperty(15, 'p1', new Map([[15, { ownerSessionId: 'p1', houses: 0 }]]), 1_000_000)).toBe(false)
+    expect(constructionCost(19)).toBe(0)
+    expect(canBuildProperty(19, 'p1', new Map([[19, { ownerSessionId: 'p1', houses: 0 }]]), 1_000_000)).toBe(false)
   })
 
   it('usa taxas fixas nas quatro casas de taxa', () => {

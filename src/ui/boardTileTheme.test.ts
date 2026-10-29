@@ -22,6 +22,15 @@ describe('cores dos pisos do tabuleiro', () => {
     expect(getBoardTileTheme(byName('Praça'), false).floor).not.toBe(residential)
   })
 
+  it('destaca todas as casas Sorte ou Revés com o piso dourado da roleta', () => {
+    const eventSpaces = boardSpaces.filter((space) => space.kind === 'event')
+    const eventFloors = new Set(eventSpaces.map((space) => getBoardTileTheme(space, false).floor))
+
+    expect(eventSpaces).toHaveLength(4)
+    expect(eventFloors).toEqual(new Set(['#d89d3d']))
+    expect(eventFloors.has(getBoardTileTheme(boardSpaces[1]!, false).floor)).toBe(false)
+  })
+
   it('dá a cada canto uma superfície própria e mantém texto contrastante', () => {
     const corners = [0, 10, 20, 30].map((id) => boardSpaces[id]!)
     const themes = corners.map((space) => getBoardTileTheme(space, true))

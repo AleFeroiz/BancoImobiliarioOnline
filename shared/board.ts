@@ -23,21 +23,21 @@ const properties: Array<[string, number]> = [
 
 const specialSpaces: Record<number, Omit<BoardSpace, 'id'>> = {
   0: { name: 'Partida', kind: 'start', color: '#edbf61' },
-  2: { name: 'Sorte ou Revés', kind: 'event', color: '#e4a447' },
   4: { name: 'Taxa urbana', kind: 'tax', color: '#c56f59' },
-  7: { name: 'Praça', kind: 'rest', color: '#81a998' },
+  8: { name: 'Sorte ou Revés', kind: 'event', color: '#e4a447' },
+  9: { name: 'Praça', kind: 'rest', color: '#81a998' },
   10: { name: 'Visita à prisão', kind: 'prison', color: '#8e9caa' },
-  12: { name: 'Sorte ou Revés', kind: 'event', color: '#e4a447' },
-  15: { name: 'Estação Central', kind: 'property', color: '#6c91ad', price: 180000 },
+  14: { name: 'Sorte ou Revés', kind: 'event', color: '#e4a447' },
   18: { name: 'Taxa de serviço', kind: 'tax', color: '#c56f59' },
+  19: { name: 'Estação Central', kind: 'property', color: '#6c91ad', price: 180000 },
   20: { name: 'Parada livre', kind: 'rest', color: '#81a998' },
-  22: { name: 'Sorte ou Revés', kind: 'event', color: '#e4a447' },
-  25: { name: 'Aeroporto', kind: 'property', color: '#6c91ad', price: 240000 },
+  24: { name: 'Sorte ou Revés', kind: 'event', color: '#e4a447' },
   28: { name: 'Taxa de luxo', kind: 'tax', color: '#c56f59' },
+  29: { name: 'Aeroporto', kind: 'property', color: '#6c91ad', price: 240000 },
   30: { name: 'Vá para a prisão', kind: 'go-to-prison', color: '#a96f63' },
-  32: { name: 'Sorte ou Revés', kind: 'event', color: '#e4a447' },
-  35: { name: 'Estação do Porto', kind: 'property', color: '#6c91ad', price: 280000 },
+  34: { name: 'Sorte ou Revés', kind: 'event', color: '#e4a447' },
   38: { name: 'Imposto especial', kind: 'tax', color: '#c56f59' },
+  39: { name: 'Estação do Porto', kind: 'property', color: '#6c91ad', price: 280000 },
 }
 
 let residentialIndex = 0
