@@ -8,16 +8,15 @@ import { getLobbyPlayerEntries } from './lobbySnapshot'
 import { canAffordPurchase } from './purchaseActions'
 import { normalizeAuctionBidInput } from './auctionActions'
 import { boardSpaces, formatMoney } from '../game/board'
-import { AUCTION_MIN_BID_INCREMENT, JAIL_FINE, START_BONUS, buildingSaleValue, calculateRent, canBuildProperty, canMortgageProperty, canRedeemMortgage, canSellBuilding, constructionCost, hasLiquidatableAssets, liquidatablePropertyIds, mortgageRedemptionCost, mortgageValue, taxForSpace, type PropertyHolding } from '../../shared/game'
+import { AUCTION_MIN_BID_INCREMENT, JAIL_FINE, PROPERTY_BUILD_LEVELS, PROPERTY_HOTEL_LEVEL, START_BONUS, buildingSaleValue, calculateRent, canBuildHotel, canBuildProperty, canMortgageProperty, canRedeemMortgage, canSellBuilding, constructionCost, hasLiquidatableAssets, hotelConstructionCost, liquidatablePropertyIds, mortgageRedemptionCost, mortgageValue, taxForSpace, type PropertyHolding } from '../../shared/game'
 import type { ExpressObjectiveUpdate } from '../../shared/objectives'
 import { PLAYER_COLORS } from './playerPalette'
 import { getGameSound, getPropertyChangeSound, getPropertyVisualChange, formatCashDelta, type GameSound } from './gameFeedback'
 import { playGameSound, startGameMusic, stopGameMusic, unlockGameAudio } from './gameAudio'
-import { getPawnStepPath } from './pawnPath'
 
 type Mode = GameMode
 type Screen = 'home' | 'room' | 'game'
-type TurnPhase = 'roll' | 'resolve' | 'purchase' | 'jail' | 'debt' | 'ended'
+type TurnPhase = 'roll' | 'rolling' | 'moving' | 'resolve' | 'purchase' | 'jail' | 'debt' | 'ended'
 type SyncedPlayer = LobbyPlayer & { sessionId: string; cash: number; isJailed: boolean; jailTurns: number; isBankrupt: boolean; finalCash: number; finalNetWorth: number; tieBreakRoll: number }
 type TradeOfferView = { id: number; fromSessionId: string; toSessionId: string; cashOffered: number; cashRequested: number; propertiesOffered: number[]; propertiesRequested: number[] }
 const BoardScene = lazy(() => import('./BoardScene'))
@@ -45,6 +44,9 @@ function App() {
   const [feedbackToast, setFeedbackToast] = useState('')
   const [diceRollSequence, setDiceRollSequence] = useState(0)
   const [presentationStage, setPresentationStage] = useState<'idle' | 'dice' | 'pawn'>('idle')
+  const [pawnMoveMode, setPawnMoveMode] = useState<'walk' | 'teleport'>('walk')
+  const [pendingPurchaseHouses, setPendingPurchaseHouses] = useState(0)
+  const [targetBuildHouses, setTargetBuildHouses] = useState(1)
   const [landingPulseSpaceId, setLandingPulseSpaceId] = useState(-1)
   const [landingPulseSequence, setLandingPulseSequence] = useState(0)
   const [name, setName] = useState('')
@@ -54,6 +56,7 @@ function App() {
   const [isReconnecting, setIsReconnecting] = useState(false)
   const [activePlayerSessionId, setActivePlayerSessionId] = useState('')
   const [turnNumber, setTurnNumber] = useState(0)
+  const [turnSeconds, setTurnSeconds] = useState(0)
   const [matchSeconds, setMatchSeconds] = useState(0)
   const [matchEnding, setMatchEnding] = useState(false)
   const [expressRound, setExpressRound] = useState(0)
@@ -74,6 +77,7 @@ function App() {
   const [showPropertyPanel, setShowPropertyPanel] = useState(false)
   const [showTradePanel, setShowTradePanel] = useState(false)
   const [showAuctionPanel, setShowAuctionPanel] = useState(false)
+  const [showHelp, setShowHelp] = useState(false)
   const [auctionSeconds, setAuctionSeconds] = useState(0)
   const [auctionId, setAuctionId] = useState(0)
   const [auctionPropertyId, setAuctionPropertyId] = useState(255)
@@ -99,13 +103,12 @@ function App() {
   const previousFeedbackSnapshot = useRef<{ description: string; diceSequence: number; players: Map<string, { cash: number; position: number }>; properties: Map<string, PropertyHolding> } | null>(null)
   const previousObjectiveComplete = useRef(false)
   const feedbackTimeout = useRef<number | null>(null)
-  const presentationTimer = useRef<number | null>(null)
   const previousTradeOfferId = useRef<number | null>(null)
   const activePlayer = roomPlayers.find((player) => player.sessionId === activePlayerSessionId)
   const activeSpace = boardSpaces[activePlayer?.position ?? 0]
   const playerTokens = roomPlayers.length > 0
-    ? roomPlayers.flatMap((player, seatIndex) => player.isBankrupt ? [] : [{ id: player.sessionId, position: player.position, color: PLAYER_COLORS[seatIndex] ?? PLAYER_COLORS[0], seatIndex }])
-    : [0, 3, 6, 9].map((position, seatIndex) => ({ id: `preview-${seatIndex}`, position, color: PLAYER_COLORS[seatIndex] ?? PLAYER_COLORS[0], seatIndex }))
+    ? roomPlayers.flatMap((player, seatIndex) => player.isBankrupt ? [] : [{ id: player.sessionId, position: player.position, color: PLAYER_COLORS[seatIndex] ?? PLAYER_COLORS[0], seatIndex, cash: player.cash }])
+    : [0, 3, 6, 9].map((position, seatIndex) => ({ id: `preview-${seatIndex}`, position, color: PLAYER_COLORS[seatIndex] ?? PLAYER_COLORS[0], seatIndex, cash: 1_500_000 }))
   const isMyTurn = room?.sessionId === activePlayerSessionId
   const incomingTradeOffer = tradeOffer?.toSessionId === room?.sessionId
   const outgoingTradeOffer = tradeOffer?.fromSessionId === room?.sessionId
@@ -123,8 +126,9 @@ function App() {
   }
   const localPlayer = roomPlayers.find((player) => player.sessionId === room?.sessionId)
   const canAuctionNow = Boolean(localPlayer && isMyTurn && !localPlayer.isBankrupt && ['roll', 'resolve', 'jail'].includes(turnPhase) && presentationStage === 'idle' && auctionId === 0 && !tradeOffer)
-  const pendingPurchasePrice = boardSpaces[pendingPropertyId]?.price ?? 0
   const pendingPurchaseSpace = boardSpaces[pendingPropertyId]
+  const pendingPurchaseHousesCost = pendingPurchaseSpace?.buildable ? pendingPurchaseHouses * constructionCost(pendingPurchaseSpace.id) : 0
+  const pendingPurchasePrice = (pendingPurchaseSpace?.price ?? 0) + pendingPurchaseHousesCost
   const highlightedSpaceIds = turnPhase === 'purchase'
     ? [pendingPropertyId, ...(selectedSpaceId === null ? [] : [selectedSpaceId])]
     : turnPhase === 'debt' && showPropertyPanel && isMyTurn
@@ -143,9 +147,16 @@ function App() {
     .map(([id, holding]) => ({ spaceId: Number(id), holding, space: boardSpaces[Number(id)] }))
     .filter((entry) => entry.space)
     .sort((first, second) => first.spaceId - second.spaceId)
-  const buildOptions = activePlayer
-    ? Array.from(roomProperties.keys()).map(Number).filter((id) => canBuildProperty(id, activePlayerSessionId, holdingsById, activePlayer.cash))
-    : []
+  const landedHolding = activePlayer && activeSpace.kind === 'property' ? holdingsById.get(activeSpace.id) : undefined
+  const ownPropertyLanding = turnPhase === 'resolve' && activeSpace.kind === 'property' && pendingPropertyId === activeSpace.id && landedHolding?.ownerSessionId === activePlayerSessionId && !landedHolding.isMortgaged
+  const canBuildSelected = activePlayer && ownPropertyLanding ? canBuildProperty(activeSpace.id, activePlayerSessionId, holdingsById, activePlayer.cash, targetBuildHouses) : false
+  const canBuildHotelHere = activePlayer && ownPropertyLanding ? canBuildHotel(activeSpace.id, activePlayerSessionId, holdingsById, activePlayer.cash) : false
+  const purchaseRentOwnership = new Map(Array.from(roomProperties.entries()).map(([id, holding]) => [Number(id), holding.ownerSessionId]))
+  if (pendingPurchaseSpace?.kind === 'property') purchaseRentOwnership.set(pendingPurchaseSpace.id, '__preview__')
+  const pendingPurchaseRent = pendingPurchaseSpace?.kind === 'property'
+    ? calculateRent(pendingPurchaseSpace.id, purchaseRentOwnership, pendingPurchaseHouses)
+    : 0
+  const modalVisible = showAuctionPanel || showTradePanel || showPropertyPanel || showObjectivePanel || Boolean(incomingTradeOffer) || (selectedSpaceId !== null && !ownPropertyLanding && turnPhase !== 'purchase') || turnPhase === 'purchase' || ownPropertyLanding || turnPhase === 'debt' || turnPhase === 'ended' || Boolean(activeCardTitle)
   const propertyBuildings = Array.from(roomProperties.entries()).map(([id, holding]) => ({
     spaceId: Number(id),
     ownerSessionId: holding.ownerSessionId,
@@ -163,12 +174,6 @@ function App() {
   const selectedRent = selectedSpace?.kind === 'property'
     ? calculateRent(selectedSpace.id, rentOwnership, selectedHolding?.houses ?? 0, selectedHolding?.isMortgaged ?? false)
     : 0
-  const pendingRentOwnership = new Map(Array.from(roomProperties.entries()).map(([id, holding]) => [Number(id), holding.ownerSessionId]))
-  if (pendingPurchaseSpace?.kind === 'property') pendingRentOwnership.set(pendingPurchaseSpace.id, '__preview__')
-  const pendingPurchaseRent = pendingPurchaseSpace?.kind === 'property'
-    ? calculateRent(pendingPurchaseSpace.id, pendingRentOwnership)
-    : 0
-
   function showGameFeedback(message: string, sound: GameSound) {
     setFeedbackToast(message)
     if (feedbackTimeout.current !== null) window.clearTimeout(feedbackTimeout.current)
@@ -186,6 +191,15 @@ function App() {
   }, [sceneReady, screen])
 
   useEffect(() => {
+    if (!showHelp) return
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setShowHelp(false)
+    }
+    window.addEventListener('keydown', closeOnEscape)
+    return () => window.removeEventListener('keydown', closeOnEscape)
+  }, [showHelp])
+
+  useEffect(() => {
     const currentId = tradeOffer?.id ?? null
     if (previousTradeOfferId.current !== null && currentId === null) {
       setShowTradePanel(false)
@@ -194,6 +208,14 @@ function App() {
     }
     previousTradeOfferId.current = currentId
   }, [tradeOffer?.id])
+
+  useEffect(() => {
+    setPendingPurchaseHouses(0)
+  }, [pendingPropertyId])
+
+  useEffect(() => {
+    if (landedHolding && landedHolding.houses < PROPERTY_BUILD_LEVELS) setTargetBuildHouses(landedHolding.houses + 1)
+  }, [activeSpace.id, landedHolding?.houses])
 
   useEffect(() => {
     if (!room) return
@@ -210,6 +232,7 @@ function App() {
         activePlayerSessionId: string
         properties: Map<string, PropertyHolding>
         turnNumber: number
+        turnSeconds: number
         matchSeconds: number
         matchEnding: boolean
         expressRound: number
@@ -218,6 +241,7 @@ function App() {
         diceOne: number
         diceTwo: number
         diceSequence: number
+        pawnMoveMode: string
         landingDescription: string
         activeCardTitle: string
         activeCardDescription: string
@@ -263,25 +287,18 @@ function App() {
         }
         const didRoll = snapshot.diceSequence > previous.diceSequence
         if (didRoll) setDiceRollSequence((sequence) => sequence + 1)
-        if (didRoll || movedPlayer) {
-          if (presentationTimer.current !== null) window.clearTimeout(presentationTimer.current)
-          if (reducedMotion) {
-            setPresentationStage('idle')
-          } else {
-            const steps = movedPlayer
-              ? getPawnStepPath(previous.players.get(movedPlayer.sessionId)?.position ?? movedPlayer.position, movedPlayer.position).length
-              : 0
-            const diceDuration = didRoll ? 760 : 0
-            setPresentationStage(didRoll ? 'dice' : 'pawn')
-            presentationTimer.current = window.setTimeout(() => {
-              setPresentationStage(steps ? 'pawn' : 'idle')
-            }, diceDuration)
-          }
-        }
+        if (reducedMotion) setPresentationStage('idle')
+        else if (snapshot.turnPhase === 'rolling') setPresentationStage('dice')
+        else if (snapshot.turnPhase === 'moving') setPresentationStage('pawn')
+        else setPresentationStage('idle')
         if (snapshot.landingDescription && snapshot.landingDescription !== previous.description) {
           const localCashDelta = (nextPlayerFacts.get(room.sessionId)?.cash ?? 0) - (previous.players.get(room.sessionId)?.cash ?? 0)
           const delta = formatCashDelta(localCashDelta)
-          showGameFeedback(`${snapshot.landingDescription}${delta ? ` · ${delta}` : ''}`, propertySound ?? getGameSound(snapshot.landingDescription))
+          const cashSound = localCashDelta > 0 ? 'money-in' : localCashDelta < 0 ? 'money-out' : null
+          showGameFeedback(`${snapshot.landingDescription}${delta ? ` · ${delta}` : ''}`, cashSound ?? propertySound ?? getGameSound(snapshot.landingDescription))
+        } else if (nextPlayers.some((player) => player.sessionId === room.sessionId && player.cash !== previous.players.get(player.sessionId)?.cash)) {
+          const localCashDelta = (nextPlayerFacts.get(room.sessionId)?.cash ?? 0) - (previous.players.get(room.sessionId)?.cash ?? 0)
+          if (soundEnabled && localCashDelta !== 0) playGameSound(localCashDelta > 0 ? 'money-in' : 'money-out')
         } else if (propertySound && soundEnabled) {
           playGameSound(propertySound)
         } else if (didRoll && soundEnabled) {
@@ -296,11 +313,13 @@ function App() {
       setIsHost(snapshot.players.get(room.sessionId)?.isHost ?? false)
       setActivePlayerSessionId(snapshot.activePlayerSessionId)
       setTurnNumber(snapshot.turnNumber)
+      setTurnSeconds(snapshot.turnSeconds)
       setMatchSeconds(snapshot.matchSeconds)
       setMatchEnding(snapshot.matchEnding)
       setExpressRound(snapshot.expressRound)
       setPhaseSeconds(snapshot.phaseSeconds)
       setTurnPhase(snapshot.turnPhase)
+      setPawnMoveMode(snapshot.pawnMoveMode === 'teleport' ? 'teleport' : 'walk')
       setDice([snapshot.diceOne, snapshot.diceTwo])
       setLandingDescription(snapshot.landingDescription)
       setActiveCardTitle(snapshot.activeCardTitle)
@@ -370,7 +389,6 @@ function App() {
 
   useEffect(() => () => {
     if (feedbackTimeout.current !== null) window.clearTimeout(feedbackTimeout.current)
-    if (presentationTimer.current !== null) window.clearTimeout(presentationTimer.current)
   }, [])
 
   useEffect(() => {
@@ -496,7 +514,7 @@ function App() {
       <div className="scene-backdrop">
         {sceneReady && (
           <Suspense fallback={<div className="scene-placeholder" aria-hidden="true" />}>
-            <BoardScene players={playerTokens} propertyBuildings={propertyBuildings} highlightedSpaceIds={highlightedSpaceIds} landingPulseSpaceId={landingPulseSpaceId} landingPulseSequence={landingPulseSequence} diceRollSequence={diceRollSequence} dice={dice} reducedMotion={reducedMotion} pawnMovementEnabled={presentationStage !== 'dice'} onMovementComplete={() => setPresentationStage('idle')} onSelectSpace={setSelectedSpaceId} />
+            <BoardScene players={playerTokens} propertyBuildings={propertyBuildings} highlightedSpaceIds={highlightedSpaceIds} landingPulseSpaceId={landingPulseSpaceId} landingPulseSequence={landingPulseSequence} diceRollSequence={diceRollSequence} dice={dice} diceVisible={turnPhase === 'rolling' && !modalVisible} reducedMotion={reducedMotion} pawnMovementEnabled={turnPhase === 'moving'} pawnMoveMode={pawnMoveMode} onMovementComplete={() => setPresentationStage('idle')} onSelectSpace={setSelectedSpaceId} />
           </Suspense>
         )}
       </div>
@@ -504,7 +522,7 @@ function App() {
         <button className="brand" onClick={() => { if (room) void leaveRoom(); else setScreen('home') }} aria-label="Voltar ao início">
           <span className="brand-mark">B</span><span>BANCO<span className="brand-light">IMOBILIÁRIO</span></span>
         </button>
-        <div className="topbar-right"><span className={`connection-dot ${isReconnecting ? 'connection-dot-retrying' : ''}`} /> <span className={isReconnecting ? 'connection-retrying' : ''} role={isReconnecting ? 'status' : undefined} aria-live={isReconnecting ? 'polite' : undefined}>{isReconnecting ? 'RECONECTANDO…' : 'PRÉVIA DE JOGO'}</span>{screen === 'game' && <><button className="game-preference" aria-pressed={soundEnabled} aria-label={`Áudio da partida ${soundEnabled ? 'ativado' : 'desativado'}`} title={`Trilha e efeitos ${soundEnabled ? 'ativados' : 'desativados'}`} onClick={() => { unlockGameAudio(); setSoundEnabled((enabled) => !enabled) }}>{soundEnabled ? '♫' : '♪̸'}</button><button className="game-preference" aria-pressed={reducedMotion} aria-label={`Movimento reduzido ${reducedMotion ? 'ativado' : 'desativado'}`} title={`Movimento reduzido ${reducedMotion ? 'ativado' : 'desativado'}`} onClick={() => setReducedMotion((enabled) => !enabled)}>◌</button></>}<button className="icon-button" aria-label="Ajuda">?</button></div>
+        <div className="topbar-right"><span className={`connection-dot ${isReconnecting ? 'connection-dot-retrying' : ''}`} /> <span className={isReconnecting ? 'connection-retrying' : ''} role={isReconnecting ? 'status' : undefined} aria-live={isReconnecting ? 'polite' : undefined}>{isReconnecting ? 'RECONECTANDO…' : 'PRÉVIA DE JOGO'}</span>{screen === 'game' && <><button className="game-preference" aria-pressed={soundEnabled} aria-label={`Áudio da partida ${soundEnabled ? 'ativado' : 'desativado'}`} title={`Trilha e efeitos ${soundEnabled ? 'ativados' : 'desativados'}`} onClick={() => { unlockGameAudio(); setSoundEnabled((enabled) => !enabled) }}>{soundEnabled ? '♫' : '♪̸'}</button><button className="game-preference" aria-pressed={reducedMotion} aria-label={`Movimento reduzido ${reducedMotion ? 'ativado' : 'desativado'}`} title={`Movimento reduzido ${reducedMotion ? 'ativado' : 'desativado'}`} onClick={() => setReducedMotion((enabled) => !enabled)}>◌</button></>}<button className="icon-button" aria-label="Ajuda" aria-expanded={showHelp} aria-controls="game-help-dialog" onClick={() => setShowHelp((open) => !open)}>?</button></div>
       </header>
 
       {screen === 'home' && (
@@ -567,7 +585,8 @@ function App() {
         <section className="game-overlay">
           <div className="game-topline"><button className="back-link" onClick={() => setScreen('room')}>← Sala {roomCode}</button><div className={`game-pill ${matchEnding || (mode === 'classic' && matchSeconds <= 60) ? 'clock-warning' : ''}`}>{modeDetails[mode].title.toUpperCase()} <span>·</span> {mode === 'classic' ? formatClock(matchSeconds) : `RODADA ${expressRound}/${6} · ${phaseSeconds}s`}</div><div className="game-tools">{mode === 'express' && expressObjective && turnPhase !== 'ended' && <button className={`portfolio-toggle objective-toggle ${expressObjective.completed ? 'objective-complete' : ''}`} aria-expanded={showObjectivePanel} onClick={() => { setShowObjectivePanel((open) => !open); setShowAuctionPanel(false); setShowTradePanel(false); setShowPropertyPanel(false) }}>{expressObjective.completed ? '✓ Meta' : `Meta ${expressObjective.progress}/${expressObjective.target}`}</button>}<button className={`portfolio-toggle ${auctionId > 0 ? 'auction-toggle-active' : ''}`} aria-expanded={showAuctionPanel} onClick={() => { setShowAuctionPanel((open) => !open); setShowTradePanel(false); setShowPropertyPanel(false); setShowObjectivePanel(false); setError('') }}>{auctionId > 0 ? `Leilão · ${auctionSeconds}s` : 'Leilão'}</button><button className="portfolio-toggle" aria-expanded={showTradePanel || Boolean(incomingTradeOffer)} disabled={(tradeSeconds === 0 && !incomingTradeOffer) || auctionId > 0} onClick={() => { setShowTradePanel((open) => !open); setShowAuctionPanel(false); setShowPropertyPanel(false); setShowObjectivePanel(false); setError('') }}>{incomingTradeOffer ? 'Oferta recebida' : `Negociar · ${tradeSeconds}s`}</button><button className="portfolio-toggle" aria-expanded={showPropertyPanel} onClick={() => { setShowPropertyPanel((open) => !open); setShowAuctionPanel(false); setShowTradePanel(false); setShowObjectivePanel(false) }}>{showPropertyPanel ? '← Jogada' : `Imóveis · ${myProperties.length}`}</button></div></div>
           <div className="player-hud">{roomPlayers.map((player, index) => <div className={`player-card seat-${index} ${player.sessionId === activePlayerSessionId ? 'active' : ''} ${player.isBankrupt ? 'bankrupt' : ''} ${player.isConnected === false ? 'disconnected' : ''}`} key={player.sessionId}><span className={`player-avatar player-${index}`}>{player.name.slice(0, 1).toUpperCase()}</span><div className="player-info"><strong>{player.name}</strong><small>{player.isBankrupt ? 'FALIU' : player.isBot ? 'BOT' : player.isBotControlled ? 'BOT NO CONTROLE' : player.isConnected === false ? player.reconnectionExpired ? 'OFFLINE' : 'RECONECTANDO' : player.isJailed ? `PRESO · ${player.jailTurns}/3` : player.sessionId === activePlayerSessionId ? 'VEZ ATUAL' : `CASA ${String(player.position + 1).padStart(2, '0')}`}</small></div><b>{formatMoney(player.cash)}</b></div>)}</div>
-          {selectedSpace && turnPhase !== 'ended' && !(turnPhase === 'purchase' && selectedSpace.id === pendingPropertyId) && !showTradePanel && !incomingTradeOffer && !showPropertyPanel && !showObjectivePanel && (
+          {modalVisible && turnPhase !== 'rolling' && turnPhase !== 'moving' && <div className="game-modal-backdrop" aria-hidden="true" />}
+          {selectedSpace && turnPhase !== 'ended' && !ownPropertyLanding && !(turnPhase === 'purchase' && selectedSpace.id === pendingPropertyId) && !showTradePanel && !incomingTradeOffer && !showPropertyPanel && !showObjectivePanel && (
             <aside className="space-inspector" aria-label={`Detalhes de ${selectedSpace.name}`}>
               <button className="trade-close" aria-label="Fechar detalhes" onClick={() => setSelectedSpaceId(null)}>×</button>
               <span className="turn-label">CASA {String(selectedSpace.id + 1).padStart(2, '0')} · {selectedSpace.kind === 'property' ? 'PROPRIEDADE' : 'ESPAÇO ESPECIAL'}</span>
@@ -576,20 +595,26 @@ function App() {
                 <>
                   <div className="space-owner-line"><i style={{ backgroundColor: selectedOwner ? PLAYER_COLORS[Math.max(0, roomPlayers.findIndex((player) => player.sessionId === selectedOwner.sessionId))] : '#a9b4a0' }} />{selectedOwner ? `Pertence a ${selectedOwner.name}` : 'Terreno livre'}</div>
                   <div className="space-facts"><div><small>PREÇO</small><strong>{formatMoney(selectedSpace.price ?? 0)}</strong></div><div><small>ALUGUEL ATUAL</small><strong>{selectedHolding?.isMortgaged ? 'Hipotecado' : formatMoney(selectedRent)}</strong></div></div>
-                  <p>{selectedHolding?.houses ? selectedHolding.houses === 5 ? 'Hotel construído' : `${selectedHolding.houses} ${selectedHolding.houses === 1 ? 'casa construída' : 'casas construídas'}` : selectedSpace.buildable ? `Imóvel residencial · construção por ${formatMoney(constructionCost(selectedSpace.id))} cada nível` : 'Estação · sem construções'}</p>
+                  <p>{selectedHolding?.houses ? selectedHolding.houses === PROPERTY_HOTEL_LEVEL ? 'Hotel construído' : `${selectedHolding.houses} ${selectedHolding.houses === 1 ? 'casa construída' : 'casas construídas'}` : selectedSpace.buildable ? `Imóvel residencial · construção por ${formatMoney(constructionCost(selectedSpace.id))} cada nível` : 'Estação · sem construções'}</p>
                 </>
               ) : <p>{selectedSpace.kind === 'tax' ? `Ao parar aqui, pague ${formatMoney(taxForSpace(selectedSpace.id))} ao banco.` : selectedSpace.kind === 'event' ? 'Ao parar aqui, compre uma carta Sorte ou Revés.' : selectedSpace.kind === 'start' ? `Receba ${formatMoney(START_BONUS)} ao cruzar a Partida.` : selectedSpace.kind === 'go-to-prison' || selectedSpace.kind === 'prison' ? selectedSpace.kind === 'go-to-prison' ? 'Vá direto para a prisão e encerre sua vez.' : 'Você está só de visita; continue normalmente.' : 'Espaço de descanso: nenhuma cobrança.'}</p>}
             </aside>
           )}
-          {(turnPhase === 'resolve' || turnPhase === 'purchase') && dice[0] > 0 && (
-            <div className="dice-result" aria-live="polite" aria-label={`Resultado dos dados: ${dice[0]} e ${dice[1]}, total ${dice[0] + dice[1]}`}>
-              <span className="dice-result-label">Resultado da jogada</span>
-              <div className="dice-result-pair" aria-hidden="true"><span>{dice[0]}</span><span>{dice[1]}</span></div>
-              <span className="dice-result-total">Total {dice[0] + dice[1]}</span>
-            </div>
-          )}
-          {feedbackToast && turnPhase !== 'ended' && <div className="game-feedback-toast" role="status" aria-live="polite">{feedbackToast}</div>}
-          {showAuctionPanel && turnPhase !== 'ended' ? (
+          {feedbackToast && turnPhase === 'roll' && !modalVisible && <div className="game-feedback-toast" role="status" aria-live="polite">{feedbackToast}</div>}
+          {ownPropertyLanding ? (
+            <aside className="turn-card property-decision-panel" aria-label={`Construir em ${activeSpace.name}`}>
+              <div className="asset-panel-heading"><span className="turn-label">VOCÊ JÁ POSSUI · {formatMoney(localPlayer?.cash ?? 0)}</span></div>
+              <h2>{activeSpace.name}</h2>
+              <p>Você caiu no seu terreno. Escolha até três casas para construir agora. Hotel só fica disponível numa próxima visita, depois das três casas.</p>
+              <div className="property-build-levels" role="group" aria-label="Nível de construção desejado">
+                {[1, 2, 3].filter((level) => level > (landedHolding?.houses ?? 0)).map((level) => <button key={level} className={`property-level-option ${targetBuildHouses === level ? 'selected' : ''}`} onClick={() => setTargetBuildHouses(level)}><span>{level === 1 ? '1 casa' : `${level} casas`}</span><small>+{formatMoney((level - (landedHolding?.houses ?? 0)) * constructionCost(activeSpace.id))}</small></button>)}
+                {(landedHolding?.houses ?? 0) === 3 && <button className="property-level-option hotel-level-option" onClick={() => room?.send('build', { propertyId: activeSpace.id, hotel: true })} disabled={!isMyTurn || !canBuildHotelHere}><span>Hotel</span><small>{formatMoney(hotelConstructionCost(activeSpace.id))}</small></button>}
+              </div>
+              <div className="space-facts"><div><small>ALUGUEL ATUAL</small><strong>{formatMoney(calculateRent(activeSpace.id, rentOwnership, landedHolding?.houses ?? 0))}</strong></div><div><small>PRÓXIMA CONSTRUÇÃO</small><strong>{landedHolding?.houses === PROPERTY_HOTEL_LEVEL ? 'Hotel' : formatMoney(constructionCost(activeSpace.id))}</strong></div></div>
+              <div className="purchase-actions property-decision-actions"><button className="roll-button" onClick={() => room?.send('build', { propertyId: activeSpace.id, targetHouses: targetBuildHouses })} disabled={!isMyTurn || !canBuildSelected}>Construir <span>{formatMoney(Math.max(0, targetBuildHouses - (landedHolding?.houses ?? 0)) * constructionCost(activeSpace.id))}</span></button><button className="secondary-action" onClick={() => room?.send('finishTurn')} disabled={!isMyTurn}>Concluir vez</button></div>
+              {landedHolding?.houses === PROPERTY_HOTEL_LEVEL && <p className="purchase-hint">Este terreno já tem hotel.</p>}
+            </aside>
+          ) : showAuctionPanel && turnPhase !== 'ended' ? (
             <aside className="turn-card trade-panel auction-panel" aria-label="Leilão voluntário de propriedade">
               <div className="asset-panel-heading"><span className="turn-label">{auctionId > 0 ? `LEILÃO · ${auctionSeconds}s` : 'MERCADO ENTRE JOGADORES'}</span><button className="trade-close" onClick={() => setShowAuctionPanel(false)} aria-label="Fechar leilão">×</button></div>
               {error && <p className="form-error" role="alert">{error}</p>}
@@ -665,7 +690,7 @@ function App() {
                   const redemptionCost = mortgageRedemptionCost(spaceId)
                   return (
                     <div className={`asset-row ${holding.isMortgaged ? 'mortgaged' : ''}`} key={spaceId}>
-                      <div className="asset-info"><strong>{space.name}</strong><small>{holding.isMortgaged ? `HIPOTECADO · sem aluguel` : holding.houses ? `${holding.houses === 5 ? 'HOTEL' : `${holding.houses} CASA(S)`}` : space.buildable ? 'IMÓVEL' : 'ESTAÇÃO'}</small></div>
+                      <div className="asset-info"><strong>{space.name}</strong><small>{holding.isMortgaged ? `HIPOTECADO · sem aluguel` : holding.houses === PROPERTY_HOTEL_LEVEL ? 'HOTEL' : holding.houses ? `${holding.houses} CASA(S)` : space.buildable ? 'IMÓVEL' : 'ESTAÇÃO'}</small></div>
                       <div className="asset-row-actions">{holding.houses > 0 && canSellBuilding(spaceId, room?.sessionId ?? '', holdingsById) ? (
                         <button className="asset-action" disabled={!isMyTurn || !['resolve', 'debt'].includes(turnPhase) || (turnPhase === 'debt' && (localPlayer?.cash ?? 0) >= debtAmount)} onClick={() => room?.send('sellBuilding', { propertyId: spaceId })}>Vender construção <b>+{formatMoney(buildingSaleValue(spaceId))}</b></button>
                       ) : holding.isMortgaged ? (
@@ -691,12 +716,15 @@ function App() {
               </div>
               {expressObjective.completed && <p className="objective-complete-note">Objetivo cumprido! {formatMoney(expressObjective.rewardAwarded)} adicionados ao saldo. Continue jogando: a vitória é decidida ao fim da partida.</p>}
             </aside>
-          ) : (
-            <div className={`turn-card${turnPhase === 'ended' ? ' final-result-card' : ''}`}>
-              <span className="turn-label">{turnPhase === 'ended' ? 'PARTIDA ENCERRADA' : turnPhase === 'debt' ? 'DÍVIDA EM ABERTO' : matchEnding ? 'TEMPO ESGOTADO · CONCLUA A JOGADA' : `TURNO ${turnNumber} · ${isMyTurn ? 'SUA VEZ' : `VEZ DE ${activePlayer?.name ?? '…'}`}`}</span>
-              <h2>{presentationStage === 'dice' ? 'Rolando os dados…' : presentationStage === 'pawn' ? 'Peão em movimento…' : turnPhase === 'ended' ? (roomPlayers.find((player) => player.sessionId === winnerSessionId)?.name ?? 'Partida encerrada') : turnPhase === 'debt' ? 'Hora de liquidar bens' : activeCardTitle || (turnPhase === 'purchase' ? `Comprar ${pendingPurchaseSpace?.name ?? 'propriedade'}` : activeSpace.name)}</h2>
-              {presentationStage !== 'idle' ? <p role="status" aria-live="polite">A próxima ação aparece quando a animação terminar.</p> : turnPhase !== 'ended' && <p>{turnPhase === 'purchase' ? 'Este terreno está livre. Você escolhe se quer comprar; se recusar, ele continua sem dono.' : landingDescription || activeCardDescription || (activeSpace.kind === 'property' ? `Propriedade · ${formatMoney(activeSpace.price ?? 0)}` : 'Aguardando a jogada.')}</p>}
-              {presentationStage === 'idle' && turnPhase === 'purchase' && pendingPurchaseSpace?.kind === 'property' && <div className="purchase-summary"><div><small>PREÇO DO TERRENO</small><strong>{formatMoney(pendingPurchasePrice)}</strong></div><div><small>ALUGUEL INICIAL</small><strong>{formatMoney(pendingPurchaseRent)}</strong></div><div><small>CONSTRUÇÃO</small><strong>{pendingPurchaseSpace.buildable ? `${formatMoney(constructionCost(pendingPurchaseSpace.id))} por nível` : 'Não disponível'}</strong></div></div>}
+          ) : selectedSpace && turnPhase !== 'ended' && !ownPropertyLanding && !(turnPhase === 'purchase' && selectedSpace.id === pendingPropertyId) && !showTradePanel && !incomingTradeOffer && !showPropertyPanel && !showObjectivePanel ? null : (
+            <div className={`turn-card${turnPhase === 'ended' ? ' final-result-card' : ''}${turnPhase === 'purchase' ? ' purchase-panel' : ''}`}>
+              <span className="turn-label">{turnPhase === 'ended' ? 'PARTIDA ENCERRADA' : turnPhase === 'debt' ? 'DÍVIDA EM ABERTO' : matchEnding ? 'TEMPO ESGOTADO · CONCLUA A JOGADA' : `TURNO ${turnNumber} · ${isMyTurn ? 'SUA VEZ' : `VEZ DE ${activePlayer?.name ?? '…'}`}`}{turnPhase !== 'ended' && turnSeconds > 0 && <b className="turn-countdown" aria-label={`${turnSeconds} segundos restantes`}>{turnSeconds}s</b>}</span>
+              <h2>{turnPhase === 'rolling' || presentationStage === 'dice' ? 'Rolando os dados…' : turnPhase === 'moving' || presentationStage === 'pawn' ? 'Peão em movimento…' : turnPhase === 'ended' ? (roomPlayers.find((player) => player.sessionId === winnerSessionId)?.name ?? 'Partida encerrada') : turnPhase === 'debt' ? 'Hora de liquidar bens' : activeCardTitle || (turnPhase === 'purchase' ? `Comprar ${pendingPurchaseSpace?.name ?? 'propriedade'}` : activeSpace.name)}</h2>
+              {turnPhase === 'rolling' || turnPhase === 'moving' || presentationStage !== 'idle' ? <p role="status" aria-live="polite">A próxima ação aparece quando a etapa atual terminar.</p> : turnPhase !== 'ended' && <p>{turnPhase === 'purchase' ? 'Este terreno está livre. Você escolhe se quer comprar; se recusar, ele continua sem dono.' : landingDescription || activeCardDescription || (activeSpace.kind === 'property' ? `Propriedade · ${formatMoney(activeSpace.price ?? 0)}` : 'Aguardando a jogada.')}</p>}
+              {presentationStage === 'idle' && turnPhase === 'purchase' && pendingPurchaseSpace?.kind === 'property' && <>
+                <div className="purchase-summary"><div><small>TERRENO</small><strong>{formatMoney(pendingPurchaseSpace.price ?? 0)}</strong></div><div><small>ALUGUEL</small><strong>{formatMoney(pendingPurchaseRent)}</strong></div><div><small>CASA</small><strong>{pendingPurchaseSpace.buildable ? `${formatMoney(constructionCost(pendingPurchaseSpace.id))} cada` : 'Indisponível'}</strong></div></div>
+                {pendingPurchaseSpace.buildable && <div className="property-build-levels purchase-level-options" role="group" aria-label="Compra de terreno e casas">{Array.from({ length: PROPERTY_BUILD_LEVELS + 1 }, (_, houses) => <button key={houses} className={`property-level-option ${pendingPurchaseHouses === houses ? 'selected' : ''}`} onClick={() => setPendingPurchaseHouses(houses)}><span>{houses === 0 ? 'Terreno' : houses === 1 ? '1 casa' : `${houses} casas`}</span><small>{formatMoney((pendingPurchaseSpace.price ?? 0) + houses * constructionCost(pendingPurchaseSpace.id))}</small></button>)}</div>}
+              </>}
               {presentationStage !== 'idle' && turnPhase !== 'ended' ? (
                 <div className="presentation-wait" aria-hidden="true">{presentationStage === 'dice' ? '🎲' : '↗'}</div>
               ) : turnPhase === 'ended' ? (
@@ -731,7 +759,7 @@ function App() {
                       <button className="roll-button" onClick={() => room?.send('roll')} disabled={!isMyTurn}>Lançar dados <span>↗</span></button>
                     ) : turnPhase === 'purchase' ? (
                       <div className="purchase-actions">
-                        <button className="roll-button" onClick={() => room?.send('buy')} disabled={!isMyTurn || !canAffordPendingPurchase}>Comprar <span>{formatMoney(pendingPurchasePrice)}</span></button>
+                        <button className="roll-button" onClick={() => room?.send('buy', { houses: pendingPurchaseHouses })} disabled={!isMyTurn || !canAffordPendingPurchase}>Comprar <span>{formatMoney(pendingPurchasePrice)}</span></button>
                         <button className="secondary-action" onClick={() => room?.send('declinePurchase')} disabled={!isMyTurn}>Não comprar</button>
                       </div>
                     ) : (
@@ -739,7 +767,6 @@ function App() {
                     )}
                   </div>
                   {turnPhase === 'purchase' && !canAffordPendingPurchase && <p className="purchase-hint" role="status">Seu saldo não cobre a compra. Você pode deixar o terreno livre.</p>}
-                  {turnPhase === 'resolve' && buildOptions.length > 0 && <div className="build-actions" aria-label="Construções disponíveis"><span>CONSTRUIR · 50% DO PREÇO</span>{buildOptions.map((propertyId) => <button key={propertyId} className="secondary-action" onClick={() => room?.send('build', { propertyId })} disabled={!isMyTurn}>Construir em {boardSpaces[propertyId].name} · {formatMoney(constructionCost(propertyId))}</button>)}</div>}
                 </>
               )}
             </div>
@@ -747,6 +774,7 @@ function App() {
           <div className="game-bottom"><span>JOGADA SINCRONIZADA · {modeDetails[mode].title.toUpperCase()}</span><button className="leave-button" onClick={() => void leaveRoom()}>Sair da mesa</button></div>
         </section>
       )}
+      {showHelp && <div className="help-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setShowHelp(false) }}><section id="game-help-dialog" className="help-dialog" role="dialog" aria-modal="true" aria-labelledby="help-title"><button className="help-close" onClick={() => setShowHelp(false)} aria-label="Fechar ajuda">×</button><span className="eyebrow">GUIA RÁPIDO</span><h2 id="help-title">Como jogar</h2><p>Jogue com amigos na mesma sala. Na sua vez, lance os dados, acompanhe o peão e responda à ação da casa.</p><ul><li><strong>20 segundos:</strong> sem ação, os dados são lançados automaticamente.</li><li><strong>10 segundos:</strong> para decidir. Compra sem resposta é recusada; cobranças e eventos são confirmados automaticamente. Na prisão, a tentativa padrão é tirar duplas.</li><li><strong>Comprar:</strong> propriedades livres podem ser compradas pelo preço indicado; recusar mantém o terreno livre.</li><li><strong>Dinheiro:</strong> sons ascendentes indicam entrada; sons descendentes indicam saída. Use o controle de áudio para silenciar.</li><li><strong>Partida:</strong> no Clássico vence o maior patrimônio ao fim de 30 minutos. No Express, vence o maior saldo após seis rodadas.</li></ul><button className="roll-button help-ok" onClick={() => setShowHelp(false)}>Entendi</button></section></div>}
     </main>
   )
 }

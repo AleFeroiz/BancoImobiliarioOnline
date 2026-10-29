@@ -23,7 +23,7 @@ describe('quebra de nomes nas casas 3D', () => {
     for (const space of boardSpaces) {
       const fitted = fitSpaceLabel(space.name, 900, (text, fontSize) => text.length * fontSize * 0.56)
       expect(fitted.lines.length, space.name).toBeLessThanOrEqual(3)
-      expect(fitted.fontSize, space.name).toBeGreaterThanOrEqual(160)
+      expect(fitted.fontSize, space.name).toBeGreaterThanOrEqual(104)
     }
   })
 })

@@ -70,6 +70,52 @@ button:disabled{opacity:.55;cursor:not-allowed}
   .room-code{font-size:21px}
 }
 
+/* A mesa fica livre durante a ação; decisões, fichas e inspetores abrem no centro. */
+.screen-game .game-overlay{z-index:3}
+.screen-game .topbar{z-index:8}
+.game-modal-backdrop{position:fixed;inset:0;z-index:4;background:rgba(28,47,43,.38);backdrop-filter:blur(.5px);pointer-events:auto}
+.screen-game .game-topline{position:relative;z-index:6}
+.screen-game .player-hud{z-index:5}
+.screen-game .turn-card,.screen-game .space-inspector{position:fixed;top:50%;right:auto;bottom:auto;left:50%;z-index:7;align-self:auto;width:min(510px,calc(100vw - 36px));max-height:calc(100dvh - 44px);overflow-y:auto;overscroll-behavior:contain;margin:0;padding:22px 24px;transform:translate(-50%,-50%);background:#f8f4e9;border:1px solid #d0d6c6;border-radius:18px;box-shadow:0 24px 72px rgba(26,43,40,.34);color:#33483b;animation:central-panel-enter .38s cubic-bezier(.18,.75,.2,1) both}
+.screen-game .turn-card h2,.screen-game .space-inspector h2{font-size:clamp(22px,3vw,30px);margin:8px 28px 8px 0;color:#354b3e}
+.screen-game .turn-card p,.screen-game .space-inspector p{font-size:12px;line-height:1.55;color:#66776b}
+.screen-game .turn-card>.turn-label,.screen-game .space-inspector .turn-label{color:#91703a}
+.screen-game .space-inspector .trade-close,.screen-game .turn-card .trade-close{position:absolute;top:12px;right:12px}
+.screen-game .game-feedback-toast{top:50%;bottom:auto;z-index:8;transform:translate(-50%,-50%)}
+.screen-game .game-bottom{position:fixed;right:4vw;bottom:14px;left:4vw;z-index:5}
+.property-build-levels{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;margin:12px 0}
+.property-level-option{min-width:0;min-height:62px;display:grid;align-content:center;justify-items:center;gap:6px;padding:8px 6px;border:1px solid #d8ddcf;border-radius:10px;background:#f1f0e6;color:#445b47;text-align:center}
+.property-level-option span{font-size:11px;font-weight:700}
+.property-level-option small{font-size:9px;color:#7a8879;font-variant-numeric:tabular-nums}
+.property-level-option.selected{border-color:#9da96e;background:#e8edd8;box-shadow:0 0 0 2px rgba(157,169,110,.14)}
+.hotel-level-option{border-color:#d9c17b;background:#f7f0d7}
+.property-decision-actions{margin-top:10px}
+.property-decision-actions .roll-button,.property-decision-actions .secondary-action{min-height:40px;border-radius:9px}
+.property-decision-actions .secondary-action{padding:0 12px;border:1px solid #d4d9cc;background:#f3f3e9;color:#536756;font-size:10px;font-weight:700}
+.purchase-level-options{margin:6px 0 10px}
+.purchase-level-options .property-level-option{min-height:53px;padding:6px 3px}
+.purchase-level-options .property-level-option span{font-size:9px}
+.purchase-level-options .property-level-option small{font-size:8px}
+@keyframes central-panel-enter{from{opacity:0;translate:0 9px;scale:.98}to{opacity:1;translate:0 0;scale:1}}
+@media(max-width:640px){
+  .screen-game .turn-card,.screen-game .space-inspector{width:calc(100vw - 24px);max-height:calc(100dvh - 30px);padding:17px 16px;border-radius:15px}
+  .screen-game .turn-card h2,.screen-game .space-inspector h2{font-size:22px}
+  .screen-game .turn-card p,.screen-game .space-inspector p{font-size:11px}
+  .property-build-levels{gap:4px}
+  .property-level-option{min-height:56px;padding:6px 3px}
+  .property-level-option span{font-size:9px}
+  .property-level-option small{font-size:7px}
+  .purchase-summary{margin:8px 0}
+  .screen-game .game-feedback-toast{max-width:calc(100vw - 24px);border-radius:12px}
+  .screen-game .game-bottom{right:10px;bottom:8px;left:10px}
+}
+@media(prefers-reduced-motion:reduce){.screen-game .turn-card,.screen-game .space-inspector{animation:none}}
+.screen-game .game-bottom{position:fixed;right:4vw;bottom:14px;left:4vw;z-index:5}
+@media(max-width:640px){.screen-game .game-bottom{right:10px;bottom:8px;left:10px}}
+.game-modal-backdrop{background:rgba(28,47,43,.38);backdrop-filter:blur(.5px)}
+.screen-game .game-bottom{position:fixed;right:4vw;bottom:14px;left:4vw;z-index:5}
+@media(max-width:640px){.screen-game .game-bottom{right:10px;bottom:8px;left:10px}}
+
 .screen-game{background:#c9dcc8;color:#2d4337}
 .screen-game .scene-backdrop{filter:saturate(1.08) contrast(1.025)}
 .screen-game .scene-backdrop:after{background:linear-gradient(180deg,rgba(241,241,224,.23),transparent 20%,transparent 74%,rgba(120,150,106,.12))}
@@ -275,12 +321,14 @@ button:disabled{opacity:.55;cursor:not-allowed}
 .game-preference{width:27px;height:27px;padding:0;display:grid;place-items:center;border:1px solid rgba(57,83,68,.25);border-radius:50%;background:rgba(250,248,237,.92);color:#526b4c;font-size:14px;line-height:1}
 .game-preference[aria-pressed="true"]{border-color:#b8a269;background:#f7f0dc}
 .game-feedback-toast{position:fixed;z-index:4;left:50%;bottom:clamp(180px,25vh,245px);width:max-content;max-width:min(440px,calc(100vw - 32px));padding:10px 14px;border:1px solid rgba(168,149,86,.42);border-radius:999px;background:rgba(255,252,239,.97);box-shadow:0 10px 28px rgba(43,62,46,.18);color:#405a43;font-size:11px;font-weight:600;line-height:1.35;text-align:center;transform:translateX(-50%);animation:feedback-toast-enter .22s ease-out both;pointer-events:none}
+.turn-card>.turn-label{display:flex;justify-content:space-between;align-items:center;gap:10px}.turn-countdown{color:#f0cf7d;font-size:12px;letter-spacing:0;font-variant-numeric:tabular-nums}.help-backdrop{position:fixed;z-index:20;inset:0;display:grid;place-items:center;padding:20px;background:rgba(9,17,22,.72);backdrop-filter:blur(5px)}.help-dialog{position:relative;width:min(520px,100%);max-height:min(82vh,720px);overflow:auto;padding:28px;background:#f6f2e8;color:#23342e;border:1px solid rgba(230,196,113,.72);box-shadow:0 24px 80px rgba(0,0,0,.4)}.help-dialog .eyebrow{color:#92703a}.help-dialog h2{margin:10px 0;font-family:'Playfair Display',serif;font-size:30px}.help-dialog p,.help-dialog li{color:#4b5d55;font-size:13px;line-height:1.6}.help-dialog ul{padding-left:20px;display:grid;gap:9px}.help-dialog li strong{color:#253a30}.help-close{position:absolute;right:14px;top:12px;width:32px;height:32px;border:0;background:transparent;color:#40584c;font-size:25px}.help-ok{display:block;width:100%;margin:18px 0 0}
 @keyframes feedback-toast-enter{from{opacity:0;translate:0 8px}to{opacity:1;translate:0 0}}
 @media(max-width:640px){
   .screen-game .topbar-right{gap:4px}
   .screen-game .topbar-right>span:nth-child(2){display:none}
   .game-preference{width:25px;height:25px;font-size:13px}
   .game-feedback-toast{bottom:clamp(174px,23vh,218px);max-width:calc(100vw - 26px);padding:8px 11px;font-size:9px;border-radius:13px}
+  .help-dialog{padding:23px 19px}.help-dialog h2{font-size:26px}.help-dialog p,.help-dialog li{font-size:12px}
 }
 [data-reduced-motion="true"] *,[data-reduced-motion="true"] *::before,[data-reduced-motion="true"] *::after{scroll-behavior:auto!important;animation:none!important;transition:none!important}
 .objective-toggle{border-color:#bda65d;background:rgba(255,251,229,.96);color:#586c47;font-weight:700}
@@ -457,3 +505,69 @@ button:disabled{opacity:.55;cursor:not-allowed}
 }
 @media(prefers-reduced-motion:reduce){.space-inspector{animation:none}}
 .seat-bot{color:#8bc8a3!important}.seat-remove-bot{margin-left:3px;width:22px;height:22px;border:1px solid rgba(255,255,255,.18);border-radius:50%;background:transparent;color:#d7b867}.add-bot-button{margin-top:9px;padding:8px 10px;width:100%;border:1px dashed rgba(213,184,101,.45);background:rgba(213,184,101,.07);color:#e5c979;text-align:left;font-size:10px}.add-bot-button:hover{background:rgba(213,184,101,.13)}
+
+/* Overrides finais: qualquer decisão ou inspeção fica centralizada sobre a mesa. */
+.screen-game .game-overlay{z-index:3}
+.screen-game .topbar{z-index:8}
+.game-modal-backdrop{position:fixed;inset:0;z-index:4;background:rgba(28,47,43,.44);backdrop-filter:blur(2px);pointer-events:auto}
+.screen-game .game-topline{position:relative;z-index:6}
+.screen-game .player-hud{z-index:5}
+.screen-game .turn-card,.screen-game .space-inspector{position:fixed;top:50%;right:auto;bottom:auto;left:50%;z-index:7;align-self:auto;width:min(510px,calc(100vw - 36px));max-height:calc(100dvh - 44px);overflow-y:auto;overscroll-behavior:contain;margin:0;padding:22px 24px;transform:translate(-50%,-50%);background:#f8f4e9;border:1px solid #d0d6c6;border-radius:18px;box-shadow:0 24px 72px rgba(26,43,40,.34);color:#33483b;animation:central-panel-enter .38s cubic-bezier(.18,.75,.2,1) both}
+.screen-game .turn-card h2,.screen-game .space-inspector h2{font-size:clamp(22px,3vw,30px);margin:8px 28px 8px 0;color:#354b3e}
+.screen-game .turn-card p,.screen-game .space-inspector p{font-size:12px;line-height:1.55;color:#66776b}
+.screen-game .turn-card>.turn-label,.screen-game .space-inspector .turn-label{color:#91703a}
+.screen-game .space-inspector .trade-close,.screen-game .turn-card .trade-close{position:absolute;top:12px;right:12px}
+.screen-game .game-feedback-toast{top:50%;bottom:auto;z-index:8;transform:translate(-50%,-50%)}
+.screen-game .game-bottom{position:relative;z-index:5}
+.property-build-levels{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;margin:12px 0}
+.property-level-option{min-width:0;min-height:62px;display:grid;align-content:center;justify-items:center;gap:6px;padding:8px 6px;border:1px solid #d8ddcf;border-radius:10px;background:#f1f0e6;color:#445b47;text-align:center}
+.property-level-option span{font-size:11px;font-weight:700}
+.property-level-option small{font-size:9px;color:#7a8879;font-variant-numeric:tabular-nums}
+.property-level-option.selected{border-color:#9da96e;background:#e8edd8;box-shadow:0 0 0 2px rgba(157,169,110,.14)}
+.hotel-level-option{border-color:#d9c17b;background:#f7f0d7}
+.property-decision-actions{margin-top:10px}
+.property-decision-actions .roll-button,.property-decision-actions .secondary-action{min-height:40px;border-radius:9px}
+.property-decision-actions .secondary-action{padding:0 12px;border:1px solid #d4d9cc;background:#f3f3e9;color:#536756;font-size:10px;font-weight:700}
+.purchase-level-options{margin:6px 0 10px}
+.purchase-level-options .property-level-option{min-height:53px;padding:6px 3px}
+.purchase-level-options .property-level-option span{font-size:9px}
+.purchase-level-options .property-level-option small{font-size:8px}
+@keyframes central-panel-enter{from{opacity:0;translate:0 9px;scale:.98}to{opacity:1;translate:0 0;scale:1}}
+@media(max-width:640px){
+  .screen-game .turn-card,.screen-game .space-inspector{width:calc(100vw - 24px);max-height:calc(100dvh - 30px);padding:17px 16px;border-radius:15px}
+  .screen-game .turn-card h2,.screen-game .space-inspector h2{font-size:22px}
+  .screen-game .turn-card p,.screen-game .space-inspector p{font-size:11px}
+  .property-build-levels{gap:4px}
+  .property-level-option{min-height:56px;padding:6px 3px}
+  .property-level-option span{font-size:9px}
+  .property-level-option small{font-size:7px}
+  .purchase-summary{margin:8px 0}
+  .screen-game .game-feedback-toast{max-width:calc(100vw - 24px);border-radius:12px}
+}
+@media(prefers-reduced-motion:reduce){.screen-game .turn-card,.screen-game .space-inspector{animation:none}}
+
+/* Final fix: fixed overlays remove the action card from the flex flow. */
+.screen-game .game-bottom{position:fixed;right:4vw;bottom:14px;left:4vw;z-index:5}
+@media(max-width:640px){.screen-game .game-bottom{right:10px;bottom:8px;left:10px}}
+
+@media(max-width:640px){
+  .screen-game .turn-card,.screen-game .space-inspector{padding:13px 12px}
+  .screen-game .turn-card h2,.screen-game .space-inspector h2{font-size:19px;margin:5px 22px 5px 0}
+  .screen-game .turn-card p,.screen-game .space-inspector p{font-size:9px;line-height:1.35;margin-bottom:6px}
+  .purchase-summary{gap:4px;margin:5px 0}
+  .purchase-summary>div{padding:5px 4px}
+  .purchase-summary small{font-size:6px}
+  .purchase-summary strong{font-size:8px}
+  .purchase-level-options{gap:3px;margin:4px 0 6px}
+  .purchase-level-options .property-level-option{min-height:40px;padding:4px 2px;gap:3px}
+  .purchase-level-options .property-level-option span{font-size:8px}
+  .purchase-level-options .property-level-option small{font-size:7px}
+  .purchase-actions .roll-button,.purchase-actions .secondary-action{min-height:34px;padding:0 6px;font-size:8px}
+}
+
+.game-modal-backdrop{background:rgba(28,47,43,.28);backdrop-filter:none}
+.screen-game .turn-card,.screen-game .space-inspector{backdrop-filter:none}
+.screen-game .game-bottom{position:fixed;top:auto;right:auto;bottom:9px;left:50%;width:max-content;max-width:calc(100vw - 24px);transform:translateX(-50%);z-index:5;gap:10px}
+@media(max-width:640px){.screen-game .game-bottom{right:auto;bottom:6px;left:50%;width:max-content;max-width:calc(100vw - 20px);transform:translateX(-50%)}}
+
+@media(min-width:641px){.screen-game .turn-card.purchase-panel{width:min(470px,calc(100vw - 36px));padding:18px 20px}.screen-game .purchase-panel h2{font-size:25px}.screen-game .purchase-panel p{font-size:11px;margin-bottom:8px}.purchase-panel .property-level-option{min-height:48px}.purchase-panel .purchase-summary>div{padding:6px}}

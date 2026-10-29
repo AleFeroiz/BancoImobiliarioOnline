@@ -15,7 +15,7 @@ describe('patrimônio final', () => {
 
   it('ignora saldo e títulos negativos ou inválidos na avaliação', () => {
     const holdings = new Map([
-      [2, { ownerSessionId: 'ana', houses: 5, isMortgaged: false }],
+      [2, { ownerSessionId: 'ana', houses: 4, isMortgaged: false }],
       [999, { ownerSessionId: 'ana', houses: 2, isMortgaged: false }],
     ])
 

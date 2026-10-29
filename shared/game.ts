@@ -4,13 +4,21 @@ export type DiceRoll = readonly [number, number]
 
 export const STARTING_CASH = 1_500_000
 export const START_BONUS = 200_000
-export const PROPERTY_BUILD_LEVELS = 5
+export const PROPERTY_BUILD_LEVELS = 3
+export const PROPERTY_HOTEL_LEVEL = 4
+export const DICE_ANIMATION_DURATION_MS = 2_800
+export const PAWN_STEP_ANIMATION_DURATION_MS = 750
+export const PAWN_TELEPORT_ANIMATION_DURATION_MS = 1_800
+export const BUILDING_ANIMATION_DURATION_MS = 1_400
+export const LANDING_PULSE_DURATION_MS = 2_200
 export const JAIL_FINE = 50_000
 export const MAX_JAIL_ATTEMPTS = 3
 export const MORTGAGE_RATIO = 0.5
 export const CLASSIC_MATCH_SECONDS = 30 * 60
 export const EXPRESS_ROUNDS = 6
 export const EXPRESS_PHASE_SECONDS = 40
+export const TURN_ROLL_SECONDS = 20
+export const TURN_DECISION_SECONDS = 10
 export const AUCTION_DURATION_SECONDS = 20
 export const AUCTION_MIN_BID_INCREMENT = 10_000
 
@@ -21,7 +29,9 @@ export function calculateNetWorth(ownerSessionId: string, cash: number, holdings
     const space = boardSpaces[spaceId]
     if (!space || space.kind !== 'property' || typeof space.price !== 'number' || holding.ownerSessionId !== ownerSessionId) return netWorth
     const propertyValue = space.price - (holding.isMortgaged ? mortgageValue(spaceId) : 0)
-    const buildingsValue = Math.max(0, holding.houses) * buildingSaleValue(spaceId)
+    const buildingsValue = holding.houses === PROPERTY_HOTEL_LEVEL
+      ? Math.floor(hotelConstructionCost(spaceId) / 2)
+      : Math.max(0, holding.houses) * buildingSaleValue(spaceId)
     return netWorth + propertyValue + buildingsValue
   }, Math.max(0, cash))
 }
@@ -79,8 +89,13 @@ export function constructionCost(spaceId: number) {
     : 0
 }
 
-export function buildingSaleValue(spaceId: number) {
+export function buildingSaleValue(spaceId: number, houses = 0) {
+  if (houses === PROPERTY_HOTEL_LEVEL) return Math.floor(hotelConstructionCost(spaceId) / 2)
   return Math.floor(constructionCost(spaceId) * 0.5)
+}
+
+export function hotelConstructionCost(spaceId: number) {
+  return constructionCost(spaceId) * 3
 }
 
 export function canSellBuilding(
@@ -90,11 +105,7 @@ export function canSellBuilding(
 ) {
   const space = boardSpaces[spaceId]
   const holding = holdings.get(spaceId)
-  if (!space || space.kind !== 'property' || !space.buildable || !holding || holding.ownerSessionId !== ownerSessionId || holding.houses < 1) return false
-  const groupSpaces = boardSpaces.filter((candidate) => candidate.kind === 'property' && candidate.buildable && candidate.color === space.color)
-  if (groupSpaces.length < 2 || !groupSpaces.every((candidate) => holdings.get(candidate.id)?.ownerSessionId === ownerSessionId)) return false
-  const highestLevel = Math.max(...groupSpaces.map((candidate) => holdings.get(candidate.id)?.houses ?? 0))
-  return holding.houses === highestLevel
+  return Boolean(space && space.kind === 'property' && space.buildable && holding && holding.ownerSessionId === ownerSessionId && holding.houses > 0)
 }
 
 export function hasLiquidatableAssets(
@@ -157,17 +168,29 @@ export function canBuildProperty(
   ownerSessionId: string,
   holdings: ReadonlyMap<number, PropertyHolding>,
   cash: number,
+  targetHouses = (holdings.get(spaceId)?.houses ?? 0) + 1,
 ) {
   const space = boardSpaces[spaceId]
   const holding = holdings.get(spaceId)
   if (!space || space.kind !== 'property' || !space.buildable || !holding || holding.ownerSessionId !== ownerSessionId) return false
   if (holding.isMortgaged) return false
-  if (holding.houses >= PROPERTY_BUILD_LEVELS || cash < constructionCost(spaceId)) return false
+  if (targetHouses <= holding.houses || targetHouses > PROPERTY_BUILD_LEVELS || cash < (targetHouses - holding.houses) * constructionCost(spaceId)) return false
   const groupSpaces = boardSpaces.filter((candidate) => candidate.kind === 'property' && candidate.buildable && candidate.color === space.color)
-  if (groupSpaces.length < 2 || !groupSpaces.every((candidate) => holdings.get(candidate.id)?.ownerSessionId === ownerSessionId)) return false
   if (groupSpaces.some((candidate) => holdings.get(candidate.id)?.isMortgaged)) return false
-  const lowestLevel = Math.min(...groupSpaces.map((candidate) => holdings.get(candidate.id)?.houses ?? 0))
-  return holding.houses <= lowestLevel
+  return true
+}
+
+export function canBuildHotel(
+  spaceId: number,
+  ownerSessionId: string,
+  holdings: ReadonlyMap<number, PropertyHolding>,
+  cash: number,
+) {
+  const space = boardSpaces[spaceId]
+  const holding = holdings.get(spaceId)
+  if (!space || space.kind !== 'property' || !space.buildable || !holding || holding.ownerSessionId !== ownerSessionId || holding.isMortgaged || holding.houses !== PROPERTY_BUILD_LEVELS) return false
+  const groupSpaces = boardSpaces.filter((candidate) => candidate.kind === 'property' && candidate.buildable && candidate.color === space.color)
+  return !groupSpaces.some((candidate) => holdings.get(candidate.id)?.isMortgaged) && cash >= hotelConstructionCost(spaceId)
 }
 
 export function taxForSpace(spaceId: number) {

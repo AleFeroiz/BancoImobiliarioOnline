@@ -1,4 +1,4 @@
-export type GameSound = 'dice' | 'purchase' | 'money' | 'auction' | 'milestone' | 'construction' | 'demolition' | 'ownership' | 'mortgage' | 'redemption'
+export type GameSound = 'dice' | 'purchase' | 'money-in' | 'money-out' | 'auction' | 'milestone' | 'construction' | 'demolition' | 'ownership' | 'mortgage' | 'redemption'
 export type PropertyVisualState = { ownerSessionId: string; houses: number; isMortgaged?: boolean }
 export type PropertyVisualChange = 'placed' | 'built' | 'demolished' | 'ownership' | 'released' | 'mortgaged' | 'redeemed'
 
@@ -35,7 +35,8 @@ export function getGameSound(description: string): GameSound {
   if (text.includes('leilão') || text.includes('leilao') || text.includes('lance')) return 'auction'
   if (text.includes('comprad') || text.includes('propriedade') && text.includes('compr')) return 'purchase'
   if (text.includes('objetivo') && (text.includes('cumpr') || text.includes('conclu'))) return 'milestone'
-  if (text.includes('aluguel') || text.includes('dívida') || text.includes('hipotec') || text.includes('recebeu') || text.includes('pagos')) return 'money'
+  if (text.includes('recebeu')) return 'money-in'
+  if (text.includes('aluguel') || text.includes('dívida') || text.includes('pagos')) return 'money-out'
   return 'dice'
 }
 

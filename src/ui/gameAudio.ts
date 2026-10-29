@@ -28,7 +28,8 @@ function getAudioContext() {
 const soundNotes: Record<GameSound, number[]> = {
   dice: [392, 523],
   purchase: [523, 659, 784],
-  money: [659, 784],
+  'money-in': [523, 659, 784, 1047],
+  'money-out': [784, 659, 523, 392],
   auction: [440, 587, 740],
   milestone: [523, 659, 880],
   construction: [587, 784, 988],

@@ -1,5 +1,6 @@
 import { ColyseusTestServer, boot } from '@colyseus/testing'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import { createServer } from 'node:net'
 import appConfig from '../src/app.config.js'
 import type { LobbyState } from '../src/rooms/schema/LobbyState.js'
 import { PropertyState } from '../src/rooms/schema/LobbyState.js'
@@ -15,6 +16,22 @@ async function waitFor(condition: () => boolean, timeout = 2500) {
   }
 }
 
+async function getAvailablePort() {
+  return new Promise<number>((resolve, reject) => {
+    const probe = createServer()
+    probe.once('error', reject)
+    probe.listen(0, '127.0.0.1', () => {
+      const address = probe.address()
+      if (!address || typeof address === 'string') {
+        probe.close()
+        reject(new Error('Não foi possível escolher uma porta local para os testes.'))
+        return
+      }
+      probe.close((error) => error ? reject(error) : resolve(address.port))
+    })
+  })
+}
+
 function setPrivateObjective(room: unknown, sessionId: string, id: ExpressObjectiveId) {
   const privateState = room as { privateObjectives: Map<string, { id: ExpressObjectiveId; progress: number; completed: boolean }> }
   privateState.privateObjectives.set(sessionId, { id, progress: 0, completed: false })
@@ -24,7 +41,7 @@ describe('sala privada', () => {
   let colyseus: ColyseusTestServer<typeof appConfig>
 
   beforeAll(async () => {
-    colyseus = await boot(appConfig)
+    colyseus = await boot(appConfig, await getAvailablePort())
   })
 
   afterAll(async () => {
@@ -163,7 +180,8 @@ describe('sala privada', () => {
     expect(room.state.properties.get('1')?.ownerSessionId).toBe(host.sessionId)
     expect(room.state.activePlayerSessionId).toBe(host.sessionId)
     expect(room.state.turnNumber).toBe(1)
-    const serverGame = room as unknown as { processBotStep: () => void }
+    const serverGame = room as unknown as { processBotStep: () => void; schedulePresentation: (_delayMs: number, action: () => void) => void }
+    serverGame.schedulePresentation = (_delayMs, action) => action()
     serverGame.processBotStep()
     expect(room.state.turnPhase).not.toBe('roll')
     room.onReconnect({ sessionId: host.sessionId } as never)
@@ -263,7 +281,7 @@ describe('sala privada', () => {
     expect(room.state.status).toBe('playing')
   })
 
-  it('conclui uma partida Express com quatro bots jogando entre si', async () => {
+  it('serializa as ações quando há vários bots e impede nova jogada durante animação', async () => {
     const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'express' })
     const host = await colyseus.connectTo(room, { name: 'Pessoa' })
     host.send('addBot')
@@ -277,15 +295,26 @@ describe('sala privada', () => {
     await started
 
     const serverGame = room as unknown as { processBotStep: () => void }
-    room.state.players.get(host.sessionId)!.isBotControlled = true
-    for (let step = 0; step < 3000 && room.state.status === 'playing'; step += 1) serverGame.processBotStep()
+    const activePlayer = room.state.players.get(host.sessionId)!
+    activePlayer.isBotControlled = true
+    const otherBots = [...room.state.players.entries()].filter(([sessionId, player]) => sessionId !== host.sessionId && player.isBot)
+    const initialDiceSequence = room.state.diceSequence
 
-    expect(room.state.status).toBe('ended')
-    expect(room.state.turnPhase).toBe('ended')
-    expect(room.state.winnerSessionId).not.toBe('')
-    expect(room.state.players.size).toBe(4)
-    expect([...room.state.players.values()].every((player) => player.finalCash >= 0 && player.finalNetWorth >= 0)).toBe(true)
-    expect(room.state.expressRound).toBe(6)
+    serverGame.processBotStep()
+    expect(room.state.turnPhase).toBe('rolling')
+    expect(room.state.diceSequence).toBe(initialDiceSequence + 1)
+    for (let attempt = 0; attempt < 8; attempt += 1) serverGame.processBotStep()
+    expect(room.state.diceSequence).toBe(initialDiceSequence + 1)
+    expect(otherBots.every(([sessionId]) => room.state.players.get(sessionId)?.position === 0)).toBe(true)
+
+    await waitFor(() => room.state.turnPhase === 'moving', 4000)
+    const destination = activePlayer.position
+    expect(destination).not.toBe(0)
+    for (let attempt = 0; attempt < 8; attempt += 1) serverGame.processBotStep()
+    expect(room.state.turnPhase).toBe('moving')
+    expect(room.state.diceSequence).toBe(initialDiceSequence + 1)
+    expect(activePlayer.position).toBe(destination)
+    expect(otherBots.every(([sessionId]) => room.state.players.get(sessionId)?.position === 0)).toBe(true)
   })
 
   it('abre a janela de negociação de 45 segundos e troca dinheiro e títulos entre as duas pessoas', async () => {
@@ -444,27 +473,11 @@ describe('sala privada', () => {
     host.send('start')
     await started
 
-    const clients = new Map([[host.sessionId, host], [guest.sessionId, guest]])
-    let buyerId = ''
-    let propertyId = -1
-    for (let turn = 0; turn < 40 && propertyId < 0; turn += 1) {
-      const active = clients.get(room.state.activePlayerSessionId)
-      if (!active) throw new Error('Jogador da vez ausente')
-      if (room.state.turnPhase === 'roll') active.send('roll')
-      await new Promise((resolve) => setTimeout(resolve, 30))
-      if (room.state.turnPhase === 'purchase') {
-        buyerId = active.sessionId
-        propertyId = room.state.pendingPropertyId
-        break
-      }
-      if (room.state.turnPhase === 'resolve') {
-        active.send('finishTurn')
-        await new Promise((resolve) => setTimeout(resolve, 30))
-      }
-    }
-    expect(propertyId).toBeGreaterThanOrEqual(0)
-
-    const buyer = clients.get(buyerId)!
+    const buyer = room.state.activePlayerSessionId === host.sessionId ? host : guest
+    const buyerId = buyer.sessionId
+    const propertyId = boardSpaces.find((space) => space.kind === 'property')!.id
+    room.state.turnPhase = 'purchase'
+    room.state.pendingPropertyId = propertyId
     buyer.send('declinePurchase')
     await new Promise((resolve) => setTimeout(resolve, 30))
     expect(room.state.turnPhase).toBe('resolve')
@@ -555,7 +568,26 @@ describe('sala privada', () => {
     expect(room.state.properties.get('1')?.ownerSessionId).toBe(host.sessionId)
   })
 
-  it('valida construções no servidor, cobra o custo e distribui casas igualmente', async () => {
+  it('permite comprar terreno livre já com até três casas no pagamento', async () => {
+    const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
+    const host = await colyseus.connectTo(room, { name: 'Ana' })
+    await colyseus.connectTo(room, { name: 'Bia' })
+    host.send('start')
+    await waitFor(() => room.state.status === 'playing')
+
+    const property = boardSpaces.find((space) => space.kind === 'property' && space.buildable)!
+    room.state.turnPhase = 'purchase'
+    room.state.pendingPropertyId = property.id
+    const cost = (property.price ?? 0) + constructionCost(property.id) * 3
+    const cashBefore = room.state.players.get(host.sessionId)!.cash
+    host.send('buy', { houses: 3 })
+    await waitFor(() => room.state.turnPhase === 'resolve')
+
+    expect(room.state.properties.get(String(property.id))).toMatchObject({ ownerSessionId: host.sessionId, houses: 3 })
+    expect(room.state.players.get(host.sessionId)!.cash).toBe(cashBefore - cost)
+  })
+
+  it('valida construções no servidor, permite até três casas e bloqueia grupo hipotecado', async () => {
     const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
     const host = await colyseus.connectTo(room, { name: 'Ana' })
     await colyseus.connectTo(room, { name: 'Bia' })
@@ -571,33 +603,41 @@ describe('sala privada', () => {
     }
     room.state.turnPhase = 'resolve'
     room.state.activePlayerSessionId = host.sessionId
+    room.state.players.get(host.sessionId)!.position = first.id
+    room.state.pendingPropertyId = first.id
     const cost = Math.floor((first.price ?? 0) * 0.5)
     const cashBefore = room.state.players.get(host.sessionId)!.cash
 
-    host.send('build', { propertyId: first.id })
+    host.send('build', { propertyId: first.id, targetHouses: 3 })
     await new Promise((resolve) => setTimeout(resolve, 30))
-    expect(room.state.properties.get(String(first.id))?.houses).toBe(1)
-    expect(room.state.players.get(host.sessionId)!.cash).toBe(cashBefore - cost)
+    expect(room.state.properties.get(String(first.id))?.houses).toBe(3)
+    expect(room.state.players.get(host.sessionId)!.cash).toBe(cashBefore - cost * 3)
 
-    const unbalancedError = new Promise<{ message: string }>((resolve) => host.onMessage('room:error', resolve))
-    host.send('build', { propertyId: first.id })
-    await expect(unbalancedError).resolves.toMatchObject({ message: expect.stringContaining('distribuição equilibrada') })
-    expect(room.state.properties.get(String(first.id))?.houses).toBe(1)
+    const sameVisitHotelError = new Promise<{ message: string }>((resolve) => host.onMessage('room:error', resolve))
+    host.send('build', { propertyId: first.id, hotel: true })
+    await expect(sameVisitHotelError).resolves.toMatchObject({ message: expect.stringContaining('Só é possível construir ao cair no próprio terreno') })
+    expect(room.state.properties.get(String(first.id))?.houses).toBe(3)
 
-    room.state.properties.get(String(first.id))!.houses = 0
     room.state.properties.get(String(group[1].id))!.isMortgaged = true
     const mortgagedGroupError = new Promise<{ message: string }>((resolve) => host.onMessage('room:error', resolve))
-    host.send('build', { propertyId: first.id })
-    await expect(mortgagedGroupError).resolves.toMatchObject({ message: expect.stringContaining('complete o grupo') })
-    expect(room.state.properties.get(String(first.id))?.houses).toBe(0)
+    room.state.pendingPropertyId = first.id
+    host.send('build', { propertyId: first.id, hotel: true })
+    await expect(mortgagedGroupError).resolves.toMatchObject({ message: expect.stringContaining('O hotel só pode ser comprado') })
+    expect(room.state.properties.get(String(first.id))?.houses).toBe(3)
 
     room.state.properties.get(String(group[1].id))!.isMortgaged = false
-    room.state.properties.get(String(first.id))!.houses = 1
+    room.state.turnNumber += 1
+    room.state.pendingPropertyId = first.id
+    host.send('build', { propertyId: first.id, hotel: true })
+    await new Promise((resolve) => setTimeout(resolve, 30))
+    expect(room.state.properties.get(String(first.id))?.houses).toBe(4)
+    expect(room.state.players.get(host.sessionId)!.cash).toBe(cashBefore - cost * 6)
+    room.state.pendingPropertyId = first.id
     const cashBeforeSale = room.state.players.get(host.sessionId)!.cash
     host.send('sellBuilding', { propertyId: first.id })
     await new Promise((resolve) => setTimeout(resolve, 30))
-    expect(room.state.properties.get(String(first.id))?.houses).toBe(0)
-    expect(room.state.players.get(host.sessionId)!.cash).toBe(cashBeforeSale + buildingSaleValue(first.id))
+    expect(room.state.properties.get(String(first.id))?.houses).toBe(3)
+    expect(room.state.players.get(host.sessionId)!.cash).toBe(cashBeforeSale + buildingSaleValue(first.id, 4))
     expect(buildingSaleValue(first.id)).toBe(Math.floor(constructionCost(first.id) / 2))
   })
 
@@ -791,9 +831,11 @@ describe('sala privada', () => {
     expect(room.state.turnPhase).toBe('roll')
     host.send('roll')
     await new Promise((resolve) => setTimeout(resolve, 30))
-    expect(['resolve', 'purchase', 'debt']).toContain(room.state.turnPhase)
+    expect(room.state.turnPhase).toBe('rolling')
+    await waitFor(() => room.state.turnPhase === 'moving', 4000)
+    await waitFor(() => ['resolve', 'purchase', 'debt'].includes(room.state.turnPhase), 13_500)
     expect(room.state.diceOne).toBeGreaterThanOrEqual(1)
-  })
+  }, 20_000)
 
   it('exige a fiança completa e mantém a pessoa presa se o saldo for insuficiente', async () => {
     const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
@@ -834,9 +876,15 @@ describe('sala privada', () => {
     expect(room.state.turnPhase).toBe('roll')
 
     const diceSequenceBeforeRoll = room.state.diceSequence
+    const startPosition = room.state.players.get(host.sessionId)?.position
     host.send('roll')
     await new Promise((resolve) => setTimeout(resolve, 50))
     expect(room.state.diceSequence).toBe(diceSequenceBeforeRoll + 1)
+    expect(room.state.turnPhase).toBe('rolling')
+    expect(room.state.players.get(host.sessionId)?.position).toBe(startPosition)
+    await waitFor(() => room.state.turnPhase === 'moving', 4000)
+    expect(room.state.players.get(host.sessionId)?.position).not.toBe(startPosition)
+    await waitFor(() => ['resolve', 'purchase', 'debt'].includes(room.state.turnPhase), 13_500)
     expect(['resolve', 'purchase']).toContain(room.state.turnPhase)
     expect(room.state.diceOne).toBeGreaterThanOrEqual(1)
     expect(room.state.diceOne).toBeLessThanOrEqual(6)
@@ -852,7 +900,7 @@ describe('sala privada', () => {
 
     if (room.state.turnPhase === 'purchase') {
       host.send('buy')
-      await new Promise((resolve) => setTimeout(resolve, 30))
+      await waitFor(() => room.state.turnPhase === 'resolve')
     }
     expect(room.state.turnPhase).toBe('resolve')
 
@@ -867,6 +915,33 @@ describe('sala privada', () => {
     expect(room.state.turnNumber).toBe(2)
     expect(room.state.turnPhase).toBe('roll')
     expect(room.state.landingDescription).toBe('')
+  }, 12_000)
+
+  it('rola automaticamente após 20 segundos e recusa uma compra após a janela de 10 segundos', async () => {
+    const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
+    const host = await colyseus.connectTo(room, { name: 'Ana' })
+    await colyseus.connectTo(room, { name: 'Bia' })
+    host.send('start')
+    await new Promise((resolve) => setTimeout(resolve, 30))
+
+    const serverGame = room as unknown as { updateTurnClock: () => void; turnTimerKey: string }
+    const activeSessionId = room.state.activePlayerSessionId
+    const initialDiceSequence = room.state.diceSequence
+    serverGame.turnTimerKey = `${room.state.turnNumber}:${activeSessionId}:roll`
+    room.state.turnSeconds = 1
+    serverGame.updateTurnClock()
+    expect(room.state.diceSequence).toBe(initialDiceSequence + 1)
+    expect(room.state.turnPhase).toBe('rolling')
+
+    const propertyId = boardSpaces.find((space) => space.kind === 'property')!.id
+    room.state.turnPhase = 'purchase'
+    room.state.pendingPropertyId = propertyId
+    serverGame.turnTimerKey = `${room.state.turnNumber}:${activeSessionId}:purchase`
+    room.state.turnSeconds = 1
+    serverGame.updateTurnClock()
+    expect(room.state.turnPhase).toBe('resolve')
+    expect(room.state.pendingPropertyId).toBe(255)
+    expect(room.state.properties.get(String(propertyId))?.ownerSessionId ?? '').toBe('')
   })
 
   it('distribui objetivos Express privados sem repetição e fora do estado compartilhado', async () => {

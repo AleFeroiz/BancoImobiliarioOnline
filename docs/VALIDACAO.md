@@ -296,3 +296,25 @@
 - Captura visual inspecionada diretamente na aba IAB do jogo, na viewport disponível de 877 × 877. Nesse enquadramento quadrado, a borda inferior do tabuleiro encosta no painel de ação. A captura confirmou o terreno recém-comprado; os níveis de casa e hotel foram inspecionados na prévia do Blender, não em uma partida construída. A revisão em viewport móvel e no Firefox continua pendente.
 - Corrigi o playtest local depois de confirmar que processos iniciados sob sandbox sem loopback ficam inalcançáveis mesmo exibindo “ready/listening”. A correção foi iniciar cada servidor uma vez com permissão de loopback e abrir uma aba nova na URL explícita. Uma tentativa de servidor duplicado registrou EADDRINUSE na porta 2567; a instrução agora exige conferir e encerrar uma instância antiga antes de iniciar outra.
 - `npm run verify`: 119 testes em 20 arquivos passaram; build do cliente e build do servidor passaram. Os três testes novos cobrem cor integral dos 24 imóveis residenciais, distinção das categorias especiais e os quatro pisos de canto. O build mantém o aviso de chunk da cena acima de 500 kB (974,19 kB).
+
+## 2026-10-28 — Dinheiro 3D e leitura de casas (em andamento)
+
+- No Blender conectado 5.2.2 LTS, criei `Cash_NoteStack`, `Cash_SilverStack` e `Cash_GoldBar` e exportei `public/assets/money-models/money-models.glb`; a fonte editável foi salva em `assets/blender/board-models.blend`. A prévia do Blender confirmou as formas low-poly, os materiais verde, prata e ouro e as três raízes GLB.
+- A representação proposta e implementada no helper é exata: barra de ouro = R$ 500.000, pilha de prata = R$ 50.000, maço de notas = R$ 10.000; sobras abaixo de R$ 10.000 viram uma nota proporcional. Os testes direcionados verificaram decomposição exata, valores de partida e saldos não finitos (18 testes passaram).
+- A captura inicial no browser mostrou três barras sobrepostas. Separei as peças por denominação em grades e adicionei nomes e valores pequenos às bases. Também reduzi a área/fonte dos rótulos das casas, aumentei os modelos para 116% e alinhei suas bases à superfície; uma moldura recebe a cor do dono.
+- Na primeira execução, o build reportou alterações concorrentes em `App.tsx` (incluindo `buildOptions` não definido e símbolos não usados), e o console do browser registrou mudança no tamanho da lista de dependências de um efeito de `AnimatedPawn`. A verificação completa foi repetida em 2026-10-28 e passou; o playtest visual completo continua pendente.
+- A sala de browser com duas pessoas chegou a iniciar e exibiu R$ 1.500.000 para cada pessoa. A conexão caiu durante a atualização concorrente do Vite; não consegui revisar a segunda disposição das barras nem ver construções em uma partida antes do encerramento.
+## 2026-10-28 — Sons de dinheiro, ajuda e prazo de turno
+
+- `npm run verify`: 134 testes em 21 arquivos passaram; build web e build do servidor passaram. O build web mantém o aviso conhecido do chunk `BoardScene` (977,37 kB).
+- `git diff --check` passou.
+- Playtest visual pendente. O servidor de desenvolvimento Colyseus encontrou `EADDRINUSE` em 2567; a porta alternou entre ocupada e livre, sem processo persistente identificável. Não foi iniciada outra instância enquanto a porta estava ocupada.
+- Casos automatizados desta frente cobrem rolagem automática e recusa de compra após a janela de decisão; os testes de regra foram atualizados para as regras de construção já implementadas.
+
+## 2026-10-28 — Jogadas lentas e serializadas, janelas centrais e construções
+
+- `npm run verify`: 135 testes em 21 arquivos passaram; builds web e do servidor passaram. O bundle de cena continua acima do aviso de 500 kB. `git diff --check` passou.
+- No navegador integrado, iniciei uma partida Clássica com três bots e observei a progressão em turnos reais. A rolagem e o movimento do bot aparecem como fases distintas, sem dados visíveis durante o movimento ou janela de decisão; a janela de turno fica no centro. A compra apresenta terreno e níveis de zero a três casas.
+- Viewports revisadas: desktop 1280 × 720 e móvel responsiva 390 × 844. A largura do documento permaneceu dentro da viewport e a ação ficou centralizada. Não foi usado dispositivo móvel físico nem Firefox.
+- Testes de servidor cobrem que outros bots não avançam durante a rolagem/movimento do bot ativo, compra inicial com três casas e hotel somente depois de outra visita. Também cobrem movimento sem reposicionamento antes da animação.
+- A pedido do usuário, a rolagem foi alongada de 1,8 s para 2,8 s e cada casa de 0,42 s para 0,75 s; teleporte e construção também foram desacelerados. A suíte completa é repetida pelo hook de commit após essa alteração de temporização.

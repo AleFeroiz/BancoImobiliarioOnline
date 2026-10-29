@@ -4,7 +4,7 @@ import { formatCashDelta, getGameSound, getPropertyChangeSound, getPropertyVisua
 describe('feedback da partida', () => {
   it('escolhe sons curtos de acordo com a jogada', () => {
     expect(getGameSound('Porto Dourado comprada por 160.000.')).toBe('purchase')
-    expect(getGameSound('Aluguel: 40.000 pagos a Ana.')).toBe('money')
+    expect(getGameSound('Aluguel: 40.000 pagos a Ana.')).toBe('money-out')
     expect(getGameSound('Bia venceu o leilão por 200.000.')).toBe('auction')
     expect(getGameSound('Objetivo cumprido!')).toBe('milestone')
     expect(getGameSound('Você escolheu não comprar.')).toBe('dice')

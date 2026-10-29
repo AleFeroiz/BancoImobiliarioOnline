@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { boardSpaces, positionOnBoard } from './board'
-import { JAIL_FINE, MAX_JAIL_ATTEMPTS, STARTING_CASH, buildingSaleValue, calculateRent, canBuildProperty, canMortgageProperty, canRedeemMortgage, canSellBuilding, constructionCost, describeLanding, hasLiquidatableAssets, mortgageRedemptionCost, mortgageValue, movePosition, resolveJailAttempt, taxForSpace } from '../../shared/game'
+import { JAIL_FINE, MAX_JAIL_ATTEMPTS, STARTING_CASH, buildingSaleValue, calculateRent, canBuildHotel, canBuildProperty, canMortgageProperty, canRedeemMortgage, canSellBuilding, constructionCost, describeLanding, hasLiquidatableAssets, hotelConstructionCost, mortgageRedemptionCost, mortgageValue, movePosition, resolveJailAttempt, taxForSpace } from '../../shared/game'
 import { EVENT_CARDS, applyCardCashEffect } from '../../shared/cards'
 
 describe('tabuleiro', () => {
@@ -63,7 +63,7 @@ describe('tabuleiro', () => {
     expect(calculateRent(property.id, owner, 2)).toBe(base * 2 + Math.floor((property.price ?? 0) * 0.1) * 2)
   })
 
-  it('permite construir grupos completos de forma equilibrada até um hotel', () => {
+  it('permite até três casas sem grupo completo e exige visita posterior para o hotel', () => {
     const first = boardSpaces.find((space) => space.kind === 'property' && space.buildable)!
     const group = boardSpaces.filter((space) => space.kind === 'property' && space.buildable && space.color === first.color)
     const second = group[1]
@@ -73,17 +73,18 @@ describe('tabuleiro', () => {
     expect(constructionCost(first.id)).toBe(cost)
     expect(canBuildProperty(first.id, 'p1', holdings, 1_000_000)).toBe(true)
     expect(canBuildProperty(first.id, 'p1', holdings, cost - 1)).toBe(false)
-    expect(canBuildProperty(first.id, 'p1', new Map([[first.id, holdings.get(first.id)!]]), 1_000_000)).toBe(false)
+    expect(canBuildProperty(first.id, 'p1', new Map([[first.id, holdings.get(first.id)!]]), 1_000_000)).toBe(true)
 
     holdings.get(first.id)!.houses = 1
-    expect(canBuildProperty(first.id, 'p1', holdings, 1_000_000)).toBe(false)
+    expect(canBuildProperty(first.id, 'p1', holdings, 1_000_000)).toBe(true)
     expect(canBuildProperty(second.id, 'p1', holdings, 1_000_000)).toBe(true)
 
-    for (const property of group) holdings.get(property.id)!.houses = 4
-    expect(canBuildProperty(first.id, 'p1', holdings, 1_000_000)).toBe(true)
-    holdings.get(first.id)!.houses = 5
+    holdings.get(first.id)!.houses = 3
     expect(canBuildProperty(first.id, 'p1', holdings, 1_000_000)).toBe(false)
-    expect(canBuildProperty(second.id, 'p1', holdings, 1_000_000)).toBe(true)
+    expect(canBuildHotel(first.id, 'p1', holdings, hotelConstructionCost(first.id))).toBe(true)
+    expect(canBuildHotel(first.id, 'p1', holdings, hotelConstructionCost(first.id) - 1)).toBe(false)
+    holdings.get(first.id)!.houses = 4
+    expect(canBuildHotel(first.id, 'p1', holdings, 1_000_000)).toBe(false)
 
     expect(constructionCost(15)).toBe(0)
     expect(canBuildProperty(15, 'p1', new Map([[15, { ownerSessionId: 'p1', houses: 0 }]]), 1_000_000)).toBe(false)
@@ -139,7 +140,7 @@ describe('tabuleiro', () => {
     expect(canBuildProperty(first.id, 'p1', holdings, 1_000_000)).toBe(false)
   })
 
-  it('permite vender construções pela metade do custo em ordem equilibrada e identifica bens liquidáveis', () => {
+  it('permite vender construções pela metade do custo e identifica bens liquidáveis', () => {
     const first = boardSpaces.find((space) => space.kind === 'property' && space.buildable)!
     const group = boardSpaces.filter((space) => space.kind === 'property' && space.buildable && space.color === first.color)
     const holdings = new Map(group.map((space) => [space.id, { ownerSessionId: 'p1', houses: 0, isMortgaged: false }]))
@@ -150,7 +151,7 @@ describe('tabuleiro', () => {
     holdings.get(first.id)!.houses = 1
     expect(canSellBuilding(first.id, 'p1', holdings)).toBe(true)
     holdings.get(group[1].id)!.houses = 2
-    expect(canSellBuilding(first.id, 'p1', holdings)).toBe(false)
+    expect(canSellBuilding(first.id, 'p1', holdings)).toBe(true)
     expect(canSellBuilding(group[1].id, 'p1', holdings)).toBe(true)
     expect(canSellBuilding(group[1].id, 'p2', holdings)).toBe(false)
 
