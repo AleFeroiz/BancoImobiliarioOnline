@@ -23,6 +23,7 @@ describe('enquadramento da câmera do tabuleiro', () => {
     expect(framing.position[0]).toBeCloseTo(12.075)
     expect(framing.position[1]).toBeCloseTo(31.05)
     expect(framing.position[2]).toBeCloseTo(12.075)
-    expect(framing).toMatchObject({ fov: 40, fogScale: 1.15 })
+    expect(framing.fov).toBe(40)
+    expect(framing).not.toHaveProperty('fogScale')
   })
 })

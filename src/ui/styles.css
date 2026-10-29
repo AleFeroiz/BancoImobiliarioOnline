@@ -469,8 +469,12 @@ button:disabled{opacity:.55;cursor:not-allowed}
 .screen-game .scene-backdrop{pointer-events:auto}
 .screen-game .scene-backdrop:after{pointer-events:none}
 .screen-game .scene-backdrop canvas{pointer-events:auto}
+.screen-game .scene-backdrop{opacity:1;filter:saturate(1.18) contrast(1.12)}
+.screen-game .scene-backdrop:after{display:none}
 .space-inspector{position:absolute;z-index:2;top:50%;left:22px;width:min(250px,23vw);padding:15px 16px;border:1px solid rgba(168,149,86,.48);border-radius:16px;background:rgba(255,252,239,.97);box-shadow:0 14px 36px rgba(47,67,48,.2);color:#2f4439;pointer-events:auto;transform:translateY(-50%);animation:space-inspector-enter .18s ease-out both}
 .space-inspector .trade-close{position:absolute;top:8px;right:8px}
+.game-feedback-toast{top:clamp(104px,13vh,142px);bottom:auto;z-index:5;display:grid;gap:3px;border-radius:12px}
+.feedback-queue-count{color:#778477;font-size:9px;font-weight:500}
 .space-inspector .turn-label{display:block;padding-right:22px;color:#92703a;font-size:8px;letter-spacing:.11em}
 .space-inspector h2{margin:7px 22px 8px 0;font-family:'Playfair Display',serif;font-size:18px;line-height:1.15}
 .space-inspector p{margin:10px 0 0;color:#647568;font-size:10px;line-height:1.45}

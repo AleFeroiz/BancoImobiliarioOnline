@@ -1,7 +1,7 @@
 import { Canvas } from '@react-three/fiber'
 import { ContactShadows, Html } from '@react-three/drei'
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
-import { CanvasTexture, Fog, PerspectiveCamera, SRGBColorSpace, type Group, type Material, type Mesh, type MeshStandardMaterial } from 'three'
+import { CanvasTexture, PerspectiveCamera, SRGBColorSpace, type Group, type Material, type Mesh, type MeshStandardMaterial } from 'three'
 import { useFrame, useThree } from '@react-three/fiber'
 import { useGLTF } from '@react-three/drei'
 import { boardSpaces, positionOnBoard } from '../game/board'
@@ -10,14 +10,14 @@ import { getBoardTileTheme } from './boardTileTheme'
 import { fitSpaceLabel } from './spaceLabel'
 import { getPawnStepPath } from './pawnPath'
 import { getPropertyVisualChange } from './gameFeedback'
-import { getCashVisualBreakdown } from './cashVisuals'
+import { getCashVisualBreakdown, normalizeCashModelRoot } from './cashVisuals'
 import { BUILDING_ANIMATION_DURATION_MS, DICE_ANIMATION_DURATION_MS, LANDING_PULSE_DURATION_MS, PAWN_STEP_ANIMATION_DURATION_MS, PAWN_TELEPORT_ANIMATION_DURATION_MS, PROPERTY_HOTEL_LEVEL, getAnimationDuration, type AnimationSpeed } from '../../shared/game'
 
 type PropertyBuilding = { spaceId: number; ownerSessionId: string; houses: number; isMortgaged: boolean; ownerColor: string }
 type PlayerToken = { id: string; position: number; color: string; seatIndex: number; cash: number; characterType: 'pawn' | 'car' | 'motorcycle' | 'airplane'; activity?: string }
 
 function ResponsiveCamera() {
-  const { camera, scene, size } = useThree()
+  const { camera, size } = useThree()
   useEffect(() => {
     if (!(camera instanceof PerspectiveCamera)) return
     const framing = getCameraFraming(size.width, size.height)
@@ -25,11 +25,7 @@ function ResponsiveCamera() {
     camera.lookAt(0, 0, 0)
     camera.fov = framing.fov
     camera.updateProjectionMatrix()
-    if (scene.fog instanceof Fog) {
-      scene.fog.near = 21 * framing.fogScale
-      scene.fog.far = 38 * framing.fogScale
-    }
-  }, [camera, scene, size.width, size.height])
+  }, [camera, size.width, size.height])
   return null
 }
 
@@ -381,7 +377,7 @@ function CashBalanceDisplay({ player }: { player: PlayerToken }) {
     const source = scene.getObjectByName(name)
     if (!source) return []
     return Array.from({ length: count }, (_, index) => {
-      const clone = source.clone(true)
+      const clone = normalizeCashModelRoot(source.clone(true))
       const column = index % 3
       const row = Math.floor(index / 3) % 3
       const layer = Math.floor(index / 9)
@@ -557,8 +553,7 @@ export default function BoardScene({ players, propertyBuildings, highlightedSpac
   return (
     <Canvas camera={{ position: [12.5, 15.5, 15.5], fov: 34 }} shadows dpr={[1, 1.6]}>
       <color attach="background" args={['#9bbcc1']} />
-      <fog attach="fog" args={['#9bbcc1', 21, 38]} />
-      <ambientLight intensity={0.72} />
+      <ambientLight intensity={0.86} />
       <directionalLight position={[7, 13, 5]} intensity={1.55} castShadow shadow-mapSize={[1024, 1024]} />
       <ResponsiveCamera />
       <Board players={players} propertyBuildings={propertyBuildings} highlightedSpaceIds={highlightedSpaceIds} landingPulseSpaceId={landingPulseSpaceId} landingPulseSequence={landingPulseSequence} diceRollSequence={diceRollSequence} dice={dice} diceVisible={diceVisible} presentationSpeed={presentationSpeed} reducedMotion={reducedMotion} pawnMovementEnabled={pawnMovementEnabled} pawnMoveMode={pawnMoveMode} onMovementComplete={onMovementComplete} onSelectSpace={onSelectSpace} />

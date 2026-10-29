@@ -1,3 +1,5 @@
+import type { Object3D } from 'three'
+
 export const CASH_VISUAL_DENOMINATIONS = {
   goldBar: 500_000,
   silverStack: 50_000,
@@ -33,4 +35,11 @@ export function representedCashValue(breakdown: CashVisualBreakdown) {
     + breakdown.silverStacks * CASH_VISUAL_DENOMINATIONS.silverStack
     + breakdown.banknoteStacks * CASH_VISUAL_DENOMINATIONS.banknoteStack
     + breakdown.partialBanknote * CASH_VISUAL_DENOMINATIONS.banknoteStack
+}
+
+export function normalizeCashModelRoot<T extends Object3D>(model: T) {
+  model.position.set(0, 0, 0)
+  model.rotation.set(0, 0, 0)
+  model.scale.set(1, 1, 1)
+  return model
 }

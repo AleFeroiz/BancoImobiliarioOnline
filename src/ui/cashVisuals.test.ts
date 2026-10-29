@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { CASH_VISUAL_DENOMINATIONS, getCashVisualBreakdown, representedCashValue } from './cashVisuals'
+import { Group } from 'three'
+import { CASH_VISUAL_DENOMINATIONS, getCashVisualBreakdown, normalizeCashModelRoot, representedCashValue } from './cashVisuals'
 
 describe('representação visual do dinheiro no tabuleiro', () => {
   it('usa barras de ouro, prata e maços de notas com valores fixos e decrescentes', () => {
@@ -18,5 +19,16 @@ describe('representação visual do dinheiro no tabuleiro', () => {
 
   it('trata saldo não finito como zero', () => {
     expect(getCashVisualBreakdown(Number.NaN)).toEqual({ goldBars: 0, silverStacks: 0, banknoteStacks: 0, partialBanknote: 0 })
+  })
+
+  it('remove a posição de vitrine do GLB antes de colocar a peça na bandeja', () => {
+    const model = new Group()
+    model.position.set(8, 0, 0)
+    model.rotation.set(0, Math.PI / 2, 0)
+    model.scale.setScalar(0.68)
+
+    expect(normalizeCashModelRoot(model).position.toArray()).toEqual([0, 0, 0])
+    expect(model.rotation.toArray()).toEqual([0, 0, 0, 'XYZ'])
+    expect(model.scale.toArray()).toEqual([1, 1, 1])
   })
 })
