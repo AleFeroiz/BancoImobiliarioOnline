@@ -7,11 +7,11 @@
 - Completar um grupo já dobra o aluguel base; a regra foi mantida e segue coberta por testes.
 - `src/ui/BoardScene.tsx` desenha uma roleta low-poly autoral nos espaços Sorte. `src/ui/boardTileTheme.ts` dá a esses pisos um tema dourado.
 - `npm run verify` passou com 145 testes em 22 arquivos e compilou o cliente e o servidor. `git diff --check` passou.
-- A revisão visual ficou pendente: o navegador integrado está desativado nas configurações de Work e a tentativa via Chrome foi interrompida pelo controle CUA. A tentativa headless não gerou captura.
+- Revisão em Chrome 156 headless com sala real e três bots: roleta visível em “Sorte ou Revés”, tabuleiro completo em 1280×900 e 390×844, sem overflow horizontal. Capturas temporárias em `.tmp/browser-test-desktop.png` e `.tmp/browser-test-mobile.png`.
 
 ## Próximo passo
 
-Quando o navegador estiver habilitado, revisar uma partida em desktop e em viewport móvel, confirmar a leitura dos oito grupos e das quatro roletas, e registrar as capturas em `docs/VALIDACAO.md`.
+Se for necessário aprofundar a revisão, conferir Chrome visível, Firefox ou aparelho físico; a validação desta sessão cobriu o Chrome headless e viewports emulados.
 
 ## Perguntas abertas
 

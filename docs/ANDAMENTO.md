@@ -16,8 +16,8 @@
 - Pedido confirmado: reunir as três propriedades de cada grupo em sequência no percurso; preservar o bônus de aluguel por grupo completo; transformar o piso dos espaços “Sorte ou Revés” e dar a eles uma roleta claramente reconhecível.
 - Implementação: oito grupos residenciais agora ocupam blocos contíguos de três casas, dois por lado. Os quatro pisos de Sorte usam tema dourado e uma roleta low-poly autoral; a mecânica existente de bônus de aluguel foi preservada.
 - Validação automatizada: `npm run verify` passou com 145 testes em 22 arquivos, build web e build do servidor. `git diff --check` passou. O build mantém o aviso conhecido do chunk 3D acima de 500 kB.
-- Revisão visual: não concluída. O navegador integrado está desativado nas configurações de Work; o CUA interrompeu o acesso ao Chrome por não conseguir validar a URL atual. Não há Playwright instalado no projeto, e a tentativa headless não produziu captura. O teste visual precisa ser repetido quando o navegador estiver habilitado.
-- Próximo passo: conferir a vista desktop e móvel no navegador habilitado e registrar as capturas dos grupos e das roletas.
+- Revisão visual: concluída em Chrome 156 headless, com perfil temporário e conexão DevTools limitada a loopback, porque o navegador integrado está desativado. Uma sala real com três bots avançou até o turno 9; observei uma animação de bot com “Girando os dados” seguida por “Movendo o peão”, um balão por vez. Em 1280×900 e 390×844 o documento não teve overflow horizontal; o tabuleiro inteiro e as roletas ficaram visíveis. Capturas temporárias: `.tmp/browser-test-desktop.png` e `.tmp/browser-test-mobile.png`.
+- Limite: esta sessão não revisou Chrome visível, Firefox nem aparelho físico. A próxima revisão pode usar o navegador integrado quando voltar a estar habilitado.
 
 ## Frente atual — velocidade de animação e observação de turnos (2026-10-29)
 

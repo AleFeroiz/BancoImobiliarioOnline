@@ -6,7 +6,9 @@
 
 - `npm run verify`: 145 testes em 22 arquivos passaram; build web e build do servidor passaram. O build web mantém o aviso conhecido do chunk 3D acima de 500 kB.
 - Testes cobrem os oito grupos residenciais com três IDs consecutivos por grupo, dois grupos por lado, a localização das quatro casas Sorte e o tema dourado distinto. O bônus de aluguel por grupo completo continua coberto pela suíte de regras.
-- A revisão manual desktop/móvel não foi concluída: o navegador integrado retornou `Local browser use is disabled in Work settings`; ao tentar selecionar o Chrome do sistema, o CUA interrompeu a ação por não conseguir confirmar a URL atual. O projeto não tem Playwright instalado; a tentativa de captura pelo Chrome headless não gerou arquivo de imagem. Nenhuma captura é apresentada como evidência desta mudança.
+- A revisão foi concluída no Chrome 156 headless usando um perfil temporário isolado e DevTools restrito a loopback; o navegador integrado continua desativado nas configurações de Work. Em uma partida Clássica local com três bots, a mesa avançou até o turno 9 e mostrou as roletas douradas nos quatro espaços de Sorte. Observei um bot anunciar “Girando os dados” e depois “Movendo o peão”; havia no máximo um balão de atividade visível.
+- Em desktop (1280×900) e celular simulado (390×844), o canvas e o documento couberam na viewport sem overflow horizontal. O tabuleiro inteiro permaneceu visível nos dois tamanhos. Capturas temporárias: `.tmp/browser-test-desktop.png` e `.tmp/browser-test-mobile.png`.
+- Os processos locais do Vite e Colyseus permaneceram sem erros nos logs durante a validação. Esta revisão não cobriu Firefox nem aparelho físico.
 - `git diff --check` passou.
 
 ## 2026-10-29 — Velocidade e observação de jogadas
