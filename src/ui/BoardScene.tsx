@@ -1,5 +1,5 @@
 import { Canvas } from '@react-three/fiber'
-import { ContactShadows, Html } from '@react-three/drei'
+import { ContactShadows, Html, OrbitControls } from '@react-three/drei'
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { CanvasTexture, PerspectiveCamera, SRGBColorSpace, type Group, type Material, type Mesh, type MeshStandardMaterial } from 'three'
 import { useFrame, useThree } from '@react-three/fiber'
@@ -22,7 +22,9 @@ function ResponsiveCamera({ tilt, horizontal }: { tilt: number; horizontal: numb
     if (!(camera instanceof PerspectiveCamera)) return
     const framing = getCameraFraming(size.width, size.height, tilt, horizontal)
     camera.position.set(...framing.position)
-    camera.up.set(...framing.up)
+    // OrbitControls expects a stable world-up axis. The per-angle up vector
+    // rolled the whole board during drags instead of orbiting around it.
+    camera.up.set(0, 1, 0)
     camera.lookAt(0, 0, 0)
     camera.fov = framing.fov
     camera.updateProjectionMatrix()
@@ -440,7 +442,7 @@ function AnimatedMortgageBadge({ position, mortgaged, reducedMotion, presentatio
   return <group ref={group} position={position} scale={mortgaged ? 1 : 0}><mesh rotation={[-Math.PI / 2, 0, 0]}><circleGeometry args={[0.11, 8]} /><meshStandardMaterial color="#71858a" roughness={0.48} /></mesh></group>
 }
 
-function Board({ players, propertyBuildings, highlightedSpaceIds, landingPulseSpaceId, landingPulseSequence, diceRollSequence, dice, diceVisible, presentationSpeed, reducedMotion, pawnMovementEnabled, pawnMoveMode, onMovementComplete, onSelectSpace }: { players: PlayerToken[]; propertyBuildings: PropertyBuilding[]; highlightedSpaceIds: readonly number[]; landingPulseSpaceId: number; landingPulseSequence: number; diceRollSequence: number; dice: [number, number]; diceVisible: boolean; presentationSpeed: AnimationSpeed; reducedMotion: boolean; pawnMovementEnabled: boolean; pawnMoveMode: 'walk' | 'teleport'; onMovementComplete: () => void; onSelectSpace: (spaceId: number) => void }) {
+function Board({ players, propertyBuildings, highlightedSpaceIds, selectionMode, landingPulseSpaceId, landingPulseSequence, diceRollSequence, dice, diceVisible, presentationSpeed, reducedMotion, pawnMovementEnabled, pawnMoveMode, onMovementComplete, onSelectSpace }: { players: PlayerToken[]; propertyBuildings: PropertyBuilding[]; highlightedSpaceIds: readonly number[]; selectionMode: boolean; landingPulseSpaceId: number; landingPulseSequence: number; diceRollSequence: number; dice: [number, number]; diceVisible: boolean; presentationSpeed: AnimationSpeed; reducedMotion: boolean; pawnMovementEnabled: boolean; pawnMoveMode: 'walk' | 'teleport'; onMovementComplete: () => void; onSelectSpace: (spaceId: number) => void }) {
   return (
     <group>
       <mesh position={[0, -0.25, 0]} receiveShadow>
@@ -481,8 +483,9 @@ function Board({ players, propertyBuildings, highlightedSpaceIds, landingPulseSp
         const rotation = space.id <= 10 || space.id >= 30 ? 0 : Math.PI / 2
         const property = propertyBuildings.find((building) => building.spaceId === space.id)
         const theme = getBoardTileTheme(space, corner)
+        const selectable = highlightedSpaceIds.includes(space.id)
         return (
-          <group key={space.id} position={[x, 0.08, z]} rotation={[0, rotation, 0]} onClick={(event) => { event.stopPropagation(); onSelectSpace(space.id) }} onPointerOver={(event) => { event.stopPropagation(); document.body.style.cursor = 'pointer' }} onPointerOut={() => { document.body.style.cursor = '' }}>
+          <group key={space.id} position={[x, 0.08, z]} rotation={[0, rotation, 0]} onClick={(event) => { event.stopPropagation(); if (!selectionMode || selectable) onSelectSpace(space.id) }} onPointerOver={(event) => { event.stopPropagation(); document.body.style.cursor = selectionMode && !selectable ? 'not-allowed' : 'pointer' }} onPointerOut={() => { document.body.style.cursor = '' }}>
             <mesh castShadow receiveShadow>
               <boxGeometry args={[size, 0.16, size]} />
               <meshStandardMaterial color={theme.floor} roughness={0.78} />
@@ -500,8 +503,8 @@ function Board({ players, propertyBuildings, highlightedSpaceIds, landingPulseSp
             {space.kind === 'tax' && <mesh position={[size * 0.31, 0.112, size * 0.3]}><cylinderGeometry args={[0.075, 0.075, 0.025, 8]} /><meshStandardMaterial color={theme.trim} roughness={0.48} /></mesh>}
             {space.kind === 'event' && <ChanceRoulette size={size} trim={theme.trim} />}
             {space.kind === 'prison' && <group position={[size * 0.3, 0.11, size * 0.3]}><mesh position={[0, 0, 0]}><boxGeometry args={[0.25, 0.025, 0.22]} /><meshStandardMaterial color="#536c7d" roughness={0.7} /></mesh>{[-1, 0, 1].map((offset) => <mesh key={offset} castShadow position={[offset * 0.085, 0.12, 0.105]}><boxGeometry args={[0.025, 0.22, 0.025]} /><meshStandardMaterial color={theme.trim} metalness={0.25} roughness={0.48} /></mesh>)}{[-1, 1].map((offset) => <mesh key={`bar-${offset}`} position={[0, offset * 0.07, 0.105]}><boxGeometry args={[0.2, 0.025, 0.025]} /><meshStandardMaterial color={theme.trim} metalness={0.25} roughness={0.48} /></mesh>)}</group>}
-            {space.kind === 'world-cup' && <group position={[size * 0.31, 0.12, size * 0.3]}><mesh castShadow position={[0, 0.12, 0]}><cylinderGeometry args={[0.055, 0.085, 0.16, 8]} /><meshStandardMaterial color="#e0b747" metalness={0.42} roughness={0.32} /></mesh><mesh position={[0, 0.21, 0]}><sphereGeometry args={[0.05, 8, 6]} /><meshStandardMaterial color="#f1d36b" metalness={0.35} roughness={0.28} /></mesh></group>}
-            {space.kind === 'world-tour' && <group position={[size * 0.31, 0.15, size * 0.3]}><mesh castShadow><sphereGeometry args={[0.1, 12, 8]} /><meshStandardMaterial color="#56a6bd" roughness={0.48} /></mesh><mesh rotation={[0, 0, Math.PI / 2]}><torusGeometry args={[0.13, 0.018, 5, 18]} /><meshStandardMaterial color="#d8bd73" metalness={0.28} roughness={0.38} /></mesh></group>}
+            {space.kind === 'world-cup' && <Suspense fallback={null}><CornerLandmark type="stadium" position={[0, 0.15, 0]} /></Suspense>}
+            {space.kind === 'world-tour' && <Suspense fallback={null}><CornerLandmark type="airport" position={[0, 0.15, 0]} /></Suspense>}
             {space.kind === 'rest' && <mesh position={[size * 0.31, 0.11, size * 0.3]}><cylinderGeometry args={[0.07, 0.09, 0.035, 6]} /><meshStandardMaterial color={theme.trim} roughness={0.62} /></mesh>}
             {space.kind === 'start' && <mesh position={[size * 0.31, 0.13, size * 0.3]} rotation={[0, Math.PI / 4, 0]}><boxGeometry args={[0.14, 0.045, 0.14]} /><meshStandardMaterial color={theme.trim} roughness={0.52} /></mesh>}
             <SpaceLabel name={space.name} size={size} ink={theme.ink} outline={theme.outline} />
@@ -511,8 +514,9 @@ function Board({ players, propertyBuildings, highlightedSpaceIds, landingPulseSp
                 <meshBasicMaterial color="#e5af3f" transparent opacity={0.96} toneMapped={false} />
               </mesh>
             )}
+            {selectionMode && !selectable && <mesh position={[0, 0.205, 0]} rotation={[-Math.PI / 2, 0, 0]}><planeGeometry args={[size * 0.98, size * 0.98]} /><meshBasicMaterial color="#1a241d" transparent opacity={0.68} depthWrite={false} /></mesh>}
             {landingPulseSpaceId === space.id && <LandingPulse sequence={landingPulseSequence} reducedMotion={reducedMotion} size={size} presentationSpeed={presentationSpeed} />}
-            {corner && (
+            {corner && space.kind !== 'world-cup' && space.kind !== 'world-tour' && (
               <mesh position={[0, 0.19, 0]} rotation={[0, Math.PI / 4, 0]}>
                 <boxGeometry args={[0.32, 0.08, 0.32]} />
                 <meshStandardMaterial color="#d5a956" roughness={0.48} />
@@ -551,14 +555,22 @@ function LandingPulse({ sequence, reducedMotion, size, presentationSpeed }: { se
   return <group ref={ring} position={[0, 0.11, 0]}>{reducedMotion ? null : <mesh rotation={[-Math.PI / 2, 0, 0]}><ringGeometry args={[size * 0.38, size * 0.45, 40]} /><meshBasicMaterial color="#e5af3f" transparent opacity={0.8} toneMapped={false} /></mesh>}</group>
 }
 
-export default function BoardScene({ players, propertyBuildings, highlightedSpaceIds = [], landingPulseSpaceId = -1, landingPulseSequence = 0, diceRollSequence = 0, dice = [0, 0], diceVisible = false, presentationSpeed = 0.5, reducedMotion = false, pawnMovementEnabled = false, pawnMoveMode = 'walk', cameraTilt = 16, cameraHorizontal = 45, onMovementComplete, onSelectSpace }: { players: PlayerToken[]; propertyBuildings: PropertyBuilding[]; highlightedSpaceIds?: readonly number[]; landingPulseSpaceId?: number; landingPulseSequence?: number; diceRollSequence?: number; dice?: [number, number]; diceVisible?: boolean; presentationSpeed?: AnimationSpeed; reducedMotion?: boolean; pawnMovementEnabled?: boolean; pawnMoveMode?: 'walk' | 'teleport'; cameraTilt?: number; cameraHorizontal?: number; onMovementComplete: () => void; onSelectSpace: (spaceId: number) => void }) {
+function CornerLandmark({ type, position }: { type: 'stadium' | 'airport'; position: [number, number, number] }) {
+  const path = type === 'stadium' ? '/assets/world-cup-stadium.glb' : '/assets/world-tour-airport.glb'
+  const { scene } = useGLTF(path)
+  const model = useMemo(() => scene.clone(), [scene])
+  return <primitive object={model} position={position} scale={type === 'stadium' ? 0.64 : 0.48} />
+}
+
+export default function BoardScene({ players, propertyBuildings, highlightedSpaceIds = [], selectionMode = false, landingPulseSpaceId = -1, landingPulseSequence = 0, diceRollSequence = 0, dice = [0, 0], diceVisible = false, presentationSpeed = 0.5, reducedMotion = false, pawnMovementEnabled = false, pawnMoveMode = 'walk', cameraEnabled = true, onMovementComplete, onSelectSpace }: { players: PlayerToken[]; propertyBuildings: PropertyBuilding[]; highlightedSpaceIds?: readonly number[]; selectionMode?: boolean; landingPulseSpaceId?: number; landingPulseSequence?: number; diceRollSequence?: number; dice?: [number, number]; diceVisible?: boolean; presentationSpeed?: AnimationSpeed; reducedMotion?: boolean; pawnMovementEnabled?: boolean; pawnMoveMode?: 'walk' | 'teleport'; cameraEnabled?: boolean; onMovementComplete: () => void; onSelectSpace: (spaceId: number) => void }) {
   return (
     <Canvas camera={{ position: [12.5, 15.5, 15.5], fov: 34 }} shadows dpr={[1, 1.6]}>
       <color attach="background" args={['#9bbcc1']} />
       <ambientLight intensity={0.86} />
       <directionalLight position={[7, 13, 5]} intensity={1.55} castShadow shadow-mapSize={[1024, 1024]} />
-      <ResponsiveCamera tilt={cameraTilt} horizontal={cameraHorizontal} />
-      <Board players={players} propertyBuildings={propertyBuildings} highlightedSpaceIds={highlightedSpaceIds} landingPulseSpaceId={landingPulseSpaceId} landingPulseSequence={landingPulseSequence} diceRollSequence={diceRollSequence} dice={dice} diceVisible={diceVisible} presentationSpeed={presentationSpeed} reducedMotion={reducedMotion} pawnMovementEnabled={pawnMovementEnabled} pawnMoveMode={pawnMoveMode} onMovementComplete={onMovementComplete} onSelectSpace={onSelectSpace} />
+      <ResponsiveCamera tilt={16} horizontal={45} />
+      <OrbitControls makeDefault enabled={cameraEnabled} enablePan={false} enableZoom={false} enableRotate minPolarAngle={Math.PI / 12} maxPolarAngle={Math.PI / 2} rotateSpeed={0.72} enableDamping dampingFactor={0.1} />
+      <Board players={players} propertyBuildings={propertyBuildings} highlightedSpaceIds={highlightedSpaceIds} selectionMode={selectionMode} landingPulseSpaceId={landingPulseSpaceId} landingPulseSequence={landingPulseSequence} diceRollSequence={diceRollSequence} dice={dice} diceVisible={diceVisible} presentationSpeed={presentationSpeed} reducedMotion={reducedMotion} pawnMovementEnabled={pawnMovementEnabled} pawnMoveMode={pawnMoveMode} onMovementComplete={onMovementComplete} onSelectSpace={onSelectSpace} />
       <ContactShadows position={[0, -0.46, 0]} opacity={0.25} scale={18} blur={2.5} far={5} />
     </Canvas>
   )

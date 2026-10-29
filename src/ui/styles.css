@@ -124,25 +124,11 @@ button:disabled{opacity:.55;cursor:not-allowed}
 .screen-game .game-session-tools .game-preference{width:25px;height:25px}
 .screen-game .game-session-tools .icon-button{margin:0;width:25px;height:25px;border-color:rgba(57,83,68,.25);color:#526b4c;background:rgba(250,248,237,.92)}
 .screen-game .game-bottom .leave-button{justify-self:end}
-.camera-tilt-control{position:fixed;z-index:6;top:50%;right:max(10px,env(safe-area-inset-right));transform:translateY(-50%);width:54px;min-height:208px;padding:10px 6px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;border:1px solid rgba(105,132,97,.3);border-radius:16px;background:rgba(250,248,237,.9);box-shadow:0 8px 24px rgba(43,62,46,.13);color:#53694e;pointer-events:auto}
-.camera-tilt-title,.camera-tilt-end{font-size:6px;font-weight:700;letter-spacing:.09em;white-space:nowrap}
-.camera-tilt-angle{font-size:10px;font-weight:700;font-variant-numeric:tabular-nums}
-.camera-tilt-control input[type=range]{width:18px;height:132px;margin:0;writing-mode:vertical-lr;direction:rtl;accent-color:#789775;cursor:ns-resize;touch-action:pan-x}
-.camera-tilt-control input[type=range]:focus-visible{outline:2px solid #9b824b;outline-offset:3px;border-radius:8px}
-.camera-orbit-control{position:fixed;z-index:6;top:50%;left:18px;transform:translateY(-50%);width:min(260px,calc(100vw - 36px));min-height:33px;padding:2px 12px;display:grid;grid-template-columns:auto auto;align-items:center;justify-content:center;column-gap:9px;row-gap:0;border:1px solid rgba(105,132,97,.3);border-radius:14px;background:rgba(250,248,237,.9);box-shadow:0 8px 24px rgba(43,62,46,.13);color:#53694e;pointer-events:auto}
-.camera-orbit-control-upper{top:49px;left:50%;transform:translateX(-50%);width:min(360px,calc(100vw - 116px))}
-.camera-orbit-title{font-size:6px;font-weight:700;letter-spacing:.09em;white-space:nowrap}
-.camera-orbit-angle{font-size:9px;font-weight:700;font-variant-numeric:tabular-nums}
-.camera-orbit-control input[type=range]{grid-column:1 / -1;width:100%;height:14px;margin:0;accent-color:#789775;cursor:ew-resize;touch-action:pan-y}
-.camera-orbit-control input[type=range]:focus-visible{outline:2px solid #9b824b;outline-offset:2px;border-radius:8px}
 .corner-choice-actions{display:grid;gap:10px;width:100%}
 .corner-choice-actions .trade-label{display:grid;gap:6px}
 @media(max-width:900px){
   .screen-game .game-overlay{padding:10px 12px 9px}
   .screen-game .player-card.seat-0,.screen-game .player-card.seat-1{top:61px}
-  .camera-tilt-control{right:max(6px,env(safe-area-inset-right));width:46px;min-height:184px;padding:8px 4px}
-  .camera-tilt-control input[type=range]{height:112px}
-  .camera-orbit-control,.camera-orbit-control-upper{top:49px;left:50%;transform:translateX(-50%);width:min(310px,calc(100vw - 96px));min-height:34px;padding:2px 9px}
 }
 @media(max-width:640px){
   .screen-game .game-overlay{padding:8px 8px 8px}
@@ -158,12 +144,6 @@ button:disabled{opacity:.55;cursor:not-allowed}
   .screen-game .game-session-tools{justify-self:start;gap:4px}
   .screen-game .game-session-tools .animation-speed-control{min-height:25px}
   .screen-game .game-bottom .leave-button{grid-column:2;grid-row:1}
-  .camera-tilt-control{top:53%;right:4px;width:38px;min-height:158px;padding:6px 3px;gap:5px;border-radius:12px}
-  .camera-tilt-title,.camera-tilt-end{font-size:5px;letter-spacing:.03em}
-  .camera-tilt-angle{font-size:9px}
-  .camera-tilt-control input[type=range]{width:16px;height:90px}
-  .camera-orbit-control,.camera-orbit-control-upper{top:48px;width:min(250px,calc(100vw - 72px));min-height:32px;padding:2px 8px}
-  .camera-orbit-title{font-size:5px}
 }
 .screen-game .game-bottom{position:fixed;right:4vw;bottom:14px;left:4vw;z-index:5}
 @media(max-width:640px){.screen-game .game-bottom{right:10px;bottom:8px;left:10px}}
@@ -635,6 +615,51 @@ button:disabled{opacity:.55;cursor:not-allowed}
 
 .game-modal-backdrop{background:rgba(28,47,43,.28);backdrop-filter:none}
 .screen-game .turn-card,.screen-game .space-inspector{backdrop-filter:none}
+
+/* Direct camera gesture and compact, map-first game decisions. */
+.game-topline-camera-hint{position:fixed;top:69px;left:50%;z-index:5;transform:translateX(-50%);padding:5px 10px;border:1px solid rgba(105,132,97,.18);border-radius:999px;background:rgba(250,248,237,.72);color:#657664;font-size:7px;font-weight:700;letter-spacing:.08em;pointer-events:none;white-space:nowrap}
+.screen-game .scene-backdrop canvas{touch-action:none;cursor:grab}
+.screen-game .scene-backdrop canvas:active{cursor:grabbing}
+.screen-game .turn-card.purchase-panel{width:min(540px,calc(100vw - 28px));padding:18px 20px}
+.screen-game .purchase-panel h2{margin-bottom:4px}
+.screen-game .purchase-panel>p{margin-bottom:7px}
+.purchase-panel .purchase-level-options{gap:7px;margin:9px 0 10px}
+.purchase-panel .purchase-choice{min-height:92px;grid-template-rows:auto 20px auto auto;gap:3px;padding:7px 3px;border-radius:11px;transition:background .16s,border-color .16s,transform .16s}
+.purchase-panel .purchase-choice:hover:not(:disabled){transform:translateY(-2px);border-color:#a7b38e;background:#f4f4e8}
+.purchase-panel .purchase-choice:disabled{cursor:not-allowed;opacity:.4;filter:grayscale(.75)}
+.purchase-panel .purchase-choice span:first-child{font-size:9px}
+.property-choice-houses{height:20px;display:flex;align-items:flex-end;justify-content:center;gap:3px}
+.property-choice-houses i{position:relative;width:10px;height:12px;background:#789775;clip-path:polygon(50% 0,100% 42%,88% 42%,88% 100%,12% 100%,12% 42%,0 42%)}
+.property-choice-flag{width:18px!important;height:16px!important;background:#c0a455!important;clip-path:none!important;border-radius:50% 50% 4px 4px}
+.property-choice-flag:before{content:'';position:absolute;left:8px;top:-10px;width:1px;height:12px;background:#786338}
+.property-choice-flag:after{content:'';position:absolute;left:9px;top:-10px;width:8px;height:5px;background:#bc7658;clip-path:polygon(0 0,100% 50%,0 100%)}
+.purchase-panel .purchase-choice small{font-size:7px;white-space:nowrap}
+.purchase-panel .purchase-choice b{font-size:8px;color:#4f624c;font-variant-numeric:tabular-nums}
+.purchase-rent-preview{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 11px;border-radius:10px;background:#edf0e2;color:#647561}
+.purchase-rent-preview>span{font-size:7px;font-weight:700;letter-spacing:.09em}
+.purchase-rent-preview>strong{color:#354b3e;font-size:13px;font-variant-numeric:tabular-nums}
+.purchase-rent-preview small{font-size:8px;font-weight:500;color:#819080}
+.purchase-panel .purchase-actions{margin-top:9px}
+.map-choice-hint{margin:7px 0 2px!important;padding:9px 10px;border-radius:9px;background:#edf0e2;color:#617460!important;font-size:9px!important}
+.screen-game .corner-choice-panel{top:auto!important;bottom:51px!important;left:50%!important;transform:translateX(-50%)!important;width:min(390px,calc(100vw - 30px));max-height:none;padding:11px 15px;border-radius:14px}
+.screen-game .corner-choice-panel h2{font-size:18px;margin:2px 24px 3px 0}
+.screen-game .corner-choice-panel>p{font-size:9px;margin:0 0 4px}
+.screen-game .corner-choice-panel .map-choice-hint{margin:3px 0 0!important;padding:7px 9px;font-size:8px!important}
+.inspector-auction-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid #e0e3d7}
+.inspector-auction-actions .auction-start-label{gap:4px;font-size:7px}
+.inspector-auction-actions .trade-input{min-height:36px;padding:0 9px;font-size:10px}
+.auction-inspector-button{align-self:end;justify-items:center;min-height:36px;padding:6px 10px;background:#f2eddc;color:#6e5a34;font-size:9px}
+@media(max-width:640px){
+  .game-topline-camera-hint{top:59px;padding:4px 8px;font-size:6px}
+  .screen-game .turn-card.purchase-panel{width:calc(100vw - 20px);padding:13px 11px}
+  .screen-game .corner-choice-panel{bottom:43px!important;width:calc(100vw - 20px);padding:9px 11px}
+  .purchase-panel .purchase-level-options{gap:4px;margin:7px 0}
+  .purchase-panel .purchase-choice{min-height:76px;gap:2px;padding:5px 1px}
+  .purchase-panel .purchase-choice span:first-child{font-size:8px}
+  .purchase-panel .purchase-choice small{font-size:6px}
+  .purchase-panel .purchase-choice b{font-size:7px}
+  .purchase-rent-preview{padding:7px 8px}
+}
 .screen-game .game-bottom{position:fixed;top:auto;right:auto;bottom:9px;left:50%;width:max-content;max-width:calc(100vw - 24px);transform:translateX(-50%);z-index:5;gap:10px}
 @media(max-width:640px){.screen-game .game-bottom{right:auto;bottom:6px;left:50%;width:max-content;max-width:calc(100vw - 20px);transform:translateX(-50%)}}
 

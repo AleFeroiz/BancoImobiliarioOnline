@@ -10,6 +10,14 @@
 - A negociação de títulos ainda tem propostas abertas em `docs/DECISOES.md`; não as trate como comportamento aprovado sem nova decisão.
 - Evidências de automação, simulação e revisão visual estão em `docs/VALIDACAO.md`. Elas descrevem estados específicos e não substituem uma conferência do código e do ambiente atuais.
 
+## Frente atual — câmera por arraste e decisões visuais no tabuleiro (2026-10-29)
+
+- Nota de trabalho: [câmera por arraste e escolhas visuais](trabalho/camera-escolhas-visuais.md).
+- Pedido confirmado: substituir os dois sliders por órbita com mouse/toque, usar clique direto nas casas válidas para Copa/Volta, compactar as quatro opções de compra com custo/aluguel, mostrar o leilão no inspetor do imóvel e criar estádio e aeroporto/avião originais.
+- Estado inicial verificado: `main` limpa/alinhada a `origin/main` no commit `479d069`. Graphify desta sessão lista apenas `GustavoGLD/Hospital`, então a navegação foi feita pelos arquivos do projeto. Blender MCP reconectado e validado em 5.2.2 LTS.
+- Implementação concluída: órbita por mouse/toque, seleção direta de destinos, quatro pacotes de compra com custo/aluguel, leilão contextual e modelos 3D dos cantos. A validação desktop observou a câmera e uma compra real; testes/build passaram. Os limites de revisão manual estão registrados em `docs/VALIDACAO.md`.
+- Próximo passo: revisar no navegador móvel os cards e a órbita; conferir estádio e aeroporto dentro das casas especiais em uma partida. Graphify desta sessão continua apontando para outro repositório.
+
 ## Frente atual — fichas de veículo no lobby (2026-10-29)
 
 - Nota de trabalho: [seletor de fichas de personagem](trabalho/seletor-fichas-personagem.md).

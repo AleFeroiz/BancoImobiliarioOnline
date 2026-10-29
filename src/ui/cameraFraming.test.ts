@@ -8,7 +8,7 @@ describe('enquadramento da câmera do tabuleiro', () => {
     expect(framing.tilt).toBe(16)
     expect(framing.distance).toBeLessThan(31)
     expect(framing.position[0]).toBeCloseTo(framing.position[2])
-    expect(framing.up[1]).toBeCloseTo(Math.sin(16 * Math.PI / 180))
+    expect(framing.position[1]).toBeCloseTo(framing.distance * Math.cos(16 * Math.PI / 180))
   })
 
   it('permite vista top-down e limita a inclinação ao máximo do controle', () => {
