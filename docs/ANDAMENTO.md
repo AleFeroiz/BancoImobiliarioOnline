@@ -12,6 +12,7 @@
 
 ## Frente concluída — sequência visual, economia e câmera (2026-10-28)
 
+- Nota de retomada: [sequência visual, economia e câmera](trabalho/sequencia-visual-economia-camera.md).
 - Pedido do usuário: tocar dados, depois movimento do peão, depois mostrar ações de chegada; limitar leilão ao turno de quem vende, deixar hipoteca apenas para resolver dívida sem saldo suficiente; elevar a câmera para aproximar a leitura da referência visual enviada.
 - Regra anterior conferida em `docs/DECISOES.md`: leilão podia começar fora da vez; hipoteca valia durante a vez e dívida. A decisão atual foi incorporada em `docs/DECISOES.md`, `docs/REGRAS-DE-JOGO.md`, `docs/PLANO.md` e `README.md`.
 - Branch atual observada: `docs/ale-dev-memory`, com upstream `origin/docs/ale-dev-memory` e commit local `44b6944`. O tracking local não mostrou divergência, mas `git fetch origin` não foi possível porque o sandbox permite apenas leitura em `.git` e negou escrita em `.git/FETCH_HEAD`; o estado remoto atual não foi confirmado.
