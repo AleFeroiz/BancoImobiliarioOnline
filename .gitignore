@@ -6,6 +6,7 @@ build/
 coverage/
 .vite/
 .vitest/
+.tmp/
 
 # Local configuration and secrets
 .env

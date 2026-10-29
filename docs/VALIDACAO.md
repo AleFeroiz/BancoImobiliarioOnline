@@ -318,3 +318,10 @@
 - Viewports revisadas: desktop 1280 × 720 e móvel responsiva 390 × 844. A largura do documento permaneceu dentro da viewport e a ação ficou centralizada. Não foi usado dispositivo móvel físico nem Firefox.
 - Testes de servidor cobrem que outros bots não avançam durante a rolagem/movimento do bot ativo, compra inicial com três casas e hotel somente depois de outra visita. Também cobrem movimento sem reposicionamento antes da animação.
 - A pedido do usuário, a rolagem foi alongada de 1,8 s para 2,8 s e cada casa de 0,42 s para 0,75 s; teleporte e construção também foram desacelerados. A suíte completa é repetida pelo hook de commit após essa alteração de temporização.
+
+## 2026-10-29 — Prévia do dinheiro 3D no navegador
+
+- Iniciei uma partida Clássica local com uma pessoa e três bots. Os quatro cartões mostraram R$ 1.500.000; a mesa 3D carregou e a interação percorreu rolagem, movimento e painel de compra de Alameda Azul.
+- A cena visível confirmou que a mesa e os indicadores carregaram no cliente após a integração dos modelos de dinheiro. O painel central permaneceu sobre o tabuleiro e o enquadramento não permitiu distinguir com segurança as malhas de nota, prata e ouro; a aparência dessas peças com saldos diferentes continua pendente de revisão dedicada.
+- Portas usadas nesta sessão: Colyseus `2568` e Vite `5175`, com `VITE_ROOM_SERVER_URL` apontado ao servidor local. As portas usuais `2567` e `5173` não estavam acessíveis.
+- A cobertura automatizada de decomposição do saldo e a suíte completa estão registradas na frente que publicou a implementação (`135` testes, builds web e servidor).
