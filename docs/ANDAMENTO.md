@@ -18,7 +18,8 @@
 - A revisão visual no navegador confirmou uma sala Clássica com três bots, compra de Jardins do Norte por R$ 280.000 e saldo de R$ 1.220.000. Os pisos diferenciados apareceram no tabuleiro. A vista disponível era 877 × 877; estados com construções e viewports móvel/Firefox ainda aguardam inspeção.
 - A correção de coordenadas, o isolamento de loopback, as portas duplicadas e o índice de texto CUA foram registrados neste documento e no fluxo permanente de `AGENTS.md`.
 - `npm run verify` passou: 119 testes em 20 arquivos, build web e build do servidor. Três testes cobrem a cor integral dos grupos residenciais e as categorias especiais. O build mantém o aviso do chunk de cena de 974,19 kB acima de 500 kB.
-- Próximo passo: publicar as mudanças revisadas diretamente em `main` com o hook local, confirmar o push e depois revisar construções em jogo e a vista móvel/Firefox.
+- Publicação confirmada: commit `95f447c` está em `origin/main`; `git status` confirmou a branch sincronizada.
+- Próximo passo: revisar construções em jogo e a vista móvel/Firefox para completar a validação visual.
 
 ## Frente concluída — sequência visual, economia e câmera (2026-10-28)
 

@@ -29,4 +29,4 @@
 1. No navegador interno, partida Clássica com três bots: comprei Jardins do Norte; saldo caiu a R$ 1.220.000. Os pisos por região foram revisados em 877 × 877. A cena em viewport móvel, Firefox e estados com casas/hotel construídos continua sem revisão visual.
 2. npm run verify passou: 119 testes em 20 arquivos, build de cliente e servidor; os temas de piso têm três testes unitários.
 3. Falhas e correções estão anotadas acima e em AGENTS.md: Blender Z-up/GLB Y-up, iniciar servidores com loopback, evitar instâncias duplicadas e seguir índices atuais da API CUA.
-4. Próximo passo: buscar atualizações de origin, revisar o diff, commitar em main passando pelo hook e confirmar git push origin main.
+4. Publicação confirmada: o commit 95f447c está em origin/main; a branch ficou sincronizada. Próximo passo: revisar construções em jogo e a vista móvel/Firefox.
