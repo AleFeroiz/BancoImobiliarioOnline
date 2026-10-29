@@ -620,6 +620,9 @@ button:disabled{opacity:.55;cursor:not-allowed}
 .game-topline-camera-hint{position:fixed;top:69px;left:50%;z-index:5;transform:translateX(-50%);padding:5px 10px;border:1px solid rgba(105,132,97,.18);border-radius:999px;background:rgba(250,248,237,.72);color:#657664;font-size:7px;font-weight:700;letter-spacing:.08em;pointer-events:none;white-space:nowrap}
 .screen-game .scene-backdrop canvas{touch-action:none;cursor:grab}
 .screen-game .scene-backdrop canvas:active{cursor:grabbing}
+.screen-game{touch-action:none}
+.screen-game .turn-card,.screen-game .space-inspector{touch-action:pan-y}
+.screen-game .player-card{user-select:none;-webkit-user-select:none}
 .screen-game .turn-card.purchase-panel{width:min(540px,calc(100vw - 28px));padding:18px 20px}
 .screen-game .purchase-panel h2{margin-bottom:4px}
 .screen-game .purchase-panel>p{margin-bottom:7px}

@@ -1,6 +1,6 @@
 import { Canvas } from '@react-three/fiber'
 import { ContactShadows, Html, OrbitControls } from '@react-three/drei'
-import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
+import { memo, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { CanvasTexture, DoubleSide, PerspectiveCamera, Shape, ShapeGeometry, SRGBColorSpace, type Group, type Material, type Mesh, type MeshStandardMaterial } from 'three'
 import { useFrame, useThree } from '@react-three/fiber'
 import { useGLTF } from '@react-three/drei'
@@ -12,10 +12,66 @@ import { getPawnStepPath } from './pawnPath'
 import { getPropertyVisualChange } from './gameFeedback'
 import { getDiceRollRotation } from './dicePresentation'
 import { getRouletteFloorSectors } from './rouletteFloor'
+import { shouldStartCameraDrag } from './cameraDrag'
 import { BUILDING_ANIMATION_DURATION_MS, DICE_ANIMATION_DURATION_MS, LANDING_PULSE_DURATION_MS, PAWN_STEP_ANIMATION_DURATION_MS, PAWN_TELEPORT_ANIMATION_DURATION_MS, PROPERTY_HOTEL_LEVEL, getAnimationDuration, type AnimationSpeed } from '../../shared/game'
 
 type PropertyBuilding = { spaceId: number; ownerSessionId: string; houses: number; isMortgaged: boolean; ownerColor: string }
 type PlayerToken = { id: string; position: number; color: string; seatIndex: number; cash: number; characterType: 'pawn' | 'car' | 'motorcycle' | 'airplane'; activity?: string }
+
+type CameraOrbitControls = {
+  enabled: boolean
+  getAzimuthalAngle: () => number
+  getPolarAngle: () => number
+  setAzimuthalAngle: (angle: number) => void
+  setPolarAngle: (angle: number) => void
+  update: () => void
+}
+
+function CameraDragAnywhere({ enabled }: { enabled: boolean }) {
+  const { controls, gl } = useThree((state) => ({ controls: state.controls, gl: state.gl }))
+  const drag = useRef<{ pointerId: number; x: number; y: number } | null>(null)
+
+  useEffect(() => {
+    if (!enabled) return
+    const interactiveSelector = 'button, a, input, select, textarea, summary, [role="button"], [data-camera-drag="off"], .game-modal-backdrop, .game-event-card, .turn-card, .space-inspector'
+    const isInteractive = (target: EventTarget | null) => target instanceof Element && Boolean(target.closest(interactiveSelector))
+    const orbit = controls as CameraOrbitControls | null
+    const onPointerDown = (event: PointerEvent) => {
+      if (!shouldStartCameraDrag({ button: event.button, isCanvasTarget: event.target === gl.domElement, isInteractiveTarget: isInteractive(event.target) })) return
+      if (!orbit?.enabled) return
+      drag.current = { pointerId: event.pointerId, x: event.clientX, y: event.clientY }
+      event.preventDefault()
+    }
+    const onPointerMove = (event: PointerEvent) => {
+      const previous = drag.current
+      if (!previous || previous.pointerId !== event.pointerId || !orbit?.enabled) return
+      const deltaX = event.clientX - previous.x
+      const deltaY = event.clientY - previous.y
+      previous.x = event.clientX
+      previous.y = event.clientY
+      orbit.setAzimuthalAngle(orbit.getAzimuthalAngle() - deltaX * 0.006)
+      orbit.setPolarAngle(orbit.getPolarAngle() - deltaY * 0.005)
+      orbit.update()
+      event.preventDefault()
+    }
+    const finishDrag = (event: PointerEvent) => {
+      if (drag.current?.pointerId === event.pointerId) drag.current = null
+    }
+    window.addEventListener('pointerdown', onPointerDown, { passive: false })
+    window.addEventListener('pointermove', onPointerMove, { passive: false })
+    window.addEventListener('pointerup', finishDrag)
+    window.addEventListener('pointercancel', finishDrag)
+    return () => {
+      window.removeEventListener('pointerdown', onPointerDown)
+      window.removeEventListener('pointermove', onPointerMove)
+      window.removeEventListener('pointerup', finishDrag)
+      window.removeEventListener('pointercancel', finishDrag)
+      drag.current = null
+    }
+  }, [controls, enabled, gl.domElement])
+
+  return null
+}
 
 function ResponsiveCamera({ tilt, horizontal }: { tilt: number; horizontal: number }) {
   const { camera, size } = useThree()
@@ -36,8 +92,8 @@ function SpaceLabel({ name, size, ink, outline }: { name: string; size: number; 
   const { gl } = useThree()
   const texture = useMemo(() => {
     const canvas = document.createElement('canvas')
-    canvas.width = 1024
-    canvas.height = 512
+    canvas.width = 768
+    canvas.height = 384
     const context = canvas.getContext('2d')
     if (context) {
       context.clearRect(0, 0, canvas.width, canvas.height)
@@ -46,24 +102,24 @@ function SpaceLabel({ name, size, ink, outline }: { name: string; size: number; 
       context.fillStyle = ink
       context.strokeStyle = outline
       context.lineJoin = 'round'
-      context.lineWidth = 14
-      const fitted = fitSpaceLabel(name, 820, (text, fontSize) => {
+      context.lineWidth = 10.5
+      const fitted = fitSpaceLabel(name, 615, (text, fontSize) => {
         context.font = `700 ${fontSize}px system-ui, sans-serif`
         return context.measureText(text).width
-      })
+      }, 126, 78)
       context.font = `700 ${fitted.fontSize}px system-ui, sans-serif`
       const { lines } = fitted
-      const lineSpacing = lines.length > 1 ? 118 : 0
-      const firstLineY = lines.length > 2 ? 138 : lines.length > 1 ? 198 : 256
+      const lineSpacing = lines.length > 1 ? 89 : 0
+      const firstLineY = lines.length > 2 ? 104 : lines.length > 1 ? 149 : 192
       lines.forEach((line, index) => {
         const y = firstLineY + lineSpacing * index
-        context.strokeText(line, 512, y, 900)
-        context.fillText(line, 512, y, 900)
+        context.strokeText(line, 384, y, 675)
+        context.fillText(line, 384, y, 675)
       })
     }
     const map = new CanvasTexture(canvas)
     map.colorSpace = SRGBColorSpace
-    map.anisotropy = gl.capabilities.getMaxAnisotropy()
+    map.anisotropy = Math.min(4, gl.capabilities.getMaxAnisotropy())
     map.needsUpdate = true
     return map
   }, [gl, ink, name, outline])
@@ -79,13 +135,13 @@ function SpaceLabel({ name, size, ink, outline }: { name: string; size: number; 
 
 function AnimatedPawn({ player, seatIndex, reducedMotion, movementEnabled, moveMode, presentationSpeed, onMovementComplete }: { player: PlayerToken; seatIndex: number; reducedMotion: boolean; movementEnabled: boolean; moveMode: 'walk' | 'teleport'; presentationSpeed: AnimationSpeed; onMovementComplete: () => void }) {
   const group = useRef<Group>(null)
+  const { invalidate } = useThree()
   const { scene: tokenScene } = useGLTF('/assets/player-tokens.glb')
   const visualSpace = useRef(player.position)
   const hopPath = useRef<number[]>([])
   const hopStart = useRef({ x: 0, z: 0 })
   const elapsed = useRef(0)
   const hopDuration = useRef(getAnimationDuration(PAWN_STEP_ANIMATION_DURATION_MS, presentationSpeed) / 1000)
-  const idleTime = useRef(seatIndex * 0.8)
   const onMovementCompleteRef = useRef(onMovementComplete)
   onMovementCompleteRef.current = onMovementComplete
   const vehicleOffsets = [[-0.2, -0.2], [0.2, -0.2], [-0.2, 0.2], [0.2, 0.2]] as const
@@ -136,7 +192,6 @@ function AnimatedPawn({ player, seatIndex, reducedMotion, movementEnabled, moveM
     const pawn = group.current
     if (!pawn) return
     if (reducedMotion) return
-    idleTime.current += delta
     const path = hopPath.current
     if (path.length) {
       elapsed.current += delta
@@ -150,6 +205,7 @@ function AnimatedPawn({ player, seatIndex, reducedMotion, movementEnabled, moveM
         onMovementCompleteRef.current()
         return
       }
+      invalidate()
       const progress = Math.min((elapsed.current - hopIndex * hopDuration.current) / hopDuration.current, 1)
       const from = hopIndex === 0 ? hopStart.current : positionOnBoard(path[hopIndex - 1] ?? player.position)
       const to = positionOnBoard(path[hopIndex] ?? player.position)
@@ -160,8 +216,6 @@ function AnimatedPawn({ player, seatIndex, reducedMotion, movementEnabled, moveM
       pawn.rotation.z = Math.sin(progress * Math.PI) * 0.14
       return
     }
-    pawn.position.y = baseY + (Math.sin(idleTime.current * 3.8) + 1) * 0.025
-    if (player.characterType === 'pawn') pawn.rotation.y = Math.sin(idleTime.current * 1.2) * 0.08
   })
 
   return (
@@ -210,6 +264,7 @@ function ChanceRoulette({ size, trim }: { size: number; trim: string }) {
 
 function AnimatedDie({ position, rotation, sequence, value, reducedMotion, visible, presentationSpeed }: { position: [number, number, number]; rotation: [number, number, number]; sequence: number; value: number; reducedMotion: boolean; visible: boolean; presentationSpeed: AnimationSpeed }) {
   const group = useRef<Group>(null)
+  const { invalidate } = useThree()
   const elapsed = useRef(0)
   const startRotation = useRef([rotation[0], rotation[1], rotation[2]])
 
@@ -224,6 +279,7 @@ function AnimatedDie({ position, rotation, sequence, value, reducedMotion, visib
     const die = group.current
     const duration = getAnimationDuration(DICE_ANIMATION_DURATION_MS, presentationSpeed) / 1000
     if (!die || !visible || sequence === 0 || reducedMotion || elapsed.current >= duration) return
+    invalidate()
     elapsed.current = Math.min(duration, elapsed.current + delta)
     const progress = elapsed.current / duration
     die.rotation.set(...getDiceRollRotation(startRotation.current as [number, number, number], progress))
@@ -244,6 +300,7 @@ function AnimatedDie({ position, rotation, sequence, value, reducedMotion, visib
 
 function AnimatedBuilding({ spaceId, houses, ownerColor, ownerSessionId, reducedMotion, presentationSpeed }: { spaceId: number; houses: number; ownerColor: string; ownerSessionId: string; reducedMotion: boolean; presentationSpeed: AnimationSpeed }) {
   const group = useRef<Group>(null)
+  const { invalidate } = useThree()
   const elapsed = useRef(0)
   const [displayHouses, setDisplayHouses] = useState(houses)
   const [displayColor, setDisplayColor] = useState(ownerColor)
@@ -280,6 +337,7 @@ function AnimatedBuilding({ spaceId, houses, ownerColor, ownerSessionId, reduced
   useFrame((_, delta) => {
     const building = group.current
     if (!building || !transition.current || reducedMotion) return
+    invalidate()
     elapsed.current += delta
     const progress = Math.min(elapsed.current / (getAnimationDuration(BUILDING_ANIMATION_DURATION_MS, presentationSpeed) / 1000), 1)
     const eased = 1 - (1 - progress) ** 3
@@ -347,6 +405,7 @@ function AnimatedBuilding({ spaceId, houses, ownerColor, ownerSessionId, reduced
 
 function AnimatedMortgageBadge({ position, mortgaged, reducedMotion, presentationSpeed }: { position: [number, number, number]; mortgaged: boolean; reducedMotion: boolean; presentationSpeed: AnimationSpeed }) {
   const group = useRef<Group>(null)
+  const { invalidate } = useThree()
   const elapsed = useRef(0)
   const previous = useRef(mortgaged)
   const active = useRef(false)
@@ -364,6 +423,7 @@ function AnimatedMortgageBadge({ position, mortgaged, reducedMotion, presentatio
   }, [mortgaged, reducedMotion])
   useFrame((_, delta) => {
     if (!group.current || reducedMotion || !active.current) return
+    invalidate()
     const duration = getAnimationDuration(300, presentationSpeed) / 1000
     elapsed.current = Math.min(duration, elapsed.current + delta)
     const progress = elapsed.current / duration
@@ -476,11 +536,13 @@ function Board({ players, propertyBuildings, highlightedSpaceIds, selectionMode,
 
 function LandingPulse({ sequence, reducedMotion, size, presentationSpeed }: { sequence: number; reducedMotion: boolean; size: number; presentationSpeed: AnimationSpeed }) {
   const ring = useRef<Group>(null)
+  const { invalidate } = useThree()
   const elapsed = useRef(0)
   useEffect(() => { elapsed.current = 0 }, [sequence])
   useFrame((_, delta) => {
     const duration = getAnimationDuration(LANDING_PULSE_DURATION_MS, presentationSpeed) / 1000
     if (!ring.current || reducedMotion || elapsed.current >= duration) return
+    invalidate()
     elapsed.current = Math.min(duration, elapsed.current + delta)
     const progress = elapsed.current / duration
     const scale = 0.72 + progress * 0.5
@@ -500,16 +562,68 @@ function CornerLandmark({ type, position }: { type: 'stadium' | 'airport'; posit
   return <primitive object={model} position={position} scale={type === 'stadium' ? 0.64 : 0.48} />
 }
 
-export default function BoardScene({ players, propertyBuildings, highlightedSpaceIds = [], selectionMode = false, landingPulseSpaceId = -1, landingPulseSequence = 0, diceRollSequence = 0, dice = [0, 0], diceVisible = false, diceResultVisible = false, presentationSpeed = 0.5, reducedMotion = false, pawnMovementEnabled = false, pawnMoveMode = 'walk', cameraEnabled = true, onMovementComplete, onSelectSpace }: { players: PlayerToken[]; propertyBuildings: PropertyBuilding[]; highlightedSpaceIds?: readonly number[]; selectionMode?: boolean; landingPulseSpaceId?: number; landingPulseSequence?: number; diceRollSequence?: number; dice?: [number, number]; diceVisible?: boolean; diceResultVisible?: boolean; presentationSpeed?: AnimationSpeed; reducedMotion?: boolean; pawnMovementEnabled?: boolean; pawnMoveMode?: 'walk' | 'teleport'; cameraEnabled?: boolean; onMovementComplete: () => void; onSelectSpace: (spaceId: number) => void }) {
+type BoardSceneProps = { players: PlayerToken[]; propertyBuildings: PropertyBuilding[]; highlightedSpaceIds?: readonly number[]; selectionMode?: boolean; landingPulseSpaceId?: number; landingPulseSequence?: number; diceRollSequence?: number; dice?: [number, number]; diceVisible?: boolean; diceResultVisible?: boolean; presentationSpeed?: AnimationSpeed; reducedMotion?: boolean; pawnMovementEnabled?: boolean; pawnMoveMode?: 'walk' | 'teleport'; cameraEnabled?: boolean; onMovementComplete: () => void; onSelectSpace: (spaceId: number) => void }
+
+function BoardSceneCanvas({ players, propertyBuildings, highlightedSpaceIds = [], selectionMode = false, landingPulseSpaceId = -1, landingPulseSequence = 0, diceRollSequence = 0, dice = [0, 0], diceVisible = false, diceResultVisible = false, presentationSpeed = 0.5, reducedMotion = false, pawnMovementEnabled = false, pawnMoveMode = 'walk', cameraEnabled = true, onMovementComplete, onSelectSpace }: BoardSceneProps) {
   return (
-    <Canvas camera={{ position: [12.5, 15.5, 15.5], fov: 34 }} shadows dpr={[1, 1.6]}>
+    <Canvas camera={{ position: [12.5, 15.5, 15.5], fov: 34 }} shadows dpr={[1, 1.25]} frameloop="demand">
       <color attach="background" args={['#9bbcc1']} />
       <ambientLight intensity={0.86} />
-      <directionalLight position={[7, 13, 5]} intensity={1.55} castShadow shadow-mapSize={[1024, 1024]} />
+      <directionalLight position={[7, 13, 5]} intensity={1.55} castShadow shadow-mapSize={[512, 512]} />
       <ResponsiveCamera tilt={16} horizontal={45} />
       <OrbitControls makeDefault enabled={cameraEnabled} enablePan={false} enableZoom={false} enableRotate minPolarAngle={Math.PI / 12} maxPolarAngle={Math.PI / 2} rotateSpeed={0.72} enableDamping dampingFactor={0.1} />
+      <CameraDragAnywhere enabled={cameraEnabled} />
       <Board players={players} propertyBuildings={propertyBuildings} highlightedSpaceIds={highlightedSpaceIds} selectionMode={selectionMode} landingPulseSpaceId={landingPulseSpaceId} landingPulseSequence={landingPulseSequence} diceRollSequence={diceRollSequence} dice={dice} diceVisible={diceVisible} diceResultVisible={diceResultVisible} presentationSpeed={presentationSpeed} reducedMotion={reducedMotion} pawnMovementEnabled={pawnMovementEnabled} pawnMoveMode={pawnMoveMode} onMovementComplete={onMovementComplete} onSelectSpace={onSelectSpace} />
-      <ContactShadows position={[0, -0.46, 0]} opacity={0.25} scale={18} blur={2.5} far={5} />
+      <ContactShadows position={[0, -0.46, 0]} opacity={0.25} scale={18} blur={2.5} far={5} frames={1} resolution={256} smooth={false} />
     </Canvas>
   )
+}
+
+function samePlayers(first: PlayerToken[], second: PlayerToken[]) {
+  return first.length === second.length && first.every((player, index) => {
+    const other = second[index]
+    return Boolean(other && player.id === other.id && player.position === other.position && player.color === other.color && player.seatIndex === other.seatIndex && player.characterType === other.characterType && player.activity === other.activity)
+  })
+}
+
+function sameBuildings(first: PropertyBuilding[], second: PropertyBuilding[]) {
+  return first.length === second.length && first.every((building, index) => {
+    const other = second[index]
+    return Boolean(other && building.spaceId === other.spaceId && building.ownerSessionId === other.ownerSessionId && building.houses === other.houses && building.isMortgaged === other.isMortgaged && building.ownerColor === other.ownerColor)
+  })
+}
+
+function sameNumbers(first: readonly number[], second: readonly number[]) {
+  return first.length === second.length && first.every((value, index) => value === second[index])
+}
+
+function areScenePropsEqual(first: BoardSceneProps, second: BoardSceneProps) {
+  return samePlayers(first.players, second.players)
+    && sameBuildings(first.propertyBuildings, second.propertyBuildings)
+    && sameNumbers(first.highlightedSpaceIds ?? [], second.highlightedSpaceIds ?? [])
+    && first.selectionMode === second.selectionMode
+    && first.landingPulseSpaceId === second.landingPulseSpaceId
+    && first.landingPulseSequence === second.landingPulseSequence
+    && first.diceRollSequence === second.diceRollSequence
+    && first.dice?.[0] === second.dice?.[0]
+    && first.dice?.[1] === second.dice?.[1]
+    && first.diceVisible === second.diceVisible
+    && first.diceResultVisible === second.diceResultVisible
+    && first.presentationSpeed === second.presentationSpeed
+    && first.reducedMotion === second.reducedMotion
+    && first.pawnMovementEnabled === second.pawnMovementEnabled
+    && first.pawnMoveMode === second.pawnMoveMode
+    && first.cameraEnabled === second.cameraEnabled
+}
+
+const MemoizedBoardScene = memo(BoardSceneCanvas, areScenePropsEqual)
+
+export default function BoardScene(props: BoardSceneProps) {
+  const movementCallback = useRef(props.onMovementComplete)
+  const selectCallback = useRef(props.onSelectSpace)
+  movementCallback.current = props.onMovementComplete
+  selectCallback.current = props.onSelectSpace
+  const onMovementComplete = useCallback(() => movementCallback.current(), [])
+  const onSelectSpace = useCallback((spaceId: number) => selectCallback.current(spaceId), [])
+  return <MemoizedBoardScene {...props} onMovementComplete={onMovementComplete} onSelectSpace={onSelectSpace} />
 }

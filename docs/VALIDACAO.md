@@ -1,5 +1,14 @@
 # Validação visual e de navegador
 
+## 2026-10-29 — Otimização de renderização e gesto global de câmera
+
+- `npm run verify`: 171 testes em 31 arquivos passaram; builds frontend e servidor passaram. `git diff --check` passou. O build mantém aviso de chunk GLTF acima de 500 KB: 955,19 KB (259,21 KB gzip), carregado quando a partida abre.
+- A implementação anterior de `ContactShadows` no Drei tinha `frames=Infinity`; a cena era capturada e o mapa desfocado a cada frame. Agora a captura ocorre uma vez em 256 px sem desfoque duplicado. O mapa de sombra direcional passou de 1024² para 512²; DPR máximo caiu de 1,6 para 1,25. Os dois canvases deixaram de animar continuamente em repouso.
+- A cena de 3D não é reconciliada a cada tick do relógio quando os valores visuais não mudam. O módulo principal caiu de 1.419,60 KB (405,36 KB gzip) para 458,01 KB (143,60 KB gzip); o HUD 3D do dinheiro agora carrega sob demanda quando uma partida abre. Os 40 rótulos usam 768×384 em vez de 1024×512, reduzindo seu volume nominal de textura em 43,75%.
+- Em partida Clássica local com três bots, observei rolagem, movimento do peão, chegada a propriedade e carta Sorte em viewport 690×880. A cena animou com renderização sob demanda. Um arraste pelo cartão de jogador sem controle girou a mesa; o botão “Não comprar” confirmou a ação sem efeito colateral de câmera.
+- Os handlers usam Pointer Events e o mesmo caminho para toque e mouse; o teste automatizado confirma que áreas interativas não iniciam a rotação. Não foi possível revisar aparelho físico nem viewport de 390×844 nesta sessão.
+- `graphify update .` foi tentado após as alterações, mas a CLI não está instalada; o MCP disponível continua apontando para outro repositório.
+
 ## 2026-10-29 — Dinheiro na HUD, roleta, cartas e dados
 
 - `npm run verify`: 165 testes em 29 arquivos passaram; builds web e de servidor passaram. `git diff --check` passou. O aviso de bundle acima de 500 kB permanece conhecido.

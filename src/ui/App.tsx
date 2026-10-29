@@ -16,9 +16,10 @@ import { appendGameFeedback, type GameFeedbackItem } from './feedbackQueue'
 import { playGameSound, startGameMusic, stopGameMusic, unlockGameAudio } from './gameAudio'
 import { getTurnActivityLabel, shouldShowTurnCard } from './turnActivity'
 import { getBoardSpaceInteraction } from './boardInteraction'
-import { CashHudOverlay, CashHudSymbols } from './CashHud'
+import { CashHudSymbols } from './CashHudSymbols'
 import { shouldShowRolledDice } from './dicePresentation'
 import { toggleSelection } from './multiSelect'
+import { areNumberPairsEqual, areRecordArraysEqual, areRecordMapsEqual } from './snapshotStability'
 
 type Mode = GameMode
 type Screen = 'home' | 'room' | 'game'
@@ -26,6 +27,7 @@ type TurnPhase = 'roll' | 'rolling' | 'moving' | 'resolve' | 'purchase' | 'jail'
 type SyncedPlayer = LobbyPlayer & { sessionId: string; cash: number; isJailed: boolean; jailTurns: number; isBankrupt: boolean; finalCash: number; finalNetWorth: number; tieBreakRoll: number }
 type TradeOfferView = { id: number; fromSessionId: string; toSessionId: string; cashOffered: number; cashRequested: number; propertiesOffered: number[]; propertiesRequested: number[] }
 const BoardScene = lazy(() => import('./BoardScene'))
+const CashHudOverlay = lazy(() => import('./CashHud').then(({ CashHudOverlay }) => ({ default: CashHudOverlay })))
 
 function parseTradeIds(value: string) {
   return value ? value.split(',').map(Number).filter(Number.isInteger) : []
@@ -378,8 +380,9 @@ function App() {
         }
       }
       previousFeedbackSnapshot.current = { description: snapshot.landingDescription, diceSequence: snapshot.diceSequence, players: nextPlayerFacts, properties: nextPropertyFacts }
-      setRoomPlayers(nextPlayers)
-      setRoomProperties(new Map(snapshot.properties.entries()))
+      setRoomPlayers((current) => areRecordArraysEqual(current, nextPlayers) ? current : nextPlayers)
+      const nextProperties = new Map(snapshot.properties.entries())
+      setRoomProperties((current) => areRecordMapsEqual(current, nextProperties) ? current : nextProperties)
       setRoomCode(snapshot.roomCode)
       setMode(snapshot.mode)
       setAnimationSpeed(snapshot.animationSpeed)
@@ -394,7 +397,10 @@ function App() {
       setPhaseSeconds(snapshot.phaseSeconds)
       setTurnPhase(snapshot.turnPhase)
       setPawnMoveMode(snapshot.pawnMoveMode === 'teleport' ? 'teleport' : 'walk')
-      setDice([snapshot.diceOne, snapshot.diceTwo])
+      setDice((current) => {
+        const next = [snapshot.diceOne, snapshot.diceTwo] as [number, number]
+        return areNumberPairsEqual(current, next) ? current : next
+      })
       setLandingDescription(snapshot.landingDescription)
       setActiveCardTitle(snapshot.activeCardTitle)
       setActiveCardDescription(snapshot.activeCardDescription)
@@ -611,7 +617,7 @@ function App() {
       <div className="scene-backdrop">
         {sceneReady && (
           <Suspense fallback={<div className="scene-placeholder" aria-hidden="true" />}>
-            <BoardScene players={playerTokens} propertyBuildings={propertyBuildings} highlightedSpaceIds={highlightedSpaceIds} selectionMode={(turnPhase === 'world-cup' || turnPhase === 'world-tour') && isMyTurn && !isPresentationAnimating} landingPulseSpaceId={landingPulseSpaceId} landingPulseSequence={landingPulseSequence} diceRollSequence={diceRollSequence} dice={dice} diceVisible={showDice} diceResultVisible={turnPhase === 'moving' && diceForPawnMovement} presentationSpeed={presentationSpeed} reducedMotion={reducedMotion} pawnMovementEnabled={turnPhase === 'moving'} pawnMoveMode={pawnMoveMode} cameraEnabled={!modalVisible && turnPhase !== 'ended' && !isPresentationAnimating} onMovementComplete={() => setPresentationStage('idle')} onSelectSpace={handleSelectSpace} />
+            <BoardScene players={playerTokens} propertyBuildings={propertyBuildings} highlightedSpaceIds={highlightedSpaceIds} selectionMode={(turnPhase === 'world-cup' || turnPhase === 'world-tour') && isMyTurn && !isPresentationAnimating} landingPulseSpaceId={landingPulseSpaceId} landingPulseSequence={landingPulseSequence} diceRollSequence={diceRollSequence} dice={dice} diceVisible={showDice} diceResultVisible={turnPhase === 'moving' && diceForPawnMovement} presentationSpeed={presentationSpeed} reducedMotion={reducedMotion} pawnMovementEnabled={turnPhase === 'moving'} pawnMoveMode={pawnMoveMode} cameraEnabled={screen === 'game' && !modalVisible && turnPhase !== 'ended' && !isPresentationAnimating} onMovementComplete={() => setPresentationStage('idle')} onSelectSpace={handleSelectSpace} />
           </Suspense>
         )}
       </div>
@@ -892,7 +898,7 @@ function App() {
           <div className="game-bottom"><span className="game-sync-label">JOGADA SINCRONIZADA · {modeDetails[mode].title.toUpperCase()}</span><div className="game-session-tools">{animationSpeedControl}<button className="game-preference" aria-pressed={soundEnabled} aria-label={`Áudio da partida ${soundEnabled ? 'ativado' : 'desativado'}`} title={`Trilha e efeitos ${soundEnabled ? 'ativados' : 'desativados'}`} onClick={() => { unlockGameAudio(); setSoundEnabled((enabled) => !enabled) }}>{soundEnabled ? '♫' : '♪̸'}</button><button className="game-preference" aria-pressed={reducedMotion} aria-label={`Movimento reduzido ${reducedMotion ? 'ativado' : 'desativado'}`} title={`Movimento reduzido ${reducedMotion ? 'ativado' : 'desativado'}`} onClick={() => setReducedMotion((enabled) => !enabled)}>◌</button><button className="game-preference" aria-label="Ajuda" aria-expanded={showHelp} aria-controls="game-help-dialog" onClick={() => setShowHelp((open) => !open)}>?</button></div><button className="leave-button" onClick={() => void leaveRoom()}>Sair da mesa</button></div>
         </section>
       )}
-      {screen === 'game' && <CashHudOverlay players={roomPlayers.map((player) => ({ id: player.sessionId, cash: player.cash }))} />}
+      {screen === 'game' && <Suspense fallback={null}><CashHudOverlay players={roomPlayers.map((player) => ({ id: player.sessionId, cash: player.cash }))} /></Suspense>}
       {showHelp && <div className="help-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setShowHelp(false) }}><section id="game-help-dialog" className="help-dialog" role="dialog" aria-modal="true" aria-labelledby="help-title"><button className="help-close" onClick={() => setShowHelp(false)} aria-label="Fechar ajuda">×</button><span className="eyebrow">GUIA RÁPIDO</span><h2 id="help-title">Como jogar</h2><p>Jogue com amigos na mesma sala. Na sua vez, lance os dados, acompanhe o peão e responda à ação da casa.</p><ul><li><strong>20 segundos:</strong> sem ação, os dados são lançados automaticamente.</li><li><strong>10 segundos:</strong> para decidir. Compra sem resposta é recusada; cobranças e eventos são confirmados automaticamente. Na prisão, o turno é pulado; a pessoa sai depois de perder três turnos.</li><li><strong>Copa do Mundo:</strong> escolha uma propriedade; o aluguel dela triplica até outra sede ser escolhida.</li><li><strong>Volta ao Mundo:</strong> viaje para uma propriedade sua, livre ou para uma casa especial. A chegada resolve normalmente, sem bônus da Partida.</li><li><strong>Comprar:</strong> propriedades livres podem ser compradas pelo preço indicado; recusar mantém o terreno livre.</li><li><strong>Dinheiro:</strong> sons ascendentes indicam entrada; sons descendentes indicam saída. Use o controle de áudio para silenciar.</li><li><strong>Partida:</strong> no Clássico vence o maior patrimônio ao fim de 30 minutos. No Express, vence o maior saldo após seis rodadas.</li></ul><button className="roll-button help-ok" onClick={() => setShowHelp(false)}>Entendi</button></section></div>}
     </main>
   )

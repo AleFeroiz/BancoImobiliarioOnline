@@ -2,6 +2,17 @@
 
 > Retrato de trabalho para retomar o projeto entre sessões. Para requisitos e decisões, consulte os documentos de origem indicados em `AGENTS.md`.
 
+## Frente concluída — otimização de renderização (2026-10-29)
+
+- Pedido confirmado: analisar o projeto por completo, remover gargalos de travamento e validar em partida real; após a otimização, permitir girar a câmera ao arrastar/tocar em qualquer área sem controle interativo, inclusive no celular.
+- Estado inicial: `main` limpa e alinhada a `origin/main`. A cena React Three Fiber mantinha uma sombra de contato renderizando a cena e desfocando o mapa em todos os frames; ambas as cenas WebGL tinham loop contínuo, e o relógio remoto recriava snapshots de jogadores, imóveis e dados a cada atualização.
+- Auditoria: a implementação instalada de Drei deixava `ContactShadows` em `frames=Infinity`, fazendo uma captura de profundidade e quatro passagens de desfoque por frame. Os dois canvases WebGL e os peões em repouso também renderizavam sem parar. Ticks de sala substituíam dados de jogadores, propriedades e dados sem mudança visual; o módulo estático de símbolos de dinheiro incluía o Three.js no pacote inicial. Cada um dos 40 rótulos ocupava 1024×512.
+- Implementação: sombra de contato em captura única de 256 px, sombras direcionais de 512 px, tetos DPR 1,25, canvases sob demanda com retomada explícita em animações, peões estáticos em repouso, cena memorizada por valores visuais, snapshots estáveis, HUD de dinheiro sob demanda e carregado só na partida, e rótulos 768×384 com anisotropia 4. O arraste por mouse/toque gira a câmera também em áreas sem controle interativo; botões e janelas ficam excluídos.
+- Validação: `npm run verify` passou com 171 testes em 31 arquivos e builds web/servidor. O pacote inicial caiu de 1.419,60 KB (405,36 KB gzip) antes da separação do HUD para 458,01 KB (143,60 KB gzip), redução de 67,7% em bytes e 64,6% gzip. Em partida Clássica com três bots, observei dados, movimento do peão, chegada e carta Sorte em viewport 690×880; arraste sobre cartão sem ação girou a câmera e o botão de compra respondeu. A navegação via pointer events inclui toque, mas aparelho físico/viewport de 390 px não estava disponível para revisão manual.
+- Graphify: o MCP continuou apontando para `GustavoGLD/Hospital` e `graphify update .` falhou porque a CLI não está instalada. O build mantém um aviso conhecido: o chunk GLTF, carregado somente ao abrir a partida, tem 955,19 KB (259,21 KB gzip).
+- Nota de trabalho: [otimização de renderização](trabalho/otimizacao-renderizacao.md).
+- Próximo passo: acompanhar desempenho e legibilidade em aparelhos móveis modestos; escolher e validar uma hospedagem Node para o multiplayer antes de lançamento.
+
 ## Estado observado — 2026-10-28
 
 - A base do produto está implementada: React + TypeScript + Vite, cena React Three Fiber, regras desacopladas e servidor autoritativo Colyseus, conforme `README.md` e `docs/PLANO.md`.
