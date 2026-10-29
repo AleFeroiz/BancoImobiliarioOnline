@@ -6,7 +6,9 @@
 
 - A partida agora publica uma sequência de dados autoritativa que anima também rolagens repetidas com o mesmo resultado. O cliente segura o peão durante a animação dos dados; depois da rolagem, anima os passos e só então libera a ação da casa.
 - O servidor valida que o vendedor está na vez ao abrir leilão, bloqueia início e lances durante dívida, e só permite vender construções/hipotecar durante dívida enquanto o saldo continuar insuficiente. Testes de integração cobrem essas restrições.
-- A câmera foi elevada no desktop, tablet e retrato móvel. Os testes de enquadramento passaram, mas não houve captura visual para confirmar legibilidade e encaixe: o navegador integrado não alcançou o Vite local (timeout), e o controle do Chrome encerrou a interação antes de navegar.
+- Revisei a partida em Chrome headless com WebGL por software em desktop (1440 × 900) e celular (390 × 844). O tabuleiro coube nos dois viewports sem rolagem horizontal; no celular a mesa inteira permaneceu visível. A cena ainda fica pequena em celular, mas o enquadramento deixa o tabuleiro completo legível como conjunto.
+- Em uma partida local real, acompanhei três lançamentos: cada um mostrou “Rolando os dados…” antes de “Peão em movimento…”, e as ações da casa só apareceram depois do movimento. No terceiro lançamento, a janela “Comprar Costa Branca” apareceu após o peão parar, com as opções de compra e recusa habilitadas.
+- Capturas inspecionadas: `.codex-tmp/review-desktop-initial.png`, `.codex-tmp/review-mobile-initial.png` e `.codex-tmp/review-purchase.png`. Os arquivos são temporários e não fazem parte do repositório.
 - `npm run verify`: 116 testes passaram; build web e build do servidor passaram. `git diff --check` passou. O build mantém o aviso conhecido de chunk da cena 3D acima de 500 kB.
 
 ## 2026-10-28 — Leilão voluntário entre jogadores
