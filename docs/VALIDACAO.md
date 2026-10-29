@@ -1,5 +1,13 @@
 # Validação visual e de navegador
 
+## 2026-10-29 — Correção após relato de 2 FPS
+
+- `npm run verify`: 176 testes em 32 arquivos passaram; builds frontend e servidor passaram. O aviso do chunk GLTF permanece (955,20 KB / 259,21 KB gzip). `git diff --check` passou.
+- Em uma partida local Colyseus com três bots, ativei o medidor e arrastei a câmera pelo gramado. A leitura indicou 77 FPS / 13,0 ms e depois 75 FPS / 13,3 ms. O tabuleiro continuou visível e os textos permaneceram legíveis no ângulo girado; o FPS voltou a “ocioso” quando a cena parou e o botão desligou a sobreposição.
+- A validação visual aconteceu no navegador integrado com a cena de desenvolvimento local, não no Chrome standalone. A sessão CUA não disponibilizou uma conexão Chrome controlável; não contornei a proteção que impede selecionar a janela ativa.
+- Otimizações cobertas por esta revisão: sem shadow map direcional dinâmico, só o piso das casas participa do raycast, filete de borda unido numa geometria, rótulos 512×256, antialiasing nativo desligado e Lambert nas faces dos pisos.
+- `graphify update .` não rodou: a CLI não está instalada e o MCP Graphify disponível aponta para outro repositório.
+
 ## 2026-10-29 — Medidor opcional de FPS
 
 - `npm run verify`: 175 testes em 32 arquivos passaram; builds frontend e servidor passaram. O build mantém o aviso conhecido do GLTF acima de 500 KB (955,19 KB / 259,21 KB gzip). `git diff --check` passou.

@@ -2,6 +2,16 @@
 
 > Retrato de trabalho para retomar o projeto entre sessões. Para requisitos e decisões, consulte os documentos de origem indicados em `AGENTS.md`.
 
+## Correção do desempenho baixo — implementação validada localmente (2026-10-29)
+
+- Relato confirmado: após publicar o medidor, o usuário observou demora até a leitura e cerca de 2 FPS ao testar a partida.
+- Estado inicial: `main` em `866b8b9`, após a função do medidor. A cena usava sombras direcionais dinâmicas, quatro malhas de acabamento por casa, hit-testing em todos os meshes da cena e rótulos de 768×384. O Canvas adicional do dinheiro é sob demanda e não invalida a cena principal durante o arraste; portanto, não há evidência de que as peças de dinheiro sejam a origem principal.
+- Implementação: desligar o passe de sombras direcionais dinâmicas, consolidar a moldura de cada casa numa malha, deixar o piso como única superfície raycastável e reduzir texturas de rótulo. O medidor exibe a primeira amostra após dois frames e sinaliza repouso mesmo sem janela completa.
+- Validação local: em uma partida Clássica com três bots no navegador integrado, arrastei a câmera. O medidor mostrou 77 FPS/13,0 ms e depois 75 FPS/13,3 ms; observei o tabuleiro, os rótulos, casas Sorte e HUD após o giro. `npm run verify` passou com 176 testes em 32 arquivos e builds web/servidor.
+- Chrome standalone segue sem revisão visual: a sessão disponibilizada ao CUA não lista conexão de navegador Chrome controlável; o teste local foi feito no navegador integrado. `graphify update .` falhou porque a CLI não está instalada e o MCP Graphify disponível aponta para outro repositório.
+- Nota de trabalho: [otimização para desempenho baixo](trabalho/otimizacao-2fps.md).
+- Próximo passo: publicar a correção em `main`; pedir ao usuário para comparar o FPS no mesmo Chrome/hardware, porque esse navegador não está conectado à automação desta sessão.
+
 ## Medidor de FPS — implementação concluída; Chrome pendente (2026-10-29)
 
 - Pedido confirmado: adicionar um medidor opcional de FPS na partida e testar o jogo no Chrome, inclusive movimentando a câmera para observar o desempenho.

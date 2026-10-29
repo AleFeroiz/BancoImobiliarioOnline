@@ -1,7 +1,7 @@
 import { Canvas } from '@react-three/fiber'
 import { ContactShadows, Html, OrbitControls } from '@react-three/drei'
 import { memo, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { CanvasTexture, DoubleSide, PerspectiveCamera, Shape, ShapeGeometry, SRGBColorSpace, type Group, type Material, type Mesh, type MeshStandardMaterial } from 'three'
+import { CanvasTexture, DoubleSide, Path, PerspectiveCamera, Shape, ShapeGeometry, SRGBColorSpace, type Group, type Material, type Mesh, type MeshStandardMaterial } from 'three'
 import { useFrame, useThree } from '@react-three/fiber'
 import { useGLTF } from '@react-three/drei'
 import { boardSpaces, positionOnBoard } from '../game/board'
@@ -27,6 +27,32 @@ type CameraOrbitControls = {
   setAzimuthalAngle: (angle: number) => void
   setPolarAngle: (angle: number) => void
   update: () => void
+}
+
+const skipRaycast = () => {}
+const tileTrimGeometryCache = new Map<number, ShapeGeometry>()
+
+function getTileTrimGeometry(size: number) {
+  const cached = tileTrimGeometryCache.get(size)
+  if (cached) return cached
+  const outer = size * 0.472
+  const inner = outer - 0.035
+  const shape = new Shape()
+  shape.moveTo(-outer, -outer)
+  shape.lineTo(outer, -outer)
+  shape.lineTo(outer, outer)
+  shape.lineTo(-outer, outer)
+  shape.closePath()
+  const hole = new Path()
+  hole.moveTo(-inner, -inner)
+  hole.lineTo(-inner, inner)
+  hole.lineTo(inner, inner)
+  hole.lineTo(inner, -inner)
+  hole.closePath()
+  shape.holes.push(hole)
+  const geometry = new ShapeGeometry(shape)
+  tileTrimGeometryCache.set(size, geometry)
+  return geometry
 }
 
 function CameraDragAnywhere({ enabled }: { enabled: boolean }) {
@@ -94,8 +120,8 @@ function SpaceLabel({ name, size, ink, outline }: { name: string; size: number; 
   const { gl } = useThree()
   const texture = useMemo(() => {
     const canvas = document.createElement('canvas')
-    canvas.width = 768
-    canvas.height = 384
+    canvas.width = 512
+    canvas.height = 256
     const context = canvas.getContext('2d')
     if (context) {
       context.clearRect(0, 0, canvas.width, canvas.height)
@@ -104,19 +130,19 @@ function SpaceLabel({ name, size, ink, outline }: { name: string; size: number; 
       context.fillStyle = ink
       context.strokeStyle = outline
       context.lineJoin = 'round'
-      context.lineWidth = 10.5
-      const fitted = fitSpaceLabel(name, 615, (text, fontSize) => {
+      context.lineWidth = 7
+      const fitted = fitSpaceLabel(name, 410, (text, fontSize) => {
         context.font = `700 ${fontSize}px system-ui, sans-serif`
         return context.measureText(text).width
-      }, 126, 78)
+      }, 84, 52)
       context.font = `700 ${fitted.fontSize}px system-ui, sans-serif`
       const { lines } = fitted
-      const lineSpacing = lines.length > 1 ? 89 : 0
-      const firstLineY = lines.length > 2 ? 104 : lines.length > 1 ? 149 : 192
+      const lineSpacing = lines.length > 1 ? 59 : 0
+      const firstLineY = lines.length > 2 ? 69 : lines.length > 1 ? 99 : 128
       lines.forEach((line, index) => {
         const y = firstLineY + lineSpacing * index
-        context.strokeText(line, 384, y, 675)
-        context.fillText(line, 384, y, 675)
+        context.strokeText(line, 256, y, 450)
+        context.fillText(line, 256, y, 450)
       })
     }
     const map = new CanvasTexture(canvas)
@@ -128,7 +154,7 @@ function SpaceLabel({ name, size, ink, outline }: { name: string; size: number; 
   useEffect(() => () => texture.dispose(), [texture])
 
   return (
-    <mesh position={[0, 0.085, size * 0.12]} rotation={[-Math.PI / 2, 0, 0]}>
+    <mesh position={[0, 0.085, size * 0.12]} rotation={[-Math.PI / 2, 0, 0]} raycast={skipRaycast}>
       <planeGeometry args={[size * 0.84, size * 0.66]} />
       <meshBasicMaterial map={texture} transparent toneMapped={false} />
     </mesh>
@@ -159,8 +185,9 @@ function AnimatedPawn({ player, seatIndex, reducedMotion, movementEnabled, moveM
     clone.traverse((object) => {
       const mesh = object as Mesh
       if (!mesh.isMesh) return
-      mesh.castShadow = true
-      mesh.receiveShadow = true
+      mesh.castShadow = false
+      mesh.receiveShadow = false
+      mesh.raycast = skipRaycast
       const recolor = (material: Material): Material => {
         const instance = material.clone()
         if (instance.name.startsWith('OWNER_TINT') && 'color' in instance) (instance as MeshStandardMaterial).color.set(player.color)
@@ -223,11 +250,11 @@ function AnimatedPawn({ player, seatIndex, reducedMotion, movementEnabled, moveM
   return (
     <group ref={group} position={[initial.x + offsetX, baseY, initial.z + offsetZ]} rotation={[0, player.position <= 10 ? Math.PI / 2 : player.position <= 20 ? Math.PI : player.position <= 30 ? -Math.PI / 2 : 0, 0]}>
       {player.characterType === 'pawn' ? <>
-        <mesh castShadow position={[0, 0.17, 0]}>
+        <mesh position={[0, 0.17, 0]} raycast={skipRaycast}>
           <cylinderGeometry args={[0.16, 0.23, 0.25, 7]} />
           <meshStandardMaterial color={player.color} roughness={0.42} />
         </mesh>
-        <mesh castShadow position={[0, 0.39, 0]}>
+        <mesh position={[0, 0.39, 0]} raycast={skipRaycast}>
           <sphereGeometry args={[0.16, 14, 12]} />
           <meshStandardMaterial color={player.color} roughness={0.35} />
         </mesh>
@@ -257,9 +284,9 @@ function ChanceRoulette({ size, trim }: { size: number; trim: string }) {
   }), [size])
   return (
     <group position={[0, 0.084, 0]}>
-      {sectors.map((geometry, index) => <mesh key={index} geometry={geometry} rotation={[-Math.PI / 2, 0, 0]}><meshBasicMaterial color={rouletteColors[index % rouletteColors.length]} side={DoubleSide} /></mesh>)}
-      <mesh position={[0, 0.008, 0]} rotation={[-Math.PI / 2, 0, 0]}><circleGeometry args={[size * 0.095, 16]} /><meshStandardMaterial color={trim} roughness={0.38} /></mesh>
-      <mesh position={[0, 0.018, 0]} rotation={[-Math.PI / 2, 0, 0]}><circleGeometry args={[size * 0.043, 12]} /><meshStandardMaterial color="#fff3cf" roughness={0.38} /></mesh>
+      {sectors.map((geometry, index) => <mesh key={index} geometry={geometry} rotation={[-Math.PI / 2, 0, 0]} raycast={skipRaycast}><meshBasicMaterial color={rouletteColors[index % rouletteColors.length]} side={DoubleSide} /></mesh>)}
+      <mesh position={[0, 0.008, 0]} rotation={[-Math.PI / 2, 0, 0]} raycast={skipRaycast}><circleGeometry args={[size * 0.095, 16]} /><meshStandardMaterial color={trim} roughness={0.38} /></mesh>
+      <mesh position={[0, 0.018, 0]} rotation={[-Math.PI / 2, 0, 0]} raycast={skipRaycast}><circleGeometry args={[size * 0.043, 12]} /><meshStandardMaterial color="#fff3cf" roughness={0.38} /></mesh>
     </group>
   )
 }
@@ -294,8 +321,8 @@ function AnimatedDie({ position, rotation, sequence, value, reducedMotion, visib
 
   return (
     <group ref={group} position={position} rotation={rotation} visible={visible}>
-      <mesh castShadow><boxGeometry args={[0.45, 0.42, 0.45]} /><meshStandardMaterial color="#fffaf0" roughness={0.22} /></mesh>
-      {(dicePips[value] ?? dicePips[1]!).map(([x, z], index) => <mesh key={index} position={[x, 0.212, z]} rotation={[-Math.PI / 2, 0, 0]}><circleGeometry args={[0.035, 10]} /><meshBasicMaterial color="#c76550" /></mesh>)}
+      <mesh raycast={skipRaycast}><boxGeometry args={[0.45, 0.42, 0.45]} /><meshStandardMaterial color="#fffaf0" roughness={0.22} /></mesh>
+      {(dicePips[value] ?? dicePips[1]!).map(([x, z], index) => <mesh key={index} position={[x, 0.212, z]} rotation={[-Math.PI / 2, 0, 0]} raycast={skipRaycast}><circleGeometry args={[0.035, 10]} /><meshBasicMaterial color="#c76550" /></mesh>)}
     </group>
   )
 }
@@ -386,8 +413,9 @@ function AnimatedBuilding({ spaceId, houses, ownerColor, ownerSessionId, reduced
     clone.traverse((object) => {
       const mesh = object as Mesh
       if (!mesh.isMesh) return
-      mesh.castShadow = true
-      mesh.receiveShadow = true
+      mesh.castShadow = false
+      mesh.receiveShadow = false
+      mesh.raycast = skipRaycast
       const recolor = (material: Material): Material => {
         const instance = material.clone()
         if (instance.name.startsWith('OWNER_TINT') && 'color' in instance) (instance as MeshStandardMaterial).color.set(displayColor)
@@ -443,34 +471,34 @@ function AnimatedMortgageBadge({ position, mortgaged, reducedMotion, presentatio
 function Board({ players, propertyBuildings, highlightedSpaceIds, selectionMode, landingPulseSpaceId, landingPulseSequence, diceRollSequence, dice, diceVisible, diceResultVisible, presentationSpeed, reducedMotion, pawnMovementEnabled, pawnMoveMode, onMovementComplete, onSelectSpace }: { players: PlayerToken[]; propertyBuildings: PropertyBuilding[]; highlightedSpaceIds: readonly number[]; selectionMode: boolean; landingPulseSpaceId: number; landingPulseSequence: number; dice: [number, number]; diceVisible: boolean; diceResultVisible: boolean; diceRollSequence: number; presentationSpeed: AnimationSpeed; reducedMotion: boolean; pawnMovementEnabled: boolean; pawnMoveMode: 'walk' | 'teleport'; onMovementComplete: () => void; onSelectSpace: (spaceId: number) => void }) {
   return (
     <group>
-      <mesh position={[0, -0.25, 0]} receiveShadow>
+      <mesh position={[0, -0.25, 0]} raycast={skipRaycast}>
         <boxGeometry args={[12.1, 0.34, 12.1]} />
         <meshStandardMaterial color="#a9794f" roughness={0.82} />
       </mesh>
-      <mesh position={[0, -0.055, 0]} receiveShadow>
+      <mesh position={[0, -0.055, 0]} raycast={skipRaycast}>
         <boxGeometry args={[11.85, 0.1, 11.85]} />
         <meshStandardMaterial color="#f1e8d6" roughness={0.92} />
       </mesh>
-      <mesh position={[0, 0.01, 0]} receiveShadow>
+      <mesh position={[0, 0.01, 0]} raycast={skipRaycast}>
         <boxGeometry args={[9.8, 0.04, 9.8]} />
         <meshStandardMaterial color="#829e6d" roughness={1} />
       </mesh>
-      <mesh position={[0, 0.045, 0]} receiveShadow>
+      <mesh position={[0, 0.045, 0]} raycast={skipRaycast}>
         <cylinderGeometry args={[1.42, 1.42, 0.045, 48]} />
         <meshStandardMaterial color="#b2c980" roughness={0.92} />
       </mesh>
-      <mesh position={[0, 0.072, 0]} receiveShadow>
+      <mesh position={[0, 0.072, 0]} raycast={skipRaycast}>
         <cylinderGeometry args={[1.22, 1.22, 0.025, 48]} />
         <meshStandardMaterial color="#76965f" roughness={0.94} />
       </mesh>
-      <mesh position={[0, 0.087, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+      <mesh position={[0, 0.087, 0]} rotation={[-Math.PI / 2, 0, 0]} raycast={skipRaycast}>
         <ringGeometry args={[1.26, 1.34, 48]} />
         <meshBasicMaterial color="#b79b58" transparent opacity={0.8} />
       </mesh>
       {[[-0.82, -0.76], [0.82, -0.76], [-0.82, 0.76], [0.82, 0.76]].map(([x, z], index) => (
         <group key={`park-tree-${index}`} position={[x, 0.1, z]}>
-          <mesh castShadow position={[0, 0.1, 0]}><cylinderGeometry args={[0.045, 0.06, 0.2, 6]} /><meshStandardMaterial color="#9b7751" roughness={0.84} /></mesh>
-          <mesh castShadow position={[0, 0.26, 0]}><coneGeometry args={[0.18, 0.28, 7]} /><meshStandardMaterial color="#66885f" roughness={0.76} /></mesh>
+          <mesh position={[0, 0.1, 0]} raycast={skipRaycast}><cylinderGeometry args={[0.045, 0.06, 0.2, 6]} /><meshStandardMaterial color="#9b7751" roughness={0.84} /></mesh>
+          <mesh position={[0, 0.26, 0]} raycast={skipRaycast}><coneGeometry args={[0.18, 0.28, 7]} /><meshStandardMaterial color="#66885f" roughness={0.76} /></mesh>
         </group>
       ))}
       {boardSpaces.map((space) => {
@@ -483,38 +511,29 @@ function Board({ players, propertyBuildings, highlightedSpaceIds, selectionMode,
         const selectable = highlightedSpaceIds.includes(space.id)
         return (
           <group key={space.id} position={[x, 0.08, z]} rotation={[0, rotation, 0]} onClick={(event) => { event.stopPropagation(); if (!selectionMode || selectable) onSelectSpace(space.id) }} onPointerOver={(event) => { event.stopPropagation(); document.body.style.cursor = selectionMode && !selectable ? 'not-allowed' : 'pointer' }} onPointerOut={() => { document.body.style.cursor = '' }}>
-            <mesh castShadow receiveShadow>
+            <mesh>
               <boxGeometry args={[size, 0.16, size]} />
-              <meshStandardMaterial color={theme.floor} roughness={0.78} />
+              <meshLambertMaterial color={theme.floor} />
             </mesh>
-            {[-1, 1].flatMap((side) => [
-              <mesh key={`trim-x-${side}`} position={[side * size * 0.455, 0.095, 0]}>
-                <boxGeometry args={[0.035, 0.018, size * 0.91]} />
-                <meshStandardMaterial color={theme.trim} roughness={0.65} />
-              </mesh>,
-              <mesh key={`trim-z-${side}`} position={[0, 0.095, side * size * 0.455]}>
-                <boxGeometry args={[size * 0.91, 0.018, 0.035]} />
-                <meshStandardMaterial color={theme.trim} roughness={0.65} />
-              </mesh>,
-            ])}
-            {space.kind === 'tax' && <mesh position={[size * 0.31, 0.112, size * 0.3]}><cylinderGeometry args={[0.075, 0.075, 0.025, 8]} /><meshStandardMaterial color={theme.trim} roughness={0.48} /></mesh>}
+            <mesh position={[0, 0.095, 0]} rotation={[-Math.PI / 2, 0, 0]} geometry={getTileTrimGeometry(size)} raycast={skipRaycast} dispose={null}><meshBasicMaterial color={theme.trim} /></mesh>
+            {space.kind === 'tax' && <mesh position={[size * 0.31, 0.112, size * 0.3]} raycast={skipRaycast}><cylinderGeometry args={[0.075, 0.075, 0.025, 8]} /><meshStandardMaterial color={theme.trim} roughness={0.48} /></mesh>}
             {space.kind === 'event' && <ChanceRoulette size={size} trim={theme.trim} />}
-            {space.kind === 'prison' && <group position={[size * 0.3, 0.11, size * 0.3]}><mesh position={[0, 0, 0]}><boxGeometry args={[0.25, 0.025, 0.22]} /><meshStandardMaterial color="#536c7d" roughness={0.7} /></mesh>{[-1, 0, 1].map((offset) => <mesh key={offset} castShadow position={[offset * 0.085, 0.12, 0.105]}><boxGeometry args={[0.025, 0.22, 0.025]} /><meshStandardMaterial color={theme.trim} metalness={0.25} roughness={0.48} /></mesh>)}{[-1, 1].map((offset) => <mesh key={`bar-${offset}`} position={[0, offset * 0.07, 0.105]}><boxGeometry args={[0.2, 0.025, 0.025]} /><meshStandardMaterial color={theme.trim} metalness={0.25} roughness={0.48} /></mesh>)}</group>}
+            {space.kind === 'prison' && <group position={[size * 0.3, 0.11, size * 0.3]}><mesh position={[0, 0, 0]} raycast={skipRaycast}><boxGeometry args={[0.25, 0.025, 0.22]} /><meshStandardMaterial color="#536c7d" roughness={0.7} /></mesh>{[-1, 0, 1].map((offset) => <mesh key={offset} position={[offset * 0.085, 0.12, 0.105]} raycast={skipRaycast}><boxGeometry args={[0.025, 0.22, 0.025]} /><meshStandardMaterial color={theme.trim} metalness={0.25} roughness={0.48} /></mesh>)}{[-1, 1].map((offset) => <mesh key={`bar-${offset}`} position={[0, offset * 0.07, 0.105]} raycast={skipRaycast}><boxGeometry args={[0.2, 0.025, 0.025]} /><meshStandardMaterial color={theme.trim} metalness={0.25} roughness={0.48} /></mesh>)}</group>}
             {space.kind === 'world-cup' && <Suspense fallback={null}><CornerLandmark type="stadium" position={[0, 0.15, 0]} /></Suspense>}
             {space.kind === 'world-tour' && <Suspense fallback={null}><CornerLandmark type="airport" position={[0, 0.15, 0]} /></Suspense>}
-            {space.kind === 'rest' && <mesh position={[size * 0.31, 0.11, size * 0.3]}><cylinderGeometry args={[0.07, 0.09, 0.035, 6]} /><meshStandardMaterial color={theme.trim} roughness={0.62} /></mesh>}
-            {space.kind === 'start' && <mesh position={[size * 0.31, 0.13, size * 0.3]} rotation={[0, Math.PI / 4, 0]}><boxGeometry args={[0.14, 0.045, 0.14]} /><meshStandardMaterial color={theme.trim} roughness={0.52} /></mesh>}
+            {space.kind === 'rest' && <mesh position={[size * 0.31, 0.11, size * 0.3]} raycast={skipRaycast}><cylinderGeometry args={[0.07, 0.09, 0.035, 6]} /><meshStandardMaterial color={theme.trim} roughness={0.62} /></mesh>}
+            {space.kind === 'start' && <mesh position={[size * 0.31, 0.13, size * 0.3]} rotation={[0, Math.PI / 4, 0]} raycast={skipRaycast}><boxGeometry args={[0.14, 0.045, 0.14]} /><meshStandardMaterial color={theme.trim} roughness={0.52} /></mesh>}
             <SpaceLabel name={space.name} size={size} ink={theme.ink} outline={theme.outline} />
             {highlightedSpaceIds.includes(space.id) && (
-              <mesh position={[0, 0.092, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+              <mesh position={[0, 0.092, 0]} rotation={[-Math.PI / 2, 0, 0]} raycast={skipRaycast}>
                 <ringGeometry args={[size * 0.38, size * 0.47, 40]} />
                 <meshBasicMaterial color="#e5af3f" transparent opacity={0.96} toneMapped={false} />
               </mesh>
             )}
-            {selectionMode && !selectable && <mesh position={[0, 0.205, 0]} rotation={[-Math.PI / 2, 0, 0]}><planeGeometry args={[size * 0.98, size * 0.98]} /><meshBasicMaterial color="#1a241d" transparent opacity={0.68} depthWrite={false} /></mesh>}
+            {selectionMode && !selectable && <mesh position={[0, 0.205, 0]} rotation={[-Math.PI / 2, 0, 0]} raycast={skipRaycast}><planeGeometry args={[size * 0.98, size * 0.98]} /><meshBasicMaterial color="#1a241d" transparent opacity={0.68} depthWrite={false} /></mesh>}
             {landingPulseSpaceId === space.id && <LandingPulse sequence={landingPulseSequence} reducedMotion={reducedMotion} size={size} presentationSpeed={presentationSpeed} />}
             {corner && space.kind !== 'world-cup' && space.kind !== 'world-tour' && (
-              <mesh position={[0, 0.19, 0]} rotation={[0, Math.PI / 4, 0]}>
+              <mesh position={[0, 0.19, 0]} rotation={[0, Math.PI / 4, 0]} raycast={skipRaycast}>
                 <boxGeometry args={[0.32, 0.08, 0.32]} />
                 <meshStandardMaterial color="#d5a956" roughness={0.48} />
               </mesh>
@@ -560,7 +579,14 @@ function LandingPulse({ sequence, reducedMotion, size, presentationSpeed }: { se
 function CornerLandmark({ type, position }: { type: 'stadium' | 'airport'; position: [number, number, number] }) {
   const path = type === 'stadium' ? '/assets/world-cup-stadium.glb' : '/assets/world-tour-airport.glb'
   const { scene } = useGLTF(path)
-  const model = useMemo(() => scene.clone(), [scene])
+  const model = useMemo(() => {
+    const clone = scene.clone(true)
+    clone.traverse((object) => {
+      const mesh = object as Mesh
+      if (mesh.isMesh) mesh.raycast = skipRaycast
+    })
+    return clone
+  }, [scene])
   return <primitive object={model} position={position} scale={type === 'stadium' ? 0.64 : 0.48} />
 }
 
@@ -575,10 +601,10 @@ function FrameRateProbe({ samples }: { samples: { current: FrameRateAccumulator 
 
 function BoardSceneCanvas({ players, propertyBuildings, highlightedSpaceIds = [], selectionMode = false, landingPulseSpaceId = -1, landingPulseSequence = 0, diceRollSequence = 0, dice = [0, 0], diceVisible = false, diceResultVisible = false, presentationSpeed = 0.5, reducedMotion = false, pawnMovementEnabled = false, pawnMoveMode = 'walk', cameraEnabled = true, fpsMeterEnabled = false, fpsSamples, onMovementComplete, onSelectSpace }: BoardSceneProps) {
   return (
-    <Canvas camera={{ position: [12.5, 15.5, 15.5], fov: 34 }} shadows dpr={[1, 1.25]} frameloop="demand">
+    <Canvas camera={{ position: [12.5, 15.5, 15.5], fov: 34 }} dpr={[0.8, 1.1]} frameloop="demand" gl={{ antialias: false, powerPreference: 'high-performance', stencil: false }}>
       <color attach="background" args={['#9bbcc1']} />
       <ambientLight intensity={0.86} />
-      <directionalLight position={[7, 13, 5]} intensity={1.55} castShadow shadow-mapSize={[512, 512]} />
+      <directionalLight position={[7, 13, 5]} intensity={1.55} />
       <ResponsiveCamera tilt={16} horizontal={45} />
       <OrbitControls makeDefault enabled={cameraEnabled} enablePan={false} enableZoom={false} enableRotate minPolarAngle={Math.PI / 12} maxPolarAngle={Math.PI / 2} rotateSpeed={0.72} enableDamping dampingFactor={0.1} />
       <CameraDragAnywhere enabled={cameraEnabled} />

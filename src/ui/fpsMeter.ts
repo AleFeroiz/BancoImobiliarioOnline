@@ -36,7 +36,7 @@ export function recordRenderedFrame(
   const windowStart = current.frameCount === 0 ? timestamp : current.windowStart
   const frameCount = current.frameCount + 1
   const elapsed = timestamp - windowStart
-  if (elapsed < sampleWindowMs || frameCount < 2) {
+  if (frameCount < 2 || (elapsed < sampleWindowMs && current.reading !== null)) {
     return { ...current, windowStart, frameCount, lastFrameAt: timestamp }
   }
 
@@ -57,7 +57,8 @@ export function readFrameRate(
   timestamp: number,
   idleAfterMs = FPS_IDLE_AFTER_MS,
 ): FrameRateDisplay {
-  if (current.lastFrameAt === null || !current.reading) return { state: 'measuring' }
+  if (current.lastFrameAt === null) return { state: 'measuring' }
   if (timestamp - current.lastFrameAt > idleAfterMs) return { state: 'idle' }
+  if (!current.reading) return { state: 'measuring' }
   return { state: 'active', ...current.reading }
 }

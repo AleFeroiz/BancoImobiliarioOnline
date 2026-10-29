@@ -11,9 +11,17 @@ describe('frame rate meter', () => {
     expect(readFrameRate(samples, 500)).toEqual({ state: 'active', fps: 60, frameTimeMs: 16.7 })
   })
 
+  it('shows an initial reading after two rendered frames', () => {
+    const first = recordRenderedFrame(createFrameRateAccumulator(), 0)
+    const second = recordRenderedFrame(first, 500)
+
+    expect(readFrameRate(second, 500)).toEqual({ state: 'active', fps: 2, frameTimeMs: 500 })
+  })
+
   it('reports an idle scene after render callbacks stop', () => {
     const afterFrame = recordRenderedFrame(createFrameRateAccumulator(), 10)
     expect(readFrameRate(afterFrame, 10)).toEqual({ state: 'measuring' })
+    expect(readFrameRate(afterFrame, 1_011)).toEqual({ state: 'idle' })
 
     let samples = afterFrame
     for (let frame = 1; frame <= 31; frame += 1) {
