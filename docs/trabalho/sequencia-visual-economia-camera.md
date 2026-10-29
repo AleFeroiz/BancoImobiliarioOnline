@@ -8,5 +8,5 @@
 - **Validação:** hook `npm run verify` passou após o commit: 116 testes, build web e build do servidor. O build mantém o aviso do chunk 3D acima de 500 kB.
 - **Revisão visual:** Chrome headless com WebGL por software, em 1440 × 900 e 390 × 844. Tabuleiro inteiro visível sem overflow horizontal. Em três jogadas reais, cada lançamento exibiu dados, depois o movimento do peão e, ao final, a ação contextual; o terceiro terminou no painel de compra de Costa Branca.
 - **Capturas:** `.codex-tmp/review-desktop-initial.png`, `.codex-tmp/review-mobile-initial.png` e `.codex-tmp/review-purchase.png` (temporárias, não versionadas).
-- **Sincronização:** `git fetch origin` concluiu; os commits foram integrados localmente em `main`, que aguarda push para `origin/main`.
-- **Próxima ação:** publicar `main` no GitHub.
+- **Sincronização:** `git fetch origin` e `git push origin main` concluíram; a branch foi publicada até `88d1e23`.
+- **Próxima ação:** nenhuma para esta frente; novas mudanças devem começar diretamente em `main` e ser publicadas após validação.
