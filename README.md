@@ -4,7 +4,7 @@ Jogo de tabuleiro 3D para navegador, para partidas privadas entre amigos. Sem co
 
 ## Estado atual
 
-A versão atual contém a experiência inicial, seletor de regras, salas privadas Colyseus por código, lobby sincronizado e uma cena 3D original em React Three Fiber. A anfitriã pode preencher lugares vagos com bots; se uma pessoa cair durante a partida, um bot assume a mesma cadeira imediatamente, e ela retoma o controle ao reconectar. A partida tem turnos autoritativos, dados, movimento, economia, casas e hotéis, cartas Sorte ou Revés, prisão, hipotecas, dívidas, falência e negociação inicial de dinheiro e títulos. Propriedades podem ser compradas ou recusadas; recusar deixa a propriedade livre e não inicia leilão. Leilões voluntários de títulos próprios só podem ser abertos durante o turno de quem vende; hipotecas só podem liquidar dívidas quando o saldo é insuficiente. O Clássico tem relógio de 30 minutos e resultado por patrimônio; o Express tem seis rodadas cronometradas, objetivo secreto individual com bônus e resultado por saldo, com desempates por patrimônio e dados. A partida conta com uma trilha ambiente procedural original e efeitos opcionais, controlados pelo botão de áudio. Os detalhes das ofertas de negociação permanecem em `docs/DECISOES.md`.
+A versão atual contém a experiência inicial, seletor de regras, salas privadas Colyseus por código, lobby sincronizado e uma cena 3D original em React Three Fiber. A anfitriã pode preencher lugares vagos com bots; se uma pessoa cair durante a partida, um bot assume a mesma cadeira imediatamente, e ela retoma o controle ao reconectar. A partida tem turnos autoritativos, dados, movimento, economia, casas e hotéis, cartas Sorte ou Revés, prisão, hipotecas, dívidas, falência e negociação inicial de dinheiro e títulos. Propriedades podem ser compradas ou recusadas; recusar deixa a propriedade livre e não inicia leilão. Leilões voluntários de títulos próprios só podem ser abertos durante o turno de quem vende; hipotecas só podem liquidar dívidas quando o saldo é insuficiente. O Clássico tem relógio de 30 minutos e resultado por patrimônio; o Express tem seis rodadas cronometradas, objetivo secreto individual com bônus e resultado por saldo, com desempates por patrimônio e dados. A cena usa construções low-poly originais criadas no Blender e pisos diferenciados por tipo de casa, com imóveis residenciais preenchidos pela cor de seu grupo. A partida conta com uma trilha ambiente procedural original e efeitos opcionais, controlados pelo botão de áudio. Os detalhes das ofertas de negociação permanecem em `docs/DECISOES.md`.
 
 ## Desenvolvimento local
 
@@ -40,6 +40,7 @@ npm run preview
 
 - `src/ui/`: telas, lobby, HUD, integração Colyseus, estilos e cena React Three Fiber.
 - `src/game/`: dados, geometria do tabuleiro e testes independentes do render.
+- `assets/blender/` e `public/assets/`: fontes Blender e modelos GLB usados na cena.
 - `server/src/`: servidor Colyseus autoritativo e estado sincronizado das salas.
 - `server/test/`: testes de integração das salas reais.
 - `shared/`: contratos compartilhados entre cliente e servidor.

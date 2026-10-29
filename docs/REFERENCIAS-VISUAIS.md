@@ -16,6 +16,12 @@ As capturas oficiais de partida mostram uma mesa quadrada elevada em perspectiva
 
 A apresentação é mais saturada e caricata que a direção anterior deste projeto: gramado verde vivo, bordas claras, acentos fortes nas cores das propriedades, retratos expressivos e peças volumosas. O padrão que vale transportar é a leitura rápida e a distribuição espacial da informação. A direção agora aumenta a saturação do tabuleiro e dá um acento próprio a cada participante, mantendo papel, feltro e madeira como materiais e preservando peças, tipografia e arte originais.
 
+## Modelos e pisos do tabuleiro
+
+O usuário pediu cinco níveis visuais originais para propriedades: terreno identificado pela pessoa dona, uma casa, duas casas, três casas e hotel. Os modelos foram criados na sessão conectada do Blender 5.2.2 LTS e reunidos em `public/assets/board-models/board-models.glb`; a fonte editável está em `assets/blender/board-models.blend`. Os telhados, a bandeira e os detalhes marcados com o material `OWNER_TINT` recebem a cor atual do dono no jogo. Paredes claras, janelas azul-escuras e bases de pedra mantêm leitura contra os oito grupos de cores.
+
+Os imóveis residenciais usam sua cor de grupo como cor de toda a superfície do piso, não apenas uma tarja. Estações usam azul ardósia. Sorte ou Revés usa azul-petróleo com marcas de cartas; taxas usam coral com marca de moeda; cantos recebem tratamentos próprios para Partida, prisão, praça e Vá para a prisão. O nome completo permanece em texto de alto contraste sobre cada piso. Essas formas e materiais são originais; as imagens anexadas servem apenas para orientar a leitura de construções pequenas e de grupos de cor.
+
 Nas capturas de rolagem, a ação usa dados grandes no vazio do centro e uma mensagem curta de contexto. Nas telas de dívida, a atenção passa para o alvo selecionável e para as opções necessárias para continuar. No placar, o resultado ocupa a frente sem apagar por completo a mesa. Na sala privada, participantes, avatar e estado de preparação são os elementos mais imediatos; controles de configuração ficam agrupados.
 
 ### Inventário de telas consultadas

@@ -1,10 +1,12 @@
 import { Canvas } from '@react-three/fiber'
 import { ContactShadows } from '@react-three/drei'
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { CanvasTexture, Fog, PerspectiveCamera, SRGBColorSpace, type Group } from 'three'
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
+import { CanvasTexture, Fog, PerspectiveCamera, SRGBColorSpace, type Group, type Material, type Mesh, type MeshStandardMaterial } from 'three'
 import { useFrame, useThree } from '@react-three/fiber'
+import { useGLTF } from '@react-three/drei'
 import { boardSpaces, positionOnBoard } from '../game/board'
 import { getCameraFraming } from './cameraFraming'
+import { getBoardTileTheme } from './boardTileTheme'
 import { fitSpaceLabel } from './spaceLabel'
 import { getPawnStepPath } from './pawnPath'
 import { getPropertyVisualChange } from './gameFeedback'
@@ -29,7 +31,7 @@ function ResponsiveCamera() {
   return null
 }
 
-function SpaceLabel({ name, size }: { name: string; size: number }) {
+function SpaceLabel({ name, size, ink, outline }: { name: string; size: number; ink: string; outline: string }) {
   const { gl } = useThree()
   const texture = useMemo(() => {
     const canvas = document.createElement('canvas')
@@ -40,8 +42,8 @@ function SpaceLabel({ name, size }: { name: string; size: number }) {
       context.clearRect(0, 0, canvas.width, canvas.height)
       context.textAlign = 'center'
       context.textBaseline = 'middle'
-      context.fillStyle = '#2f4536'
-      context.strokeStyle = '#fffaf1'
+      context.fillStyle = ink
+      context.strokeStyle = outline
       context.lineJoin = 'round'
       context.lineWidth = 24
       const fitted = fitSpaceLabel(name, 900, (text, fontSize) => {
@@ -63,7 +65,7 @@ function SpaceLabel({ name, size }: { name: string; size: number }) {
     map.anisotropy = gl.capabilities.getMaxAnisotropy()
     map.needsUpdate = true
     return map
-  }, [gl, name])
+  }, [gl, ink, name, outline])
   useEffect(() => () => texture.dispose(), [texture])
 
   return (
@@ -197,10 +199,11 @@ function AnimatedDie({ position, rotation, sequence, value, reducedMotion }: { p
 function AnimatedBuilding({ spaceId, houses, ownerColor, ownerSessionId, reducedMotion }: { spaceId: number; houses: number; ownerColor: string; ownerSessionId: string; reducedMotion: boolean }) {
   const group = useRef<Group>(null)
   const elapsed = useRef(0)
-  const [displayHouses, setDisplayHouses] = useState(0)
+  const [displayHouses, setDisplayHouses] = useState(houses)
   const [displayColor, setDisplayColor] = useState(ownerColor)
   const previous = useRef({ ownerSessionId, houses: 0 })
   const transition = useRef<'build' | 'demolish' | 'ownership' | null>(houses > 0 ? 'build' : null)
+  const { scene } = useGLTF('/assets/board-models/board-models.glb')
 
   useEffect(() => {
     const building = group.current
@@ -265,68 +268,30 @@ function AnimatedBuilding({ spaceId, houses, ownerColor, ownerSessionId, reduced
 
   const { x, z } = positionOnBoard(spaceId)
   const rotation = spaceId <= 10 || spaceId >= 30 ? 0 : Math.PI / 2
-  return <group ref={group} position={[x, 0.19, z]} rotation={[0, rotation, 0]}>{displayHouses > 0 && ownerSessionId ? (
-    displayHouses === 5 ? (
-      <group position={[0, 0.08, 0.23]}>
-        <mesh castShadow><boxGeometry args={[0.3, 0.18, 0.22]} /><meshStandardMaterial color={displayColor} roughness={0.48} /></mesh>
-        <mesh castShadow position={[0, 0.14, 0]}><coneGeometry args={[0.22, 0.16, 4]} /><meshStandardMaterial color={displayColor} roughness={0.56} /></mesh>
-      </group>
-    ) : Array.from({ length: displayHouses }, (_, index) => (
-      <group key={index} position={[(index - 1.5) * 0.17, 0.07, 0.25]}>
-        <mesh castShadow><boxGeometry args={[0.11, 0.11, 0.11]} /><meshStandardMaterial color="#f6ead0" roughness={0.72} /></mesh>
-        <mesh castShadow position={[0, 0.09, 0]}><coneGeometry args={[0.095, 0.09, 4]} /><meshStandardMaterial color={displayColor} roughness={0.55} /></mesh>
-      </group>
-    ))
-  ) : null}</group>
-}
-
-function AnimatedOwnerMarker({ position, ownerSessionId, ownerColor, visible, reducedMotion }: { position: [number, number, number]; ownerSessionId: string; ownerColor: string; visible: boolean; reducedMotion: boolean }) {
-  const group = useRef<Group>(null)
-  const elapsed = useRef(0)
-  const [displayColor, setDisplayColor] = useState(ownerColor)
-  const previousOwner = useRef(ownerSessionId)
-  const previousVisible = useRef(visible)
-  const animation = useRef<'place' | 'transfer' | 'release' | null>('place')
-  useEffect(() => {
-    if (ownerSessionId !== previousOwner.current) {
-      animation.current = ownerSessionId ? 'transfer' : 'release'
-      elapsed.current = 0
-    } else if (visible !== previousVisible.current) {
-      animation.current = visible ? 'place' : 'release'
-      elapsed.current = 0
-    } else if (animation.current === 'place' && group.current && visible && !reducedMotion) {
-      group.current.scale.setScalar(0.45)
-    }
-    if (reducedMotion) {
-      setDisplayColor(ownerColor)
-      animation.current = null
-      group.current?.scale.setScalar(visible ? 1 : 0)
-      if (group.current) group.current.position.y = position[1]
-    }
-    previousOwner.current = ownerSessionId
-    previousVisible.current = visible
-  }, [ownerSessionId, ownerColor, position[0], position[1], position[2], reducedMotion, visible])
-  useFrame((_, delta) => {
-    const marker = group.current
-    if (!marker || reducedMotion || !animation.current) return
-    elapsed.current += delta
-    const progress = Math.min(elapsed.current / 0.48, 1)
-    if (animation.current === 'release') marker.scale.setScalar(1 - progress)
-    else {
-      marker.scale.setScalar(animation.current === 'place' ? 0.45 + progress * 0.55 : 1)
-      marker.position.y = position[1] + Math.sin(progress * Math.PI) * (animation.current === 'place' ? 0.12 : 0.28)
-      marker.rotation.y = Math.sin(progress * Math.PI) * 0.16
-      if (animation.current === 'transfer' && progress >= 0.78) setDisplayColor(ownerColor)
-    }
-    if (progress >= 1) {
-      marker.scale.setScalar(visible ? 1 : 0)
-      marker.position.y = position[1]
-      marker.rotation.y = 0
-      setDisplayColor(ownerColor)
-      animation.current = null
-    }
-  })
-  return <group ref={group} position={position} scale={visible ? 1 : 0}><mesh castShadow><cylinderGeometry args={[0.075, 0.075, 0.12, 8]} /><meshStandardMaterial color={displayColor} roughness={0.42} /></mesh></group>
+  const variantName = displayHouses === 0 ? 'Board_Land' : displayHouses === 5 ? 'Board_Hotel' : `Board_House_${displayHouses}`
+  const model = useMemo(() => {
+    if (!ownerSessionId) return null
+    const source = scene.getObjectByName(variantName)
+    if (!source) return null
+    const clone = source.clone(true)
+    clone.position.set(0, 0, 0)
+    clone.rotation.set(0, 0, 0)
+    clone.scale.set(1, 1, 1)
+    clone.traverse((object) => {
+      const mesh = object as Mesh
+      if (!mesh.isMesh) return
+      mesh.castShadow = true
+      mesh.receiveShadow = true
+      const recolor = (material: Material): Material => {
+        const instance = material.clone()
+        if (instance.name.startsWith('OWNER_TINT') && 'color' in instance) (instance as MeshStandardMaterial).color.set(displayColor)
+        return instance
+      }
+      mesh.material = Array.isArray(mesh.material) ? mesh.material.map(recolor) : recolor(mesh.material)
+    })
+    return clone
+  }, [displayColor, ownerSessionId, scene, variantName])
+  return <group ref={group} position={[x, 0.19, z + 0.22]} rotation={[0, rotation, 0]}>{model && <primitive object={model} />}</group>
 }
 
 function AnimatedMortgageBadge({ position, mortgaged, reducedMotion }: { position: [number, number, number]; mortgaged: boolean; reducedMotion: boolean }) {
@@ -400,17 +365,30 @@ function Board({ players, propertyBuildings, highlightedSpaceIds, landingPulseSp
         const size = corner ? 1.14 : 0.98
         const rotation = space.id <= 10 || space.id >= 30 ? 0 : Math.PI / 2
         const property = propertyBuildings.find((building) => building.spaceId === space.id)
+        const theme = getBoardTileTheme(space, corner)
         return (
           <group key={space.id} position={[x, 0.08, z]} rotation={[0, rotation, 0]} onClick={(event) => { event.stopPropagation(); onSelectSpace(space.id) }} onPointerOver={(event) => { event.stopPropagation(); document.body.style.cursor = 'pointer' }} onPointerOut={() => { document.body.style.cursor = '' }}>
             <mesh castShadow receiveShadow>
               <boxGeometry args={[size, 0.16, size]} />
-              <meshStandardMaterial color={corner ? '#f6e8c8' : '#fffaf1'} roughness={0.78} />
+              <meshStandardMaterial color={theme.floor} roughness={0.78} />
             </mesh>
-            <mesh position={[0, 0.09, -size * 0.39]}>
-              <boxGeometry args={[size * 0.82, 0.045, size * 0.19]} />
-              <meshStandardMaterial color={space.color} roughness={0.7} />
-            </mesh>
-            <SpaceLabel name={space.name} size={size} />
+            {[-1, 1].flatMap((side) => [
+              <mesh key={`trim-x-${side}`} position={[side * size * 0.455, 0.095, 0]}>
+                <boxGeometry args={[0.035, 0.018, size * 0.91]} />
+                <meshStandardMaterial color={theme.trim} roughness={0.65} />
+              </mesh>,
+              <mesh key={`trim-z-${side}`} position={[0, 0.095, side * size * 0.455]}>
+                <boxGeometry args={[size * 0.91, 0.018, 0.035]} />
+                <meshStandardMaterial color={theme.trim} roughness={0.65} />
+              </mesh>,
+            ])}
+            {space.kind === 'tax' && <mesh position={[size * 0.31, 0.112, size * 0.3]}><cylinderGeometry args={[0.075, 0.075, 0.025, 8]} /><meshStandardMaterial color={theme.trim} roughness={0.48} /></mesh>}
+            {space.kind === 'event' && [-1, 0, 1].map((offset) => <mesh key={offset} position={[size * 0.28 + offset * 0.075, 0.115, size * 0.3]} rotation={[0, Math.PI / 4, 0]}><boxGeometry args={[0.075, 0.03, 0.075]} /><meshStandardMaterial color={theme.trim} roughness={0.52} /></mesh>)}
+            {space.kind === 'prison' && [-1, 0, 1].map((offset) => <mesh key={offset} position={[offset * 0.09, 0.11, size * 0.34]}><boxGeometry args={[0.035, 0.035, 0.19]} /><meshStandardMaterial color={theme.trim} roughness={0.55} /></mesh>)}
+            {space.kind === 'go-to-prison' && <mesh position={[size * 0.31, 0.12, size * 0.3]} rotation={[0, Math.PI / 4, 0]}><boxGeometry args={[0.17, 0.05, 0.17]} /><meshStandardMaterial color={theme.trim} roughness={0.55} /></mesh>}
+            {space.kind === 'rest' && <mesh position={[size * 0.31, 0.11, size * 0.3]}><cylinderGeometry args={[0.07, 0.09, 0.035, 6]} /><meshStandardMaterial color={theme.trim} roughness={0.62} /></mesh>}
+            {space.kind === 'start' && <mesh position={[size * 0.31, 0.13, size * 0.3]} rotation={[0, Math.PI / 4, 0]}><boxGeometry args={[0.14, 0.045, 0.14]} /><meshStandardMaterial color={theme.trim} roughness={0.52} /></mesh>}
+            <SpaceLabel name={space.name} size={size} ink={theme.ink} outline={theme.outline} />
             {highlightedSpaceIds.includes(space.id) && (
               <mesh position={[0, 0.092, 0]} rotation={[-Math.PI / 2, 0, 0]}>
                 <ringGeometry args={[size * 0.38, size * 0.47, 40]} />
@@ -425,11 +403,12 @@ function Board({ players, propertyBuildings, highlightedSpaceIds, landingPulseSp
               </mesh>
             )}
             {property && <AnimatedMortgageBadge position={[size * 0.3, 0.12, size * 0.2]} mortgaged={property.isMortgaged} reducedMotion={reducedMotion} />}
-            {property && <AnimatedOwnerMarker position={[size * 0.31, 0.16, size * 0.22]} ownerSessionId={property.ownerSessionId} ownerColor={property.ownerColor} visible={Boolean(property.ownerSessionId) && property.houses === 0} reducedMotion={reducedMotion} />}
           </group>
         )
       })}
-      {propertyBuildings.map(({ spaceId, houses, ownerColor, ownerSessionId }) => <AnimatedBuilding key={`buildings-${spaceId}`} spaceId={spaceId} houses={houses} ownerColor={ownerColor} ownerSessionId={ownerSessionId} reducedMotion={reducedMotion} />)}
+      <Suspense fallback={null}>
+        {propertyBuildings.filter(({ ownerSessionId }) => Boolean(ownerSessionId)).map(({ spaceId, houses, ownerColor, ownerSessionId }) => <AnimatedBuilding key={`buildings-${spaceId}`} spaceId={spaceId} houses={houses} ownerColor={ownerColor} ownerSessionId={ownerSessionId} reducedMotion={reducedMotion} />)}
+      </Suspense>
       {players.map((player) => <AnimatedPawn key={player.id} player={player} seatIndex={player.seatIndex} reducedMotion={reducedMotion} movementEnabled={pawnMovementEnabled} onMovementComplete={onMovementComplete} />)}
       <AnimatedDie position={[-0.34, 0.23, -0.23]} rotation={[0.12, 0.25, 0.25]} sequence={diceRollSequence} value={dice[0] || 1} reducedMotion={reducedMotion} />
       <AnimatedDie position={[0.38, 0.23, 0.2]} rotation={[-0.18, 0.3, -0.2]} sequence={diceRollSequence} value={dice[1] || 1} reducedMotion={reducedMotion} />

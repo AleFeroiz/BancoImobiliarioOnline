@@ -28,6 +28,23 @@ Construir um jogo de tabuleiro multiplayer casual para navegador, para partidas 
 - Como a direção confirmada é um tabuleiro 3D com interface de jogo, não adote o caminho 2D padrão do plugin. Mantenha a mesma decisão de engine, UI, assets e validação nos documentos e na implementação.
 - Se o plugin ou a habilidade necessária não estiver disponível na sessão, informe a limitação e não diga que a habilidade foi aplicada.
 
+## Blender para assets do jogo
+
+- Para modelar ou revisar assets 3D, use o Blender mais recente instalado no PC do usuário através do MCP Blender conectado. Comece com `get_addon_status` e `get_scene_info`; confirme a versão ativa antes de criar assets.
+- Crie modelos na sessão ao vivo com `execute_blender_code`, confira a cena com `get_scene_info` e inspecione a forma com `look` antes de integrar. Comece o código com `import bpy`. O safe mode permite importar `bpy`/bibliotecas de malha e usar operadores Blender, mas bloqueia `open`, `os`, subprocessos, rede e leitura arbitrária de arquivos; salve/exporte exclusivamente com operadores Blender para caminhos conhecidos dentro do projeto.
+- Blender usa Z como eixo vertical. Modele a base no plano XY, coloque a altura em Z e use `export_yup=True` no exportador glTF para obter GLB Y-up no Three.js. Deixe a origem na base do modelo, confira o tamanho na cena da mesa e confira o resultado exportado no Blender antes de carregar no jogo.
+- Salve as fontes editáveis `.blend` em `assets/blender/` e exporte os modelos de navegador como GLB em `public/assets/`. Use nomes estáveis para raízes e materiais, escala e origem consistentes, poucos materiais reutilizáveis e um material nomeado para partes que o jogo precisa recolorir.
+- Integre GLB pela cena React Three Fiber e carregue alterações de cor a partir do estado do jogo. Registre a versão do Blender, os arquivos exportados e a revisão visual em `docs/VALIDACAO.md`.
+- Se o Blender mais recente não estiver conectado, informe a limitação e tente restabelecer a conexão pelo aplicativo. Não substitua silenciosamente o fluxo por outro software.
+
+## Playtest local no navegador
+
+- Antes de iniciar, confira `git status`, a branch e as portas 5173 (Vite) e 2567 (Colyseus). Use uma única sessão de cada servidor; se a porta estiver ocupada, identifique e encerre a sessão antiga em vez de iniciar outra.
+- Neste ambiente Windows, processos de desenvolvimento iniciados sem acesso local podem imprimir “ready/listening” e ainda assim ficar inalcançáveis pelo navegador. Para playtest, inicie `npm run dev:server` e `npm run dev -- --host 127.0.0.1` com permissão de loopback aprovada pelo ambiente. Aguarde as duas mensagens de porta antes de abrir o navegador.
+- Abra uma nova aba do navegador interno diretamente na URL local conhecida (`http://127.0.0.1:5173/`). Não tente selecionar uma janela de navegador existente se a URL não puder ser identificada. Siga a documentação CUA da sessão: em abas browser, `typeText` recebe primeiro o índice AX e depois o texto; após erro ou ação, obtenha novo estado antes de continuar.
+- Entre em uma sala de teste, preencha vagas com bots quando necessário, inicie a partida, revise desktop e mobile quando houver mudança responsiva, e capture o tabuleiro após um estado real de compra/construção. Leia os logs do navegador e do servidor. Encerre as duas sessões locais ao terminar.
+- Se uma conexão falhar, confirme se o servidor responde e se a porta está escutando antes de tentar de novo. Não repita navegação em aba ou processo sem verificar se o anterior ainda está ativo.
+
 ## Princípios de implementação
 
 - A experiência principal é uma partida 3D no navegador, com interface DOM para menus, lobby, HUD e acessibilidade.
@@ -47,6 +64,7 @@ Construir um jogo de tabuleiro multiplayer casual para navegador, para partidas 
 - Todo commit deve passar pelo hook local de pré-commit, que executa a suíte completa de testes e o build. Não use `--no-verify` nem desative o hook.
 - Quando um bug for encontrado e corrigido, inclua no mesmo trabalho um teste de regressão que falhe antes da correção e passe depois dela.
 - Se não houver teste automatizado adequado para uma mudança visual, registre a validação manual feita com o Game Studio e adicione testes automatizados para a lógica não visual relacionada.
+- Em atualizações visuais de tabuleiro, mantenha os materiais, cores de grupo e categorias de piso documentados em `docs/DECISOES.md` e registre a revisão manual em `docs/VALIDACAO.md`.
 - O usuário autorizou Codex e agentes delegados a coordenar tarefas deste projeto por mensagem com chats existentes ou com novos chats. Use essa autorização só para trabalho relacionado ao projeto e não envie segredos ou dados pessoais.
 - Não inclua segredos, tokens, dados pessoais ou conteúdo de usuário em código, commits ou logs.
 - Ao terminar, informe os arquivos alterados e o que foi ou não validado.
