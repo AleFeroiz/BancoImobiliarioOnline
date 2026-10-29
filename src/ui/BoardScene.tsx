@@ -22,9 +22,8 @@ function ResponsiveCamera({ tilt, horizontal }: { tilt: number; horizontal: numb
     if (!(camera instanceof PerspectiveCamera)) return
     const framing = getCameraFraming(size.width, size.height, tilt, horizontal)
     camera.position.set(...framing.position)
-    // OrbitControls expects a stable world-up axis. The per-angle up vector
-    // rolled the whole board during drags instead of orbiting around it.
-    camera.up.set(0, 1, 0)
+    // Keep the world-up axis stable so OrbitControls does not roll the board.
+    camera.up.set(...framing.up)
     camera.lookAt(0, 0, 0)
     camera.fov = framing.fov
     camera.updateProjectionMatrix()

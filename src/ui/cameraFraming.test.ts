@@ -8,7 +8,7 @@ describe('enquadramento da câmera do tabuleiro', () => {
     expect(framing.tilt).toBe(16)
     expect(framing.distance).toBeLessThan(31)
     expect(framing.position[0]).toBeCloseTo(framing.position[2])
-    expect(framing.position[1]).toBeCloseTo(framing.distance * Math.cos(16 * Math.PI / 180))
+    expect(framing.up).toEqual([0, 1, 0])
   })
 
   it('permite vista top-down e limita a inclinação ao máximo do controle', () => {
@@ -20,6 +20,12 @@ describe('enquadramento da câmera do tabuleiro', () => {
     expect(topDown.position[2]).toBe(0)
     expect(topDown.tilt).toBe(0)
     expect(shallow.tilt).toBeCloseTo(75)
+  })
+
+  it('mantém o eixo vertical fixo para os controles orbitais não rolarem a mesa', () => {
+    for (const horizontal of [0, 45, 90, 180, 270, 359]) {
+      expect(getCameraFraming(1440, 900, 75, horizontal).up).toEqual([0, 1, 0])
+    }
   })
 
   it('adapta o enquadramento a celular, tablet e desktop usando o giro escolhido', () => {

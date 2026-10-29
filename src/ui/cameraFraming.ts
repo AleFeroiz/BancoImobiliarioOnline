@@ -1,5 +1,6 @@
 export type CameraFraming = {
   position: [number, number, number]
+  up: [number, number, number]
   fov: number
   distance: number
   azimuth: number
@@ -42,5 +43,5 @@ export function getCameraFraming(width: number, height: number, tiltDegrees = 16
     distance * cosTilt,
     distance * sinTilt * cosAzimuth,
   ]
-  return { position, fov, distance, azimuth, tilt: tilt * 180 / Math.PI }
+  return { position, up: [0, 1, 0], fov, distance, azimuth, tilt: tilt * 180 / Math.PI }
 }
