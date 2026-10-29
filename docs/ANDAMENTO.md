@@ -2,6 +2,16 @@
 
 > Retrato de trabalho para retomar o projeto entre sessões. Para requisitos e decisões, consulte os documentos de origem indicados em `AGENTS.md`.
 
+## Medidor de FPS — implementação concluída; Chrome pendente (2026-10-29)
+
+- Pedido confirmado: adicionar um medidor opcional de FPS na partida e testar o jogo no Chrome, inclusive movimentando a câmera para observar o desempenho.
+- Estado inicial verificado: `main` limpa e alinhada a `origin/main` no commit `c44db1f`. A cena R3F usa `frameloop="demand"`, então a medição deve contar callbacks de render da própria cena e sinalizar repouso, sem ativar um loop contínuo.
+- Implementação: botão FPS desligado por padrão na barra inferior; leitura de FPS e milissegundos por quadro montada apenas quando habilitada; probe R3F condicional, indicação de ociosidade e nova janela de amostra ao retomar renderização.
+- Validação: `npm run verify` passou com 175 testes em 32 arquivos e builds web/servidor. Playtest Chrome não realizado: a automação bloqueou a seleção da janela quando não conseguiu determinar com confiança a URL atual, e encerrou o controle do computador.
+- Graphify: `graphify update .` falhou porque a CLI não está instalada; o MCP disponível continua apontando para outro repositório.
+- Nota de trabalho: [medidor de FPS e playtest no Chrome](trabalho/medidor-fps.md).
+- Próximo passo: retomar a validação visual no Chrome quando uma sessão Chrome controlável e com URL verificável estiver disponível; ativar o FPS e arrastar a câmera durante a partida.
+
 ## Frente em andamento — publicação automática no Render (2026-10-29)
 
 - O serviço gratuito está conectado ao GitHub (`main`) e a tela atual mostra `Auto-Deploy: On Commit`, mas os deploys permanecem manuais. O commit de teste `03ef597` não apareceu no histórico do Render.

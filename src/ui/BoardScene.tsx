@@ -14,6 +14,8 @@ import { getDiceRollRotation } from './dicePresentation'
 import { getRouletteFloorSectors } from './rouletteFloor'
 import { shouldStartCameraDrag } from './cameraDrag'
 import { BUILDING_ANIMATION_DURATION_MS, DICE_ANIMATION_DURATION_MS, LANDING_PULSE_DURATION_MS, PAWN_STEP_ANIMATION_DURATION_MS, PAWN_TELEPORT_ANIMATION_DURATION_MS, PROPERTY_HOTEL_LEVEL, getAnimationDuration, type AnimationSpeed } from '../../shared/game'
+import type { FrameRateAccumulator } from './fpsMeter'
+import { recordRenderedFrame } from './fpsMeter'
 
 type PropertyBuilding = { spaceId: number; ownerSessionId: string; houses: number; isMortgaged: boolean; ownerColor: string }
 type PlayerToken = { id: string; position: number; color: string; seatIndex: number; cash: number; characterType: 'pawn' | 'car' | 'motorcycle' | 'airplane'; activity?: string }
@@ -562,9 +564,16 @@ function CornerLandmark({ type, position }: { type: 'stadium' | 'airport'; posit
   return <primitive object={model} position={position} scale={type === 'stadium' ? 0.64 : 0.48} />
 }
 
-type BoardSceneProps = { players: PlayerToken[]; propertyBuildings: PropertyBuilding[]; highlightedSpaceIds?: readonly number[]; selectionMode?: boolean; landingPulseSpaceId?: number; landingPulseSequence?: number; diceRollSequence?: number; dice?: [number, number]; diceVisible?: boolean; diceResultVisible?: boolean; presentationSpeed?: AnimationSpeed; reducedMotion?: boolean; pawnMovementEnabled?: boolean; pawnMoveMode?: 'walk' | 'teleport'; cameraEnabled?: boolean; onMovementComplete: () => void; onSelectSpace: (spaceId: number) => void }
+type BoardSceneProps = { players: PlayerToken[]; propertyBuildings: PropertyBuilding[]; highlightedSpaceIds?: readonly number[]; selectionMode?: boolean; landingPulseSpaceId?: number; landingPulseSequence?: number; diceRollSequence?: number; dice?: [number, number]; diceVisible?: boolean; diceResultVisible?: boolean; presentationSpeed?: AnimationSpeed; reducedMotion?: boolean; pawnMovementEnabled?: boolean; pawnMoveMode?: 'walk' | 'teleport'; cameraEnabled?: boolean; fpsMeterEnabled?: boolean; fpsSamples?: { current: FrameRateAccumulator }; onMovementComplete: () => void; onSelectSpace: (spaceId: number) => void }
 
-function BoardSceneCanvas({ players, propertyBuildings, highlightedSpaceIds = [], selectionMode = false, landingPulseSpaceId = -1, landingPulseSequence = 0, diceRollSequence = 0, dice = [0, 0], diceVisible = false, diceResultVisible = false, presentationSpeed = 0.5, reducedMotion = false, pawnMovementEnabled = false, pawnMoveMode = 'walk', cameraEnabled = true, onMovementComplete, onSelectSpace }: BoardSceneProps) {
+function FrameRateProbe({ samples }: { samples: { current: FrameRateAccumulator } }) {
+  useFrame(() => {
+    samples.current = recordRenderedFrame(samples.current, performance.now())
+  })
+  return null
+}
+
+function BoardSceneCanvas({ players, propertyBuildings, highlightedSpaceIds = [], selectionMode = false, landingPulseSpaceId = -1, landingPulseSequence = 0, diceRollSequence = 0, dice = [0, 0], diceVisible = false, diceResultVisible = false, presentationSpeed = 0.5, reducedMotion = false, pawnMovementEnabled = false, pawnMoveMode = 'walk', cameraEnabled = true, fpsMeterEnabled = false, fpsSamples, onMovementComplete, onSelectSpace }: BoardSceneProps) {
   return (
     <Canvas camera={{ position: [12.5, 15.5, 15.5], fov: 34 }} shadows dpr={[1, 1.25]} frameloop="demand">
       <color attach="background" args={['#9bbcc1']} />
@@ -573,6 +582,7 @@ function BoardSceneCanvas({ players, propertyBuildings, highlightedSpaceIds = []
       <ResponsiveCamera tilt={16} horizontal={45} />
       <OrbitControls makeDefault enabled={cameraEnabled} enablePan={false} enableZoom={false} enableRotate minPolarAngle={Math.PI / 12} maxPolarAngle={Math.PI / 2} rotateSpeed={0.72} enableDamping dampingFactor={0.1} />
       <CameraDragAnywhere enabled={cameraEnabled} />
+      {fpsMeterEnabled && fpsSamples && <FrameRateProbe samples={fpsSamples} />}
       <Board players={players} propertyBuildings={propertyBuildings} highlightedSpaceIds={highlightedSpaceIds} selectionMode={selectionMode} landingPulseSpaceId={landingPulseSpaceId} landingPulseSequence={landingPulseSequence} diceRollSequence={diceRollSequence} dice={dice} diceVisible={diceVisible} diceResultVisible={diceResultVisible} presentationSpeed={presentationSpeed} reducedMotion={reducedMotion} pawnMovementEnabled={pawnMovementEnabled} pawnMoveMode={pawnMoveMode} onMovementComplete={onMovementComplete} onSelectSpace={onSelectSpace} />
       <ContactShadows position={[0, -0.46, 0]} opacity={0.25} scale={18} blur={2.5} far={5} frames={1} resolution={256} smooth={false} />
     </Canvas>
@@ -614,6 +624,8 @@ function areScenePropsEqual(first: BoardSceneProps, second: BoardSceneProps) {
     && first.pawnMovementEnabled === second.pawnMovementEnabled
     && first.pawnMoveMode === second.pawnMoveMode
     && first.cameraEnabled === second.cameraEnabled
+    && first.fpsMeterEnabled === second.fpsMeterEnabled
+    && first.fpsSamples === second.fpsSamples
 }
 
 const MemoizedBoardScene = memo(BoardSceneCanvas, areScenePropsEqual)

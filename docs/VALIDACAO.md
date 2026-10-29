@@ -1,5 +1,12 @@
 # Validação visual e de navegador
 
+## 2026-10-29 — Medidor opcional de FPS
+
+- `npm run verify`: 175 testes em 32 arquivos passaram; builds frontend e servidor passaram. O build mantém o aviso conhecido do GLTF acima de 500 KB (955,19 KB / 259,21 KB gzip). `git diff --check` passou.
+- O medidor usa `useFrame` da cena React Three Fiber sob demanda, não um contador RAF independente. Quando ativo, mostra FPS e tempo por quadro; após 1 segundo sem quadros indica ociosidade. O probe não é montado quando desligado. Testes cobrem 60 FPS, pausa, retomada e timestamps inválidos.
+- Playtest no Chrome ficou pendente: a chamada CUA para selecionar a janela do Chrome foi encerrada por não conseguir determinar a URL atual com confiança suficiente. Não usei outro meio para contornar essa proteção.
+- `graphify update .` não rodou porque a CLI não está instalada; o MCP Graphify disponível aponta para outro repositório.
+
 ## 2026-10-29 — Otimização de renderização e gesto global de câmera
 
 - `npm run verify`: 171 testes em 31 arquivos passaram; builds frontend e servidor passaram. `git diff --check` passou. O build mantém aviso de chunk GLTF acima de 500 KB: 955,19 KB (259,21 KB gzip), carregado quando a partida abre.
