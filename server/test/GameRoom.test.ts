@@ -478,7 +478,7 @@ describe('sala privada', () => {
     expect(room.state.properties.get(String(propertyId))?.ownerSessionId ?? '').toBe('')
   })
 
-  it('permite ao dono iniciar leilão fora da vez, reserva lances e transfere o título ao maior lance', async () => {
+  it('restringe o início do leilão ao turno do dono, reserva lances e transfere o título ao maior lance', async () => {
     const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
     const host = await colyseus.connectTo(room, { name: 'Ana' })
     const seller = await colyseus.connectTo(room, { name: 'Bia' })
@@ -495,9 +495,15 @@ describe('sala privada', () => {
     title.ownerSessionId = seller.sessionId
     title.isMortgaged = true
     room.state.properties.set('1', title)
+    room.state.activePlayerSessionId = seller.sessionId
+    room.state.turnPhase = 'resolve'
+    const wrongTurnError = new Promise<{ message: string }>((resolve) => host.onMessage('room:error', resolve))
+    host.send('auctionStart', { propertyId: 1, startingBid: 120_000 })
+    await expect(wrongTurnError).resolves.toMatchObject({ message: expect.stringContaining('durante seu turno') })
+    expect(room.state.auctionId).toBe(0)
     seller.send('auctionStart', { propertyId: 1, startingBid: 120_000 })
     await waitFor(() => room.state.auctionId > 0)
-    expect(room.state.activePlayerSessionId).toBe(host.sessionId)
+    expect(room.state.activePlayerSessionId).toBe(seller.sessionId)
     expect(room.state.auctionStartingBid).toBe(120_000)
 
     const sellerBidError = new Promise<{ message: string }>((resolve) => seller.onMessage('room:error', resolve))
@@ -595,7 +601,7 @@ describe('sala privada', () => {
     expect(buildingSaleValue(first.id)).toBe(Math.floor(constructionCost(first.id) / 2))
   })
 
-  it('autoriza hipotecar e resgatar um título somente pelo dono na sua vez', async () => {
+  it('permite hipotecar só ao dono durante dívida insuficiente e resgatar ao dono no turno', async () => {
     const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
     const host = await colyseus.connectTo(room, { name: 'Ana' })
     const guest = await colyseus.connectTo(room, { name: 'Bia' })
@@ -610,12 +616,16 @@ describe('sala privada', () => {
     const property = new PropertyState()
     property.ownerSessionId = host.sessionId
     room.state.properties.set(String(propertyId), property)
-    room.state.turnPhase = 'resolve'
+    room.state.turnPhase = 'debt'
+    room.state.debtAmount = 180_000
     room.state.activePlayerSessionId = host.sessionId
     const hostPlayer = room.state.players.get(host.sessionId)!
     hostPlayer.cash = 100_000
+    room.state.players.get(guest.sessionId)!.cash = 100_000
 
+    const outOfTurnMortgage = new Promise<{ message: string }>((resolve) => guest.onMessage('room:error', resolve))
     guest.send('mortgage', { propertyId })
+    await expect(outOfTurnMortgage).resolves.toMatchObject({ message: expect.stringContaining('Hipotecas só podem') })
     await new Promise((resolve) => setTimeout(resolve, 30))
     expect(property.isMortgaged).toBe(false)
 
@@ -626,11 +636,25 @@ describe('sala privada', () => {
     expect(property.isMortgaged).toBe(false)
 
     room.state.activePlayerSessionId = host.sessionId
+    room.state.turnPhase = 'resolve'
+    const outsideDebt = new Promise<{ message: string }>((resolve) => host.onMessage('room:error', resolve))
+    host.send('mortgage', { propertyId })
+    await expect(outsideDebt).resolves.toMatchObject({ message: expect.stringContaining('Hipotecas só podem') })
+    expect(property.isMortgaged).toBe(false)
+    room.state.turnPhase = 'debt'
     host.send('mortgage', { propertyId })
     await new Promise((resolve) => setTimeout(resolve, 30))
     expect(property.isMortgaged).toBe(true)
     expect(hostPlayer.cash).toBe(100_000 + mortgageValue(propertyId))
 
+    const secondTitle = new PropertyState()
+    secondTitle.ownerSessionId = host.sessionId
+    room.state.properties.set('16', secondTitle)
+    const alreadyCovered = new Promise<{ message: string }>((resolve) => host.onMessage('room:error', resolve))
+    host.send('mortgage', { propertyId: 16 })
+    await expect(alreadyCovered).resolves.toMatchObject({ message: expect.stringContaining('saldo já cobre') })
+
+    room.state.turnPhase = 'resolve'
     room.state.activePlayerSessionId = guest.sessionId
     const unauthorizedRedemption = new Promise<{ message: string }>((resolve) => guest.onMessage('room:error', resolve))
     guest.send('redeemMortgage', { propertyId })
@@ -661,6 +685,11 @@ describe('sala privada', () => {
     expect(room.state.debtAmount).toBe(50_000)
     expect(room.state.debtCreditorSessionId).toBe('')
     expect(player.cash).toBe(20_000)
+
+    const debtAuctionError = new Promise<{ message: string }>((resolve) => host.onMessage('room:error', resolve))
+    host.send('auctionStart', { propertyId: 15, startingBid: 10_000 })
+    await expect(debtAuctionError).resolves.toMatchObject({ message: expect.stringContaining('durante seu turno') })
+    expect(room.state.auctionId).toBe(0)
 
     const propertyId = 15
     const property = new PropertyState()
@@ -804,8 +833,10 @@ describe('sala privada', () => {
     await expect(unauthorizedRoll).resolves.toMatchObject({ message: 'Aguarde a sua vez para lançar os dados.' })
     expect(room.state.turnPhase).toBe('roll')
 
+    const diceSequenceBeforeRoll = room.state.diceSequence
     host.send('roll')
     await new Promise((resolve) => setTimeout(resolve, 50))
+    expect(room.state.diceSequence).toBe(diceSequenceBeforeRoll + 1)
     expect(['resolve', 'purchase']).toContain(room.state.turnPhase)
     expect(room.state.diceOne).toBeGreaterThanOrEqual(1)
     expect(room.state.diceOne).toBeLessThanOrEqual(6)

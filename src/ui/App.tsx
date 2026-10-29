@@ -13,6 +13,7 @@ import type { ExpressObjectiveUpdate } from '../../shared/objectives'
 import { PLAYER_COLORS } from './playerPalette'
 import { getGameSound, getPropertyChangeSound, getPropertyVisualChange, formatCashDelta, type GameSound } from './gameFeedback'
 import { playGameSound, startGameMusic, stopGameMusic, unlockGameAudio } from './gameAudio'
+import { getPawnStepPath } from './pawnPath'
 
 type Mode = GameMode
 type Screen = 'home' | 'room' | 'game'
@@ -43,6 +44,7 @@ function App() {
   const [reducedMotion, setReducedMotion] = useState(() => typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches)
   const [feedbackToast, setFeedbackToast] = useState('')
   const [diceRollSequence, setDiceRollSequence] = useState(0)
+  const [presentationStage, setPresentationStage] = useState<'idle' | 'dice' | 'pawn'>('idle')
   const [landingPulseSpaceId, setLandingPulseSpaceId] = useState(-1)
   const [landingPulseSequence, setLandingPulseSequence] = useState(0)
   const [name, setName] = useState('')
@@ -94,9 +96,10 @@ function App() {
   const [isHost, setIsHost] = useState(false)
   const [isConnecting, setIsConnecting] = useState(false)
   const activeRoom = useRef<Room | null>(null)
-  const previousFeedbackSnapshot = useRef<{ description: string; diceOne: number; diceTwo: number; players: Map<string, { cash: number; position: number }>; properties: Map<string, PropertyHolding> } | null>(null)
+  const previousFeedbackSnapshot = useRef<{ description: string; diceSequence: number; players: Map<string, { cash: number; position: number }>; properties: Map<string, PropertyHolding> } | null>(null)
   const previousObjectiveComplete = useRef(false)
   const feedbackTimeout = useRef<number | null>(null)
+  const presentationTimer = useRef<number | null>(null)
   const previousTradeOfferId = useRef<number | null>(null)
   const activePlayer = roomPlayers.find((player) => player.sessionId === activePlayerSessionId)
   const activeSpace = boardSpaces[activePlayer?.position ?? 0]
@@ -119,7 +122,7 @@ function App() {
     return boardSpaces.some((space) => space.kind === 'property' && space.color === color && (holdingsById.get(space.id)?.houses ?? 0) > 0)
   }
   const localPlayer = roomPlayers.find((player) => player.sessionId === room?.sessionId)
-  const canAuctionNow = Boolean(localPlayer && !localPlayer.isBankrupt && turnPhase !== 'purchase' && turnPhase !== 'debt' && turnPhase !== 'ended' && auctionId === 0 && !tradeOffer)
+  const canAuctionNow = Boolean(localPlayer && isMyTurn && !localPlayer.isBankrupt && ['roll', 'resolve', 'jail'].includes(turnPhase) && presentationStage === 'idle' && auctionId === 0 && !tradeOffer)
   const pendingPurchasePrice = boardSpaces[pendingPropertyId]?.price ?? 0
   const pendingPurchaseSpace = boardSpaces[pendingPropertyId]
   const highlightedSpaceIds = turnPhase === 'purchase'
@@ -214,6 +217,7 @@ function App() {
         turnPhase: TurnPhase
         diceOne: number
         diceTwo: number
+        diceSequence: number
         landingDescription: string
         activeCardTitle: string
         activeCardDescription: string
@@ -257,8 +261,23 @@ function App() {
           setLandingPulseSpaceId(Number(buildingChanged[0]))
           setLandingPulseSequence((sequence) => sequence + 1)
         }
-        const didRoll = snapshot.diceOne > 0 && (previous.diceOne === 0 && previous.diceTwo === 0 || snapshot.diceOne !== previous.diceOne || snapshot.diceTwo !== previous.diceTwo)
+        const didRoll = snapshot.diceSequence > previous.diceSequence
         if (didRoll) setDiceRollSequence((sequence) => sequence + 1)
+        if (didRoll || movedPlayer) {
+          if (presentationTimer.current !== null) window.clearTimeout(presentationTimer.current)
+          if (reducedMotion) {
+            setPresentationStage('idle')
+          } else {
+            const steps = movedPlayer
+              ? getPawnStepPath(previous.players.get(movedPlayer.sessionId)?.position ?? movedPlayer.position, movedPlayer.position).length
+              : 0
+            const diceDuration = didRoll ? 760 : 0
+            setPresentationStage(didRoll ? 'dice' : 'pawn')
+            presentationTimer.current = window.setTimeout(() => {
+              setPresentationStage(steps ? 'pawn' : 'idle')
+            }, diceDuration)
+          }
+        }
         if (snapshot.landingDescription && snapshot.landingDescription !== previous.description) {
           const localCashDelta = (nextPlayerFacts.get(room.sessionId)?.cash ?? 0) - (previous.players.get(room.sessionId)?.cash ?? 0)
           const delta = formatCashDelta(localCashDelta)
@@ -269,7 +288,7 @@ function App() {
           playGameSound('dice')
         }
       }
-      previousFeedbackSnapshot.current = { description: snapshot.landingDescription, diceOne: snapshot.diceOne, diceTwo: snapshot.diceTwo, players: nextPlayerFacts, properties: nextPropertyFacts }
+      previousFeedbackSnapshot.current = { description: snapshot.landingDescription, diceSequence: snapshot.diceSequence, players: nextPlayerFacts, properties: nextPropertyFacts }
       setRoomPlayers(nextPlayers)
       setRoomProperties(new Map(snapshot.properties.entries()))
       setRoomCode(snapshot.roomCode)
@@ -347,10 +366,11 @@ function App() {
       room.onReconnect.remove(handleReconnect)
       removeObjectiveMessage()
     }
-  }, [room, soundEnabled])
+  }, [room, soundEnabled, reducedMotion])
 
   useEffect(() => () => {
     if (feedbackTimeout.current !== null) window.clearTimeout(feedbackTimeout.current)
+    if (presentationTimer.current !== null) window.clearTimeout(presentationTimer.current)
   }, [])
 
   useEffect(() => {
@@ -476,7 +496,7 @@ function App() {
       <div className="scene-backdrop">
         {sceneReady && (
           <Suspense fallback={<div className="scene-placeholder" aria-hidden="true" />}>
-            <BoardScene players={playerTokens} propertyBuildings={propertyBuildings} highlightedSpaceIds={highlightedSpaceIds} landingPulseSpaceId={landingPulseSpaceId} landingPulseSequence={landingPulseSequence} diceRollSequence={diceRollSequence} dice={dice} reducedMotion={reducedMotion} onSelectSpace={setSelectedSpaceId} />
+            <BoardScene players={playerTokens} propertyBuildings={propertyBuildings} highlightedSpaceIds={highlightedSpaceIds} landingPulseSpaceId={landingPulseSpaceId} landingPulseSequence={landingPulseSequence} diceRollSequence={diceRollSequence} dice={dice} reducedMotion={reducedMotion} pawnMovementEnabled={presentationStage !== 'dice'} onMovementComplete={() => setPresentationStage('idle')} onSelectSpace={setSelectedSpaceId} />
           </Suspense>
         )}
       </div>
@@ -638,7 +658,7 @@ function App() {
             <aside className="turn-card asset-panel" aria-label="Minha carteira de imóveis">
               <div className="asset-panel-heading"><span className="turn-label">{turnPhase === 'debt' ? 'LIQUIDAÇÃO DE DÍVIDA' : 'CARTEIRA DA PARTIDA'}</span>{turnPhase === 'debt' ? <button className="trade-close" onClick={() => setShowPropertyPanel(false)} aria-label="Voltar para a dívida">×</button> : <span>{formatMoney(localPlayer?.cash ?? 0)}</span>}</div>
               <h2>{turnPhase === 'debt' ? 'Bens para quitar a dívida' : 'Meus imóveis'}</h2>
-              <p>{turnPhase === 'debt' ? `Falta pagar ${formatMoney(debtAmount)}. Seu saldo é ${formatMoney(localPlayer?.cash ?? 0)}; os aros dourados indicam bens que podem ser liquidados.` : 'Hipoteque para receber metade do valor ou abra um leilão voluntário de um título próprio.'}</p>
+              <p>{turnPhase === 'debt' ? `Falta pagar ${formatMoney(debtAmount)}. Seu saldo é ${formatMoney(localPlayer?.cash ?? 0)}; venda construções ou hipoteque títulos para completar o pagamento.` : 'No seu turno, você pode leiloar um título próprio. Hipotecas ficam disponíveis apenas para quitar uma dívida.'}</p>
               <div className="asset-list">
                 {myProperties.length === 0 ? <span className="asset-empty">Você ainda não tem propriedades.</span> : myProperties.map(({ spaceId, holding, space }) => {
                   const canMortgage = canMortgageProperty(spaceId, room?.sessionId ?? '', holdingsById)
@@ -647,17 +667,17 @@ function App() {
                     <div className={`asset-row ${holding.isMortgaged ? 'mortgaged' : ''}`} key={spaceId}>
                       <div className="asset-info"><strong>{space.name}</strong><small>{holding.isMortgaged ? `HIPOTECADO · sem aluguel` : holding.houses ? `${holding.houses === 5 ? 'HOTEL' : `${holding.houses} CASA(S)`}` : space.buildable ? 'IMÓVEL' : 'ESTAÇÃO'}</small></div>
                       <div className="asset-row-actions">{holding.houses > 0 && canSellBuilding(spaceId, room?.sessionId ?? '', holdingsById) ? (
-                        <button className="asset-action" disabled={!isMyTurn || !['resolve', 'debt'].includes(turnPhase)} onClick={() => room?.send('sellBuilding', { propertyId: spaceId })}>Vender construção <b>+{formatMoney(buildingSaleValue(spaceId))}</b></button>
+                        <button className="asset-action" disabled={!isMyTurn || !['resolve', 'debt'].includes(turnPhase) || (turnPhase === 'debt' && (localPlayer?.cash ?? 0) >= debtAmount)} onClick={() => room?.send('sellBuilding', { propertyId: spaceId })}>Vender construção <b>+{formatMoney(buildingSaleValue(spaceId))}</b></button>
                       ) : holding.isMortgaged ? (
                         <button className="asset-action" disabled={!isMyTurn || turnPhase !== 'resolve' || !canRedeemMortgage(spaceId, room?.sessionId ?? '', holdingsById, localPlayer?.cash ?? 0)} onClick={() => room?.send('redeemMortgage', { propertyId: spaceId })} title={`Resgate por ${formatMoney(redemptionCost)}`}>Resgatar <b>{formatMoney(redemptionCost)}</b></button>
                       ) : (
-                        <button className="asset-action" disabled={!isMyTurn || !canMortgage || !['resolve', 'debt'].includes(turnPhase)} onClick={() => room?.send('mortgage', { propertyId: spaceId })} title={canMortgage ? `Receba ${formatMoney(mortgageValue(spaceId))}` : 'Venda primeiro as construções do grupo'}>Hipotecar <b>+{formatMoney(mortgageValue(spaceId))}</b></button>
+                        <button className="asset-action" disabled={!isMyTurn || !canMortgage || turnPhase !== 'debt' || (localPlayer?.cash ?? 0) >= debtAmount} onClick={() => room?.send('mortgage', { propertyId: spaceId })} title={canMortgage ? 'Disponível apenas para completar o pagamento de uma dívida' : 'Venda primeiro as construções do grupo'}>Hipotecar <b>+{formatMoney(mortgageValue(spaceId))}</b></button>
                       )}<label className="auction-start-label">LANCE INICIAL<input className="trade-input" type="number" min={AUCTION_MIN_BID_INCREMENT} step={AUCTION_MIN_BID_INCREMENT} value={auctionStartingBids[spaceId] ?? String(space.price ?? AUCTION_MIN_BID_INCREMENT)} onChange={(event) => setAuctionStartingBids((current) => ({ ...current, [spaceId]: event.target.value }))} /></label><button className="asset-action auction-start-button" disabled={!canAuctionNow || isTradePropertyLocked(spaceId) || Number(auctionStartingBids[spaceId] ?? space.price ?? 0) < AUCTION_MIN_BID_INCREMENT} title={isTradePropertyLocked(spaceId) ? 'Venda primeiro as construções do grupo' : 'Leiloar seu imóvel para os outros jogadores'} onClick={() => { room?.send('auctionStart', { propertyId: spaceId, startingBid: Number(auctionStartingBids[spaceId] ?? space.price ?? 0) }); setError('') }}>Leiloar</button></div>
                     </div>
                   )
                 })}
               </div>
-              <span className="asset-note">Leilões podem ser iniciados fora da sua vez; os lances ficam reservados durante 20 segundos.</span>
+              <span className="asset-note">Inicie leilões durante seu turno, fora de compras e dívidas. Os lances ficam reservados durante 20 segundos.</span>
             </aside>
           ) : mode === 'express' && expressObjective && showObjectivePanel && turnPhase !== 'ended' ? (
             <aside className="turn-card objective-panel" aria-label="Objetivo privado Express">
@@ -674,10 +694,12 @@ function App() {
           ) : (
             <div className={`turn-card${turnPhase === 'ended' ? ' final-result-card' : ''}`}>
               <span className="turn-label">{turnPhase === 'ended' ? 'PARTIDA ENCERRADA' : turnPhase === 'debt' ? 'DÍVIDA EM ABERTO' : matchEnding ? 'TEMPO ESGOTADO · CONCLUA A JOGADA' : `TURNO ${turnNumber} · ${isMyTurn ? 'SUA VEZ' : `VEZ DE ${activePlayer?.name ?? '…'}`}`}</span>
-              <h2>{turnPhase === 'ended' ? (roomPlayers.find((player) => player.sessionId === winnerSessionId)?.name ?? 'Partida encerrada') : turnPhase === 'debt' ? 'Hora de liquidar bens' : activeCardTitle || (turnPhase === 'purchase' ? `Comprar ${pendingPurchaseSpace?.name ?? 'propriedade'}` : activeSpace.name)}</h2>
-              {turnPhase !== 'ended' && <p>{turnPhase === 'purchase' ? 'Este terreno está livre. Você escolhe se quer comprar; se recusar, ele continua sem dono.' : landingDescription || activeCardDescription || (activeSpace.kind === 'property' ? `Propriedade · ${formatMoney(activeSpace.price ?? 0)}` : 'Aguardando a jogada.')}</p>}
-              {turnPhase === 'purchase' && pendingPurchaseSpace?.kind === 'property' && <div className="purchase-summary"><div><small>PREÇO DO TERRENO</small><strong>{formatMoney(pendingPurchasePrice)}</strong></div><div><small>ALUGUEL INICIAL</small><strong>{formatMoney(pendingPurchaseRent)}</strong></div><div><small>CONSTRUÇÃO</small><strong>{pendingPurchaseSpace.buildable ? `${formatMoney(constructionCost(pendingPurchaseSpace.id))} por nível` : 'Não disponível'}</strong></div></div>}
-              {turnPhase === 'ended' ? (
+              <h2>{presentationStage === 'dice' ? 'Rolando os dados…' : presentationStage === 'pawn' ? 'Peão em movimento…' : turnPhase === 'ended' ? (roomPlayers.find((player) => player.sessionId === winnerSessionId)?.name ?? 'Partida encerrada') : turnPhase === 'debt' ? 'Hora de liquidar bens' : activeCardTitle || (turnPhase === 'purchase' ? `Comprar ${pendingPurchaseSpace?.name ?? 'propriedade'}` : activeSpace.name)}</h2>
+              {presentationStage !== 'idle' ? <p role="status" aria-live="polite">A próxima ação aparece quando a animação terminar.</p> : turnPhase !== 'ended' && <p>{turnPhase === 'purchase' ? 'Este terreno está livre. Você escolhe se quer comprar; se recusar, ele continua sem dono.' : landingDescription || activeCardDescription || (activeSpace.kind === 'property' ? `Propriedade · ${formatMoney(activeSpace.price ?? 0)}` : 'Aguardando a jogada.')}</p>}
+              {presentationStage === 'idle' && turnPhase === 'purchase' && pendingPurchaseSpace?.kind === 'property' && <div className="purchase-summary"><div><small>PREÇO DO TERRENO</small><strong>{formatMoney(pendingPurchasePrice)}</strong></div><div><small>ALUGUEL INICIAL</small><strong>{formatMoney(pendingPurchaseRent)}</strong></div><div><small>CONSTRUÇÃO</small><strong>{pendingPurchaseSpace.buildable ? `${formatMoney(constructionCost(pendingPurchaseSpace.id))} por nível` : 'Não disponível'}</strong></div></div>}
+              {presentationStage !== 'idle' && turnPhase !== 'ended' ? (
+                <div className="presentation-wait" aria-hidden="true">{presentationStage === 'dice' ? '🎲' : '↗'}</div>
+              ) : turnPhase === 'ended' ? (
                 <div className="final-result-content">
                   <div className="winner-banner"><span aria-hidden="true">✦</span><strong>{winnerSessionId ? 'VENCEDOR DA PARTIDA' : 'PARTIDA ENCERRADA'}</strong><span aria-hidden="true">✦</span></div>
                   {winnerSessionId && (() => {

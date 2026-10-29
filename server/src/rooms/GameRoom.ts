@@ -173,6 +173,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
 
       const diceOne = randomInt(1, 7)
       const diceTwo = randomInt(1, 7)
+      this.state.diceSequence += 1
       this.state.diceOne = diceOne
       this.state.diceTwo = diceTwo
       this.movePlayer(client.sessionId, player, diceOne + diceTwo)
@@ -231,6 +232,10 @@ export class GameRoom extends Room<{ state: LobbyState }> {
     },
     sellBuilding: (client: Client, payload: { propertyId?: unknown }) => {
       if (this.state.status !== 'playing' || !['resolve', 'debt'].includes(this.state.turnPhase) || client.sessionId !== this.state.activePlayerSessionId) return
+      if (this.state.turnPhase === 'debt' && (this.state.players.get(client.sessionId)?.cash ?? 0) >= this.state.debtAmount) {
+        client.send('room:error', { message: 'Seu saldo já cobre a dívida; liquide bens apenas quando precisar completar o pagamento.' })
+        return
+      }
       const propertyId = typeof payload?.propertyId === 'number' ? payload.propertyId : -1
       const player = this.state.players.get(client.sessionId)
       const property = this.state.properties.get(String(propertyId))
@@ -246,11 +251,18 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       this.refreshExpressObjective(client.sessionId)
     },
     mortgage: (client: Client, payload: { propertyId?: unknown }) => {
-      if (this.state.status !== 'playing' || !['resolve', 'debt'].includes(this.state.turnPhase) || client.sessionId !== this.state.activePlayerSessionId) return
+      if (this.state.status !== 'playing' || this.state.turnPhase !== 'debt' || client.sessionId !== this.state.activePlayerSessionId) {
+        client.send('room:error', { message: 'Hipotecas só podem ser usadas para completar o pagamento de uma dívida.' })
+        return
+      }
       const propertyId = typeof payload?.propertyId === 'number' ? payload.propertyId : -1
       const player = this.state.players.get(client.sessionId)
       const property = this.state.properties.get(String(propertyId))
       const holdings = this.getHoldings()
+      if (!player || player.cash >= this.state.debtAmount) {
+        client.send('room:error', { message: 'Seu saldo já cobre a dívida; não é possível hipotecar neste momento.' })
+        return
+      }
       if (!player || !property || !canMortgageProperty(propertyId, client.sessionId, holdings)) {
         client.send('room:error', { message: 'Essa propriedade não pode ser hipotecada. Venda as construções do grupo e tente novamente.' })
         return
@@ -334,6 +346,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       if (this.state.status !== 'playing' || this.state.turnPhase !== 'jail' || client.sessionId !== this.state.activePlayerSessionId || !player?.isJailed) return
       const dice: [number, number] = [randomInt(1, 7), randomInt(1, 7)]
       const result = resolveJailAttempt(dice, player.jailTurns, player.cash)
+      this.state.diceSequence += 1
       this.state.diceOne = dice[0]
       this.state.diceTwo = dice[1]
       player.isJailed = result.isJailed
@@ -487,8 +500,8 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       this.state.landingDescription = 'A proposta de troca foi cancelada.'
     },
     auctionStart: (client: Client, payload: { propertyId?: unknown; startingBid?: unknown }) => {
-      if (this.state.status !== 'playing' || ['purchase', 'debt'].includes(this.state.turnPhase)) {
-        client.send('room:error', { message: 'Aguarde a resolução da compra ou dívida para abrir um leilão.' })
+      if (this.state.status !== 'playing' || client.sessionId !== this.state.activePlayerSessionId || !['roll', 'resolve', 'jail'].includes(this.state.turnPhase)) {
+        client.send('room:error', { message: 'Leilões voluntários só podem começar durante seu turno, fora de compras e dívidas.' })
         return
       }
       if (this.state.auctionId > 0 || this.state.tradeOfferId > 0) {

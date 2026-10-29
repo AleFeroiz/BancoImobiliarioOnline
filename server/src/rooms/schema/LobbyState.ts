@@ -42,6 +42,7 @@ export const LobbyState = schema({
   phaseSeconds: t.uint8().default(0),
   diceOne: t.uint8().default(0),
   diceTwo: t.uint8().default(0),
+  diceSequence: t.uint32().default(0),
   landingDescription: t.string().default(''),
   activeCardTitle: t.string().default(''),
   activeCardDescription: t.string().default(''),

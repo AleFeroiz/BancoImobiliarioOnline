@@ -10,6 +10,15 @@
 - A negociação de títulos ainda tem propostas abertas em `docs/DECISOES.md`; não as trate como comportamento aprovado sem nova decisão.
 - Evidências de automação, simulação e revisão visual estão em `docs/VALIDACAO.md`. Elas descrevem estados específicos e não substituem uma conferência do código e do ambiente atuais.
 
+## Frente concluída — sequência visual, economia e câmera (2026-10-28)
+
+- Pedido do usuário: tocar dados, depois movimento do peão, depois mostrar ações de chegada; limitar leilão ao turno de quem vende, deixar hipoteca apenas para resolver dívida sem saldo suficiente; elevar a câmera para aproximar a leitura da referência visual enviada.
+- Regra anterior conferida em `docs/DECISOES.md`: leilão podia começar fora da vez; hipoteca valia durante a vez e dívida. A decisão atual foi incorporada em `docs/DECISOES.md`, `docs/REGRAS-DE-JOGO.md`, `docs/PLANO.md` e `README.md`.
+- Branch atual observada: `docs/ale-dev-memory`, com upstream `origin/docs/ale-dev-memory` e commit local `44b6944`. O tracking local não mostrou divergência, mas `git fetch origin` não foi possível porque o sandbox permite apenas leitura em `.git` e negou escrita em `.git/FETCH_HEAD`; o estado remoto atual não foi confirmado.
+- Implementação: o servidor restringe leilões ao turno da pessoa vendedora e hipotecas/demolição durante dívida ao saldo insuficiente; a cena e o cartão de turno sequenciam dados, caminhada do peão e ação contextual; a câmera passou a olhar de cima tanto no desktop como no celular.
+- Validação: `npm run verify` passou (116 testes, build web e build do servidor). `git diff --check` passou. O build mantém o aviso conhecido do chunk de cena 3D acima de 500 kB. Revisão visual manual ficou pendente: a prévia local não abriu no navegador integrado por timeout e a automação no Chrome foi encerrada pelo controle de segurança antes de interagir com a janela.
+- Próximo passo: revisar a mudança visual em navegador/aparelho após a branch de trabalho ficar disponível. A branch atual e o `.git` somente leitura impedem criar branch, commit ou PR nesta sessão.
+
 ## Retomada
 
 1. Verifique branch, `git status`, upstream e alterações recebidas antes de editar.

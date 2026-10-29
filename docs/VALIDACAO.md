@@ -2,6 +2,13 @@
 
 > As entradas anteriores registram testes da versão existente naquele dia. A escolha ao cair em uma propriedade livre continua sendo **comprar ou não comprar**; leilão é uma ação voluntária separada para vender um título que o jogador já possui.
 
+## 2026-10-28 — Sequência de jogada, liquidação e câmera alta
+
+- A partida agora publica uma sequência de dados autoritativa que anima também rolagens repetidas com o mesmo resultado. O cliente segura o peão durante a animação dos dados; depois da rolagem, anima os passos e só então libera a ação da casa.
+- O servidor valida que o vendedor está na vez ao abrir leilão, bloqueia início e lances durante dívida, e só permite vender construções/hipotecar durante dívida enquanto o saldo continuar insuficiente. Testes de integração cobrem essas restrições.
+- A câmera foi elevada no desktop, tablet e retrato móvel. Os testes de enquadramento passaram, mas não houve captura visual para confirmar legibilidade e encaixe: o navegador integrado não alcançou o Vite local (timeout), e o controle do Chrome encerrou a interação antes de navegar.
+- `npm run verify`: 116 testes passaram; build web e build do servidor passaram. `git diff --check` passou. O build mantém o aviso conhecido de chunk da cena 3D acima de 500 kB.
+
 ## 2026-10-28 — Leilão voluntário entre jogadores
 
 - Em uma sala local com dois clientes no Chromium integrado, comprei Rua das Palmeiras por R$ 120.000 e abri a carteira. O dono escolheu R$ 120.000 como lance inicial e iniciou o leilão mesmo com outro jogador fora da vez.
