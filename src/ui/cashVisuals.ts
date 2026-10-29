@@ -1,4 +1,4 @@
-import type { Object3D } from 'three'
+import { Box3, Vector3, type Object3D } from 'three'
 
 export const CASH_VISUAL_DENOMINATIONS = {
   goldBar: 500_000,
@@ -30,6 +30,15 @@ export function getCashVisualBreakdown(cash: number): CashVisualBreakdown {
   }
 }
 
+export function getCashHudPieceCounts(cash: number) {
+  const breakdown = getCashVisualBreakdown(cash)
+  return {
+    gold: Math.min(3, breakdown.goldBars),
+    silver: Math.min(3, breakdown.silverStacks),
+    note: Math.min(3, breakdown.banknoteStacks + Number(breakdown.partialBanknote > 0)),
+  }
+}
+
 export function representedCashValue(breakdown: CashVisualBreakdown) {
   return breakdown.goldBars * CASH_VISUAL_DENOMINATIONS.goldBar
     + breakdown.silverStacks * CASH_VISUAL_DENOMINATIONS.silverStack
@@ -37,9 +46,19 @@ export function representedCashValue(breakdown: CashVisualBreakdown) {
     + breakdown.partialBanknote * CASH_VISUAL_DENOMINATIONS.banknoteStack
 }
 
-export function normalizeCashModelRoot<T extends Object3D>(model: T) {
+export function fitCashModelRoot<T extends Object3D>(model: T, targetHeight: number, rotation: [number, number, number] = [0, 0, 0]) {
   model.position.set(0, 0, 0)
-  model.rotation.set(0, 0, 0)
+  model.rotation.set(...rotation)
   model.scale.set(1, 1, 1)
+  model.updateMatrixWorld(true)
+  const bounds = new Box3().setFromObject(model)
+  if (bounds.isEmpty()) return model
+  const size = bounds.getSize(new Vector3())
+  if (size.y <= 0) return model
+  const center = bounds.getCenter(new Vector3())
+  const scale = targetHeight / size.y
+  model.scale.setScalar(scale)
+  model.position.set(-center.x * scale, -bounds.min.y * scale, -center.z * scale)
+  model.updateMatrixWorld(true)
   return model
 }

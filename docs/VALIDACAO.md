@@ -1,5 +1,13 @@
 # Validação visual e de navegador
 
+## 2026-10-29 — Dinheiro na HUD, roleta, cartas e dados
+
+- `npm run verify`: 165 testes em 29 arquivos passaram; builds web e de servidor passaram. `git diff --check` passou. O aviso de bundle acima de 500 kB permanece conhecido.
+- Em uma partida Colyseus local com três bots, conferi os quatro saldos ligados a modelos/ícones de barras de ouro, moedas de prata e cédulas junto aos cartões. Em viewport de 690×880, as peças ficaram acima dos cartões; em 390×844, ficaram dentro do canto superior de cada cartão, sem rolagem horizontal e sem cobrir o tabuleiro.
+- A partida mostrou “Girar dados” e os dados com total 11 durante a resolução/movimento; depois que o peão parou, os dados desapareceram. Em ambas as viewports o botão inferior permaneceu alcançável e o tabuleiro coube na tela.
+- Os quatro pisos Sorte agora usam setores radiais cobrindo o quadrado inteiro; testes cobrem área total e limites. A partida de revisão não alcançou uma carta nem Copa/Volta, então os cartões temporários, temporizador e fechamento dessas escolhas não foram inspecionados visualmente nesta rodada.
+- `graphify update .` não rodou: o CLI não está instalado. O MCP Graphify disponível aponta para `GustavoGLD/Hospital`, não para este repositório.
+
 ## 2026-10-29 — Órbita e escolhas visuais da partida
 
 - Blender 5.2.2 LTS conectado pelo MCP: criei e revisei os modelos autorais do estádio e do conjunto aeroporto/avião. Fontes editáveis em `assets/blender/special-corners.blend`; modelos exportados em `public/assets/world-cup-stadium.glb` e `public/assets/world-tour-airport.glb`.

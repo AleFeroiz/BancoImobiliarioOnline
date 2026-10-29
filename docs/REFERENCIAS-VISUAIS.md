@@ -81,13 +81,15 @@ Na galeria histórica, a interface também está separada por estados de produto
 
 - Manter o tabuleiro 3D como foco e reservar espaço negativo no centro para dados, animações e mensagens breves.
 - Distribuir os cartões dos participantes pelas bordas/cantos em desktop, com nome, saldo e estado da vez visíveis sem abrir painéis.
+- Anexar as peças 3D de dinheiro ao cartão de cada participante na HUD, fora do tabuleiro e com escala de ícone legível em desktop e celular.
 - Destacar quem está na vez com contorno, cor de acento e rótulo curto; não depender apenas da cor para comunicar o estado.
 - Usar cores de identificação consistentes entre avatar, ficha e peça no tabuleiro; reservar um realce mais forte para a pessoa da vez.
 - Manter saturação suficiente nas cores de propriedades e nos marcadores para que a mesa pareça um jogo de tabuleiro vivo, preservando superfícies claras e materiais originais.
 - Deixar a ação principal em um painel contextual compacto na borda inferior. Mostrar nele apenas a decisão atual, como lançar, comprar, ofertar ou pagar.
 - Apresentar o modo e o relógio numa cápsula curta na faixa superior. A carteira, regras longas e negociação ficam em painéis que abrem sob demanda.
 - Em ações com alvo no tabuleiro, marcar a propriedade ou casa envolvida e mostrar motivo, valor e opções no mesmo cartão; usar um escurecimento leve apenas enquanto a decisão estiver aberta.
-- Para dados e mudanças de vez, levar o feedback visual ao espaço central ou ao jogador ativo e manter uma legenda de texto acessível no HUD.
+- Para dados e mudanças de vez, deixar o tabuleiro livre de cartões genéricos: um comando compacto inicia a rolagem, e os dados nivelados com o total aparecem na área central até o fim do movimento.
+- Revelações de cartas usam um cartão curto sobre a partida que pode ser dispensado por clique/toque e desaparece em até 10 segundos; a ação principal continua disponível depois que a revelação fecha.
 - No resultado, manter a cena ao fundo com contraste reduzido e exibir uma classificação concisa; mostrar o critério da vitória, o saldo e o patrimônio quando forem relevantes para o modo.
 - Em telas estreitas, reduzir o tamanho dos cartões e organizá-los em duas colunas no topo; manter o tabuleiro visível e a ação alcançável sem rolagem horizontal.
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { Group } from 'three'
-import { CASH_VISUAL_DENOMINATIONS, getCashVisualBreakdown, normalizeCashModelRoot, representedCashValue } from './cashVisuals'
+import { Box3, BoxGeometry, Group, Mesh, MeshBasicMaterial, Vector3 } from 'three'
+import { CASH_VISUAL_DENOMINATIONS, fitCashModelRoot, getCashHudPieceCounts, getCashVisualBreakdown, representedCashValue } from './cashVisuals'
 
 describe('representação visual do dinheiro no tabuleiro', () => {
   it('usa barras de ouro, prata e maços de notas com valores fixos e decrescentes', () => {
@@ -21,14 +21,39 @@ describe('representação visual do dinheiro no tabuleiro', () => {
     expect(getCashVisualBreakdown(Number.NaN)).toEqual({ goldBars: 0, silverStacks: 0, banknoteStacks: 0, partialBanknote: 0 })
   })
 
-  it('remove a posição de vitrine do GLB antes de colocar a peça na bandeja', () => {
-    const model = new Group()
-    model.position.set(8, 0, 0)
-    model.rotation.set(0, Math.PI / 2, 0)
-    model.scale.setScalar(0.68)
+  it('mostra as denominações certas junto ao cartão e limita a composição do ícone', () => {
+    expect(getCashHudPieceCounts(1_500_000)).toEqual({ gold: 3, silver: 0, note: 0 })
+    expect(getCashHudPieceCounts(1_225_000)).toEqual({ gold: 2, silver: 3, note: 3 })
+    expect(getCashHudPieceCounts(0)).toEqual({ gold: 0, silver: 0, note: 0 })
+  })
 
-    expect(normalizeCashModelRoot(model).position.toArray()).toEqual([0, 0, 0])
-    expect(model.rotation.toArray()).toEqual([0, 0, 0, 'XYZ'])
-    expect(model.scale.toArray()).toEqual([1, 1, 1])
+  it('centraliza e escala cada modelo 3D para caber no espaço do cartão do jogador', () => {
+    const model = new Group()
+    const mesh = new Mesh(new BoxGeometry(2, 4, 1), new MeshBasicMaterial())
+    mesh.position.set(8, 6, -3)
+    model.add(mesh)
+
+    fitCashModelRoot(model, 20)
+    const bounds = new Box3().setFromObject(model)
+    const size = bounds.getSize(new Vector3())
+    const center = bounds.getCenter(new Vector3())
+
+    expect(size.y).toBeCloseTo(20)
+    expect(bounds.min.y).toBeCloseTo(0)
+    expect(center.x).toBeCloseTo(0)
+    expect(center.z).toBeCloseTo(0)
+  })
+
+  it('vira notas e moedas deitadas para a frente antes de dimensioná-las na HUD', () => {
+    const model = new Group()
+    model.add(new Mesh(new BoxGeometry(4, 0.1, 3), new MeshBasicMaterial()))
+
+    fitCashModelRoot(model, 20, [Math.PI / 2, 0, 0])
+    const bounds = new Box3().setFromObject(model)
+    const size = bounds.getSize(new Vector3())
+
+    expect(size.y).toBeCloseTo(20)
+    expect(size.x).toBeCloseTo(4 * 20 / 3)
+    expect(bounds.min.y).toBeCloseTo(0)
   })
 })

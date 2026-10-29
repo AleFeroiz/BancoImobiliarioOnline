@@ -10,7 +10,18 @@
 - A negociação de títulos ainda tem propostas abertas em `docs/DECISOES.md`; não as trate como comportamento aprovado sem nova decisão.
 - Evidências de automação, simulação e revisão visual estão em `docs/VALIDACAO.md`. Elas descrevem estados específicos e não substituem uma conferência do código e do ambiente atuais.
 
-## Frente atual — câmera por arraste e decisões visuais no tabuleiro (2026-10-29)
+## Frente concluída — HUD, dados, cartas e roleta em piso integral (2026-10-29)
+
+- Nota de trabalho: [HUD, dados, cartas e roleta](trabalho/hud-cartas-dados-roleta.md).
+- Pedido confirmado: fazer os quatro pisos de Sorte virarem roletas completas; trocar o cartão genérico de rolagem por um botão simples; animar e manter os dados nivelados com resultado acima enquanto o peão anda; mostrar cartas em cartão temporário que fecha com clique ou após 10 segundos; reduzir seletores e painéis excessivos; reposicionar o dinheiro 3D para a interface, associado aos cartões dos participantes.
+- Estado inicial verificado: `main` limpa/alinhada a `origin/main` no commit `07646a4`. A roleta atual é pequena e fica sobre piso liso; a UI de rolagem usa o cartão central; os modelos de dinheiro estão em vitrines no centro do tabuleiro, não junto aos cartões dos jogadores.
+- Implementação: os quatro pisos Sorte usam oito setores radiais que cobrem toda a área quadrada. A rolagem tem o botão compacto “Girar dados”; os dados terminam nivelados, mostram o total durante o movimento e desaparecem ao concluir. Cartas de evento e avisos de Copa/Volta aceitam clique/toque para fechar e expiram em 10 segundos. Negociação usa botões para o parceiro e para imóveis múltiplos; o ritmo usa opções segmentadas. Barras, moedas e notas acompanham o saldo em uma camada 3D transparente e ícones legíveis acima dos cartões desktop ou dentro deles no celular.
+- Validação automatizada: `npm run verify` passou com 165 testes em 29 arquivos, builds web e de servidor. `git diff --check` passou. O build ainda registra o aviso conhecido do bundle 3D acima de 500 kB.
+- Playtest Game Studio: partida local real com três bots, botão de rolagem e dados/resultados no tabuleiro; saldo e dinheiro visíveis junto aos quatro jogadores. Revisei viewport 690×880 e viewport móvel 390×844; o tabuleiro, os quatro cartões e “Girar dados” permaneceram acessíveis. Ao concluir o movimento, os dados sumiram. Não alcancei uma carta Sorte ou a escolha de Copa/Volta nesta partida, então esse estado permanece coberto pela implementação e pendente de revisão visual específica.
+- Graphify: `graphify update .` não foi possível porque o executável CLI não está instalado; o servidor MCP da sessão apontava apenas para outro repositório. As fontes alteradas foram conferidas diretamente e a suíte completa passou.
+- Próximo passo: revisar uma revelação de carta e uma escolha Copa/Volta em partida real; acompanhar contraste e escala dos modelos 3D nos saldos intermediários.
+
+## Frente concluída — câmera por arraste e decisões visuais no tabuleiro (2026-10-29)
 
 - Nota de trabalho: [câmera por arraste e escolhas visuais](trabalho/camera-escolhas-visuais.md).
 - Pedido confirmado: substituir os dois sliders por órbita com mouse/toque, usar clique direto nas casas válidas para Copa/Volta, compactar as quatro opções de compra com custo/aluguel, mostrar o leilão no inspetor do imóvel e criar estádio e aeroporto/avião originais.
