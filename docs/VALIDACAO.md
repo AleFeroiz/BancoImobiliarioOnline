@@ -8,6 +8,7 @@
 - Em uma partida Clássica no navegador local, com três bots, o controle do anfitrião apareceu em 0,5× e aceitou 2×. Os dados 3D ficaram visíveis na área central enquanto rolavam, sem o cartão de ação encobrindo a cena.
 - Após a jogada humana, o turno do Bot 1 manteve o cartão central oculto. A bolha sobre o peão anunciou “Movendo o peão”; a cena mostrou os dados durante a rolagem do bot e o percurso sem caixa modal.
 - A validação foi feita na viewport apresentada pelo navegador integrado (690 × 880). Não foi feita nesta sessão uma verificação em aparelho físico ou Firefox.
+- A captura indicou que o balão ainda ficava pequeno; aumentei sua escala 3D (`distanceFactor` 8→12) e a fonte desktop (11→13 px; móvel 9→11 px). A revisão visual após esse ajuste foi bloqueada porque o CUA retornou `Local browser use is disabled in Work settings`; confirmei também que este projeto não tem Playwright instalado. O tamanho final precisa de conferência no próximo playtest autorizado.
 - `git diff --check` passou.
 
 ## 2026-10-28 — Sequência de jogada, liquidação e câmera alta

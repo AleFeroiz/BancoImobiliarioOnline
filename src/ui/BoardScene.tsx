@@ -152,7 +152,7 @@ function AnimatedPawn({ player, seatIndex, reducedMotion, movementEnabled, moveM
         <sphereGeometry args={[0.16, 14, 12]} />
         <meshStandardMaterial color={player.color} roughness={0.35} />
       </mesh>
-      {player.activity && <Html position={[0, 0.86, 0]} center distanceFactor={8} zIndexRange={[6, 0]} style={{ pointerEvents: 'none' }}><div className="turn-activity-bubble" role="status" aria-live="polite">{player.activity}</div></Html>}
+      {player.activity && <Html position={[0, 0.86, 0]} center distanceFactor={12} zIndexRange={[6, 0]} style={{ pointerEvents: 'none' }}><div className="turn-activity-bubble" role="status" aria-live="polite">{player.activity}</div></Html>}
     </group>
   )
 }

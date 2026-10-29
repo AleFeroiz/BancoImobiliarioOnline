@@ -578,8 +578,8 @@ button:disabled{opacity:.55;cursor:not-allowed}
 .screen-game.game-presentation-active .space-inspector{display:none!important}
 .animation-speed-control{display:flex;align-items:center;gap:5px;padding:4px 6px 4px 9px;border:1px solid rgba(105,132,97,.3);border-radius:999px;background:rgba(250,248,237,.92);color:#62745d;font-size:7px;font-weight:700;letter-spacing:.08em;white-space:nowrap}
 .animation-speed-control select{min-height:24px;padding:0 5px;border:0;border-radius:999px;background:#e8eddf;color:#405943;font-size:9px;font-weight:700;cursor:pointer}
-.turn-activity-bubble{position:relative;padding:7px 10px;border:1px solid rgba(114,139,104,.42);border-radius:13px;background:rgba(255,252,239,.97);box-shadow:0 6px 18px rgba(38,57,41,.24);color:#3c5741;font:700 11px/1.15 system-ui,sans-serif;white-space:nowrap;animation:turn-bubble-enter .18s ease-out both}
+.turn-activity-bubble{position:relative;padding:7px 10px;border:1px solid rgba(114,139,104,.42);border-radius:13px;background:rgba(255,252,239,.97);box-shadow:0 6px 18px rgba(38,57,41,.24);color:#3c5741;font:700 13px/1.15 system-ui,sans-serif;white-space:nowrap;animation:turn-bubble-enter .18s ease-out both}
 .turn-activity-bubble:after{content:"";position:absolute;left:50%;bottom:-6px;width:10px;height:10px;border-right:1px solid rgba(114,139,104,.42);border-bottom:1px solid rgba(114,139,104,.42);background:#fffcf0;transform:translateX(-50%) rotate(45deg)}
 @keyframes turn-bubble-enter{from{opacity:0;translate:0 5px}to{opacity:1;translate:0 0}}
-@media(max-width:640px){.animation-speed-control{gap:3px;padding:3px}.animation-speed-control>span{display:none}.animation-speed-control select{min-height:23px;padding:0 3px;font-size:8px}.turn-activity-bubble{padding:6px 8px;font-size:9px}}
+@media(max-width:640px){.animation-speed-control{gap:3px;padding:3px}.animation-speed-control>span{display:none}.animation-speed-control select{min-height:23px;padding:0 3px;font-size:8px}.turn-activity-bubble{padding:6px 8px;font-size:11px}}
 @media(prefers-reduced-motion:reduce){.turn-activity-bubble{animation:none}}
