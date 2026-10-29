@@ -31,6 +31,7 @@ Construir um jogo de tabuleiro multiplayer casual para navegador, para partidas 
 ## Blender para assets do jogo
 
 - Para modelar ou revisar assets 3D, use o Blender mais recente instalado no PC do usuário através do MCP Blender conectado. Comece com `get_addon_status` e `get_scene_info`; confirme a versão ativa antes de criar assets.
+- No PC de casa, Blender 5.2.2 LTS e MCP Blender estavam instalados em 2026-10-28. Inicie o aplicativo, habilite o add-on e clique em Start MCP Server; valide a conexão e a versão antes de usar. Consulte “Rotina no PC de casa” no README para sincronização, atualização condicional do add-on e caminhos de saída.
 - Crie modelos na sessão ao vivo com `execute_blender_code`, confira a cena com `get_scene_info` e inspecione a forma com `look` antes de integrar. Comece o código com `import bpy`. O safe mode permite importar `bpy`/bibliotecas de malha e usar operadores Blender, mas bloqueia `open`, `os`, subprocessos, rede e leitura arbitrária de arquivos; salve/exporte exclusivamente com operadores Blender para caminhos conhecidos dentro do projeto.
 - Blender usa Z como eixo vertical. Modele a base no plano XY, coloque a altura em Z e use `export_yup=True` no exportador glTF para obter GLB Y-up no Three.js. Deixe a origem na base do modelo, confira o tamanho na cena da mesa e confira o resultado exportado no Blender antes de carregar no jogo.
 - Salve as fontes editáveis `.blend` em `assets/blender/` e exporte os modelos de navegador como GLB em `public/assets/`. Use nomes estáveis para raízes e materiais, escala e origem consistentes, poucos materiais reutilizáveis e um material nomeado para partes que o jogo precisa recolorir.
@@ -39,6 +40,7 @@ Construir um jogo de tabuleiro multiplayer casual para navegador, para partidas 
 
 ## Playtest local no navegador
 
+- O procedimento passo a passo para o PC de casa e para atualizar/publicar pelo GitHub está em “Rotina no PC de casa” no README; siga-o como entrada operacional principal.
 - Antes de iniciar, confira `git status`, a branch e as portas 5173 (Vite) e 2567 (Colyseus). Use uma única sessão de cada servidor; se a porta estiver ocupada, identifique e encerre a sessão antiga em vez de iniciar outra.
 - Neste ambiente Windows, processos de desenvolvimento iniciados sem acesso local podem imprimir “ready/listening” e ainda assim ficar inalcançáveis pelo navegador. Para playtest, inicie `npm run dev:server` e `npm run dev -- --host 127.0.0.1` com permissão de loopback aprovada pelo ambiente. Aguarde as duas mensagens de porta antes de abrir o navegador.
 - Abra uma nova aba do navegador interno diretamente na URL local conhecida (`http://127.0.0.1:5173/`). Não tente selecionar uma janela de navegador existente se a URL não puder ser identificada. Siga a documentação CUA da sessão: em abas browser, `typeText` recebe primeiro o índice AX e depois o texto; após erro ou ação, obtenha novo estado antes de continuar.
@@ -61,6 +63,7 @@ Construir um jogo de tabuleiro multiplayer casual para navegador, para partidas 
 - Trabalhe em uma mudança coesa por vez, diretamente em `main`; não crie branches auxiliares nem abra pull requests sem pedido explícito do usuário.
 - Antes de implementar uma funcionalidade, alinhe comportamento e regras em documentação quando houver impacto no produto.
 - A cada implementação, adicione ou atualize testes, execute a suíte completa e faça commit/push diretamente em `main` para o GitHub.
+- No Windows, diferencie falha de teste de bloqueio do sandbox: se Vitest der `EPERM` renomeando arquivos temporários no `AppData\\Local\\Packages\\sandbox...\\Temp`, configure `TEMP` e `TMP` para uma pasta `.tmp` dentro do repositório e repita. Se os testes Colyseus derem `fetch failed`, permita loopback local para a execução e repita; não considere a primeira execução como validação concluída. O README registra os comandos.
 - Todo commit deve passar pelo hook local de pré-commit, que executa a suíte completa de testes e o build. Não use `--no-verify` nem desative o hook.
 - Quando um bug for encontrado e corrigido, inclua no mesmo trabalho um teste de regressão que falhe antes da correção e passe depois dela.
 - Se não houver teste automatizado adequado para uma mudança visual, registre a validação manual feita com o Game Studio e adicione testes automatizados para a lógica não visual relacionada.

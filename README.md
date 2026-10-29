@@ -19,6 +19,88 @@ npm run dev:server
 npm run dev
 ```
 
+## Rotina no PC de casa
+
+### Atualizar o projeto pelo GitHub
+
+Abra o PowerShell na pasta do repositório e confira o estado antes de sincronizar:
+
+```powershell
+git status --short --branch
+git fetch origin
+git status --short --branch
+git log --oneline --left-right main...origin/main
+```
+
+O projeto trabalha diretamente na branch `main`. Se a árvore estiver limpa e o histórico local só estiver atrás, atualize por avanço rápido:
+
+```powershell
+git switch main
+git pull --ff-only origin main
+```
+
+Se houver arquivos modificados, preserve-os e revise antes de trocar de branch ou puxar alterações. Não use reset, limpeza forçada ou sobrescrita para resolver divergências.
+
+### Abrir a partida local no navegador
+
+Instale Node.js 24 LTS e npm 10 ou superior. Na primeira instalação, ou quando o lockfile mudar, rode `npm ci` na raiz do projeto. Abra dois terminais PowerShell nessa pasta. Deixe o servidor de salas no primeiro:
+
+```powershell
+npm run dev:server
+```
+
+Inicie o site no segundo:
+
+```powershell
+npm run dev -- --host 127.0.0.1
+```
+
+Abra [http://127.0.0.1:5173/](http://127.0.0.1:5173/) no navegador. O Vite usa a porta 5173 e Colyseus a porta 2567; mantenha somente uma instância de cada servidor. Pare cada uma com Ctrl+C.
+
+No terminal integrado do Codex, o sandbox pode impedir conexões locais mesmo quando um comando imprime “ready/listening”. Nesse caso, permita acesso de loopback para o servidor e o Vite, confirme que ambos iniciaram e só então abra a URL local. Se aparecer `EADDRINUSE`, já há algo ouvindo naquela porta: confira o PID e confirme que é uma sessão antiga deste projeto antes de encerrá-la; não finalize processos desconhecidos.
+
+### Abrir o Blender e os assets
+
+Na última conferência deste PC (2026-10-28), o Blender instalado era 5.2.2 LTS. Abra-o, habilite o add-on `Interface: Blender MCP` nas preferências de Add-ons e inicie `Start MCP Server` no painel do add-on. No Codex, confirme a conexão e a versão com `get_addon_status` e confira a cena com `get_scene_info` antes de modelar.
+
+A conferência de 2026-10-28 encontrou o add-on no protocolo 14, atrás do protocolo 15 esperado pelo servidor. Para atualizar, rode `uvx mcp-for-blender install-addon` no PowerShell; depois reinicie o Blender ou desabilite e habilite `Interface: Blender MCP` nas preferências, inicie `Start MCP Server` outra vez e confirme que `get_addon_status` informa `up_to_date: true`. Se `uvx` não estiver disponível, instale `uv` pelo método oficial documentado pelo projeto Astral e reabra o PowerShell. Não comece modelagem pelo MCP enquanto não confirmar a conexão e a versão atual.
+
+Os modelos editáveis ficam em `assets/blender/`; os GLB usados no jogo ficam em `public/assets/`. O arquivo atual está em `assets/blender/board-models.blend` e é carregado pelo jogo de `public/assets/board-models/board-models.glb`. Blender usa Z-up; exporte GLB com Y-up para Three.js. Consulte o fluxo completo e os limites do safe mode em `AGENTS.md`.
+
+### Verificar e publicar alterações
+
+Antes do commit, revise os arquivos e rode:
+
+```powershell
+npm run verify
+git diff --check
+git status --short --branch
+```
+
+O hook de pré-commit também executa `npm run verify`; espere terminar e não o desative. O fluxo deste projeto publica diretamente na branch `main`, sem branch de tarefa ou PR salvo quando o usuário pedir:
+
+No terminal do Codex no Windows, se o Vitest falhar com `EPERM` ao renomear arquivos temporários dentro de `AppData\\Local\\Packages\\sandbox...\\Temp`, rode novamente com `TEMP` e `TMP` apontando para uma pasta temporária dentro do repositório. Se os testes Colyseus falharem com `fetch failed`, permita acesso de loopback local para o comando de verificação e rode-o novamente; isso é uma falha de acesso do ambiente, não um resultado válido da suíte. No PowerShell:
+
+```powershell
+$env:TEMP = Join-Path (Get-Location) '.tmp'
+$env:TMP = $env:TEMP
+New-Item -ItemType Directory -Force -Path $env:TEMP | Out-Null
+npm run verify
+```
+
+No PC executando o PowerShell fora do sandbox do Codex, use primeiro o comando normal; aplique esses ajustes somente se aparecerem os erros descritos.
+
+```powershell
+git add <arquivos revisados>
+git commit -m "descrição curta da mudança"
+git push origin main
+git status --short --branch
+git rev-parse HEAD
+git rev-parse origin/main
+```
+
+Depois do push, confirme que a árvore está limpa e que `HEAD` coincide com `origin/main`. Se o GitHub pedir autenticação, complete-a pelo Git Credential Manager ou GitHub Desktop; nunca coloque token em comando, arquivo ou documentação.
+
 Em produção, configure `VITE_ROOM_SERVER_URL` com a origem HTTP/HTTPS do servidor Colyseus. `.env.example` mostra o formato.
 
 Para executar todos os testes e o build:
