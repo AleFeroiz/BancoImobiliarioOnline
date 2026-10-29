@@ -2,28 +2,64 @@ import { describe, expect, it } from 'vitest'
 import { getCameraFraming } from './cameraFraming'
 
 describe('enquadramento da câmera do tabuleiro', () => {
-  it('usa um ângulo mais alto no celular em pé para deixar o tabuleiro completo legível', () => {
-    const framing = getCameraFraming(390, 844)
-
-    expect(framing.position[0]).toBe(0)
-    expect(framing.position[1] / framing.position[2]).toBeCloseTo(32 / 18)
-    expect(framing.fov).toBe(42)
-  })
-
-  it('mantém a vista diagonal em telas desktop', () => {
+  it('usa uma inclinação inicial discreta e aproxima a mesa mantendo os quatro cantos visíveis', () => {
     const framing = getCameraFraming(1440, 900)
 
-    expect(framing.position).toEqual([10.5, 27, 10.5])
-    expect(framing.fov).toBe(34)
+    expect(framing.tilt).toBe(16)
+    expect(framing.distance).toBeLessThan(31)
+    expect(framing.position[0]).toBeCloseTo(framing.position[2])
+    expect(framing.up[1]).toBeCloseTo(Math.sin(16 * Math.PI / 180))
   })
 
-  it('preserva o enquadramento compacto de tablets e janelas estreitas', () => {
-    const framing = getCameraFraming(800, 900)
+  it('permite vista top-down e limita a inclinação ao máximo do controle', () => {
+    const topDown = getCameraFraming(1440, 900, 0)
+    const shallow = getCameraFraming(1440, 900, 90)
 
-    expect(framing.position[0]).toBeCloseTo(12.075)
-    expect(framing.position[1]).toBeCloseTo(31.05)
-    expect(framing.position[2]).toBeCloseTo(12.075)
-    expect(framing.fov).toBe(40)
-    expect(framing).not.toHaveProperty('fogScale')
+    expect(topDown.position[1]).toBeCloseTo(topDown.distance)
+    expect(topDown.position[0]).toBe(0)
+    expect(topDown.position[2]).toBe(0)
+    expect(topDown.tilt).toBe(0)
+    expect(shallow.tilt).toBeCloseTo(75)
+  })
+
+  it('adapta a orientação e o enquadramento a celular, tablet e desktop', () => {
+    const portrait = getCameraFraming(390, 844, 16)
+    const tablet = getCameraFraming(800, 900, 16)
+    const desktop = getCameraFraming(1440, 900, 16)
+
+    expect(portrait.azimuth).toBe(0)
+    expect(tablet.azimuth).toBe(Math.PI / 4)
+    expect(desktop.azimuth).toBe(Math.PI / 4)
+    expect(portrait.distance).toBeGreaterThan(desktop.distance)
+    expect(tablet.fov).toBe(42)
+    expect(desktop.fov).toBe(38)
+  })
+
+  it('mantém os quatro cantos dentro da tela em todo o intervalo de inclinação', () => {
+    for (const [width, height] of [[390, 844], [800, 900], [1440, 900], [1920, 1080]]) {
+      for (const angle of [0, 16, 75]) {
+        const framing = getCameraFraming(width, height, angle)
+        const aspect = width / height
+        const verticalHalfFov = framing.fov * Math.PI / 360
+        const horizontalHalfFov = Math.atan(Math.tan(verticalHalfFov) * aspect)
+        const sinTilt = Math.sin(framing.tilt * Math.PI / 180)
+        const cosTilt = Math.cos(framing.tilt * Math.PI / 180)
+        const sinAzimuth = Math.sin(framing.azimuth)
+        const cosAzimuth = Math.cos(framing.azimuth)
+
+        for (const x of [-6.2, 6.2]) {
+          for (const z of [-6.2, 6.2]) {
+            const towardCamera = x * sinAzimuth + z * cosAzimuth
+            const acrossCamera = x * cosAzimuth - z * sinAzimuth
+            const depth = framing.distance - towardCamera * sinTilt
+            const projectedX = acrossCamera / (depth * Math.tan(horizontalHalfFov))
+            const projectedY = -towardCamera * cosTilt / (depth * Math.tan(verticalHalfFov))
+
+            expect(Math.abs(projectedX), `${width}×${height} at ${angle}° horizontally`).toBeLessThan(1)
+            expect(Math.abs(projectedY), `${width}×${height} at ${angle}° vertically`).toBeLessThan(1)
+          }
+        }
+      }
+    }
   })
 })

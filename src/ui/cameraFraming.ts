@@ -1,17 +1,53 @@
 export type CameraFraming = {
   position: [number, number, number]
+  up: [number, number, number]
   fov: number
+  distance: number
+  azimuth: number
+  tilt: number
 }
 
-export function getCameraFraming(width: number, height: number): CameraFraming {
-  const aspect = width / height
-  if (width < 640 && aspect < 0.7) {
-    return { position: [0, 32, 18], fov: 42 }
-  }
+const BOARD_HALF_SIZE = 6.2
+const FRAME_MARGIN = 1.08
 
-  const distance = aspect < 0.7 ? 1.5 : aspect < 1.1 ? 1.15 : 1
-  return {
-    position: [10.5 * distance, 27 * distance, 10.5 * distance],
-    fov: width < 640 ? 49 : width < 900 ? 40 : 34,
-  }
+export function getCameraFraming(width: number, height: number, tiltDegrees = 16): CameraFraming {
+  const aspect = Math.max(0.25, width / Math.max(height, 1))
+  const tilt = Math.min(75, Math.max(0, tiltDegrees)) * Math.PI / 180
+  const azimuth = aspect < 0.72 ? 0 : Math.PI / 4
+  const fov = width < 640 ? 46 : width < 900 ? 42 : 38
+  const verticalHalfFov = fov * Math.PI / 360
+  const horizontalHalfFov = Math.atan(Math.tan(verticalHalfFov) * aspect)
+  const sinTilt = Math.sin(tilt)
+  const cosTilt = Math.cos(tilt)
+  const sinAzimuth = Math.sin(azimuth)
+  const cosAzimuth = Math.cos(azimuth)
+  const corners = [
+    [-BOARD_HALF_SIZE, -BOARD_HALF_SIZE],
+    [-BOARD_HALF_SIZE, BOARD_HALF_SIZE],
+    [BOARD_HALF_SIZE, -BOARD_HALF_SIZE],
+    [BOARD_HALF_SIZE, BOARD_HALF_SIZE],
+  ] as const
+
+  // Fit the projected board corners in both axes, accounting for their different perspective depths.
+  const requiredDistance = corners.reduce((maximum, [x, z]) => {
+    const towardCamera = x * sinAzimuth + z * cosAzimuth
+    const acrossCamera = x * cosAzimuth - z * sinAzimuth
+    const depthOffset = towardCamera * sinTilt
+    const horizontalDistance = depthOffset + Math.abs(acrossCamera) / Math.tan(horizontalHalfFov)
+    const verticalDistance = depthOffset + Math.abs(towardCamera * cosTilt) / Math.tan(verticalHalfFov)
+    return Math.max(maximum, horizontalDistance, verticalDistance)
+  }, 0)
+  const distance = requiredDistance * FRAME_MARGIN
+  const position: [number, number, number] = [
+    distance * sinTilt * sinAzimuth,
+    distance * cosTilt,
+    distance * sinTilt * cosAzimuth,
+  ]
+  const up: [number, number, number] = [
+    -cosTilt * sinAzimuth,
+    sinTilt,
+    -cosTilt * cosAzimuth,
+  ]
+
+  return { position, up, fov, distance, azimuth, tilt: tilt * 180 / Math.PI }
 }
