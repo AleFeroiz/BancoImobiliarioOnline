@@ -2,6 +2,14 @@
 
 > Retrato de trabalho para retomar o projeto entre sessões. Para requisitos e decisões, consulte os documentos de origem indicados em `AGENTS.md`.
 
+## Frente em andamento — publicação automática no Render (2026-10-29)
+
+- O serviço gratuito está conectado ao GitHub (`main`) e a tela atual mostra `Auto-Deploy: On Commit`, mas os deploys permanecem manuais. O commit de teste `03ef597` não apareceu no histórico do Render.
+- Foi preparado um passo no workflow do GitHub Actions para chamar o Deploy Hook depois de `npm run verify`; ele só será ativado quando o segredo `RENDER_DEPLOY_HOOK_URL` for configurado no repositório.
+- Configuração externa única ainda necessária: adicionar o segredo pelo painel do GitHub, desligar o auto-deploy nativo no Render para evitar duplicidade e executar `workflow_dispatch` em `main` uma vez.
+- Detalhes e passos: [deploy automático do Render](trabalho/render-auto-deploy.md).
+- Próximo passo: após a configuração externa, confirmar no GitHub Actions que o hook foi aceito e no Render que `03ef597` (ou o HEAD atual) virou deploy; então validar que um push posterior aciona o workflow automaticamente.
+
 ## Frente concluída — otimização de renderização (2026-10-29)
 
 - Pedido confirmado: analisar o projeto por completo, remover gargalos de travamento e validar em partida real; após a otimização, permitir girar a câmera ao arrastar/tocar em qualquer área sem controle interativo, inclusive no celular.

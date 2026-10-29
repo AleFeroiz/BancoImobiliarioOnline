@@ -5,6 +5,7 @@ on:
     branches: [main, 'feat/**', 'fix/**', 'chore/**']
   pull_request:
     branches: [main]
+  workflow_dispatch:
 
 jobs:
   verify:
@@ -17,3 +18,16 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run verify
+      - name: Trigger Render deploy
+        if: ${{ github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') }}
+        env:
+          RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+        shell: bash
+        run: |
+          if [[ -z "$RENDER_DEPLOY_HOOK_URL" ]]; then
+            echo "::warning::Configure the RENDER_DEPLOY_HOOK_URL repository secret to enable Render deployments."
+            exit 0
+          fi
+
+          curl --fail --silent --show-error --request POST "$RENDER_DEPLOY_HOOK_URL" > /dev/null
+          echo "Render accepted the deployment request."
