@@ -67,7 +67,7 @@ Na última conferência deste PC (2026-10-28), o Blender instalado era 5.2.2 LTS
 
 A conferência de 2026-10-28 encontrou o add-on no protocolo 14, atrás do protocolo 15 esperado pelo servidor. Para atualizar, rode `uvx mcp-for-blender install-addon` no PowerShell; depois reinicie o Blender ou desabilite e habilite `Interface: Blender MCP` nas preferências, inicie `Start MCP Server` outra vez e confirme que `get_addon_status` informa `up_to_date: true`. Se `uvx` não estiver disponível, instale `uv` pelo método oficial documentado pelo projeto Astral e reabra o PowerShell. Não comece modelagem pelo MCP enquanto não confirmar a conexão e a versão atual.
 
-Os modelos editáveis ficam em `assets/blender/`; os GLB usados no jogo ficam em `public/assets/`. O arquivo atual está em `assets/blender/board-models.blend` e é carregado pelo jogo de `public/assets/board-models/board-models.glb`. Blender usa Z-up; exporte GLB com Y-up para Three.js. Consulte o fluxo completo e os limites do safe mode em `AGENTS.md`.
+Os modelos editáveis ficam em `assets/blender/`; os GLB usados no jogo ficam em `public/assets/`. O modelo de tabuleiro está em `assets/blender/board-models.blend` e `public/assets/board-models/board-models.glb`; as fichas de veículo estão em `assets/blender/player-tokens.blend` e `public/assets/player-tokens.glb`. Blender usa Z-up; exporte GLB com Y-up para Three.js. Consulte o fluxo completo e os limites do safe mode em `AGENTS.md`.
 
 ### Verificar e publicar alterações
 

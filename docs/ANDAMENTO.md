@@ -10,6 +10,14 @@
 - A negociação de títulos ainda tem propostas abertas em `docs/DECISOES.md`; não as trate como comportamento aprovado sem nova decisão.
 - Evidências de automação, simulação e revisão visual estão em `docs/VALIDACAO.md`. Elas descrevem estados específicos e não substituem uma conferência do código e do ambiente atuais.
 
+## Frente atual — fichas de veículo no lobby (2026-10-29)
+
+- Nota de trabalho: [seletor de fichas de personagem](trabalho/seletor-fichas-personagem.md).
+- Pedido confirmado: criar modelos low-poly originais de carro, moto e avião e permitir escolher entre esses modelos e o peão no lobby; a alteração é visual e preserva as regras e a cor do dono.
+- Estado inicial verificado: `main` estava limpa e alinhada a `origin/main` no commit `65ec727`; Blender 5.2.2 LTS está conectado com o add-on MCP atualizado. A sincronização do lobby e o ponto de renderização das peças foram localizados.
+- Implementação concluída: modelos e seletor sincronizado; testes/build passaram. Blender conferiu o GLB final; a tentativa de Chrome foi bloqueada pela política da ferramenta CUA ao não conseguir determinar com confiança a URL da janela ativa no Windows. A evidência e o limite estão em `docs/VALIDACAO.md`.
+- Próximo passo: revisar visualmente peão/carrinho/moto/avião e a cor de cada dono em Chrome ou navegador interno assim que a inspeção do navegador voltar a estar disponível.
+
 ## Frente concluída — bairros em sequência e identidade visual da Sorte (2026-10-29)
 
 - Nota de retomada: [bairros em sequência e tema da Sorte](trabalho/bairros-sequencia-sorte.md).

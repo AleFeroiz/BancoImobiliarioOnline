@@ -1,5 +1,13 @@
 export type GameMode = 'classic' | 'express'
 export type LobbyStatus = 'waiting' | 'playing' | 'ended'
+export type CharacterType = 'pawn' | 'car' | 'motorcycle' | 'airplane'
+
+export const CHARACTER_OPTIONS: ReadonlyArray<{ id: CharacterType; label: string }> = [
+  { id: 'pawn', label: 'Peão' },
+  { id: 'car', label: 'Carrinho' },
+  { id: 'motorcycle', label: 'Moto' },
+  { id: 'airplane', label: 'Avião' },
+]
 
 export type LobbyPlayer = {
   name: string
@@ -8,12 +16,17 @@ export type LobbyPlayer = {
   reconnectionExpired?: boolean
   isBot?: boolean
   isBotControlled?: boolean
+  characterType: CharacterType
   position: number
   isBankrupt?: boolean
 }
 
 export function isGameMode(value: unknown): value is GameMode {
   return value === 'classic' || value === 'express'
+}
+
+export function isCharacterType(value: unknown): value is CharacterType {
+  return value === 'pawn' || value === 'car' || value === 'motorcycle' || value === 'airplane'
 }
 
 export function normalizePlayerName(value: unknown): string | null {

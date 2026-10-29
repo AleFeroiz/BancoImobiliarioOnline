@@ -1,6 +1,6 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import type { Room } from '@colyseus/sdk'
-import type { GameMode, LobbyPlayer } from '../../shared/lobby'
+import { CHARACTER_OPTIONS, type CharacterType, type GameMode, type LobbyPlayer } from '../../shared/lobby'
 import { scheduleSceneLoad } from './sceneLoading'
 import { roomClient } from './roomClient'
 import { finalScoreMetrics, rankFinalScore, scoreCriteria } from './scoreCriteria'
@@ -35,6 +35,15 @@ function formatClock(seconds: number) {
 const modeDetails: Record<Mode, { title: string; duration: string; detail: string }> = {
   classic: { title: 'Clássico Rápido', duration: '30 min', detail: 'Regras completas • patrimônio no final' },
   express: { title: 'Express', duration: '8–16 min', detail: '6 rodadas • objetivos valem bônus' },
+}
+
+function CharacterIcon({ characterType }: { characterType: CharacterType }) {
+  return <svg className="character-option-icon" viewBox="0 0 48 36" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+    {characterType === 'pawn' && <><circle cx="24" cy="7" r="4" /><path d="M21 13h6l2 8 6 7H13l6-7 2-8Z" /><path d="M16 32h16" /></>}
+    {characterType === 'car' && <><path d="m8 22 3-8h24l5 8 2 2v7H6v-7l2-2Z" /><path d="m14 14 3-6h14l4 6" /><circle cx="14" cy="30" r="3" /><circle cx="34" cy="30" r="3" /></>}
+    {characterType === 'motorcycle' && <><circle cx="12" cy="27" r="6" /><circle cx="36" cy="27" r="6" /><path d="m12 27 9-10 7 10h8l-7-13h-6l-4 6m-1-3h-5m17-3 5 1 2 5" /><path d="m21 17 4-3" /></>}
+    {characterType === 'airplane' && <><path d="m24 3 4 12 15 9-1 4-14-5 1 8-5-3-5 3 1-8-14 5-1-4 15-9 4-12Z" /></>}
+  </svg>
 }
 
 function App() {
@@ -115,8 +124,8 @@ function App() {
   const showTurnCard = shouldShowTurnCard(isMyTurn, turnPhase) && !isPresentationAnimating
   const animationSpeedControl = isHost && turnPhase !== 'ended' ? <label className="animation-speed-control" title="A velocidade escolhida vale nas próximas animações"><span>ANIMAÇÃO</span><select aria-label="Velocidade das animações da sala" value={animationSpeed} onChange={(event) => room?.send('setAnimationSpeed', { speed: Number(event.target.value) as AnimationSpeed })}>{ANIMATION_SPEEDS.map((speed) => <option key={speed} value={speed}>{speed.toLocaleString('pt-BR')}×</option>)}</select></label> : null
   const playerTokens = roomPlayers.length > 0
-    ? roomPlayers.flatMap((player, seatIndex) => player.isBankrupt ? [] : [{ id: player.sessionId, position: player.position, color: PLAYER_COLORS[seatIndex] ?? PLAYER_COLORS[0], seatIndex, cash: player.cash, activity: player.sessionId === activePlayerSessionId && !isMyTurn ? turnActivityLabel : '' }])
-    : [0, 3, 6, 9].map((position, seatIndex) => ({ id: `preview-${seatIndex}`, position, color: PLAYER_COLORS[seatIndex] ?? PLAYER_COLORS[0], seatIndex, cash: 1_500_000 }))
+    ? roomPlayers.flatMap((player, seatIndex) => player.isBankrupt ? [] : [{ id: player.sessionId, position: player.position, color: PLAYER_COLORS[seatIndex] ?? PLAYER_COLORS[0], seatIndex, cash: player.cash, characterType: player.characterType, activity: player.sessionId === activePlayerSessionId && !isMyTurn ? turnActivityLabel : '' }])
+    : [0, 3, 6, 9].map((position, seatIndex) => ({ id: `preview-${seatIndex}`, position, color: PLAYER_COLORS[seatIndex] ?? PLAYER_COLORS[0], seatIndex, cash: 1_500_000, characterType: 'pawn' as CharacterType }))
   const incomingTradeOffer = tradeOffer?.toSessionId === room?.sessionId
   const outgoingTradeOffer = tradeOffer?.fromSessionId === room?.sessionId
   const auctionSeller = roomPlayers.find((player) => player.sessionId === auctionSellerSessionId)
@@ -516,6 +525,10 @@ function App() {
     room?.send('addBot')
   }
 
+  function selectCharacter(characterType: CharacterType) {
+    room?.send('setCharacter', { characterType })
+  }
+
   function removeBot(sessionId: string) {
     room?.send('removeBot', { sessionId })
   }
@@ -575,6 +588,16 @@ function App() {
             <p>Compartilhe o código com seus amigos para sentarem à mesa.</p>
             <div className="room-code-label">CÓDIGO DA SALA</div><button className="room-code" onClick={() => navigator.clipboard?.writeText(roomCode)}>{roomCode}<span>▣</span></button>
             <div className="room-mode"><span className="mode-icon">✦</span><div><strong>{modeDetails[mode].title}</strong><small>{modeDetails[mode].duration} · {modeDetails[mode].detail}</small></div></div>
+            {roomPlayers.some((player) => player.sessionId === room?.sessionId) && <div className="character-selector" aria-label="Escolha sua ficha para a partida">
+              <span className="character-selector-label">ESCOLHA SUA FICHA</span>
+              <div className="character-option-list">{CHARACTER_OPTIONS.map((option) => {
+                const selected = roomPlayers.find((player) => player.sessionId === room?.sessionId)?.characterType === option.id
+                return <button key={option.id} type="button" className={`character-option${selected ? ' selected' : ''}`} aria-pressed={selected} onClick={() => selectCharacter(option.id)}>
+                  <CharacterIcon characterType={option.id} />
+                  <span>{option.label}</span>
+                </button>
+              })}</div>
+            </div>}
             <div className="seat-list">{roomPlayers.map((player, index) => <div className="seat" key={player.sessionId}><span className={`seat-avatar avatar-${index}`}>{player.name.slice(0, 1).toUpperCase()}</span><span>{player.name}</span>{player.isBot ? <small className="seat-bot">BOT</small> : player.isBotControlled ? <small className="seat-bot">BOT NO CONTROLE</small> : player.isConnected === false ? <small className="seat-reconnecting">{player.reconnectionExpired ? 'OFFLINE' : 'RECONECTANDO'}</small> : player.isHost ? <small>ANFITRIÃO</small> : null}{isHost && player.isBot && <button className="seat-remove-bot" onClick={() => removeBot(player.sessionId)} aria-label={`Remover ${player.name}`}>×</button>}</div>)}{Array.from({ length: Math.max(0, 4 - roomPlayers.length) }, (_, index) => <div className="seat waiting" key={`waiting-${index}`}><span className="seat-avatar">+</span><span>Aguardando jogador</span></div>)}</div>
             {isHost && roomPlayers.length < 4 && <button className="add-bot-button" onClick={addBot}>＋ Adicionar bot</button>}
             <div className="prototype-note">{roomPlayers.length}/4 lugares ocupados · sala temporária para sua turma.</div>

@@ -9,6 +9,7 @@
 | Plataforma | Navegador em computador e celular, com partida apresentada em 3D. |
 | Jogadores | De 2 a 4 por sala no MVP. |
 | Bots | A pessoa anfitriã pode preencher os lugares livres com bots antes de iniciar e removê-los no lobby. São aceitas salas com pelo menos uma pessoa e um segundo participante humano ou bot. Se uma pessoa cair durante a partida, o bot assume imediatamente a mesma cadeira, patrimônio e decisões pendentes; ao reconectar, o controle volta à pessoa. A cadeira pode ser retomada durante a partida, com janela de reconexão de até 24 horas. Bots usam as mesmas validações e ações de jogo do servidor. |
+| Fichas | No lobby, cada pessoa escolhe uma ficha visual entre peão, carrinho, moto e avião. A escolha é sincronizada para a sala, fica bloqueada após o início e não altera posição, regras, economia ou ações. Modelos de veículo usam a cor já definida para a pessoa dona; bots mantêm o peão. |
 | Presets | A pessoa anfitriã escolhe Clássico Rápido ou Express ao criar a sala. |
 | Clássico Rápido | Partida de 30 minutos, com o conjunto completo de mecânicas clássicas combinado no escopo. |
 | Express | Seis rodadas, com fase de 40 segundos para cada pessoa em cada rodada; duração prevista de 8 minutos com duas pessoas e 16 com quatro, mais resolução de dívidas. Oito objetivos digitais originais e vitória por maior saldo ao final. Concluir objetivo não encerra a partida imediatamente. |

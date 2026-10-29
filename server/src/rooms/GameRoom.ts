@@ -1,7 +1,7 @@
 import { randomInt } from 'node:crypto'
 import { CloseCode, Client, Room } from '@colyseus/core'
 import type { GameMode } from '../../../shared/lobby.js'
-import { isGameMode, normalizePlayerName } from '../../../shared/lobby.js'
+import { isCharacterType, isGameMode, normalizePlayerName } from '../../../shared/lobby.js'
 import { AUCTION_DURATION_SECONDS, AUCTION_MIN_BID_INCREMENT, CLASSIC_MATCH_SECONDS, DEFAULT_ANIMATION_SPEED, DICE_ANIMATION_DURATION_MS, EXPRESS_PHASE_SECONDS, EXPRESS_ROUNDS, JAIL_FINE, PAWN_STEP_ANIMATION_DURATION_MS, PAWN_TELEPORT_ANIMATION_DURATION_MS, PROPERTY_BUILD_LEVELS, PROPERTY_HOTEL_LEVEL, START_BONUS, STARTING_CASH, TURN_DECISION_SECONDS, TURN_ROLL_SECONDS, buildingSaleValue, calculateNetWorth, calculateRent, canBuildHotel, canBuildProperty, canMortgageProperty, canRedeemMortgage, canSellBuilding, constructionCost, describeLanding, getAnimationDuration, hasLiquidatableAssets, hotelConstructionCost, isAnimationSpeed, mortgageRedemptionCost, mortgageValue, movePosition, resolveJailAttempt, taxForSpace } from '../../../shared/game.js'
 import { boardSpaces } from '../../../shared/board.js'
 import { EVENT_CARDS } from '../../../shared/cards.js'
@@ -79,6 +79,14 @@ export class GameRoom extends Room<{ state: LobbyState }> {
   }
 
   messages = {
+    setCharacter: (client: Client, payload: { characterType?: unknown }) => {
+      const player = this.state.players.get(client.sessionId)
+      if (this.state.status !== 'waiting' || !player || player.isBot || !isCharacterType(payload?.characterType)) {
+        client.send('room:error', { message: 'Escolha uma ficha válida enquanto a sala ainda está no lobby.' })
+        return
+      }
+      player.characterType = payload.characterType
+    },
     setAnimationSpeed: (client: Client, payload: { speed?: unknown }) => {
       const requester = this.state.players.get(client.sessionId)
       if (!requester?.isHost) {

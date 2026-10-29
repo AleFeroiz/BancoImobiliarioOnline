@@ -506,6 +506,15 @@ button:disabled{opacity:.55;cursor:not-allowed}
 @media(prefers-reduced-motion:reduce){.space-inspector{animation:none}}
 .seat-bot{color:#8bc8a3!important}.seat-remove-bot{margin-left:3px;width:22px;height:22px;border:1px solid rgba(255,255,255,.18);border-radius:50%;background:transparent;color:#d7b867}.add-bot-button{margin-top:9px;padding:8px 10px;width:100%;border:1px dashed rgba(213,184,101,.45);background:rgba(213,184,101,.07);color:#e5c979;text-align:left;font-size:10px}.add-bot-button:hover{background:rgba(213,184,101,.13)}
 
+.character-selector{margin:11px 0 12px;padding:10px 11px 11px;border:1px solid #e1e5d5;border-radius:11px;background:#f5f5e9}
+.character-selector-label{display:block;margin-bottom:8px;color:#788673;font-size:8px;font-weight:700;letter-spacing:.15em}
+.character-option-list{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px}
+.character-option{min-width:0;min-height:61px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;border:1px solid #d9dfd2;border-radius:8px;background:#fffdf4;color:#596b5d;font-size:9px;font-weight:600;transition:background .14s,border-color .14s,transform .14s}
+.character-option:hover{border-color:#9bad8e;transform:translateY(-1px)}
+.character-option.selected{border-color:#779675;background:#e8efdf;color:#476b4d;box-shadow:inset 0 0 0 1px #779675}
+.character-option-icon{width:36px;height:29px}
+@media(max-width:640px){.character-selector{padding:8px;margin:9px 0}.character-option-list{gap:5px}.character-option{min-height:56px;font-size:8px}.character-option-icon{width:32px;height:26px}}
+
 /* Overrides finais: qualquer decisão ou inspeção fica centralizada sobre a mesa. */
 .screen-game .game-overlay{z-index:3}
 .screen-game .topbar{z-index:8}

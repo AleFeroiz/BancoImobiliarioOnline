@@ -2,6 +2,14 @@
 
 > As entradas anteriores registram testes da versão existente naquele dia. A escolha ao cair em uma propriedade livre continua sendo **comprar ou não comprar**; leilão é uma ação voluntária separada para vender um título que o jogador já possui.
 
+## 2026-10-29 — Seletor de fichas visuais
+
+- `npm run verify`: 150 testes em 24 arquivos passaram; builds do frontend e servidor passaram. O build web mantém o aviso conhecido do chunk 3D acima de 500 kB.
+- Testes novos cobrem as quatro opções válidas, rejeição de identificadores desconhecidos, escolha por jogador sincronizada antes do início, persistência durante a partida e bloqueio de mudanças após começar. Bots continuam com peão por padrão.
+- Blender 5.2.2 LTS MCP: os três modelos autorais foram inspecionados em três quartos e o GLB final foi reimportado na cena; raízes `Token_Car`, `Token_Motorcycle` e `Token_Airplane`, 26 malhas, material `OWNER_TINT`. Fonte em `assets/blender/player-tokens.blend`; GLB Y-up em `public/assets/player-tokens.glb`.
+- Playtest visual no Chrome não foi concluído: a ferramenta CUA bloqueou a leitura do navegador no Windows porque não conseguiu determinar a URL da janela ativa e encerrou o controle de navegador para esta rodada. O navegador integrado segue desativado. A sala Colyseus e o Vite locais chegaram a iniciar; as sessões foram encerradas após a tentativa.
+- Pendente: validar visualmente os quatro estados de ficha e a cor dos donos em Chrome ou navegador interno quando o controle de navegador estiver disponível. Não há captura de navegador para esta mudança.
+
 ## 2026-10-29 — Bairros em sequência e casas de Sorte
 
 - `npm run verify`: 145 testes em 22 arquivos passaram; build web e build do servidor passaram. O build web mantém o aviso conhecido do chunk 3D acima de 500 kB.

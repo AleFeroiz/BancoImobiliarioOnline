@@ -60,8 +60,34 @@ describe('sala privada', () => {
     expect(room.roomId).toMatch(/^[A-HJ-NP-Z2-9]{5}$/)
     expect(room.state.roomCode).toBe(room.roomId)
     expect(room.state.mode).toBe('express')
-    expect(room.state.players.get(host.sessionId)).toMatchObject({ name: 'Ana', isHost: true })
+    expect(room.state.players.get(host.sessionId)).toMatchObject({ name: 'Ana', isHost: true, characterType: 'pawn' })
     expect(room.state.players.get(guest.sessionId)).toMatchObject({ name: 'Bia', isHost: false })
+  })
+
+  it('sincroniza a ficha escolhida por cada pessoa somente antes de iniciar', async () => {
+    const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
+    const host = await colyseus.connectTo(room, { name: 'Lia' })
+    const guest = await colyseus.connectTo(room, { name: 'Nina' })
+
+    host.send('setCharacter', { characterType: 'car' })
+    await waitFor(() => room.state.players.get(host.sessionId)?.characterType === 'car')
+    guest.send('setCharacter', { characterType: 'airplane' })
+    await waitFor(() => room.state.players.get(guest.sessionId)?.characterType === 'airplane')
+    const invalidChoice = new Promise<{ message: string }>((resolve) => host.onMessage('room:error', resolve))
+    host.send('setCharacter', { characterType: 'boat' })
+    expect((await invalidChoice).message).toContain('ficha válida')
+    expect(room.state.players.get(host.sessionId)?.characterType).toBe('car')
+
+    const started = new Promise<void>((resolve) => host.onMessage('game:started', () => resolve()))
+    host.send('start')
+    await started
+    expect(room.state.players.get(host.sessionId)?.characterType).toBe('car')
+    expect(room.state.players.get(guest.sessionId)?.characterType).toBe('airplane')
+
+    const lockedChoice = new Promise<{ message: string }>((resolve) => guest.onMessage('room:error', resolve))
+    guest.send('setCharacter', { characterType: 'motorcycle' })
+    expect((await lockedChoice).message).toContain('lobby')
+    expect(room.state.players.get(guest.sessionId)?.characterType).toBe('airplane')
   })
 
   it('cria e entra na sala pelos mesmos métodos do cliente web', async () => {
@@ -296,7 +322,7 @@ describe('sala privada', () => {
     host.send('addBot')
     await waitFor(() => room.state.players.size === 2)
     const bot = [...room.state.players.entries()].find(([, player]) => player.isBot)
-    expect(bot?.[1]).toMatchObject({ name: 'Bot 1', isBot: true, isBotControlled: true, isConnected: true })
+    expect(bot?.[1]).toMatchObject({ name: 'Bot 1', isBot: true, isBotControlled: true, isConnected: true, characterType: 'pawn' })
     host.send('removeBot', { sessionId: bot?.[0] })
     await waitFor(() => room.state.players.size === 1)
     host.send('addBot')

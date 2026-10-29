@@ -14,7 +14,7 @@ import { getCashVisualBreakdown } from './cashVisuals'
 import { BUILDING_ANIMATION_DURATION_MS, DICE_ANIMATION_DURATION_MS, LANDING_PULSE_DURATION_MS, PAWN_STEP_ANIMATION_DURATION_MS, PAWN_TELEPORT_ANIMATION_DURATION_MS, PROPERTY_HOTEL_LEVEL, getAnimationDuration, type AnimationSpeed } from '../../shared/game'
 
 type PropertyBuilding = { spaceId: number; ownerSessionId: string; houses: number; isMortgaged: boolean; ownerColor: string }
-type PlayerToken = { id: string; position: number; color: string; seatIndex: number; cash: number; activity?: string }
+type PlayerToken = { id: string; position: number; color: string; seatIndex: number; cash: number; characterType: 'pawn' | 'car' | 'motorcycle' | 'airplane'; activity?: string }
 
 function ResponsiveCamera() {
   const { camera, scene, size } = useThree()
@@ -80,6 +80,7 @@ function SpaceLabel({ name, size, ink, outline }: { name: string; size: number; 
 
 function AnimatedPawn({ player, seatIndex, reducedMotion, movementEnabled, moveMode, presentationSpeed, onMovementComplete }: { player: PlayerToken; seatIndex: number; reducedMotion: boolean; movementEnabled: boolean; moveMode: 'walk' | 'teleport'; presentationSpeed: AnimationSpeed; onMovementComplete: () => void }) {
   const group = useRef<Group>(null)
+  const { scene: tokenScene } = useGLTF('/assets/player-tokens.glb')
   const visualSpace = useRef(player.position)
   const hopPath = useRef<number[]>([])
   const hopStart = useRef({ x: 0, z: 0 })
@@ -88,9 +89,30 @@ function AnimatedPawn({ player, seatIndex, reducedMotion, movementEnabled, moveM
   const idleTime = useRef(seatIndex * 0.8)
   const onMovementCompleteRef = useRef(onMovementComplete)
   onMovementCompleteRef.current = onMovementComplete
-  const offsetX = 0.13 * (seatIndex - 1.5)
-  const offsetZ = 0.06
+  const vehicleOffsets = [[-0.2, -0.2], [0.2, -0.2], [-0.2, 0.2], [0.2, 0.2]] as const
+  const offsetX = player.characterType === 'pawn' ? 0.13 * (seatIndex - 1.5) : vehicleOffsets[seatIndex]?.[0] ?? 0
+  const offsetZ = player.characterType === 'pawn' ? 0.06 : vehicleOffsets[seatIndex]?.[1] ?? 0
+  const baseY = player.characterType === 'pawn' ? 0.35 : 0.16
   const initial = positionOnBoard(visualSpace.current)
+  const model = useMemo(() => {
+    if (player.characterType === 'pawn') return null
+    const source = tokenScene.getObjectByName(({ car: 'Token_Car', motorcycle: 'Token_Motorcycle', airplane: 'Token_Airplane' } as const)[player.characterType])
+    if (!source) return null
+    const clone = source.clone(true)
+    clone.traverse((object) => {
+      const mesh = object as Mesh
+      if (!mesh.isMesh) return
+      mesh.castShadow = true
+      mesh.receiveShadow = true
+      const recolor = (material: Material): Material => {
+        const instance = material.clone()
+        if (instance.name.startsWith('OWNER_TINT') && 'color' in instance) (instance as MeshStandardMaterial).color.set(player.color)
+        return instance
+      }
+      mesh.material = Array.isArray(mesh.material) ? mesh.material.map(recolor) : recolor(mesh.material)
+    })
+    return clone
+  }, [player.characterType, player.color, tokenScene])
 
   useEffect(() => {
     if (player.position === visualSpace.current) return
@@ -99,7 +121,7 @@ function AnimatedPawn({ player, seatIndex, reducedMotion, movementEnabled, moveM
     if (!path.length) return
     if (reducedMotion) {
       const destination = positionOnBoard(player.position)
-      group.current?.position.set(destination.x + offsetX, 0.35, destination.z + offsetZ)
+      group.current?.position.set(destination.x + offsetX, baseY, destination.z + offsetZ)
       visualSpace.current = player.position
       hopPath.current = []
       onMovementCompleteRef.current()
@@ -122,7 +144,7 @@ function AnimatedPawn({ player, seatIndex, reducedMotion, movementEnabled, moveM
       const hopIndex = Math.floor(elapsed.current / hopDuration.current)
       if (hopIndex >= path.length) {
         const destination = positionOnBoard(path[path.length - 1] ?? player.position)
-        pawn.position.set(destination.x + offsetX, 0.35, destination.z + offsetZ)
+        pawn.position.set(destination.x + offsetX, baseY, destination.z + offsetZ)
         pawn.rotation.z = 0
         hopPath.current = []
         visualSpace.current = player.position
@@ -134,25 +156,28 @@ function AnimatedPawn({ player, seatIndex, reducedMotion, movementEnabled, moveM
       const to = positionOnBoard(path[hopIndex] ?? player.position)
       const fromX = hopIndex === 0 ? from.x : from.x + offsetX
       const fromZ = hopIndex === 0 ? from.z : from.z + offsetZ
-      pawn.position.set(fromX + (to.x + offsetX - fromX) * progress, 0.35 + Math.sin(progress * Math.PI) * 0.24, fromZ + (to.z + offsetZ - fromZ) * progress)
+      pawn.position.set(fromX + (to.x + offsetX - fromX) * progress, baseY + Math.sin(progress * Math.PI) * 0.24, fromZ + (to.z + offsetZ - fromZ) * progress)
+      if (player.characterType !== 'pawn') pawn.rotation.y = Math.atan2(to.x - from.x, to.z - from.z)
       pawn.rotation.z = Math.sin(progress * Math.PI) * 0.14
       return
     }
-    pawn.position.y = 0.35 + (Math.sin(idleTime.current * 3.8) + 1) * 0.025
-    pawn.rotation.y = Math.sin(idleTime.current * 1.2) * 0.08
+    pawn.position.y = baseY + (Math.sin(idleTime.current * 3.8) + 1) * 0.025
+    if (player.characterType === 'pawn') pawn.rotation.y = Math.sin(idleTime.current * 1.2) * 0.08
   })
 
   return (
-    <group ref={group} position={[initial.x + offsetX, 0.35, initial.z + offsetZ]}>
-      <mesh castShadow position={[0, 0.17, 0]}>
-        <cylinderGeometry args={[0.16, 0.23, 0.25, 7]} />
-        <meshStandardMaterial color={player.color} roughness={0.42} />
-      </mesh>
-      <mesh castShadow position={[0, 0.39, 0]}>
-        <sphereGeometry args={[0.16, 14, 12]} />
-        <meshStandardMaterial color={player.color} roughness={0.35} />
-      </mesh>
-      {player.activity && <Html position={[0, 0.86, 0]} center distanceFactor={12} zIndexRange={[6, 0]} style={{ pointerEvents: 'none' }}><div className="turn-activity-bubble" role="status" aria-live="polite">{player.activity}</div></Html>}
+    <group ref={group} position={[initial.x + offsetX, baseY, initial.z + offsetZ]} rotation={[0, player.position <= 10 ? Math.PI / 2 : player.position <= 20 ? Math.PI : player.position <= 30 ? -Math.PI / 2 : 0, 0]}>
+      {player.characterType === 'pawn' ? <>
+        <mesh castShadow position={[0, 0.17, 0]}>
+          <cylinderGeometry args={[0.16, 0.23, 0.25, 7]} />
+          <meshStandardMaterial color={player.color} roughness={0.42} />
+        </mesh>
+        <mesh castShadow position={[0, 0.39, 0]}>
+          <sphereGeometry args={[0.16, 14, 12]} />
+          <meshStandardMaterial color={player.color} roughness={0.35} />
+        </mesh>
+      </> : model && <primitive object={model} scale={0.48} />}
+      {player.activity && <Html position={[0, player.characterType === 'pawn' ? 0.86 : 0.66, 0]} center distanceFactor={12} zIndexRange={[6, 0]} style={{ pointerEvents: 'none' }}><div className="turn-activity-bubble" role="status" aria-live="polite">{player.activity}</div></Html>}
     </group>
   )
 }
