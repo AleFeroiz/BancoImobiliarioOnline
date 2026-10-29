@@ -1,8 +1,9 @@
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { useGLTF } from '@react-three/drei'
 import { memo, Suspense, useEffect, useMemo, useRef } from 'react'
-import { OrthographicCamera, type Group, type Object3D } from 'three'
+import { OrthographicCamera, type Group, type Material, type Object3D } from 'three'
 import { fitCashModelRoot, getCashVisualBreakdown } from './cashVisuals'
+import { createUnlitMaterial } from './sceneMaterials'
 
 type HudCashPlayer = { id: string; cash: number }
 
@@ -41,6 +42,11 @@ function CashHudStack({ player }: { player: HudCashPlayer }) {
     if (!source) return []
     return Array.from({ length: count }, (_, stackIndex) => {
       const model = fitCashModelRoot(source.clone(true), 17, typeIndex === 0 ? [0, 0, 0] : [Math.PI / 2, 0, 0])
+      model.traverse((object) => {
+        const mesh = object as Object3D & { isMesh?: boolean; material?: Material | Material[] }
+        if (!mesh.isMesh || !mesh.material) return
+        mesh.material = Array.isArray(mesh.material) ? mesh.material.map((material) => createUnlitMaterial(material)) : createUnlitMaterial(mesh.material)
+      })
       const amountScale = typeIndex === 2 && stackIndex === count - 1 && breakdown.partialBanknote > 0
         ? Math.max(0.18, breakdown.partialBanknote)
         : 1
@@ -71,15 +77,13 @@ function CashHudStack({ player }: { player: HudCashPlayer }) {
 function CashHudScene({ players }: { players: HudCashPlayer[] }) {
   return <>
     <CashHudCamera />
-    <ambientLight intensity={2.1} />
-    <directionalLight position={[-80, 100, 120]} intensity={2.4} />
     <Suspense fallback={null}>{players.map((player) => <CashHudStack key={player.id} player={player} />)}</Suspense>
   </>
 }
 
 function CashHudOverlayScene({ players }: { players: HudCashPlayer[] }) {
   if (players.length === 0) return null
-  return <Canvas className="cash-hud-canvas" aria-hidden="true" orthographic dpr={[1, 1.25]} frameloop="demand" camera={{ position: [0, 0, 100], left: 0, right: 1, top: 1, bottom: 0, near: 0.1, far: 200 }} gl={{ alpha: true, antialias: true }}><CashHudScene players={players} /></Canvas>
+  return <Canvas className="cash-hud-canvas" aria-hidden="true" orthographic dpr={[0.8, 1]} frameloop="demand" camera={{ position: [0, 0, 100], left: 0, right: 1, top: 1, bottom: 0, near: 0.1, far: 200 }} gl={{ alpha: true, antialias: false, powerPreference: 'high-performance', stencil: false }}><CashHudScene players={players} /></Canvas>
 }
 
 export const CashHudOverlay = memo(CashHudOverlayScene, (first, second) => first.players.length === second.players.length && first.players.every((player, index) => {

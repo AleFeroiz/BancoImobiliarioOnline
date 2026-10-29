@@ -1,5 +1,14 @@
 # Validação visual e de navegador
 
+## 2026-10-29 — Cena sem luzes e sombras
+
+- `npm run verify`: 180 testes em 33 arquivos passaram; builds frontend e servidor passaram. `git diff --check` passou. O chunk GLTF continua grande (956,03 KB / 259,61 KB gzip).
+- Auditoria de `src/ui`: nenhuma luz Three/R3F, mapa/passe de sombra, `ContactShadows`, material Standard/Lambert ou flag de cast/receive shadow permaneceu no tabuleiro ou no HUD 3D do dinheiro. Os GLBs da cena também são convertidos para materiais sem iluminação, mantendo cor, mapa, transparência e alpha.
+- Playtest local em sala Clássica com três bots: tabuleiro e HUD ficaram visíveis, com cores de imóveis, tokens, roletas, dinheiro na interface e ação de dados depois de remover as luzes; o arraste continuou girando a câmera. A imagem mostrou cores mais planas/pálidas, como esperado sem luz, sem placas ou sombras sobre o tabuleiro.
+- Durante o arraste automatizado do navegador integrado, o medidor leu 7 FPS / 141,7 ms. O gerador de ponteiro do CUA limita essa amostra e não é evidência suficiente do FPS real do Chrome; a leitura deve ser repetida na máquina do usuário/Chrome. A tentativa de selecionar o Chrome standalone foi encerrada pela proteção que não identificou a URL da janela com confiança.
+- Não alcancei manualmente Copa/Volta ou outra seleção de destino nesta partida. Testes unitários verificam a conversão para material sem iluminação, a redução de 80% no contraste, o escurecimento e a restauração após a seleção.
+- `graphify update .` não pôde ser executado: CLI indisponível, e o Graphify MCP disponível aponta para `GustavoGLD/Hospital`, não para este repositório.
+
 ## 2026-10-29 — Correção após relato de 2 FPS
 
 - `npm run verify`: 176 testes em 32 arquivos passaram; builds frontend e servidor passaram. O aviso do chunk GLTF permanece (955,20 KB / 259,21 KB gzip). `git diff --check` passou.

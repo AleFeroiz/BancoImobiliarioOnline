@@ -2,6 +2,18 @@
 
 > Retrato de trabalho para retomar o projeto entre sessões. Para requisitos e decisões, consulte os documentos de origem indicados em `AGENTS.md`.
 
+## Remoção de luzes e sombras 3D — validação local concluída (2026-10-29)
+
+- Pedido confirmado: eliminar toda iluminação e sombra da cena e destacar destinos elegíveis pela diferença dos materiais, sem placas/sombras sobrepostas. Destinos indisponíveis devem ficar 80% menos contrastados/mais apagados em pisos, modelos, detalhes e rótulos; destinos válidos preservam ou elevam as cores originais.
+- A árvore estava limpa em `main`, em `90c968a`. A primeira tentativa de `git fetch origin` foi negada ao escrever `.git/FETCH_HEAD`; a repetição autorizada concluiu, sem commits novos nem divergência em relação a `origin/main`.
+- Auditoria da implementação: o tabuleiro tinha luz ambiente e direcional, HUD 3D do dinheiro tinha mais duas luzes, e Drei `ContactShadows` adicionava a única sombra. Materiais standard/Lambert e os materiais dos GLBs dependiam das luzes.
+- Implementação: remover as quatro luzes e a sombra de contato dos dois canvases; converter materiais próprios e GLBs para `MeshBasicMaterial`; remover a placa escura sobre cada casa inválida; alterar a cor dos materiais de toda a casa e das construções durante seleção e restaurar após sair dela. Os testes cobrem conversão unlit, redução de contraste em 80% e restauração.
+- `npm run verify` passou: 180 testes em 33 arquivos, builds frontend e servidor. O aviso de chunk GLTF continua em 956,03 KB (259,61 KB gzip). `git diff --check` passou.
+- Playtest local em partida Clássica com três bots: tabuleiro, cores, cartões e dinheiro ficaram visíveis após retirar as luzes; o arraste girou a câmera. A leitura do medidor durante o arraste do CUA variou a 7 FPS/141,7 ms, mas a injeção de ponteiro do navegador integrado não representa uma medição confiável do Chrome/hardware real. A automação do Chrome standalone foi bloqueada por não conseguir confirmar com segurança a URL da janela. O estado visual real de escolha de destino não foi alcançado manualmente; contraste/restauração ficam cobertos pelos testes unitários.
+- Graphify não está conectado a este repositório; a CLI não está instalada.
+- Nota: [cena sem luzes, sombras e realce por contraste](trabalho/cena-sem-luzes-sombras.md).
+- Próximo passo: revisar as alterações e publicar em `main` com hook ativo.
+
 ## Correção do desempenho baixo — implementação validada localmente (2026-10-29)
 
 - Relato confirmado: após publicar o medidor, o usuário observou demora até a leitura e cerca de 2 FPS ao testar a partida.
