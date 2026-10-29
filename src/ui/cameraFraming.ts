@@ -10,10 +10,10 @@ export type CameraFraming = {
 const BOARD_HALF_SIZE = 6.2
 const FRAME_MARGIN = 1.08
 
-export function getCameraFraming(width: number, height: number, tiltDegrees = 16): CameraFraming {
+export function getCameraFraming(width: number, height: number, tiltDegrees = 16, horizontalDegrees = 45): CameraFraming {
   const aspect = Math.max(0.25, width / Math.max(height, 1))
   const tilt = Math.min(75, Math.max(0, tiltDegrees)) * Math.PI / 180
-  const azimuth = aspect < 0.72 ? 0 : Math.PI / 4
+  const azimuth = ((horizontalDegrees % 360) + 360) % 360 * Math.PI / 180
   const fov = width < 640 ? 46 : width < 900 ? 42 : 38
   const verticalHalfFov = fov * Math.PI / 360
   const horizontalHalfFov = Math.atan(Math.tan(verticalHalfFov) * aspect)

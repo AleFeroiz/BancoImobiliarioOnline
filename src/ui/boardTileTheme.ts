@@ -6,6 +6,8 @@ export function getBoardTileTheme(space: BoardSpace, corner: boolean): BoardTile
   if (corner) {
     if (space.kind === 'start') return { floor: '#e7bd53', trim: '#fff1c9', ink: '#293d42', outline: '#fff7df' }
     if (space.kind === 'prison') return { floor: '#73899b', trim: '#d5e1e4', ink: '#fffaf1', outline: '#334954' }
+    if (space.kind === 'world-cup') return { floor: '#347d69', trim: '#f0d370', ink: '#fffaf1', outline: '#285249' }
+    if (space.kind === 'world-tour') return { floor: '#397f9b', trim: '#e2d093', ink: '#fffaf1', outline: '#294f60' }
     if (space.kind === 'rest') return { floor: '#588d69', trim: '#d4e5b8', ink: '#fffaf1', outline: '#355541' }
     return { floor: '#cf694e', trim: '#f4d09a', ink: '#fffaf1', outline: '#713f39' }
   }

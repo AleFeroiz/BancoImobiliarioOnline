@@ -351,3 +351,9 @@
 - A cena visível confirmou que a mesa e os indicadores carregaram no cliente após a integração dos modelos de dinheiro. O painel central permaneceu sobre o tabuleiro e o enquadramento não permitiu distinguir com segurança as malhas de nota, prata e ouro; a aparência dessas peças com saldos diferentes continua pendente de revisão dedicada.
 - Portas usadas nesta sessão: Colyseus `2568` e Vite `5175`, com `VITE_ROOM_SERVER_URL` apontado ao servidor local. As portas usuais `2567` e `5173` não estavam acessíveis.
 - A cobertura automatizada de decomposição do saldo e a suíte completa estão registradas na frente que publicou a implementação (`135` testes, builds web e servidor).
+
+## 2026-10-29 — Cantos novos e controle horizontal da câmera
+
+- `npm run verify`: 153 testes em 25 arquivos passaram; build web e build do servidor passaram. O build web mantém o aviso conhecido do chunk 3D acima de 500 kB. `git diff --check` passou.
+- Em uma partida local no navegador integrado (1280 × 720), testei inclinação de 0°, 16° e 75° e giros horizontais de 0°, 45° e 90°. O tabuleiro completo permaneceu no enquadramento e o slider horizontal foi reposicionado para liberar a área das casas no ângulo padrão.
+- A integração do servidor valida os três turnos completos na prisão, o aluguel triplicado na propriedade escolhida pela Copa, a rejeição de propriedade rival na Volta ao Mundo e o teletransporte para Partida sem bônus.

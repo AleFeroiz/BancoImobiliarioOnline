@@ -129,11 +129,20 @@ button:disabled{opacity:.55;cursor:not-allowed}
 .camera-tilt-angle{font-size:10px;font-weight:700;font-variant-numeric:tabular-nums}
 .camera-tilt-control input[type=range]{width:18px;height:132px;margin:0;writing-mode:vertical-lr;direction:rtl;accent-color:#789775;cursor:ns-resize;touch-action:pan-x}
 .camera-tilt-control input[type=range]:focus-visible{outline:2px solid #9b824b;outline-offset:3px;border-radius:8px}
+.camera-orbit-control{position:fixed;z-index:6;top:50%;left:18px;transform:translateY(-50%);width:min(260px,calc(100vw - 36px));min-height:33px;padding:2px 12px;display:grid;grid-template-columns:auto auto;align-items:center;justify-content:center;column-gap:9px;row-gap:0;border:1px solid rgba(105,132,97,.3);border-radius:14px;background:rgba(250,248,237,.9);box-shadow:0 8px 24px rgba(43,62,46,.13);color:#53694e;pointer-events:auto}
+.camera-orbit-control-upper{top:49px;left:50%;transform:translateX(-50%);width:min(360px,calc(100vw - 116px))}
+.camera-orbit-title{font-size:6px;font-weight:700;letter-spacing:.09em;white-space:nowrap}
+.camera-orbit-angle{font-size:9px;font-weight:700;font-variant-numeric:tabular-nums}
+.camera-orbit-control input[type=range]{grid-column:1 / -1;width:100%;height:14px;margin:0;accent-color:#789775;cursor:ew-resize;touch-action:pan-y}
+.camera-orbit-control input[type=range]:focus-visible{outline:2px solid #9b824b;outline-offset:2px;border-radius:8px}
+.corner-choice-actions{display:grid;gap:10px;width:100%}
+.corner-choice-actions .trade-label{display:grid;gap:6px}
 @media(max-width:900px){
   .screen-game .game-overlay{padding:10px 12px 9px}
   .screen-game .player-card.seat-0,.screen-game .player-card.seat-1{top:61px}
   .camera-tilt-control{right:max(6px,env(safe-area-inset-right));width:46px;min-height:184px;padding:8px 4px}
   .camera-tilt-control input[type=range]{height:112px}
+  .camera-orbit-control,.camera-orbit-control-upper{top:49px;left:50%;transform:translateX(-50%);width:min(310px,calc(100vw - 96px));min-height:34px;padding:2px 9px}
 }
 @media(max-width:640px){
   .screen-game .game-overlay{padding:8px 8px 8px}
@@ -153,6 +162,8 @@ button:disabled{opacity:.55;cursor:not-allowed}
   .camera-tilt-title,.camera-tilt-end{font-size:5px;letter-spacing:.03em}
   .camera-tilt-angle{font-size:9px}
   .camera-tilt-control input[type=range]{width:16px;height:90px}
+  .camera-orbit-control,.camera-orbit-control-upper{top:48px;width:min(250px,calc(100vw - 72px));min-height:32px;padding:2px 8px}
+  .camera-orbit-title{font-size:5px}
 }
 .screen-game .game-bottom{position:fixed;right:4vw;bottom:14px;left:4vw;z-index:5}
 @media(max-width:640px){.screen-game .game-bottom{right:10px;bottom:8px;left:10px}}

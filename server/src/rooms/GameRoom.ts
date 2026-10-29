@@ -2,12 +2,12 @@ import { randomInt } from 'node:crypto'
 import { CloseCode, Client, Room } from '@colyseus/core'
 import type { GameMode } from '../../../shared/lobby.js'
 import { isCharacterType, isGameMode, normalizePlayerName } from '../../../shared/lobby.js'
-import { AUCTION_DURATION_SECONDS, AUCTION_MIN_BID_INCREMENT, CLASSIC_MATCH_SECONDS, DEFAULT_ANIMATION_SPEED, DICE_ANIMATION_DURATION_MS, EXPRESS_PHASE_SECONDS, EXPRESS_ROUNDS, JAIL_FINE, PAWN_STEP_ANIMATION_DURATION_MS, PAWN_TELEPORT_ANIMATION_DURATION_MS, PROPERTY_BUILD_LEVELS, PROPERTY_HOTEL_LEVEL, START_BONUS, STARTING_CASH, TURN_DECISION_SECONDS, TURN_ROLL_SECONDS, buildingSaleValue, calculateNetWorth, calculateRent, canBuildHotel, canBuildProperty, canMortgageProperty, canRedeemMortgage, canSellBuilding, constructionCost, describeLanding, getAnimationDuration, hasLiquidatableAssets, hotelConstructionCost, isAnimationSpeed, mortgageRedemptionCost, mortgageValue, movePosition, resolveJailAttempt, taxForSpace } from '../../../shared/game.js'
+import { AUCTION_DURATION_SECONDS, AUCTION_MIN_BID_INCREMENT, CLASSIC_MATCH_SECONDS, DEFAULT_ANIMATION_SPEED, DICE_ANIMATION_DURATION_MS, EXPRESS_PHASE_SECONDS, EXPRESS_ROUNDS, JAIL_TURNS, PAWN_STEP_ANIMATION_DURATION_MS, PAWN_TELEPORT_ANIMATION_DURATION_MS, PROPERTY_BUILD_LEVELS, PROPERTY_HOTEL_LEVEL, START_BONUS, STARTING_CASH, TURN_DECISION_SECONDS, TURN_ROLL_SECONDS, buildingSaleValue, calculateNetWorth, calculateRent, canBuildHotel, canBuildProperty, canMortgageProperty, canRedeemMortgage, canSellBuilding, constructionCost, describeLanding, getAnimationDuration, hasLiquidatableAssets, hotelConstructionCost, isAnimationSpeed, mortgageRedemptionCost, mortgageValue, movePosition, taxForSpace } from '../../../shared/game.js'
 import { boardSpaces } from '../../../shared/board.js'
 import { EVENT_CARDS } from '../../../shared/cards.js'
 import { EMPTY_OBJECTIVE_ACTIVITY, EXPRESS_OBJECTIVES, getExpressObjectiveProgress, type ExpressObjectiveId, type ExpressObjectiveUpdate, type ObjectiveActivity } from '../../../shared/objectives.js'
 import { LobbyPlayerState, LobbyState, PropertyState } from './schema/LobbyState.js'
-import { chooseBotAuctionBid, chooseBotJailAction, shouldBotBuyProperty } from './botStrategy.js'
+import { chooseBotAuctionBid, shouldBotBuyProperty } from './botStrategy.js'
 
 const ROOM_CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
 const ROOM_CODE_LENGTH = 5
@@ -386,52 +386,10 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       this.advanceTurn()
     },
     jailRoll: (client: Client) => {
-      const player = this.state.players.get(client.sessionId)
-      if (this.state.status !== 'playing' || this.state.turnPhase !== 'jail' || client.sessionId !== this.state.activePlayerSessionId || !player?.isJailed) return
-      const dice: [number, number] = [randomInt(1, 7), randomInt(1, 7)]
-      const result = resolveJailAttempt(dice, player.jailTurns, player.cash)
-      this.state.diceSequence += 1
-      this.state.diceOne = dice[0]
-      this.state.diceTwo = dice[1]
-      player.isJailed = result.isJailed
-      player.jailTurns = result.jailTurns
-      player.cash = result.cash
-      this.state.pawnMoveMode = 'walk'
-      this.state.turnPhase = 'rolling'
-      this.state.presentationSpeed = this.state.animationSpeed
-      if (!result.move) {
-        this.schedulePresentation(getAnimationDuration(DICE_ANIMATION_DURATION_MS, this.state.presentationSpeed), () => {
-          if (this.state.turnPhase !== 'rolling' || this.state.activePlayerSessionId !== client.sessionId) return
-          this.state.turnPhase = 'resolve'
-          this.state.landingDescription = `Sem duplas: tentativa ${result.jailTurns} de 3. Sua vez termina na prisão.`
-          this.finishExpiredPhaseIfReady()
-        })
-        return
-      }
-      const releaseText = result.outcome === 'doubles'
-        ? 'Duplas! Você saiu da prisão.'
-        : `Após três tentativas, saiu da prisão e pagou ${result.finePaid.toLocaleString('pt-BR')}.`
-      const startPosition = player.position
-      this.state.activeCardTitle = ''
-      this.state.activeCardDescription = ''
-      this.schedulePresentation(getAnimationDuration(DICE_ANIMATION_DURATION_MS, this.state.presentationSpeed), () => {
-        if (this.state.turnPhase !== 'rolling' || this.state.activePlayerSessionId !== client.sessionId) return
-        this.movePlayer(client.sessionId, player, dice[0] + dice[1])
-        this.startPawnMovement(client.sessionId, player, startPosition, releaseText)
-      })
+      client.send('room:error', { message: 'Na prisão, você perde três turnos completos. Não há rolagem para sair.' })
     },
     jailPay: (client: Client) => {
-      const player = this.state.players.get(client.sessionId)
-      if (this.state.status !== 'playing' || this.state.turnPhase !== 'jail' || client.sessionId !== this.state.activePlayerSessionId || !player?.isJailed) return
-      if (player.cash < JAIL_FINE) {
-        client.send('room:error', { message: `A fiança custa ${JAIL_FINE.toLocaleString('pt-BR')}. Tente tirar duplas.` })
-        return
-      }
-      player.cash -= JAIL_FINE
-      player.isJailed = false
-      player.jailTurns = 0
-      this.state.turnPhase = 'roll'
-      this.state.landingDescription = `Fiança paga: ${JAIL_FINE.toLocaleString('pt-BR')}. Role os dados para avançar.`
+      client.send('room:error', { message: 'A prisão dura três turnos completos e não pode ser paga.' })
     },
     tradeOffer: (client: Client, payload: {
       toSessionId?: unknown
@@ -640,13 +598,56 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       this.clearAuction(true)
     },
     finishTurn: (client: Client) => {
-      if (this.state.status !== 'playing' || this.state.turnPhase !== 'resolve') return
+      if (this.state.status !== 'playing' || !['resolve', 'jail'].includes(this.state.turnPhase)) return
       if (client.sessionId !== this.state.activePlayerSessionId) {
         client.send('room:error', { message: 'Somente a pessoa da vez pode concluir a jogada.' })
         return
       }
+      if (this.state.turnPhase === 'jail') {
+        const player = this.state.players.get(client.sessionId)
+        if (!player?.isJailed) return
+        player.jailTurns = Math.max(0, player.jailTurns - 1)
+        if (player.jailTurns === 0) player.isJailed = false
+      }
       if (this.state.mode === 'classic' && this.state.matchEnding) this.finishMatch()
       else this.advanceTurn()
+    },
+    chooseWorldCup: (client: Client, payload: { propertyId?: unknown }) => {
+      const propertyId = typeof payload?.propertyId === 'number' ? payload.propertyId : -1
+      const space = boardSpaces[propertyId]
+      if (this.state.status !== 'playing' || this.state.turnPhase !== 'world-cup' || client.sessionId !== this.state.activePlayerSessionId) return
+      if (!space || space.kind !== 'property') {
+        client.send('room:error', { message: 'Escolha uma propriedade válida para sediar a Copa do Mundo.' })
+        return
+      }
+      this.state.worldCupSpaceId = propertyId
+      this.state.turnPhase = 'resolve'
+      this.state.landingDescription = `${space.name} será sede da Copa do Mundo. O aluguel agora vale três vezes o valor normal.`
+      this.finishExpiredPhaseIfReady()
+    },
+    chooseWorldTour: (client: Client, payload: { spaceId?: unknown }) => {
+      const spaceId = typeof payload?.spaceId === 'number' ? payload.spaceId : -1
+      const space = boardSpaces[spaceId]
+      const player = this.state.players.get(client.sessionId)
+      if (this.state.status !== 'playing' || this.state.turnPhase !== 'world-tour' || client.sessionId !== this.state.activePlayerSessionId || !player) return
+      const holding = this.state.properties.get(String(spaceId))
+      const isAllowedProperty = space?.kind === 'property' && (!holding?.ownerSessionId || holding.ownerSessionId === client.sessionId)
+      const isAllowedSpecial = space && space.kind !== 'property' && space.id !== player.position
+      if (!space || space.id === 30 || (!isAllowedProperty && !isAllowedSpecial)) {
+        client.send('room:error', { message: 'Escolha uma propriedade sua, livre ou uma casa especial diferente desta.' })
+        return
+      }
+      player.position = spaceId
+      this.state.pawnMoveMode = 'teleport'
+      this.state.turnPhase = 'moving'
+      this.state.landingDescription = `Volta ao Mundo: sua peça viajou para ${space.name}, sem bônus por passagem pela Partida.`
+      this.state.presentationSpeed = this.state.animationSpeed
+      this.schedulePresentation(getAnimationDuration(PAWN_TELEPORT_ANIMATION_DURATION_MS, this.state.presentationSpeed), () => {
+        if (this.state.turnPhase !== 'moving' || this.state.activePlayerSessionId !== client.sessionId || player.position !== spaceId) return
+        this.state.pawnMoveMode = 'walk'
+        this.resolveSpace(client.sessionId, player, true, `Volta ao Mundo: chegada em ${space.name}, sem bônus por passagem pela Partida.`)
+        this.finishExpiredPhaseIfReady()
+      })
     },
   }
 
@@ -793,10 +794,10 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       this.turnTimerKey = key
       this.state.turnSeconds = phase === 'roll'
         ? TURN_ROLL_SECONDS
-        : ['purchase', 'resolve', 'jail', 'debt'].includes(phase) ? TURN_DECISION_SECONDS : 0
+      : ['purchase', 'resolve', 'jail', 'world-cup', 'world-tour', 'debt'].includes(phase) ? TURN_DECISION_SECONDS : 0
       return
     }
-    if (this.state.turnSeconds === 0 || !['roll', 'purchase', 'resolve', 'jail', 'debt'].includes(phase)) return
+    if (this.state.turnSeconds === 0 || !['roll', 'purchase', 'resolve', 'jail', 'world-cup', 'world-tour', 'debt'].includes(phase)) return
     this.state.turnSeconds -= 1
     if (this.state.turnSeconds > 0) return
 
@@ -807,7 +808,9 @@ export class GameRoom extends Room<{ state: LobbyState }> {
     if (phase === 'roll') this.rollForPlayer(sessionId)
     else if (phase === 'purchase') this.messages.declinePurchase(client)
     else if (phase === 'resolve') this.messages.finishTurn(client)
-    else if (phase === 'jail') this.messages.jailRoll(client)
+    else if (phase === 'jail') this.messages.finishTurn(client)
+    else if (phase === 'world-cup') this.messages.chooseWorldCup(client, { propertyId: this.getWorldCupDefaultPropertyId() })
+    else if (phase === 'world-tour') this.messages.chooseWorldTour(client, { spaceId: this.getWorldTourDefaultDestination(sessionId) })
     else {
       this.autoResolveDebt(sessionId)
       if (this.state.turnPhase === 'debt' && this.state.activePlayerSessionId === sessionId) this.state.turnSeconds = TURN_DECISION_SECONDS
@@ -864,6 +867,21 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       this.state.turnPhase = 'resolve'
       this.state.landingDescription = `${space?.name ?? 'A propriedade'} permaneceu livre; a compra expirou.`
       this.advanceTurn()
+      return
+    }
+    const sessionId = this.state.activePlayerSessionId
+    const internalClient = { sessionId, send: () => undefined } as unknown as Client
+    if (this.state.turnPhase === 'jail') {
+      this.messages.finishTurn(internalClient)
+      return
+    }
+    if (this.state.turnPhase === 'world-cup') {
+      this.messages.chooseWorldCup(internalClient, { propertyId: this.getWorldCupDefaultPropertyId() })
+      this.advanceTurn()
+      return
+    }
+    if (this.state.turnPhase === 'world-tour') {
+      this.messages.chooseWorldTour(internalClient, { spaceId: this.getWorldTourDefaultDestination(sessionId) })
       return
     }
     if (this.state.turnPhase === 'debt') return
@@ -963,8 +981,11 @@ export class GameRoom extends Room<{ state: LobbyState }> {
         this.messages.buy(client, { houses })
       } else this.messages.declinePurchase(client)
     } else if (this.state.turnPhase === 'jail') {
-      const choice = chooseBotJailAction(player.cash, player.jailTurns)
-      this.messages[choice === 'pay' ? 'jailPay' : 'jailRoll'](client)
+      this.messages.finishTurn(client)
+    } else if (this.state.turnPhase === 'world-cup') {
+      this.messages.chooseWorldCup(client, { propertyId: this.getWorldCupDefaultPropertyId() })
+    } else if (this.state.turnPhase === 'world-tour') {
+      this.messages.chooseWorldTour(client, { spaceId: this.getWorldTourDefaultDestination(sessionId) })
     } else if (this.state.turnPhase === 'debt') {
       if (player.cash >= this.state.debtAmount) {
         this.messages.payDebt(client)
@@ -1177,7 +1198,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
     this.turnTimerKey = `${this.state.turnNumber}:${this.state.activePlayerSessionId}:${this.state.turnPhase}`
     this.state.diceOne = 0
     this.state.diceTwo = 0
-    this.state.landingDescription = nextPlayer?.isJailed ? 'Você está preso. Pague a fiança ou tente tirar duplas.' : ''
+    this.state.landingDescription = nextPlayer?.isJailed ? `Você está preso. Este é um dos seus ${nextPlayer.jailTurns} turnos de prisão.` : ''
     this.state.activeCardTitle = ''
     this.state.activeCardDescription = ''
     this.startTradeWindow()
@@ -1213,10 +1234,31 @@ export class GameRoom extends Room<{ state: LobbyState }> {
     }
   }
 
+  private getWorldCupDefaultPropertyId() {
+    return boardSpaces
+      .filter((space) => space.kind === 'property')
+      .sort((first, second) => (second.price ?? 0) - (first.price ?? 0))[0]?.id ?? 1
+  }
+
+  private getWorldTourDefaultDestination(sessionId: string) {
+    const player = this.state.players.get(sessionId)
+    const eligible = boardSpaces.filter((space) => {
+      if (space.id === 30 || space.id === player?.position) return false
+      if (space.kind !== 'property') return true
+      const ownerSessionId = this.state.properties.get(String(space.id))?.ownerSessionId
+      return !ownerSessionId || ownerSessionId === sessionId
+    })
+    return eligible
+      .filter((space) => space.kind === 'property')
+      .sort((first, second) => (second.price ?? 0) - (first.price ?? 0))[0]?.id
+      ?? eligible.find((space) => space.kind !== 'property')?.id
+      ?? 0
+  }
+
   private sendToJail(sessionId: string, player: LobbyPlayerState, description: string) {
     player.position = 10
     player.isJailed = true
-    player.jailTurns = 0
+    player.jailTurns = JAIL_TURNS
     this.state.pendingPropertyId = 255
     this.state.turnPhase = 'moving'
     this.state.pawnMoveMode = 'teleport'
@@ -1245,7 +1287,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       } else if (property.ownerSessionId !== this.state.activePlayerSessionId) {
         const owner = this.state.players.get(property.ownerSessionId)
         const ownership = new Map(Array.from(this.state.properties.entries()).map(([id, item]) => [Number(id), item.ownerSessionId]))
-        const rent = calculateRent(space.id, ownership, property.houses, property.isMortgaged)
+        const rent = calculateRent(space.id, ownership, property.houses, property.isMortgaged, this.state.worldCupSpaceId)
         if (owner && property.isMortgaged) {
           this.state.landingDescription += ` ${space.name} está hipotecada; não há aluguel.`
         } else if (owner) {
@@ -1255,8 +1297,16 @@ export class GameRoom extends Room<{ state: LobbyState }> {
     } else if (space.kind === 'tax') {
       const tax = taxForSpace(space.id)
       this.collectPayment(sessionId, player, tax, '', 'Taxa')
-    } else if (space.kind === 'go-to-prison') {
-      this.sendToJail(sessionId, player, 'Vá para a prisão: sua peça foi enviada à casa de visita e sua vez termina.')
+    } else if (space.kind === 'prison') {
+      player.isJailed = true
+      player.jailTurns = JAIL_TURNS
+      this.state.landingDescription = `${describeLanding(space.id)} Você perderá os próximos três turnos.`
+    } else if (space.kind === 'world-cup') {
+      this.state.turnPhase = 'world-cup'
+      this.state.landingDescription = `${describeLanding(space.id)} Escolha uma propriedade para sediar o evento.`
+    } else if (space.kind === 'world-tour') {
+      this.state.turnPhase = 'world-tour'
+      this.state.landingDescription = `${describeLanding(space.id)} Escolha sua próxima casa.`
     } else if (space.kind === 'event' && drawEvent) {
       this.recordExpressActivity(sessionId, 'eventCardsDrawn')
       const card = EVENT_CARDS[randomInt(EVENT_CARDS.length)]
@@ -1271,7 +1321,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
         this.movePlayer(sessionId, player, card.effect.spaces)
         this.startPawnMovement(sessionId, player, startPosition, card.description, false)
       } else {
-        this.sendToJail(sessionId, player, `${card.description} Sua peça foi enviada à casa de visita.`)
+        this.sendToJail(sessionId, player, `${card.description} Sua peça foi enviada à prisão por três turnos.`)
       }
     }
   }

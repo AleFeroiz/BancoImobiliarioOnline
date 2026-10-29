@@ -9,9 +9,9 @@ Um jogo de tabuleiro para abrir no navegador e jogar com amigos, sem cadastro. C
 - Tela inicial para escolher nome e criar/entrar em sala.
 - Ao criar, anfitrião escolhe Clássico Rápido ou Express; quem entra vê o modo antes de confirmar.
 - Lobby lista até quatro participantes, anfitrião e estado de preparação; anfitrião inicia.
-- Tabuleiro 3D de câmera ajustável, com inclinação inicial discreta e controle vertical de top-down a 75° que preserva o tabuleiro completo no enquadramento; a partida usa toda a janela, sem o cabeçalho geral. Espaços legíveis, peças e dados; cada pessoa escolhe no lobby peão, carrinho, moto ou avião como ficha visual colorida por dono; cada jogada mostra os dados, depois o percurso da ficha e por fim a ação de chegada; o anfitrião controla a velocidade das animações (0,5×, 1× ou 2×), e observadores acompanham as fases por balão junto à ficha; HUD em HTML responsivo para desktop e celular.
+- Tabuleiro 3D de câmera ajustável, com inclinação inicial discreta, controle vertical de top-down a 75° e giro horizontal de 0° a 359°, preservando os quatro cantos no enquadramento; a partida usa toda a janela, sem o cabeçalho geral. Partida, Prisão (três turnos), Copa do Mundo (aluguel 3× na propriedade escolhida) e Volta ao Mundo (teletransporte para casa própria, livre ou especial) são os quatro cantos. Espaços legíveis, peças e dados; cada pessoa escolhe no lobby peão, carrinho, moto ou avião como ficha visual colorida por dono; cada jogada mostra os dados, depois o percurso da ficha e por fim a ação de chegada; o anfitrião controla a velocidade das animações (0,5×, 1× ou 2×), e observadores acompanham as fases por balão junto à ficha; HUD em HTML responsivo para desktop e celular.
 - Ações disponíveis e resultados da jogada ficam claros em cada turno.
-- O botão “?” abre um guia rápido. A pessoa tem 20 segundos para rolar e 10 segundos para uma decisão; expiração recusa compras, confirma resoluções obrigatórias, tenta duplas na prisão e avança a liquidação de dívidas.
+- O botão “?” abre um guia rápido. A pessoa tem 20 segundos para rolar e 10 segundos para uma decisão; expiração recusa compras, conclui automaticamente o turno de prisão, escolhe destinos padrão para os cantos novos e avança a liquidação de dívidas.
 - Partidas temporárias, sem conta ou progresso persistente.
 
 ## Regras acordadas

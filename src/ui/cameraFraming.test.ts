@@ -22,12 +22,12 @@ describe('enquadramento da câmera do tabuleiro', () => {
     expect(shallow.tilt).toBeCloseTo(75)
   })
 
-  it('adapta a orientação e o enquadramento a celular, tablet e desktop', () => {
+  it('adapta o enquadramento a celular, tablet e desktop usando o giro escolhido', () => {
     const portrait = getCameraFraming(390, 844, 16)
     const tablet = getCameraFraming(800, 900, 16)
     const desktop = getCameraFraming(1440, 900, 16)
 
-    expect(portrait.azimuth).toBe(0)
+    expect(portrait.azimuth).toBe(Math.PI / 4)
     expect(tablet.azimuth).toBe(Math.PI / 4)
     expect(desktop.azimuth).toBe(Math.PI / 4)
     expect(portrait.distance).toBeGreaterThan(desktop.distance)
@@ -38,7 +38,8 @@ describe('enquadramento da câmera do tabuleiro', () => {
   it('mantém os quatro cantos dentro da tela em todo o intervalo de inclinação', () => {
     for (const [width, height] of [[390, 844], [800, 900], [1440, 900], [1920, 1080]]) {
       for (const angle of [0, 16, 75]) {
-        const framing = getCameraFraming(width, height, angle)
+       for (const horizontal of [0, 45, 90, 180, 270, 359]) {
+        const framing = getCameraFraming(width, height, angle, horizontal)
         const aspect = width / height
         const verticalHalfFov = framing.fov * Math.PI / 360
         const horizontalHalfFov = Math.atan(Math.tan(verticalHalfFov) * aspect)
@@ -59,6 +60,7 @@ describe('enquadramento da câmera do tabuleiro', () => {
             expect(Math.abs(projectedY), `${width}×${height} at ${angle}° vertically`).toBeLessThan(1)
           }
         }
+       }
       }
     }
   })

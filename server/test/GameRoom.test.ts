@@ -5,7 +5,7 @@ import appConfig from '../src/app.config.js'
 import type { LobbyState } from '../src/rooms/schema/LobbyState.js'
 import { PropertyState } from '../src/rooms/schema/LobbyState.js'
 import { boardSpaces } from '../../shared/board.js'
-import { START_BONUS, STARTING_CASH, buildingSaleValue, constructionCost, mortgageRedemptionCost, mortgageValue } from '../../shared/game.js'
+import { START_BONUS, STARTING_CASH, buildingSaleValue, calculateRent, constructionCost, mortgageRedemptionCost, mortgageValue } from '../../shared/game.js'
 import { EXPRESS_OBJECTIVES, type ExpressObjectiveId, type ExpressObjectiveUpdate } from '../../shared/objectives.js'
 
 async function waitFor(condition: () => boolean, timeout = 2500) {
@@ -864,55 +864,78 @@ describe('sala privada', () => {
     expect(room.state.status).toBe('ended')
   })
 
-  it('libera a pessoa presa após cobrar a fiança e permite rolar no mesmo turno', async () => {
+  it('mantém a prisão por três turnos completos e libera automaticamente depois', async () => {
     const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
     const host = await colyseus.connectTo(room, { name: 'Ana' })
-    await colyseus.connectTo(room, { name: 'Bia' })
-    host.send('start')
-    await new Promise((resolve) => setTimeout(resolve, 30))
-
-    const player = room.state.players.get(host.sessionId)!
-    player.isJailed = true
-    player.cash = 80_000
-    room.state.turnPhase = 'jail'
-    host.send('jailPay')
-    await new Promise((resolve) => setTimeout(resolve, 30))
-
-    expect(player.isJailed).toBe(false)
-    expect(player.cash).toBe(30_000)
-    expect(room.state.turnPhase).toBe('roll')
-    host.send('roll')
-    await new Promise((resolve) => setTimeout(resolve, 30))
-    expect(room.state.turnPhase).toBe('rolling')
-    await waitFor(() => room.state.turnPhase === 'moving', 4000)
-    await waitFor(() => ['resolve', 'purchase', 'debt'].includes(room.state.turnPhase), 13_500)
-    expect(room.state.diceOne).toBeGreaterThanOrEqual(1)
-  }, 20_000)
-
-  it('exige a fiança completa e mantém a pessoa presa se o saldo for insuficiente', async () => {
-    const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
-    const host = await colyseus.connectTo(room, { name: 'Ana' })
-    await colyseus.connectTo(room, { name: 'Bia' })
+    const guest = await colyseus.connectTo(room, { name: 'Bia' })
     const started = new Promise<void>((resolve) => host.onMessage('game:started', () => resolve()))
     host.send('start')
     await started
 
     const player = room.state.players.get(host.sessionId)!
+    player.position = 10
     player.isJailed = true
-    player.jailTurns = 1
-    player.cash = 49_999
+    player.jailTurns = 3
+    room.state.activePlayerSessionId = host.sessionId
     room.state.turnPhase = 'jail'
-    const insufficientFine = new Promise<{ message: string }>((resolve) => host.onMessage('room:error', resolve))
+    for (const remaining of [2, 1, 0]) {
+      host.send('finishTurn')
+      await waitFor(() => room.state.activePlayerSessionId === guest.sessionId && room.state.turnPhase === 'roll')
+      expect(player.jailTurns).toBe(remaining)
+      if (remaining === 0) break
+      room.state.activePlayerSessionId = host.sessionId
+      room.state.turnPhase = 'jail'
+      room.state.turnNumber += 1
+    }
+    expect(player.isJailed).toBe(false)
+    expect(player.cash).toBe(STARTING_CASH)
+  })
 
-    host.send('jailPay')
-    await expect(insufficientFine).resolves.toMatchObject({ message: expect.stringContaining('A fiança custa 50.000') })
-    expect(player).toMatchObject({ isJailed: true, jailTurns: 1, cash: 49_999 })
-    expect(room.state.turnPhase).toBe('jail')
+  it('aplica a sede da Copa ao aluguel e impede a Volta ao Mundo para imóvel de outra pessoa', async () => {
+    const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
+    const host = await colyseus.connectTo(room, { name: 'Ana' })
+    const guest = await colyseus.connectTo(room, { name: 'Bia' })
+    const started = new Promise<void>((resolve) => host.onMessage('game:started', () => resolve()))
+    host.send('start')
+    await started
+    const owner = room.state.players.get(guest.sessionId)!
+    const visitor = room.state.players.get(host.sessionId)!
+    const property = boardSpaces.find((space) => space.kind === 'property')!
+    const title = new PropertyState()
+    title.ownerSessionId = guest.sessionId
+    room.state.properties.set(String(property.id), title)
+    const normalRent = calculateRent(property.id, new Map([[property.id, guest.sessionId]]))
 
-    player.cash = 50_000
-    host.send('jailPay')
-    await waitFor(() => room.state.turnPhase === 'roll')
-    expect(player).toMatchObject({ isJailed: false, jailTurns: 0, cash: 0 })
+    room.state.activePlayerSessionId = host.sessionId
+    room.state.turnPhase = 'world-cup'
+    host.send('chooseWorldCup', { propertyId: property.id })
+    await waitFor(() => room.state.turnPhase === 'resolve')
+    expect(room.state.worldCupSpaceId).toBe(property.id)
+
+    const privateRoom = room as unknown as { resolveSpace: (sessionId: string, player: typeof visitor) => void }
+    visitor.position = property.id
+    visitor.cash = STARTING_CASH
+    owner.cash = STARTING_CASH
+    privateRoom.resolveSpace(host.sessionId, visitor)
+    expect(visitor.cash).toBe(STARTING_CASH - normalRent * 3)
+    expect(owner.cash).toBe(STARTING_CASH + normalRent * 3)
+
+    visitor.position = 10
+    privateRoom.resolveSpace(host.sessionId, visitor)
+    expect(visitor).toMatchObject({ isJailed: true, jailTurns: 3 })
+
+    room.state.turnPhase = 'world-tour'
+    visitor.position = 30
+    const invalidDestination = new Promise<{ message: string }>((resolve) => host.onMessage('room:error', resolve))
+    host.send('chooseWorldTour', { spaceId: property.id })
+    await expect(invalidDestination).resolves.toMatchObject({ message: expect.stringContaining('propriedade sua, livre') })
+
+    room.state.animationSpeed = 2
+    host.send('chooseWorldTour', { spaceId: 0 })
+    await waitFor(() => room.state.turnPhase === 'resolve', 2_500)
+    expect(visitor.position).toBe(0)
+    expect(visitor.cash).toBe(STARTING_CASH - normalRent * 3)
+    expect(room.state.landingDescription).toContain('sem bônus por passagem pela Partida')
   })
 
   it('autoriza apenas a pessoa da vez a rolar e só avança após concluir a casa', async () => {

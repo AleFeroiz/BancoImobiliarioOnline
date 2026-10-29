@@ -98,6 +98,13 @@
 - Após a captura, ampliei a escala do balão porque a leitura estava pequena nessa viewport. A revisão visual dessa melhoria ficou pendente: a sessão CUA seguinte informou `Local browser use is disabled in Work settings`; o primeiro playtest permanece válido para a estrutura da tela, não para o novo tamanho.
 - `git diff --check` passou; `main` e `origin/main` estavam alinhadas antes da integração. Depois da publicação, futuras frentes continuam diretamente em `main`.
 
+## Frente concluída — cantos do tabuleiro e giro horizontal (2026-10-29)
+
+- Cantos 2–4: Prisão por três turnos completos, Copa do Mundo escolhida pela pessoa da vez (aluguel 3×) e Volta ao Mundo com teletransporte para imóvel próprio, livre ou casa especial. O servidor valida as escolhas e as resolve na ordem do turno.
+- A câmera mantém o slider vertical de 0° a 75° e recebeu um slider horizontal de 0° a 359°. A geometria do enquadramento ajusta os quatro cantos para cada orientação; testes cobrem as posições extremas em desktop, tablet e celular.
+- `npm run verify` passou: 153 testes em 25 arquivos, build web e build do servidor. `git diff --check` passou. Revisão manual no navegador integrado em 1280 × 720 cobriu inclinações 0°/16°/75° e giros 0°/45°/90°; os cantos permaneceram visíveis.
+- `graphify update .` foi tentado após a mudança, mas o executável `graphify` não está instalado nesta sessão. Os artefatos locais em `graphify-out/` e `.codex/` ficaram fora do commit.
+
 ## Retomada
 
 1. Verifique branch, `git status`, upstream e alterações recebidas antes de editar.

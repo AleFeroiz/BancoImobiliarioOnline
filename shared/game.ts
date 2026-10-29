@@ -24,8 +24,7 @@ export function getAnimationDuration(durationMs: number, speed: number) {
 }
 
 export const LANDING_PULSE_DURATION_MS = 2_200
-export const JAIL_FINE = 50_000
-export const MAX_JAIL_ATTEMPTS = 3
+export const JAIL_TURNS = 3
 export const MORTGAGE_RATIO = 0.5
 export const CLASSIC_MATCH_SECONDS = 30 * 60
 export const EXPRESS_ROUNDS = 6
@@ -49,23 +48,6 @@ export function calculateNetWorth(ownerSessionId: string, cash: number, holdings
   }, Math.max(0, cash))
 }
 
-export type JailAttemptResult = {
-  isJailed: boolean
-  jailTurns: number
-  cash: number
-  move: boolean
-  outcome: 'doubles' | 'failed' | 'forced-release'
-  finePaid: number
-}
-
-export function resolveJailAttempt(dice: DiceRoll, jailTurns: number, cash: number): JailAttemptResult {
-  if (dice[0] === dice[1]) return { isJailed: false, jailTurns: 0, cash, move: true, outcome: 'doubles', finePaid: 0 }
-  const nextAttempt = jailTurns + 1
-  if (nextAttempt < MAX_JAIL_ATTEMPTS) return { isJailed: true, jailTurns: nextAttempt, cash, move: false, outcome: 'failed', finePaid: 0 }
-  const finePaid = Math.min(cash, JAIL_FINE)
-  return { isJailed: false, jailTurns: 0, cash: cash - finePaid, move: true, outcome: 'forced-release', finePaid }
-}
-
 export function movePosition(position: number, dice: DiceRoll) {
   const spaces = boardSpaces.length
   return (position + dice[0] + dice[1]) % spaces
@@ -80,19 +62,21 @@ export function describeLanding(spaceId: number) {
     event: 'Você parou em uma casa de evento.',
     tax: 'Você parou em uma casa de taxa.',
     rest: 'Você parou em uma casa de descanso.',
-    prison: 'Você está visitando a prisão.',
-    'go-to-prison': 'Você parou na casa Vá para a prisão.',
+    prison: 'Você caiu na prisão e ficará preso por três turnos.',
+    'world-cup': 'Escolha uma propriedade para sediar a Copa do Mundo; o aluguel dela triplica.',
+    'world-tour': 'Escolha uma propriedade sua, livre ou casa especial para visitar.',
   } satisfies Record<typeof space.kind, string>
   return `${space.name}. ${descriptions[space.kind]}`
 }
 
-export function calculateRent(spaceId: number, ownership: ReadonlyMap<number, string>, houses = 0, isMortgaged = false) {
+export function calculateRent(spaceId: number, ownership: ReadonlyMap<number, string>, houses = 0, isMortgaged = false, worldCupSpaceId = -1) {
   const space = boardSpaces[spaceId]
   if (!space || space.kind !== 'property' || typeof space.price !== 'number' || isMortgaged) return 0
   const groupSpaces = boardSpaces.filter((candidate) => candidate.kind === 'property' && candidate.buildable && candidate.color === space.color)
   const groupIsComplete = groupSpaces.length > 1 && groupSpaces.every((candidate) => ownership.get(candidate.id) === ownership.get(spaceId))
   const baseRent = Math.max(10_000, Math.floor(space.price * 0.1))
-  return baseRent * (groupIsComplete ? 2 : 1) + houses * Math.floor(space.price * 0.1)
+  const rent = baseRent * (groupIsComplete ? 2 : 1) + houses * Math.floor(space.price * 0.1)
+  return spaceId === worldCupSpaceId ? rent * 3 : rent
 }
 
 export function constructionCost(spaceId: number) {

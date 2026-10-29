@@ -1,17 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { chooseBotAuctionBid, chooseBotJailAction, shouldBotBuyProperty } from '../src/rooms/botStrategy.js'
+import { chooseBotAuctionBid, shouldBotBuyProperty } from '../src/rooms/botStrategy.js'
 
 describe('estratégia básica de bots', () => {
   it('compra com reserva e aceita uma compra barata que completa grupo', () => {
     expect(shouldBotBuyProperty(500_000, 700_000, false, 'classic')).toBe(true)
     expect(shouldBotBuyProperty(500_000, 600_000, false, 'classic')).toBe(false)
     expect(shouldBotBuyProperty(500_000, 550_000, true, 'classic')).toBe(true)
-  })
-
-  it('paga para sair da prisão quando tem reserva e rola na terceira tentativa', () => {
-    expect(chooseBotJailAction(200_000, 0)).toBe('pay')
-    expect(chooseBotJailAction(80_000, 0)).toBe('roll')
-    expect(chooseBotJailAction(1_000_000, 2)).toBe('roll')
   })
 
   it('dá lance apenas dentro do teto de valor e mantém uma reserva de caixa', () => {

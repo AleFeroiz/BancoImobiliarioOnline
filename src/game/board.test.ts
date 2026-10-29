@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { boardSpaces, positionOnBoard } from './board'
-import { JAIL_FINE, MAX_JAIL_ATTEMPTS, STARTING_CASH, buildingSaleValue, calculateRent, canBuildHotel, canBuildProperty, canMortgageProperty, canRedeemMortgage, canSellBuilding, constructionCost, describeLanding, hasLiquidatableAssets, hotelConstructionCost, mortgageRedemptionCost, mortgageValue, movePosition, resolveJailAttempt, taxForSpace } from '../../shared/game'
+import { JAIL_TURNS, STARTING_CASH, buildingSaleValue, calculateRent, canBuildHotel, canBuildProperty, canMortgageProperty, canRedeemMortgage, canSellBuilding, constructionCost, describeLanding, hasLiquidatableAssets, hotelConstructionCost, mortgageRedemptionCost, mortgageValue, movePosition, taxForSpace } from '../../shared/game'
 import { EVENT_CARDS, applyCardCashEffect } from '../../shared/cards'
 
 describe('tabuleiro', () => {
@@ -19,6 +19,9 @@ describe('tabuleiro', () => {
 
   it('identifica a partida e mantém preço nas propriedades', () => {
     expect(boardSpaces[0]).toMatchObject({ name: 'Partida', kind: 'start' })
+    expect(boardSpaces[10]).toMatchObject({ name: 'Prisão', kind: 'prison' })
+    expect(boardSpaces[20]).toMatchObject({ name: 'Copa do Mundo', kind: 'world-cup' })
+    expect(boardSpaces[30]).toMatchObject({ name: 'Volta ao Mundo', kind: 'world-tour' })
 
     const properties = boardSpaces.filter(({ kind }) => kind === 'property')
     expect(properties.length).toBeGreaterThan(0)
@@ -64,7 +67,7 @@ describe('tabuleiro', () => {
     expect(() => describeLanding(40)).toThrow(RangeError)
   })
 
-  it('calcula aluguel base e dobra quando a mesma pessoa completa o grupo', () => {
+  it('calcula aluguel base, bônus do grupo e triplicação pela Copa', () => {
     const property = boardSpaces.find((space) => space.kind === 'property')!
     const group = boardSpaces.filter((space) => space.kind === 'property' && space.color === property.color)
     const owner = new Map(group.map((space) => [space.id, 'jogador-1']))
@@ -74,6 +77,7 @@ describe('tabuleiro', () => {
     expect(calculateRent(property.id, new Map([[property.id, 'jogador-1']]))).toBe(base)
     expect(calculateRent(property.id, owner)).toBe(base * 2)
     expect(calculateRent(property.id, owner, 2)).toBe(base * 2 + Math.floor((property.price ?? 0) * 0.1) * 2)
+    expect(calculateRent(property.id, owner, 2, false, property.id)).toBe((base * 2 + Math.floor((property.price ?? 0) * 0.1) * 2) * 3)
   })
 
   it('permite até três casas sem grupo completo e exige visita posterior para o hotel', () => {
@@ -119,13 +123,8 @@ describe('tabuleiro', () => {
     expect(applyCardCashEffect(120_000, 50_000)).toBe(170_000)
   })
 
-  it('libera da prisão com duplas ou na terceira tentativa e cobra até a fiança', () => {
-    expect(MAX_JAIL_ATTEMPTS).toBe(3)
-    expect(JAIL_FINE).toBe(50_000)
-    expect(resolveJailAttempt([4, 4], 0, 100_000)).toMatchObject({ isJailed: false, move: true, outcome: 'doubles', cash: 100_000 })
-    expect(resolveJailAttempt([2, 5], 0, 100_000)).toMatchObject({ isJailed: true, jailTurns: 1, move: false, outcome: 'failed' })
-    expect(resolveJailAttempt([1, 6], 1, 100_000)).toMatchObject({ isJailed: true, jailTurns: 2, move: false, outcome: 'failed' })
-    expect(resolveJailAttempt([1, 2], 2, 20_000)).toMatchObject({ isJailed: false, jailTurns: 0, cash: 0, move: true, outcome: 'forced-release', finePaid: 20_000 })
+  it('define prisão por três turnos completos sem fiança', () => {
+    expect(JAIL_TURNS).toBe(3)
   })
 
   it('calcula hipoteca e resgate, bloqueia aluguel e exige vender construções do grupo', () => {

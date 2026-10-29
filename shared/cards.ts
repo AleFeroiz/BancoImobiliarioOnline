@@ -16,7 +16,7 @@ export const EVENT_CARDS: readonly EventCard[] = [
   { id: 'building-repair', title: 'Reparo emergencial', description: 'Um reparo inesperado custa R$ 100.000.', effect: { kind: 'cash', amount: -100_000 } },
   { id: 'city-assessment', title: 'Contribuição urbana', description: 'A nova iluminação pública custa R$ 150.000.', effect: { kind: 'cash', amount: -150_000 } },
   { id: 'shortcut', title: 'Atalho pela cidade', description: 'Avance três casas e resolva onde parar.', effect: { kind: 'move', spaces: 3 } },
-  { id: 'court-summons', title: 'Convocação judicial', description: 'Vá direto para a prisão. Sua vez termina ao chegar.', effect: { kind: 'jail' } },
+  { id: 'court-summons', title: 'Convocação judicial', description: 'Vá direto para a prisão e perca os próximos três turnos.', effect: { kind: 'jail' } },
 ]
 
 export function applyCardCashEffect(cash: number, amount: number) {
