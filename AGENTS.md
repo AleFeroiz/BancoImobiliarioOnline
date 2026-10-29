@@ -18,7 +18,7 @@ Construir um jogo de tabuleiro multiplayer casual para navegador, para partidas 
 - `docs/DECISOES.md` guarda decisões confirmadas e propostas abertas; `docs/REGRAS-DE-JOGO.md` especifica o comportamento acordado; `docs/VALIDACAO.md` guarda evidências de testes e revisão visual; `docs/REFERENCIAS-VISUAIS.md` registra referências visuais.
 - Ao iniciar trabalho substancial, confira o estado do repositório e leia o plano ou nota da frente relacionada. Atualize `docs/ANDAMENTO.md` no início, quando uma descoberta mudar o rumo e ao concluir ou bloquear trabalho, com fatos verificados, decisões, validação e próximo passo concreto.
 - Para uma frente substancial que precise continuar em outra sessão, crie uma nota concisa em `docs/trabalho/<identificador-curto>.md` e ligue-a a partir de `docs/ANDAMENTO.md`. Separe fatos, decisões, suposições e perguntas abertas; não transforme propostas em decisões.
-- O repositório Git privado é a fonte compartilhada canônica do projeto. Para sincronizar entre máquinas, confira branch, `origin`, upstream e mudanças locais; use `git fetch` e inspecione o que chegou antes de integrar. Preserve mudanças locais. Publique notas e código apenas na branch da frente, em commit revisado e via pull request conforme os templates de `.github/`; não considere trabalho local sincronizado até haver evidência de push e de integração no destino.
+- O repositório Git privado é a fonte compartilhada canônica do projeto e `main` é sempre a branch final. Não crie branches de tarefa nem pull requests, a menos que o usuário peça explicitamente. Antes de sincronizar entre máquinas, confira `main`, `origin` e mudanças locais; use `git fetch` e inspecione o que chegou. Preserve mudanças locais, faça commits revisados diretamente em `main` e publique-os com `git push origin main`. Só considere trabalho sincronizado após o push ser confirmado.
 - Não registre credenciais, tokens, dados pessoais nem histórico de conversa. Notas devem permitir retomada, não transcrever sessões.
 
 ## Uso obrigatório do Game Studio
@@ -41,11 +41,9 @@ Construir um jogo de tabuleiro multiplayer casual para navegador, para partidas 
 
 ## Fluxo de trabalho
 
-- Trabalhe em uma mudança coesa por vez e mantenha a branch `main` pronta para integração.
-- Use branches curtas: `feat/`, `fix/`, `docs/` ou `chore/`, seguidas por um resumo em kebab-case.
-- Abra pull requests com objetivo, resumo, evidência de validação e riscos ou decisões pendentes. Use os templates em `.github/`.
+- Trabalhe em uma mudança coesa por vez, diretamente em `main`; não crie branches auxiliares nem abra pull requests sem pedido explícito do usuário.
 - Antes de implementar uma funcionalidade, alinhe comportamento e regras em documentação quando houver impacto no produto.
-- A cada implementação, adicione ou atualize testes, execute a suíte completa e faça commit/push da mudança aprovada para o GitHub.
+- A cada implementação, adicione ou atualize testes, execute a suíte completa e faça commit/push diretamente em `main` para o GitHub.
 - Todo commit deve passar pelo hook local de pré-commit, que executa a suíte completa de testes e o build. Não use `--no-verify` nem desative o hook.
 - Quando um bug for encontrado e corrigido, inclua no mesmo trabalho um teste de regressão que falhe antes da correção e passe depois dela.
 - Se não houver teste automatizado adequado para uma mudança visual, registre a validação manual feita com o Game Studio e adicione testes automatizados para a lógica não visual relacionada.

@@ -15,10 +15,10 @@
 - Nota de retomada: [sequência visual, economia e câmera](trabalho/sequencia-visual-economia-camera.md).
 - Pedido do usuário: tocar dados, depois movimento do peão, depois mostrar ações de chegada; limitar leilão ao turno de quem vende, deixar hipoteca apenas para resolver dívida sem saldo suficiente; elevar a câmera para aproximar a leitura da referência visual enviada.
 - Regra anterior conferida em `docs/DECISOES.md`: leilão podia começar fora da vez; hipoteca valia durante a vez e dívida. A decisão atual foi incorporada em `docs/DECISOES.md`, `docs/REGRAS-DE-JOGO.md`, `docs/PLANO.md` e `README.md`.
-- Branch atual observada: `docs/ale-dev-memory`, com upstream `origin/docs/ale-dev-memory`; os commits locais desta frente estão à frente do upstream registrado. `git ls-remote` não completou por erro de DNS; não há confirmação de push nem do estado remoto atual.
+- Branch atual: `main`, avançada por fast-forward após `git fetch origin`. Os quatro commits desta frente estão locais e aguardam publicação no `origin/main`.
 - Implementação: o servidor restringe leilões ao turno da pessoa vendedora e hipotecas/demolição durante dívida ao saldo insuficiente; a cena e o cartão de turno sequenciam dados, caminhada do peão e ação contextual; a câmera passou a olhar de cima tanto no desktop como no celular.
 - Validação: `npm run verify` passou (116 testes, build web e build do servidor). Uma partida local real foi revisada no Chrome headless em 1440 × 900 e 390 × 844: três jogadas confirmaram dados → caminhada → ação de chegada; o diálogo de compra apareceu depois de o peão parar. O tabuleiro inteiro coube nos dois tamanhos sem overflow horizontal. `git diff --check` passou. O build mantém o aviso conhecido do chunk de cena 3D acima de 500 kB.
-- Próximo passo: sincronizar a branch conforme o fluxo de PR do projeto quando a conectividade permitir; a revisão visual de navegador desta mudança está concluída.
+- Próximo passo: publicar `main` no GitHub; a revisão visual de navegador desta mudança está concluída.
 
 ## Retomada
 
