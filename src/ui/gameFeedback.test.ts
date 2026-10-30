@@ -1,7 +1,14 @@
 import { describe, expect, it } from 'vitest'
-import { formatCashDelta, getCashChangeTone, getCashToastPlacement, getGameSound, getPropertyChangeSound, getPropertyVisualChange } from './gameFeedback'
+import { formatCashDelta, getCashChangeTone, getCashToastPlacement, getGameSound, getLandingSpecialSound, getPropertyChangeSound, getPropertyVisualChange } from './gameFeedback'
 
 describe('feedback da partida', () => {
+  it('associa efeitos de chegada à Volta ao Mundo, Prisão e Copa', () => {
+    expect(getLandingSpecialSound(30)).toBe('airplane-pass')
+    expect(getLandingSpecialSound(10)).toBe('police-siren')
+    expect(getLandingSpecialSound(20)).toBe('crowd-cheer')
+    expect(getLandingSpecialSound(5)).toBeNull()
+  })
+
   it('escolhe sons curtos de acordo com a jogada', () => {
     expect(getGameSound('Porto Dourado comprada por 160.000.')).toBe('purchase')
     expect(getGameSound('Aluguel: 40.000 pagos a Ana.')).toBe('money-out')

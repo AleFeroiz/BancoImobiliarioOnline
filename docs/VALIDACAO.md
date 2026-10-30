@@ -477,3 +477,10 @@
 - `git diff --check` passou. Testes cobrem a decisão de compra mesmo com casa inspecionada anteriormente, labels de aluguel apenas com proprietário, steppers com limites de saldo, estilo de som de passo e faixas de DPR com qualidade alta padrão.
 - Revisão visual pendente: a porta 2567 aparentou livre na enumeração, mas o servidor terminou com `EADDRINUSE`; não foi possível identificar um processo/listener para encerrar. Sem a sala Colyseus, não capturei a inspeção ou as opções gráficas no navegador.
 - `graphify update .` não executou porque a CLI `graphify` não está instalada.
+
+## Aluguel ampliado, opções em tela cheia, emotes, hotel e sons de cantos — 2026-10-30
+
+- `npm run verify`: 224 testes em 44 arquivos passaram; builds frontend e servidor passaram. O aviso conhecido de chunk de cena continua em 956,45 KB (259,83 KB gzip).
+- Regressões: broadcast e validação de emote no Colyseus, símbolos dos seis emotes, som ligado aos cantos Aeroporto/Prisão/Copa e tintura da fachada azul do hotel com preservação do material dos vidros.
+- Playtest de navegador não concluído: `npm run dev:server` retornou `EADDRINUSE` na porta 2567 mesmo sem listener listado; a sessão recém-iniciada foi encerrada, e não foi encerrado nenhum processo desconhecido. Não capturei screenshot das novas opções, do balão de emote ou do aluguel ampliado.
+- Graphify query foi tentado, mas o único repositório consultável era `GustavoGLD/Hospital`, sem relação com este jogo; a CLI e ferramenta de atualização do grafo deste checkout não estão disponíveis.

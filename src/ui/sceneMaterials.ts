@@ -20,7 +20,7 @@ export function createTokenOutlineMaterial() {
 }
 
 export function getOwnerTintOverride(meshName: string, materialName: string, ownerColor?: ColorRepresentation) {
-  return materialName.startsWith('OWNER_TINT') || meshName === 'Limestone parcel curb' ? ownerColor : undefined
+  return materialName.startsWith('OWNER_TINT') || materialName === 'Hotel deep teal.001' || meshName === 'Limestone parcel curb' ? ownerColor : undefined
 }
 
 export function createUnlitMaterial(source: Material, colorOverride?: ColorRepresentation, dimmed = false) {

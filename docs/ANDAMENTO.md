@@ -9,6 +9,15 @@
 
 > Retrato de trabalho para retomar o projeto entre sessões. Para requisitos e decisões, consulte os documentos de origem indicados em `AGENTS.md`.
 
+## Aluguéis 3D, opções em tela inteira, emotes e sons de chegada — implementação concluída (2026-10-30)
+
+- Pedido atual: aumentar os valores de aluguel 3D; abrir configurações em tela cheia sem pausar a partida e oferecer ajustes de imagem/desempenho; adicionar seis emotes sincronizados; trocar a cor azul fixa da fachada dos hotéis pela cor do proprietário; tocar sons ao chegar ao Aeroporto, Prisão e Copa.
+- Inspeção: o texto da cena usava `fontSize=0.115`; o GLB usa `Hotel deep teal.001` na fachada e só marcava teto/placa com `OWNER_TINT`; o menu gráfico anterior era um popover. O servidor envia mensagens Colyseus autoritativas.
+- Implementação: valores de aluguel ampliados e em negrito, fachada de hotel tingida pela cor do dono sem recolorir os vidros, configurações de gráficos/FPS/áudio/movimento numa tela sobreposta sem pausar turnos, whitelist server-side de emotes e balões temporários, e sons sintetizados de avião, sirene e torcida.
+- Validação: `npm run verify` passou com 224 testes em 44 arquivos e builds frontend/servidor; `git diff --check` passou. O playtest visual não abriu: Colyseus retornou `EADDRINUSE` em 2567, sem PID identificável. Testes cobrem whitelist de emotes e broadcast do servidor, estilos de som de chegada e tintura da fachada do hotel com preservação dos vidros.
+- Graphify: o único índice disponível é `GustavoGLD/Hospital`, sem relação com este repositório; a CLI local e uma ferramenta de atualização para este checkout não estão disponíveis.
+- Próximo passo: revisar diff e publicar em `main` somente os arquivos desta tarefa, preservando os arquivos locais Blender.
+
 ## Painel de compra, inspeção, passos do peão e qualidade gráfica — implementação concluída (2026-10-30)
 
 - Pedido atual: manter a decisão de compra visível sem saldo e com casa previamente selecionada; mostrar rótulos 3D somente em propriedades possuídas; corrigir layout de perfil com só um imóvel; substituir campos numéricos por botões; tocar um efeito suave por passo do peão; incluir inspeção de níveis e valores; expor controle gráfico com padrão de maior resolução.

@@ -23,9 +23,10 @@ import { getBuildingInnerEdgeOffset, getCenteredModelPlacement, getModelFootprin
 import { getPropertyRentLabel } from './propertyRentLabel'
 import { playGameSound } from './gameAudio'
 import { getGraphicsDprRange, type GraphicsQuality } from './graphicsQuality'
+import { getPlayerEmoteSymbol, type PlayerEmote } from '../../shared/playerEmotes'
 
 type PropertyBuilding = { spaceId: number; ownerSessionId: string; houses: number; isMortgaged: boolean; ownerColor: string }
-type PlayerToken = { id: string; position: number; color: string; seatIndex: number; cash: number; characterType: 'pawn' | 'car' | 'motorcycle' | 'airplane'; activity?: string }
+type PlayerToken = { id: string; position: number; color: string; seatIndex: number; cash: number; characterType: 'pawn' | 'car' | 'motorcycle' | 'airplane'; activity?: string; emote?: { emote: PlayerEmote; sequence: number } }
 
 type CameraOrbitControls = {
   enabled: boolean
@@ -88,7 +89,7 @@ function CameraDragAnywhere({ enabled }: { enabled: boolean }) {
 
   useEffect(() => {
     if (!enabled) return
-    const interactiveSelector = 'button, a, input, select, textarea, summary, [role="button"], [data-camera-drag="off"], .game-modal-backdrop, .game-event-card, .turn-card, .space-inspector, .player-profile-panel, .game-options-panel'
+    const interactiveSelector = 'button, a, input, select, textarea, summary, [role="button"], [data-camera-drag="off"], .game-modal-backdrop, .game-event-card, .turn-card, .space-inspector, .player-profile-panel, .game-options-panel, .game-settings-backdrop, .emote-picker'
     const isInteractive = (target: EventTarget | null) => target instanceof Element && Boolean(target.closest(interactiveSelector))
     const orbit = controls as CameraOrbitControls | null
     const onPointerDown = (event: PointerEvent) => {
@@ -341,6 +342,7 @@ function AnimatedPawn({ player, seatIndex, reducedMotion, movementEnabled, moveM
         </group>
       </> : model && <><primitive object={model.outline} scale={0.61} /><primitive object={model.object} scale={0.56} /></>}
       {player.activity && <Html position={[0, player.characterType === 'pawn' ? 0.86 : 0.66, 0]} center distanceFactor={12} zIndexRange={[6, 0]} style={{ pointerEvents: 'none' }}><div className="turn-activity-bubble" role="status" aria-live="polite">{player.activity}</div></Html>}
+      {player.emote && <Html key={player.emote.sequence} position={[0, player.characterType === 'pawn' ? 1.08 : 0.9, 0]} center distanceFactor={10} zIndexRange={[8, 0]} style={{ pointerEvents: 'none' }}><div className="player-emote-bubble" aria-label="Emote do jogador">{getPlayerEmoteSymbol(player.emote.emote)}</div></Html>}
     </group>
   )
 }
@@ -634,7 +636,7 @@ function Board({ players, propertyBuildings, worldCupSpaceId, highlightedSpaceId
           </group>
         )
       })}
-      {propertyRentLabels.map(({ id, position, text }) => <Billboard key={`rent-${id}`} position={position} follow><Text fontSize={0.115} maxWidth={1.18} textAlign="center" anchorX="center" anchorY="middle" color="#243b2e" outlineColor="#fff9eb" outlineWidth={0.012} depthOffset={-1} raycast={skipRaycast}>{text}</Text></Billboard>)}
+      {propertyRentLabels.map(({ id, position, text }) => <Billboard key={`rent-${id}`} position={position} follow><Text fontSize={0.2} fontWeight="bold" maxWidth={1.65} textAlign="center" anchorX="center" anchorY="middle" color="#243b2e" outlineColor="#fff9eb" outlineWidth={0.022} depthOffset={-1} raycast={skipRaycast}>{text}</Text></Billboard>)}
       <Suspense fallback={null}>
         {propertyBuildings.filter(({ ownerSessionId }) => Boolean(ownerSessionId)).map(({ spaceId, houses, ownerColor, ownerSessionId }) => <AnimatedBuilding key={`buildings-${spaceId}`} spaceId={spaceId} houses={houses} ownerColor={ownerColor} ownerSessionId={ownerSessionId} reducedMotion={reducedMotion} presentationSpeed={presentationSpeed} dimmed={selectionMode && !highlightedSpaceIds.includes(spaceId)} />)}
       </Suspense>
@@ -716,7 +718,7 @@ function BoardSceneCanvas({ players, propertyBuildings, worldCupSpaceId = 255, h
 function samePlayers(first: PlayerToken[], second: PlayerToken[]) {
   return first.length === second.length && first.every((player, index) => {
     const other = second[index]
-    return Boolean(other && player.id === other.id && player.position === other.position && player.color === other.color && player.seatIndex === other.seatIndex && player.characterType === other.characterType && player.activity === other.activity)
+    return Boolean(other && player.id === other.id && player.position === other.position && player.color === other.color && player.seatIndex === other.seatIndex && player.characterType === other.characterType && player.activity === other.activity && player.emote?.sequence === other.emote?.sequence)
   })
 }
 

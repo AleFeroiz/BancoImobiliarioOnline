@@ -1,4 +1,6 @@
-export type GameSound = 'none' | 'dice' | 'pawn-step' | 'purchase' | 'money-in' | 'money-out' | 'auction' | 'milestone' | 'construction' | 'demolition' | 'ownership' | 'mortgage' | 'redemption'
+import { boardSpaces } from '../game/board'
+
+export type GameSound = 'none' | 'dice' | 'pawn-step' | 'purchase' | 'money-in' | 'money-out' | 'auction' | 'milestone' | 'construction' | 'demolition' | 'ownership' | 'mortgage' | 'redemption' | 'airplane-pass' | 'police-siren' | 'crowd-cheer'
 export type PropertyVisualState = { ownerSessionId: string; houses: number; isMortgaged?: boolean }
 export type PropertyVisualChange = 'placed' | 'built' | 'demolished' | 'ownership' | 'released' | 'mortgaged' | 'redeemed'
 
@@ -55,4 +57,12 @@ export function getCashChangeTone(delta: number): 'gain' | 'loss' | null {
 
 export function getCashToastPlacement(seatIndex: number): 'below' | 'above' {
   return seatIndex < 2 ? 'below' : 'above'
+}
+
+export function getLandingSpecialSound(spaceId: number): GameSound | null {
+  const kind = boardSpaces[spaceId]?.kind
+  if (kind === 'world-tour') return 'airplane-pass'
+  if (kind === 'prison') return 'police-siren'
+  if (kind === 'world-cup') return 'crowd-cheer'
+  return null
 }

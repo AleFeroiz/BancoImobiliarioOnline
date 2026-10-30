@@ -23,6 +23,8 @@ describe('materiais da cena sem luzes', () => {
 
   it('usa a cor do dono no limite de pedra do canteiro', () => {
     expect(getOwnerTintOverride('Limestone parcel curb', 'Limestone paving.001', '#51b9c5')).toBe('#51b9c5')
+    expect(getOwnerTintOverride('Hotel ground floor', 'Hotel deep teal.001', '#d1a33e')).toBe('#d1a33e')
+    expect(getOwnerTintOverride('Hotel ground window', 'Glazed blue glass.001', '#d1a33e')).toBeUndefined()
     expect(getOwnerTintOverride('Other paving', 'Limestone paving.001', '#51b9c5')).toBeUndefined()
     expect(getOwnerTintOverride('OWNER_TINT roof', 'OWNER_TINT.001', '#aa77cc')).toBe('#aa77cc')
   })

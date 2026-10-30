@@ -39,15 +39,21 @@ const soundNotes: Record<GameSound, number[]> = {
   ownership: [494, 659, 784],
   mortgage: [392, 494],
   redemption: [494, 659],
+  'airplane-pass': [],
+  'police-siren': [],
+  'crowd-cheer': [],
 }
 
-export type GameAudioEffectStyle = 'silent' | 'cash-register' | 'distorted-loss' | 'dice-rattle' | 'pawn-puff' | 'musical'
+export type GameAudioEffectStyle = 'silent' | 'cash-register' | 'distorted-loss' | 'dice-rattle' | 'pawn-puff' | 'airplane-pass' | 'police-siren' | 'crowd-cheer' | 'musical'
 
 export function getGameAudioEffectStyle(sound: GameSound): GameAudioEffectStyle {
   if (sound === 'money-in') return 'cash-register'
   if (sound === 'money-out') return 'distorted-loss'
   if (sound === 'dice') return 'dice-rattle'
   if (sound === 'pawn-step') return 'pawn-puff'
+  if (sound === 'airplane-pass') return 'airplane-pass'
+  if (sound === 'police-siren') return 'police-siren'
+  if (sound === 'crowd-cheer') return 'crowd-cheer'
   if (sound === 'none') return 'silent'
   return 'musical'
 }
@@ -139,6 +145,74 @@ function playPawnPuff(audio: AudioContext) {
   oscillator.stop(start + 0.11)
 }
 
+function playAirplanePass(audio: AudioContext) {
+  const start = audio.currentTime
+  const noise = audio.createBufferSource()
+  const buffer = audio.createBuffer(1, Math.ceil(audio.sampleRate * 1.45), audio.sampleRate)
+  const samples = buffer.getChannelData(0)
+  for (let index = 0; index < samples.length; index += 1) samples[index] = (Math.random() * 2 - 1) * 0.45
+  noise.buffer = buffer
+  const filter = audio.createBiquadFilter()
+  filter.type = 'lowpass'
+  filter.frequency.setValueAtTime(400, start)
+  filter.frequency.exponentialRampToValueAtTime(1550, start + 0.58)
+  filter.frequency.exponentialRampToValueAtTime(360, start + 1.4)
+  const gain = audio.createGain()
+  gain.gain.setValueAtTime(0.0001, start)
+  gain.gain.exponentialRampToValueAtTime(0.13, start + 0.55)
+  gain.gain.exponentialRampToValueAtTime(0.0001, start + 1.42)
+  const pan = audio.createStereoPanner()
+  pan.pan.setValueAtTime(-0.9, start)
+  pan.pan.linearRampToValueAtTime(0.9, start + 1.4)
+  noise.connect(filter)
+  filter.connect(gain)
+  gain.connect(pan)
+  pan.connect(audio.destination)
+  noise.start(start)
+  noise.stop(start + 1.45)
+}
+
+function playPoliceSiren(audio: AudioContext) {
+  const start = audio.currentTime
+  const oscillator = audio.createOscillator()
+  const gain = audio.createGain()
+  oscillator.type = 'triangle'
+  oscillator.frequency.setValueAtTime(660, start)
+  for (let index = 0; index < 4; index += 1) {
+    oscillator.frequency.setValueAtTime(920, start + index * 0.36 + 0.18)
+    oscillator.frequency.setValueAtTime(660, start + (index + 1) * 0.36)
+  }
+  gain.gain.setValueAtTime(0.0001, start)
+  gain.gain.exponentialRampToValueAtTime(0.075, start + 0.035)
+  gain.gain.setValueAtTime(0.075, start + 1.35)
+  gain.gain.exponentialRampToValueAtTime(0.0001, start + 1.48)
+  oscillator.connect(gain)
+  gain.connect(audio.destination)
+  oscillator.start(start)
+  oscillator.stop(start + 1.5)
+}
+
+function playCrowdCheer(audio: AudioContext) {
+  const start = audio.currentTime
+  playNoise(audio, start, 0.95, 720, 0.11)
+  playNoise(audio, start + 0.11, 0.82, 1180, 0.08)
+  for (const [index, frequency] of [784, 988, 1175].entries()) {
+    const onset = start + index * 0.075
+    const oscillator = audio.createOscillator()
+    const gain = audio.createGain()
+    oscillator.type = 'sine'
+    oscillator.frequency.setValueAtTime(frequency, onset)
+    oscillator.frequency.exponentialRampToValueAtTime(frequency * 1.16, onset + 0.3)
+    gain.gain.setValueAtTime(0.0001, onset)
+    gain.gain.exponentialRampToValueAtTime(0.035, onset + 0.08)
+    gain.gain.exponentialRampToValueAtTime(0.0001, onset + 0.72)
+    oscillator.connect(gain)
+    gain.connect(audio.destination)
+    oscillator.start(onset)
+    oscillator.stop(onset + 0.74)
+  }
+}
+
 export function playGameSound(sound: GameSound) {
   if (getGameAudioEffectStyle(sound) === 'silent') return
   const audio = getAudioContext()
@@ -161,6 +235,9 @@ export function playGameSound(sound: GameSound) {
       playPawnPuff(audio)
       return
     }
+    if (style === 'airplane-pass') { playAirplanePass(audio); return }
+    if (style === 'police-siren') { playPoliceSiren(audio); return }
+    if (style === 'crowd-cheer') { playCrowdCheer(audio); return }
     const start = audio.currentTime
     soundNotes[sound].forEach((frequency, index) => {
       const oscillator = audio.createOscillator()

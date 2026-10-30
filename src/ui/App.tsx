@@ -11,7 +11,7 @@ import { boardSpaces, formatMoney } from '../game/board'
 import { ANIMATION_SPEEDS, AUCTION_MIN_BID_INCREMENT, DEFAULT_ANIMATION_SPEED, PROPERTY_BUILD_LEVELS, PROPERTY_HOTEL_LEVEL, START_BONUS, buildingSaleValue, calculateRent, canBuildHotel, canBuildProperty, canMortgageProperty, canRedeemMortgage, canSellBuilding, constructionCost, hasLiquidatableAssets, hotelConstructionCost, liquidatablePropertyIds, mortgageRedemptionCost, mortgageValue, taxForSpace, type AnimationSpeed, type PropertyHolding } from '../../shared/game'
 import type { ExpressObjectiveUpdate } from '../../shared/objectives'
 import { PLAYER_COLORS } from './playerPalette'
-import { getCashToastPlacement, getGameSound, getPropertyChangeSound, getPropertyVisualChange, formatCashDelta, type GameSound } from './gameFeedback'
+import { getCashToastPlacement, getGameSound, getLandingSpecialSound, getPropertyChangeSound, getPropertyVisualChange, formatCashDelta, type GameSound } from './gameFeedback'
 import { CashChangeToast } from './CashChangeToast'
 import { stepDieValue } from './forcedDice'
 import { getPropertyRentLabel } from './propertyRentLabel'
@@ -28,6 +28,7 @@ import { createFrameRateAccumulator } from './fpsMeter'
 import { dismissCardRevealOnPointerDown } from './cardRevealInput'
 import { adjustMoneyValue } from './moneyStepper'
 import { DEFAULT_GRAPHICS_QUALITY, type GraphicsQuality } from './graphicsQuality'
+import { isPlayerEmote, PLAYER_EMOTES, type PlayerEmote } from '../../shared/playerEmotes'
 
 type Mode = GameMode
 type Screen = 'home' | 'room' | 'game'
@@ -127,7 +128,9 @@ function App() {
   const [showAuctionPanel, setShowAuctionPanel] = useState(false)
   const [showHelp, setShowHelp] = useState(false)
   const [showOptions, setShowOptions] = useState(false)
+  const [showEmotePicker, setShowEmotePicker] = useState(false)
   const [graphicsQuality, setGraphicsQuality] = useState<GraphicsQuality>(DEFAULT_GRAPHICS_QUALITY)
+  const [playerEmotes, setPlayerEmotes] = useState<Record<string, { emote: PlayerEmote; sequence: number }>>({})
   const [auctionSeconds, setAuctionSeconds] = useState(0)
   const [auctionId, setAuctionId] = useState(0)
   const [auctionPropertyId, setAuctionPropertyId] = useState(255)
@@ -150,7 +153,10 @@ function App() {
   const [isConnecting, setIsConnecting] = useState(false)
   const activeRoom = useRef<Room | null>(null)
   const fpsSamples = useRef(createFrameRateAccumulator())
-  const previousFeedbackSnapshot = useRef<{ description: string; diceSequence: number; players: Map<string, { cash: number; position: number }>; properties: Map<string, PropertyHolding> } | null>(null)
+  const previousFeedbackSnapshot = useRef<{ description: string; diceSequence: number; turnPhase: TurnPhase; players: Map<string, { cash: number; position: number }>; properties: Map<string, PropertyHolding> } | null>(null)
+  const pendingLandingSound = useRef<GameSound | null>(null)
+  const emoteSequence = useRef(0)
+  const emoteTimeouts = useRef(new Map<string, number>())
   const previousObjectiveComplete = useRef(false)
   const feedbackSequence = useRef(0)
   const soundEnabledRef = useRef(soundEnabled)
@@ -166,7 +172,7 @@ function App() {
   const feedbackPending = feedbackQueue.length > 0
   const animationSpeedControl = isHost && turnPhase !== 'ended' ? <div className="animation-speed-control" role="group" aria-label="Velocidade das animações da sala" title="Vale nas próximas animações"><span>RITMO</span><div>{ANIMATION_SPEEDS.map((speed) => <button key={speed} type="button" aria-pressed={animationSpeed === speed} onClick={() => room?.send('setAnimationSpeed', { speed })}>{speed.toLocaleString('pt-BR')}×</button>)}</div></div> : null
   const playerTokens = roomPlayers.length > 0
-    ? roomPlayers.flatMap((player, seatIndex) => player.isBankrupt ? [] : [{ id: player.sessionId, position: player.position, color: PLAYER_COLORS[seatIndex] ?? PLAYER_COLORS[0], seatIndex, cash: player.cash, characterType: player.characterType, activity: player.sessionId === activePlayerSessionId && !isMyTurn ? turnActivityLabel : '' }])
+    ? roomPlayers.flatMap((player, seatIndex) => player.isBankrupt ? [] : [{ id: player.sessionId, position: player.position, color: PLAYER_COLORS[seatIndex] ?? PLAYER_COLORS[0], seatIndex, cash: player.cash, characterType: player.characterType, activity: player.sessionId === activePlayerSessionId && !isMyTurn ? turnActivityLabel : '', emote: playerEmotes[player.sessionId] }])
     : [0, 3, 6, 9].map((position, seatIndex) => ({ id: `preview-${seatIndex}`, position, color: PLAYER_COLORS[seatIndex] ?? PLAYER_COLORS[0], seatIndex, cash: 1_500_000, characterType: 'pawn' as CharacterType }))
   const incomingTradeOffer = tradeOffer?.toSessionId === room?.sessionId
   const outgoingTradeOffer = tradeOffer?.fromSessionId === room?.sessionId
@@ -332,6 +338,20 @@ function App() {
   }, [activeSpace.id, landedHolding?.houses])
 
   useEffect(() => {
+    if (!showOptions) return
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setShowOptions(false)
+    }
+    window.addEventListener('keydown', closeOnEscape)
+    return () => window.removeEventListener('keydown', closeOnEscape)
+  }, [showOptions])
+
+  useEffect(() => () => {
+    emoteTimeouts.current.forEach((timer) => window.clearTimeout(timer))
+    emoteTimeouts.current.clear()
+  }, [])
+
+  useEffect(() => {
     if (!room) return
 
     const updateLobby = (state: unknown) => {
@@ -394,8 +414,13 @@ function App() {
         const propertySound = propertyChange ? getPropertyChangeSound(propertyChange) : null
         const movedPlayer = nextPlayers.find((player) => previous.players.get(player.sessionId)?.position !== undefined && previous.players.get(player.sessionId)?.position !== player.position)
         if (movedPlayer) {
+          pendingLandingSound.current = getLandingSpecialSound(movedPlayer.position)
           setLandingPulseSpaceId(movedPlayer.position)
           setLandingPulseSequence((sequence) => sequence + 1)
+        }
+        if (previous.turnPhase === 'moving' && snapshot.turnPhase !== 'moving') {
+          if (soundEnabled && pendingLandingSound.current) playGameSound(pendingLandingSound.current)
+          pendingLandingSound.current = null
         }
         const buildingChanged = Array.from(nextPropertyFacts.entries()).find(([id, holding]) => holding.houses !== (previous.properties.get(id)?.houses ?? 0))
         if (buildingChanged) {
@@ -432,7 +457,7 @@ function App() {
           playGameSound('dice')
         }
       }
-      previousFeedbackSnapshot.current = { description: snapshot.landingDescription, diceSequence: snapshot.diceSequence, players: nextPlayerFacts, properties: nextPropertyFacts }
+      previousFeedbackSnapshot.current = { description: snapshot.landingDescription, diceSequence: snapshot.diceSequence, turnPhase: snapshot.turnPhase, players: nextPlayerFacts, properties: nextPropertyFacts }
       setRoomPlayers((current) => areRecordArraysEqual(current, nextPlayers) ? current : nextPlayers)
       const nextProperties = new Map(snapshot.properties.entries())
       setRoomProperties((current) => areRecordMapsEqual(current, nextProperties) ? current : nextProperties)
@@ -492,11 +517,29 @@ function App() {
       }
       previousObjectiveComplete.current = update.completed
     }
+    const handlePlayerEmote = (payload: { sessionId?: unknown; emote?: unknown }) => {
+      if (typeof payload?.sessionId !== 'string' || !isPlayerEmote(payload.emote)) return
+      const sessionId = payload.sessionId
+      const emote = payload.emote
+      const sequence = ++emoteSequence.current
+      setPlayerEmotes((current) => ({ ...current, [sessionId]: { emote, sequence } }))
+      const oldTimer = emoteTimeouts.current.get(sessionId)
+      if (oldTimer !== undefined) window.clearTimeout(oldTimer)
+      const timer = window.setTimeout(() => {
+        setPlayerEmotes((current) => current[sessionId]?.sequence === sequence ? Object.fromEntries(Object.entries(current).filter(([id]) => id !== sessionId)) : current)
+        emoteTimeouts.current.delete(sessionId)
+      }, 2600)
+      emoteTimeouts.current.set(sessionId, timer)
+    }
     const removeObjectiveMessage = room.onMessage<ExpressObjectiveUpdate>('game:objective', handleObjective)
+    const removePlayerEmoteMessage = room.onMessage<{ sessionId: string; emote: PlayerEmote }>('game:emote', handlePlayerEmote)
     const handleLeave = (_code: number, reason?: string) => {
       if (activeRoom.current !== room) return
       activeRoom.current = null
       setRoom(null)
+      setPlayerEmotes({})
+      emoteTimeouts.current.forEach((timer) => window.clearTimeout(timer))
+      emoteTimeouts.current.clear()
       setExpressObjective(null)
       previousObjectiveComplete.current = false
       setShowObjectivePanel(false)
@@ -518,6 +561,7 @@ function App() {
       room.onDrop.remove(handleDrop)
       room.onReconnect.remove(handleReconnect)
       removeObjectiveMessage()
+      removePlayerEmoteMessage()
     }
   }, [room, soundEnabled, reducedMotion])
 
@@ -592,6 +636,9 @@ function App() {
     const currentRoom = activeRoom.current
     activeRoom.current = null
     setRoom(null)
+    setPlayerEmotes({})
+    emoteTimeouts.current.forEach((timer) => window.clearTimeout(timer))
+    emoteTimeouts.current.clear()
     setRoomPlayers([])
     setRoomProperties(new Map())
     previousFeedbackSnapshot.current = null
@@ -953,9 +1000,27 @@ function App() {
           {isMyTurn && !showTransientReveal && !feedbackPending && turnPhase === 'world-cup' && <div className="map-choice-prompt" role="status">Toque em uma propriedade sua iluminada para escolher a sede</div>}
           {isMyTurn && !showTransientReveal && !feedbackPending && turnPhase === 'world-tour' && <div className="map-choice-prompt" role="status">Toque em uma casa iluminada para escolher o destino</div>}
           {showTransientReveal && <div className="card-reveal-backdrop" role="button" tabIndex={0} aria-label="Fechar carta e continuar" onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') dismissTransientReveal() }}><article className="game-event-card" aria-live="polite"><span className="event-card-kicker">{revealKind === 'event' ? 'SORTE OU REVÉS' : revealKind === 'world-cup' ? 'COPA DO MUNDO' : 'VOLTA AO MUNDO'}</span><div className="event-card-art" aria-hidden="true">{revealKind === 'world-cup' ? '✦' : revealKind === 'world-tour' ? '↗' : '◆'}</div><h2>{revealKind === 'event' ? activeCardTitle : revealKind === 'world-cup' ? 'Escolha a sede' : 'Escolha para onde viajar'}</h2><p>{revealKind === 'event' ? activeCardDescription : revealKind === 'world-cup' ? 'Toque em uma propriedade sua iluminada no tabuleiro. O aluguel dela vale três vezes.' : 'Toque em uma casa iluminada. Propriedades de outras pessoas ficam indisponíveis.'}</p><small>Toque em qualquer lugar para continuar · {turnSeconds || 15}s</small></article></div>}
-          <div className="game-bottom"><span className="game-sync-label">JOGADA SINCRONIZADA · {modeDetails[mode].title.toUpperCase()}</span><div className="game-session-tools">{animationSpeedControl}<button className="game-preference fps-toggle" aria-pressed={fpsMeterEnabled} aria-label={`Medidor de FPS ${fpsMeterEnabled ? 'ativado' : 'desativado'}`} title={`Medidor de FPS ${fpsMeterEnabled ? 'ativado' : 'desativado'}`} onClick={() => setFpsMeterEnabled((enabled) => !enabled)}>FPS</button><button className="game-preference" aria-pressed={soundEnabled} aria-label={`Áudio da partida ${soundEnabled ? 'ativado' : 'desativado'}`} title={`Trilha e efeitos ${soundEnabled ? 'ativados' : 'desativados'}`} onClick={() => { unlockGameAudio(); setSoundEnabled((enabled) => !enabled) }}>{soundEnabled ? '♫' : '♪̸'}</button><button className="game-preference" aria-pressed={reducedMotion} aria-label={`Movimento reduzido ${reducedMotion ? 'ativado' : 'desativado'}`} title={`Movimento reduzido ${reducedMotion ? 'ativado' : 'desativado'}`} onClick={() => setReducedMotion((enabled) => !enabled)}>◌</button><div className="game-options-wrap"><button className="game-preference" aria-label="Opções da partida" aria-expanded={showOptions} onClick={() => setShowOptions((open) => !open)}>⚙</button>{showOptions && <section className="game-options-panel" role="dialog" aria-label="Opções gráficas"><div className="game-options-heading"><strong>GRÁFICOS</strong><small>{graphicsQuality === 'high' ? 'Alta resolução' : graphicsQuality === 'balanced' ? 'Equilibrado' : 'Desempenho'}</small></div><p>Mais qualidade deixa a imagem mais nítida e pode reduzir o desempenho em aparelhos modestos.</p><div className="graphics-quality-options" role="group" aria-label="Qualidade gráfica">{([['performance', 'Desempenho'], ['balanced', 'Equilibrado'], ['high', 'Alta']] as const).map(([quality, label]) => <button type="button" key={quality} className={graphicsQuality === quality ? 'selected' : ''} aria-pressed={graphicsQuality === quality} onClick={() => setGraphicsQuality(quality)}>{label}</button>)}</div></section>}</div><button className="game-preference" aria-label="Ajuda" aria-expanded={showHelp} aria-controls="game-help-dialog" onClick={() => setShowHelp((open) => !open)}>?</button></div><button className="leave-button" onClick={() => void leaveRoom()}>Sair da mesa</button></div>
+          <div className="game-bottom"><span className="game-sync-label">JOGADA SINCRONIZADA · {modeDetails[mode].title.toUpperCase()}</span><div className="game-session-tools">
+            {animationSpeedControl}
+            {turnPhase !== 'ended' && <div className="emote-control">
+              <button className="game-preference emote-toggle" type="button" aria-label="Enviar emote" aria-expanded={showEmotePicker} onClick={() => setShowEmotePicker((open) => !open)}>☺</button>
+              {showEmotePicker && <div className="emote-picker" role="group" aria-label="Escolha um emote">{PLAYER_EMOTES.map(({ id, label, symbol }) => <button key={id} type="button" aria-label={label} title={label} onClick={() => { room?.send('emote', { emote: id }); setShowEmotePicker(false) }}>{symbol}</button>)}</div>}
+            </div>}
+            <button className="game-preference" aria-label="Opções da partida" aria-expanded={showOptions} onClick={() => setShowOptions(true)}>⚙</button>
+            <button className="game-preference" aria-label="Ajuda" aria-expanded={showHelp} aria-controls="game-help-dialog" onClick={() => setShowHelp((open) => !open)}>?</button>
+          </div><button className="leave-button" onClick={() => void leaveRoom()}>Sair da mesa</button></div>
         </section>
       )}
+      {screen === 'game' && showOptions && <div className="game-settings-backdrop" onPointerDown={(event) => { if (event.target === event.currentTarget) setShowOptions(false) }}>
+        <section className="game-settings-screen" role="dialog" aria-modal="true" aria-labelledby="game-settings-title">
+          <header className="game-settings-heading"><div><span className="eyebrow">PREFERÊNCIAS LOCAIS</span><h2 id="game-settings-title">Opções da partida</h2><p>A partida continua normalmente enquanto esta tela estiver aberta.</p></div><button className="game-settings-close" type="button" onClick={() => setShowOptions(false)} aria-label="Fechar opções">×</button></header>
+          <div className="game-settings-content">
+            <section className="game-settings-section"><div className="game-settings-section-heading"><div><h3>Gráficos e desempenho</h3><p>Reduza a resolução para priorizar fluidez em aparelhos mais modestos.</p></div><span>QUALIDADE</span></div><div className="graphics-quality-options" role="group" aria-label="Qualidade gráfica">{([['performance', 'Desempenho', '0,8–1×'], ['balanced', 'Equilibrado', '1–1,4×'], ['high', 'Alta', '1–2×']] as const).map(([quality, label, scale]) => <button type="button" key={quality} className={graphicsQuality === quality ? 'selected' : ''} aria-pressed={graphicsQuality === quality} onClick={() => setGraphicsQuality(quality)}><strong>{label}</strong><small>{scale} de resolução</small></button>)}</div><div className="game-settings-switches"><button type="button" className="game-settings-switch-row" aria-pressed={fpsMeterEnabled} onClick={() => setFpsMeterEnabled((enabled) => !enabled)}><span><strong>Medidor de FPS</strong><small>Mostra quadros por segundo e tempo por quadro.</small></span><i>{fpsMeterEnabled ? 'Ativado' : 'Desativado'}</i></button></div></section>
+            <section className="game-settings-section"><div className="game-settings-section-heading"><div><h3>Som e movimento</h3><p>Ajustes pessoais; não alteram o estado da partida dos outros jogadores.</p></div><span>JOGABILIDADE</span></div><div className="game-settings-switches"><button type="button" className="game-settings-switch-row" aria-pressed={soundEnabled} onClick={() => { unlockGameAudio(); setSoundEnabled((enabled) => !enabled) }}><span><strong>Trilha e efeitos sonoros</strong><small>Dados, dinheiro, construções e sons de chegada.</small></span><i>{soundEnabled ? 'Ativado' : 'Desativado'}</i></button><button type="button" className="game-settings-switch-row" aria-pressed={reducedMotion} onClick={() => setReducedMotion((enabled) => !enabled)}><span><strong>Movimento reduzido</strong><small>Reduz animações de dados, peões e interface.</small></span><i>{reducedMotion ? 'Ativado' : 'Desativado'}</i></button></div></section>
+          </div>
+          <footer className="game-settings-footer"><span>As opções são aplicadas na hora e só afetam sua tela.</span><button type="button" onClick={() => setShowOptions(false)}>Voltar à partida</button></footer>
+        </section>
+      </div>}
       {screen === 'game' && <Suspense fallback={null}><CashHudOverlay players={roomPlayers.map((player) => ({ id: player.sessionId, cash: player.cash }))} /></Suspense>}
       {screen === 'game' && fpsMeterEnabled && <FpsMeter samples={fpsSamples} />}
       {showHelp && <div className="help-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setShowHelp(false) }}><section id="game-help-dialog" className="help-dialog" role="dialog" aria-modal="true" aria-labelledby="help-title"><button className="help-close" onClick={() => setShowHelp(false)} aria-label="Fechar ajuda">×</button><span className="eyebrow">GUIA RÁPIDO</span><h2 id="help-title">Como jogar</h2><p>Jogue com amigos na mesma sala. Na sua vez, lance os dados, acompanhe o peão e responda à ação da casa.</p><ul><li><strong>20 segundos:</strong> sem ação, os dados são lançados automaticamente.</li><li><strong>15 segundos:</strong> para decidir. Compra sem resposta é recusada; cobranças e eventos são confirmados automaticamente. Na prisão, você pode aguardar, tentar duplas ou pagar R$ 200.000 para sair.</li><li><strong>Copa do Mundo:</strong> escolha uma propriedade; o aluguel dela triplica até outra sede ser escolhida.</li><li><strong>Volta ao Mundo:</strong> viaje para uma propriedade sua, livre ou para uma casa especial. A chegada resolve normalmente, sem bônus da Partida.</li><li><strong>Comprar:</strong> propriedades livres podem ser compradas pelo preço indicado; recusar mantém o terreno livre.</li><li><strong>Dinheiro:</strong> sons ascendentes indicam entrada; sons descendentes indicam saída. Use o controle de áudio para silenciar.</li><li><strong>Partida:</strong> no Clássico vence o maior patrimônio ao fim de 30 minutos. No Express, vence o maior saldo após seis rodadas.</li></ul><button className="roll-button help-ok" onClick={() => setShowHelp(false)}>Entendi</button></section></div>}

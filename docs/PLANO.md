@@ -13,6 +13,7 @@ Um jogo de tabuleiro para abrir no navegador e jogar com amigos, sem cadastro. C
 - Ações disponíveis e resultados da jogada ficam claros em cada turno.
 - O botão “?” abre um guia rápido. A pessoa tem 20 segundos para rolar e 15 segundos para uma decisão; expiração recusa compras, conclui automaticamente o turno de prisão, escolhe destinos padrão para os cantos novos e avança a liquidação de dívidas.
 - Partidas temporárias, sem conta ou progresso persistente.
+- Durante a partida, as opções locais abrem em tela sobreposta sem pausar o estado sincronizado; incluem qualidade gráfica, FPS, áudio e movimento reduzido. Emotes curtos são transmitidos a todos e os cantos Aeroporto, Prisão e Copa têm sons de chegada próprios.
 
 ## Regras acordadas
 

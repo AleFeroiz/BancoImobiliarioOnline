@@ -64,6 +64,23 @@ describe('sala privada', () => {
     expect(room.state.players.get(guest.sessionId)).toMatchObject({ name: 'Bia', isHost: false })
   })
 
+  it('transmite emotes escolhidos por qualquer participante e rejeita valores inválidos', async () => {
+    const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
+    const host = await colyseus.connectTo(room, { name: 'Ana' })
+    const guest = await colyseus.connectTo(room, { name: 'Bia' })
+    const started = new Promise<void>((resolve) => host.onMessage('game:started', () => resolve()))
+    host.send('start')
+    await started
+
+    const emote = new Promise<{ sessionId: string; emote: string }>((resolve) => host.onMessage('game:emote', resolve))
+    guest.send('emote', { emote: 'laugh' })
+    expect(await emote).toEqual({ sessionId: guest.sessionId, emote: 'laugh' })
+
+    const invalid = new Promise<{ message: string }>((resolve) => guest.onMessage('room:error', resolve))
+    guest.send('emote', { emote: 'wave' })
+    expect((await invalid).message).toContain('emote')
+  })
+
   it('sincroniza a ficha escolhida por cada pessoa somente antes de iniciar', async () => {
     const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
     const host = await colyseus.connectTo(room, { name: 'Lia' })

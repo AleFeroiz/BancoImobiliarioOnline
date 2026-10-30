@@ -4,6 +4,7 @@ import type { GameMode } from '../../../shared/lobby.js'
 import { isCharacterType, isGameMode, normalizePlayerName } from '../../../shared/lobby.js'
 import { AUCTION_DURATION_SECONDS, AUCTION_MIN_BID_INCREMENT, CLASSIC_MATCH_SECONDS, DEFAULT_ANIMATION_SPEED, DICE_ANIMATION_DURATION_MS, EXPRESS_PHASE_SECONDS, EXPRESS_ROUNDS, JAIL_TURNS, PAWN_STEP_ANIMATION_DURATION_MS, PAWN_TELEPORT_ANIMATION_DURATION_MS, PROPERTY_BUILD_LEVELS, PROPERTY_HOTEL_LEVEL, START_BONUS, STARTING_CASH, TURN_DECISION_SECONDS, TURN_ROLL_SECONDS, areDiceDoubles, buildingSaleValue, calculateNetWorth, calculateRent, calculateStationRent, canBuildHotel, canBuildProperty, canMortgageProperty, canRedeemMortgage, canSellBuilding, constructionCost, describeLanding, getAnimationDuration, hasLiquidatableAssets, hotelConstructionCost, isAnimationSpeed, mortgageRedemptionCost, mortgageValue, movePosition, taxForSpace } from '../../../shared/game.js'
 import { boardSpaces } from '../../../shared/board.js'
+import { isPlayerEmote } from '../../../shared/playerEmotes.js'
 import { EVENT_CARDS } from '../../../shared/cards.js'
 import { EMPTY_OBJECTIVE_ACTIVITY, EXPRESS_OBJECTIVES, getExpressObjectiveProgress, type ExpressObjectiveId, type ExpressObjectiveUpdate, type ObjectiveActivity } from '../../../shared/objectives.js'
 import { LobbyPlayerState, LobbyState, PropertyState } from './schema/LobbyState.js'
@@ -78,6 +79,14 @@ export class GameRoom extends Room<{ state: LobbyState }> {
   }
 
   messages = {
+    emote: (client: Client, payload: { emote?: unknown }) => {
+      const player = this.state.players.get(client.sessionId)
+      if (this.state.status !== 'playing' || !player || player.isBot || player.isBankrupt || !isPlayerEmote(payload?.emote)) {
+        client.send('room:error', { message: 'Esse emote não está disponível agora.' })
+        return
+      }
+      this.broadcast('game:emote', { sessionId: client.sessionId, emote: payload.emote })
+    },
     setCharacter: (client: Client, payload: { characterType?: unknown }) => {
       const player = this.state.players.get(client.sessionId)
       if (this.state.status !== 'waiting' || !player || player.isBot || !isCharacterType(payload?.characterType)) {
