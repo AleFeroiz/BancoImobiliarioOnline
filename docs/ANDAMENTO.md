@@ -2,6 +2,17 @@
 
 > Retrato de trabalho para retomar o projeto entre sessões. Para requisitos e decisões, consulte os documentos de origem indicados em `AGENTS.md`.
 
+## Correções de casas e interações — concluído (2026-10-29)
+
+- Pedido confirmado pelas capturas e pelo esclarecimento sobre a câmera externa: em todas as bordas, construções devem ficar apoiadas e alinhadas à borda interna com a fachada para fora; textos também devem apontar para fora. Completar ainda clique/toque global para dispensar cartas sem acionar o tabuleiro, posicionar o aeroporto no canto Volta ao Mundo, substituir a placa quadrada pela borda do canteiro na cor do dono, expor melhor o controle DEV e aumentar para 15 segundos as janelas de decisão.
+- Estado inicial verificado em `main` no commit `89e0620`, alinhado com `origin/main`; alterações locais anteriores em `assets/blender/special-corners.blend` e `.blend1` devem ser preservadas fora do escopo.
+- Graphify query foi tentada antes da busca de código; a CLI não está instalada e o Graphify MCP conectado indexa outro projeto.
+- Implementação: construções seguem a borda interna com fachada para fora e apoio ajustado ao topo do piso; as rotações locais dos rótulos consideram a rotação composta do piso e apontam para fora nos quatro lados. Revelações dispensam clique/toque capturado na raiz sem propagar ação ao tabuleiro; o aeroporto é recentrado pela caixa de limites, apoiado na base e reduzido para caber no canto; a placa adicional sob o terreno foi removida e a borda de pedra recebe a cor do dono. O modo DEV está identificado e destacado; janelas de decisão e de revelação passaram a 15 segundos. A velocidade inicial permanece em 1×, a câmera fica livre durante movimento e inspeção continua acessível fora da vez.
+- `npm run verify`: 194 testes em 38 arquivos passaram; builds frontend e servidor passaram. O aviso existente do chunk 3D permanece em 956,20 KB (259,70 KB gzip). `git diff --check` passou.
+- Playtest local com anfitrião e dois bots: 1× apareceu selecionado ao iniciar; modo DEV e escolhas dos dados ficaram visíveis; uma compra real com uma casa foi concluída e a construção apareceu alinhada à borda interna. O painel de compra mostrou contagem inicial de 15 segundos. A rotação da câmera deixou os quatro lados visíveis para revisão da orientação externa. Interação de carta foi validada com teste de captura de pointer; toque em dispositivo físico não foi simulado.
+- Graphify update não rodou porque a CLI não está instalada; o Graphify MCP conectado aponta para outro projeto. Blender MCP não estava conectado; o aeroporto foi ajustado em runtime e nenhum arquivo Blender foi incluído.
+- Próximo passo: publicar somente os arquivos desta frente em `main`; preservar os arquivos Blender que já estavam modificados no workspace.
+
 ## Polimento da cena, interação de inspeção e controles de teste — implementação validada (2026-10-29)
 
 - Pedido confirmado: alinhar casas na borda interna e orientá-las em altura, orientar rótulos para fora por lado do tabuleiro, reposicionar aeroporto, liberar câmera durante animação e inspeção fora da vez, polir a apresentação, adicionar modo DEV do anfitrião para dados forçados e mudar velocidade inicial para 1×.

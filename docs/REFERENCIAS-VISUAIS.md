@@ -89,7 +89,7 @@ Na galeria histórica, a interface também está separada por estados de produto
 - Apresentar o modo e o relógio numa cápsula curta na faixa superior. A carteira, regras longas e negociação ficam em painéis que abrem sob demanda.
 - Em ações com alvo no tabuleiro, marcar a propriedade ou casa envolvida e mostrar motivo, valor e opções no mesmo cartão; usar um escurecimento leve apenas enquanto a decisão estiver aberta.
 - Para dados e mudanças de vez, deixar o tabuleiro livre de cartões genéricos: um comando compacto inicia a rolagem, e os dados nivelados com o total aparecem na área central até o fim do movimento.
-- Revelações de cartas usam um cartão curto sobre a partida que pode ser dispensado por clique/toque e desaparece em até 10 segundos; a ação principal continua disponível depois que a revelação fecha.
+- Revelações de cartas usam um cartão curto sobre a partida que pode ser dispensado por clique/toque e desaparece em até 15 segundos; a ação principal continua disponível depois que a revelação fecha.
 - No resultado, manter a cena ao fundo com contraste reduzido e exibir uma classificação concisa; mostrar o critério da vitória, o saldo e o patrimônio quando forem relevantes para o modo.
 - Em telas estreitas, reduzir o tamanho dos cartões e organizá-los em duas colunas no topo; manter o tabuleiro visível e a ação alcançável sem rolagem horizontal.
 

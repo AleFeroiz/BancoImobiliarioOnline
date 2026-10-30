@@ -1,13 +1,13 @@
 import { Canvas } from '@react-three/fiber'
 import { Html, OrbitControls } from '@react-three/drei'
 import { memo, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import { Box3, CanvasTexture, DoubleSide, Path, PerspectiveCamera, Shape, ShapeGeometry, SRGBColorSpace, Vector3, type Group, type Mesh, type Object3D } from 'three'
+import { Box3, CanvasTexture, DoubleSide, Path, PerspectiveCamera, Shape, ShapeGeometry, SRGBColorSpace, type Group, type Mesh, type Object3D } from 'three'
 import { useFrame, useThree } from '@react-three/fiber'
 import { useGLTF } from '@react-three/drei'
 import { boardSpaces, positionOnBoard } from '../game/board'
 import { getCameraFraming } from './cameraFraming'
 import { getCameraZoomLimits } from './cameraZoom'
-import { getBoardSpaceDecoration } from './boardDecoration'
+import { BUILDING_GROUP_Y, BUILDING_MODEL_Y_OFFSET, getBoardSpaceDecoration } from './boardDecoration'
 import { getBoardTileTheme } from './boardTileTheme'
 import { fitSpaceLabel } from './spaceLabel'
 import { getPawnStepPath } from './pawnPath'
@@ -18,7 +18,8 @@ import { shouldStartCameraDrag } from './cameraDrag'
 import { BUILDING_ANIMATION_DURATION_MS, DICE_ANIMATION_DURATION_MS, LANDING_PULSE_DURATION_MS, PAWN_STEP_ANIMATION_DURATION_MS, PAWN_TELEPORT_ANIMATION_DURATION_MS, PROPERTY_HOTEL_LEVEL, getAnimationDuration, type AnimationSpeed } from '../../shared/game'
 import type { FrameRateAccumulator } from './fpsMeter'
 import { recordRenderedFrame } from './fpsMeter'
-import { applySelectionContrast, createUnlitMaterial } from './sceneMaterials'
+import { applySelectionContrast, createUnlitMaterial, getOwnerTintOverride } from './sceneMaterials'
+import { getCenteredModelPlacement } from './modelPlacement'
 
 type PropertyBuilding = { spaceId: number; ownerSessionId: string; houses: number; isMortgaged: boolean; ownerColor: string }
 type PlayerToken = { id: string; position: number; color: string; seatIndex: number; cash: number; characterType: 'pawn' | 'car' | 'motorcycle' | 'airplane'; activity?: string }
@@ -42,8 +43,8 @@ function makeSceneMaterialsUnlit(root: Object3D, dimmed = false, ownerColor?: st
     const mesh = object as Mesh
     if (!mesh.isMesh) return
     mesh.material = Array.isArray(mesh.material)
-      ? mesh.material.map((material) => createUnlitMaterial(material, material.name.startsWith('OWNER_TINT') ? ownerColor : undefined, dimmed))
-      : createUnlitMaterial(mesh.material, mesh.material.name.startsWith('OWNER_TINT') ? ownerColor : undefined, dimmed)
+      ? mesh.material.map((material) => createUnlitMaterial(material, getOwnerTintOverride(mesh.name, material.name, ownerColor), dimmed))
+      : createUnlitMaterial(mesh.material, getOwnerTintOverride(mesh.name, mesh.material.name, ownerColor), dimmed)
   })
 }
 
@@ -446,6 +447,7 @@ function AnimatedBuilding({ spaceId, houses, ownerColor, ownerSessionId, reduced
   const { x, z } = positionOnBoard(spaceId)
   const decoration = getBoardSpaceDecoration(spaceId)
   const [offsetX, offsetZ] = decoration.buildingOffset
+  const buildingRotation = decoration.buildingRotation
   const variantName = displayHouses === 0 ? 'Board_Land' : displayHouses === PROPERTY_HOTEL_LEVEL ? 'Board_Hotel' : `Board_House_${displayHouses}`
   const model = useMemo(() => {
     if (!ownerSessionId) return null
@@ -464,9 +466,8 @@ function AnimatedBuilding({ spaceId, houses, ownerColor, ownerSessionId, reduced
     return clone
   }, [dimmed, displayColor, ownerSessionId, scene, variantName])
   return (
-    <group ref={group} position={[x + offsetX, 0.038, z + offsetZ]} rotation={[0, decoration.tileRotation, 0]}>
-      <mesh position={[0, 0.128, 0]}><boxGeometry args={[0.96, 0.016, 0.72]} /><meshBasicMaterial color={displayColor} /></mesh>
-      {model && <primitive object={model} position={[0, 0.12, 0]} scale={1.16} />}
+    <group ref={group} position={[x + offsetX, BUILDING_GROUP_Y, z + offsetZ]} rotation={[0, buildingRotation, 0]}>
+      {model && <primitive object={model} position={[0, BUILDING_MODEL_Y_OFFSET, 0]} scale={1.16} />}
     </group>
   )
 }
@@ -628,8 +629,7 @@ function CornerLandmark({ type, position, dimmed }: { type: 'stadium' | 'airport
     clone.userData.selectionContrastManaged = true
     if (type === 'airport') {
       const bounds = new Box3().setFromObject(clone)
-      const center = bounds.getCenter(new Vector3())
-      clone.position.set(clone.position.x + clone.position.x - center.x, clone.position.y + clone.position.y - bounds.min.y, clone.position.z + clone.position.z - center.z)
+      clone.position.set(...getCenteredModelPlacement(bounds))
     }
     clone.traverse((object) => {
       const mesh = object as Mesh
@@ -638,7 +638,7 @@ function CornerLandmark({ type, position, dimmed }: { type: 'stadium' | 'airport
     makeSceneMaterialsUnlit(clone, dimmed)
     return clone
   }, [dimmed, scene, type])
-  return <group position={position}><primitive object={model} scale={type === 'stadium' ? 0.64 : 0.48} /></group>
+  return <group position={position}><primitive object={model} scale={type === 'stadium' ? 0.64 : 0.36} /></group>
 }
 
 type BoardSceneProps = { players: PlayerToken[]; propertyBuildings: PropertyBuilding[]; highlightedSpaceIds?: readonly number[]; selectionMode?: boolean; landingPulseSpaceId?: number; landingPulseSequence?: number; diceRollSequence?: number; dice?: [number, number]; diceVisible?: boolean; diceResultVisible?: boolean; presentationSpeed?: AnimationSpeed; reducedMotion?: boolean; pawnMovementEnabled?: boolean; pawnMoveMode?: 'walk' | 'teleport'; cameraEnabled?: boolean; fpsMeterEnabled?: boolean; fpsSamples?: { current: FrameRateAccumulator }; onMovementComplete: () => void; onSelectSpace: (spaceId: number) => void }

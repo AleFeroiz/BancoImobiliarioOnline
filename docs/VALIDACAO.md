@@ -1,5 +1,13 @@
 # Validação visual e de navegador
 
+## 2026-10-29 — Correções de casas, aeroporto, cartas e testes DEV
+
+- `npm run verify`: 194 testes em 38 arquivos passaram; build do frontend e do servidor passaram. O aviso já conhecido do chunk 3D permanece em 956,20 KB (259,70 KB gzip). `git diff --check` passou.
+- Playtest local em sala Clássica com anfitrião e dois bots: 1× estava ativo por padrão; o botão MODO DEV e o painel para escolher os dois dados ficaram visíveis; o painel de compra mostrou a janela de 15 segundos. Comprei Rua das Palmeiras com uma casa e confirmei que o modelo apareceu no alinhamento interno do piso.
+- Girei a câmera para inspecionar o percurso e os rótulos nos quatro lados. Os testes de regressão cobrem as rotações compostas dos textos, a orientação das fachadas, o alinhamento e a altura da base das construções, o recentramento/apoio do aeroporto, a cor da borda de pedra e a captura de clique da carta.
+- A pinça não foi simulada em hardware touch. O fechamento global da carta foi verificado por teste de evento e não por uma carta alcançada no playtest. O avião foi recentrado e reduzido no renderer; nenhum arquivo Blender foi alterado.
+- `graphify update .` não executou: a CLI não está instalada, e o Graphify MCP disponível aponta para outro repositório.
+
 ## 2026-10-29 — Casas, inspeção durante jogadas e modo DEV
 
 - `npm run verify` passou: 187 testes em 36 arquivos; builds frontend e servidor passaram. O aviso existente de chunk 3D continua em 956,10 KB (259,64 KB gzip). `git diff --check` passou.

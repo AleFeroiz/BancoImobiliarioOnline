@@ -30,7 +30,7 @@ export const CLASSIC_MATCH_SECONDS = 30 * 60
 export const EXPRESS_ROUNDS = 6
 export const EXPRESS_PHASE_SECONDS = 40
 export const TURN_ROLL_SECONDS = 20
-export const TURN_DECISION_SECONDS = 10
+export const TURN_DECISION_SECONDS = 15
 export const AUCTION_DURATION_SECONDS = 20
 export const AUCTION_MIN_BID_INCREMENT = 10_000
 

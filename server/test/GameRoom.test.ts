@@ -1016,7 +1016,7 @@ describe('sala privada', () => {
     expect(room.state.landingDescription).toBe('')
   }, 12_000)
 
-  it('rola automaticamente após 20 segundos e recusa uma compra após a janela de 10 segundos', async () => {
+  it('rola automaticamente após 20 segundos e recusa uma compra após a janela de 15 segundos', async () => {
     const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
     const host = await colyseus.connectTo(room, { name: 'Ana' })
     await colyseus.connectTo(room, { name: 'Bia' })

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { boardSpaces } from './board.js'
-import { ANIMATION_SPEEDS, DEFAULT_ANIMATION_SPEED, DICE_ANIMATION_DURATION_MS, PAWN_STEP_ANIMATION_DURATION_MS, calculateNetWorth, getAnimationDuration, isAnimationSpeed, liquidatablePropertyIds } from './game.js'
+import { ANIMATION_SPEEDS, DEFAULT_ANIMATION_SPEED, DICE_ANIMATION_DURATION_MS, PAWN_STEP_ANIMATION_DURATION_MS, TURN_DECISION_SECONDS, calculateNetWorth, getAnimationDuration, isAnimationSpeed, liquidatablePropertyIds } from './game.js'
 
 describe('velocidade da apresentação', () => {
   it('começa em 1x e aplica 0,5x e 2x proporcionalmente', () => {
@@ -17,6 +17,12 @@ describe('velocidade da apresentação', () => {
     expect(ANIMATION_SPEEDS.every(isAnimationSpeed)).toBe(true)
     expect(isAnimationSpeed(0.75)).toBe(false)
     expect(isAnimationSpeed('1')).toBe(false)
+  })
+})
+
+describe('tempo para decisões', () => {
+  it('dá 15 segundos para decisões após o movimento', () => {
+    expect(TURN_DECISION_SECONDS).toBe(15)
   })
 })
 

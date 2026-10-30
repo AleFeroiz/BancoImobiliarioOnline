@@ -15,6 +15,10 @@ type MaterialWithSurface = Material & {
 
 const originalColors = new WeakMap<Material, Color>()
 
+export function getOwnerTintOverride(meshName: string, materialName: string, ownerColor?: ColorRepresentation) {
+  return materialName.startsWith('OWNER_TINT') || meshName === 'Limestone parcel curb' ? ownerColor : undefined
+}
+
 export function createUnlitMaterial(source: Material, colorOverride?: ColorRepresentation, dimmed = false) {
   const surface = source as MaterialWithSurface
   const material = new MeshBasicMaterial({

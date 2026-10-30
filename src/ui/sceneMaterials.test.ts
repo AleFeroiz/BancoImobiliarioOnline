@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { BoxGeometry, Color, Group, Mesh, MeshBasicMaterial, MeshStandardMaterial } from 'three'
-import { applySelectionContrast, createUnlitMaterial, reduceColorContrast } from './sceneMaterials'
+import { applySelectionContrast, createUnlitMaterial, getOwnerTintOverride, reduceColorContrast } from './sceneMaterials'
 
 describe('materiais da cena sem luzes', () => {
   it('converte materiais PBR para cores sem iluminação e preserva a cor original', () => {
@@ -11,6 +11,12 @@ describe('materiais da cena sem luzes', () => {
     expect(unlit.color.getHex()).toBe(source.color.getHex())
     expect(unlit.transparent).toBe(true)
     expect(unlit.opacity).toBeCloseTo(0.7)
+  })
+
+  it('usa a cor do dono no limite de pedra do canteiro', () => {
+    expect(getOwnerTintOverride('Limestone parcel curb', 'Limestone paving.001', '#51b9c5')).toBe('#51b9c5')
+    expect(getOwnerTintOverride('Other paving', 'Limestone paving.001', '#51b9c5')).toBeUndefined()
+    expect(getOwnerTintOverride('OWNER_TINT roof', 'OWNER_TINT.001', '#aa77cc')).toBe('#aa77cc')
   })
 
   it('reduz em 80% a diferença de cor e deixa casas indisponíveis apagadas', () => {
