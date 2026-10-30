@@ -6,6 +6,7 @@ import { useFrame, useThree } from '@react-three/fiber'
 import { useGLTF } from '@react-three/drei'
 import { boardSpaces, positionOnBoard } from '../game/board'
 import { getCameraFraming } from './cameraFraming'
+import { getCameraZoomLimits } from './cameraZoom'
 import { getBoardTileTheme } from './boardTileTheme'
 import { fitSpaceLabel } from './spaceLabel'
 import { getPawnStepPath } from './pawnPath'
@@ -23,6 +24,8 @@ type PlayerToken = { id: string; position: number; color: string; seatIndex: num
 
 type CameraOrbitControls = {
   enabled: boolean
+  minDistance: number
+  maxDistance: number
   getAzimuthalAngle: () => number
   getPolarAngle: () => number
   setAzimuthalAngle: (angle: number) => void
@@ -133,6 +136,29 @@ function ResponsiveCamera({ tilt, horizontal }: { tilt: number; horizontal: numb
     camera.updateProjectionMatrix()
   }, [camera, size.width, size.height, tilt, horizontal])
   return null
+}
+
+function CameraZoomBounds() {
+  const { controls, size } = useThree((state) => ({ controls: state.controls, size: state.size }))
+  useEffect(() => {
+    const orbit = controls as CameraOrbitControls | null
+    if (!orbit) return
+    const framing = getCameraFraming(size.width, size.height, 16, 45)
+    const limits = getCameraZoomLimits(framing.distance)
+    orbit.minDistance = limits.minDistance
+    orbit.maxDistance = limits.maxDistance
+    orbit.update()
+  }, [controls, size.width, size.height])
+  return null
+}
+
+function TokenHighlight({ color, baseY }: { color: string; baseY: number }) {
+  return (
+    <group position={[0, 0.025 - baseY, 0]} rotation={[Math.PI / 2, 0, 0]} raycast={skipRaycast}>
+      <mesh raycast={skipRaycast}><torusGeometry args={[0.3, 0.04, 5, 24]} /><meshBasicMaterial color="#fff8e4" /></mesh>
+      <mesh raycast={skipRaycast}><torusGeometry args={[0.3, 0.023, 5, 24]} /><meshBasicMaterial color={color} /></mesh>
+    </group>
+  )
 }
 
 function SpaceLabel({ name, size, ink, outline }: { name: string; size: number; ink: string; outline: string }) {
@@ -261,16 +287,19 @@ function AnimatedPawn({ player, seatIndex, reducedMotion, movementEnabled, moveM
 
   return (
     <group ref={group} position={[initial.x + offsetX, baseY, initial.z + offsetZ]} rotation={[0, player.position <= 10 ? Math.PI / 2 : player.position <= 20 ? Math.PI : player.position <= 30 ? -Math.PI / 2 : 0, 0]}>
+      <TokenHighlight color={player.color} baseY={baseY} />
       {player.characterType === 'pawn' ? <>
-        <mesh position={[0, 0.17, 0]} raycast={skipRaycast}>
-          <cylinderGeometry args={[0.16, 0.23, 0.25, 7]} />
-          <meshBasicMaterial color={player.color} />
-        </mesh>
-        <mesh position={[0, 0.39, 0]} raycast={skipRaycast}>
-          <sphereGeometry args={[0.16, 14, 12]} />
-          <meshBasicMaterial color={player.color} />
-        </mesh>
-      </> : model && <primitive object={model} scale={0.48} />}
+        <group scale={1.12}>
+          <mesh position={[0, 0.17, 0]} raycast={skipRaycast}>
+            <cylinderGeometry args={[0.16, 0.23, 0.25, 7]} />
+            <meshBasicMaterial color={player.color} />
+          </mesh>
+          <mesh position={[0, 0.39, 0]} raycast={skipRaycast}>
+            <sphereGeometry args={[0.16, 14, 12]} />
+            <meshBasicMaterial color={player.color} />
+          </mesh>
+        </group>
+      </> : model && <primitive object={model} scale={0.54} />}
       {player.activity && <Html position={[0, player.characterType === 'pawn' ? 0.86 : 0.66, 0]} center distanceFactor={12} zIndexRange={[6, 0]} style={{ pointerEvents: 'none' }}><div className="turn-activity-bubble" role="status" aria-live="polite">{player.activity}</div></Html>}
     </group>
   )
@@ -612,7 +641,8 @@ function BoardSceneCanvas({ players, propertyBuildings, highlightedSpaceIds = []
     <Canvas camera={{ position: [12.5, 15.5, 15.5], fov: 34 }} dpr={[0.8, 1.1]} frameloop="demand" gl={{ antialias: false, powerPreference: 'high-performance', stencil: false }}>
       <color attach="background" args={['#9bbcc1']} />
       <ResponsiveCamera tilt={16} horizontal={45} />
-      <OrbitControls makeDefault enabled={cameraEnabled} enablePan={false} enableZoom={false} enableRotate minPolarAngle={Math.PI / 12} maxPolarAngle={Math.PI / 2} rotateSpeed={0.72} enableDamping dampingFactor={0.1} />
+      <OrbitControls makeDefault enabled={cameraEnabled} enablePan={false} enableZoom enableRotate minPolarAngle={Math.PI / 12} maxPolarAngle={Math.PI / 2} rotateSpeed={0.72} zoomSpeed={0.75} enableDamping dampingFactor={0.1} />
+      <CameraZoomBounds />
       <CameraDragAnywhere enabled={cameraEnabled} />
       {fpsMeterEnabled && fpsSamples && <FrameRateProbe samples={fpsSamples} />}
       <Board players={players} propertyBuildings={propertyBuildings} highlightedSpaceIds={highlightedSpaceIds} selectionMode={selectionMode} landingPulseSpaceId={landingPulseSpaceId} landingPulseSequence={landingPulseSequence} diceRollSequence={diceRollSequence} dice={dice} diceVisible={diceVisible} diceResultVisible={diceResultVisible} presentationSpeed={presentationSpeed} reducedMotion={reducedMotion} pawnMovementEnabled={pawnMovementEnabled} pawnMoveMode={pawnMoveMode} onMovementComplete={onMovementComplete} onSelectSpace={onSelectSpace} />

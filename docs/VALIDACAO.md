@@ -1,5 +1,12 @@
 # Validação visual e de navegador
 
+## 2026-10-29 — Zoom da câmera e destaque das fichas
+
+- `npm run verify` passou: 183 testes em 35 arquivos; builds frontend e servidor passaram. O aviso existente de chunk 3D continua em 956,10 KB (259,64 KB gzip). `git diff --check` passou.
+- Playtest em sala Clássica com três bots, navegador integrado em 690×900: scroll aproximou o tabuleiro e scroll inverso restaurou o enquadramento. A partida seguiu até uma decisão real de compra e as fichas permaneceram no tabuleiro com aro contrastante.
+- A pinça é atendida pelo zoom nativo de OrbitControls, mas não foi simulada em dispositivo touch nesta sessão. A revisão estreita foi feita no viewport disponível, sem emulação de hardware móvel.
+- `graphify update .` não rodou: a CLI não está instalada; Graphify MCP disponível aponta para outro repositório.
+
 ## 2026-10-29 — Travamento da HUD de dinheiro no Chrome
 
 - Comparação controlada em Chrome 156 com GTX 970, 1365×900 e DPR 1: durante o mesmo arrasto da câmera, `07646a4` registrou ~97 FPS e `2def5f6` ~7 FPS, com intervalos de quadro de até 146,7 ms. No A/B da cópia temporária, desligar o overlay grande não resolveu; remover os efeitos CSS de filtro/perspectiva/3D/recorte dos símbolos de dinheiro restaurou ~99 FPS, e desligar a roleta não mudou o resultado.

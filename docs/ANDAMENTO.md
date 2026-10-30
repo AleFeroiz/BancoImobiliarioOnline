@@ -2,6 +2,16 @@
 
 > Retrato de trabalho para retomar o projeto entre sessões. Para requisitos e decisões, consulte os documentos de origem indicados em `AGENTS.md`.
 
+## Zoom da câmera e destaque das fichas — implementação validada (2026-10-29)
+
+- Pedido confirmado: permitir zoom pela roda do mouse e gesto de pinça no celular; destacar visualmente as fichas dos participantes.
+- Estado inicial: branch `main`; `assets/blender/special-corners.blend` está modificado e `assets/blender/special-corners.blend1` não rastreado, ambos fora do escopo e preservados. `git fetch origin` falhou com permissão negada ao abrir `.git/FETCH_HEAD`; a revisão local mostra `main...origin/main` sem commits divergentes.
+- A cena usa React Three Fiber/Drei `OrbitControls`; zoom pela roda agora está ativo com limites relativos ao enquadramento responsivo, o mesmo controle atende gesto de pinça. `AnimatedPawn` aumenta levemente as peças e acrescenta aros de contraste no chão. A dica de controle foi atualizada; `DECISOES.md` e `PLANO.md` refletem o comportamento visual.
+- `npm run verify` passou com 183 testes em 35 arquivos e builds frontend/servidor. Playtest em viewport 690×900 confirmou aproximação e retorno por scroll numa partida com três bots e decisão real de compra. Pinça não simulada por falta de emulação touch disponível; detalhes em [VALIDACAO.md](VALIDACAO.md).
+- Graphify local não está instalado; Graphify MCP aponta para `GustavoGLD/Hospital`, não este repositório. Código localizado pela busca dos arquivos de câmera e cena.
+- Nota de trabalho: [zoom da câmera e destaque das fichas](trabalho/zoom-e-destaque-fichas.md).
+- Próximo passo: revisar e publicar a mudança em `main`; alterações locais de Blender não fazem parte deste escopo.
+
 ## Investigação de travamento no Chrome — correção concluída (2026-10-29)
 
 - Pedido confirmado: reproduzir no Chrome os travamentos fortes da partida e corrigir a causa.
