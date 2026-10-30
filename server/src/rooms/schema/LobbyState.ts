@@ -59,7 +59,6 @@ export const LobbyState = schema({
   debtCreditorSessionId: t.string().default(''),
   debtReason: t.string().default(''),
   winnerSessionId: t.string().default(''),
-  tradeSeconds: t.uint8().default(0),
   tradeOfferId: t.uint32().default(0),
   tradeOfferFromSessionId: t.string().default(''),
   tradeOfferToSessionId: t.string().default(''),

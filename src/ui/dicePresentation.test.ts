@@ -4,6 +4,8 @@ import { getDiceRollRotation, shouldShowRolledDice } from './dicePresentation'
 describe('apresentação minimalista dos dados', () => {
   it('mantém dados na rolagem e no movimento que foi iniciado por ela', () => {
     expect(shouldShowRolledDice('rolling', false)).toBe(true)
+    expect(shouldShowRolledDice('station-rent-rolling', false)).toBe(true)
+    expect(shouldShowRolledDice('station-rent', false)).toBe(false)
     expect(shouldShowRolledDice('moving', true)).toBe(true)
     expect(shouldShowRolledDice('moving', false)).toBe(false)
     expect(shouldShowRolledDice('resolve', true)).toBe(false)

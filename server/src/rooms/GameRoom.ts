@@ -36,7 +36,6 @@ function createRoomCode() {
 export class GameRoom extends Room<{ state: LobbyState }> {
   maxClients = 4
   state = new LobbyState()
-  private tradeInterval?: ReturnType<typeof setInterval>
   private auctionInterval?: ReturnType<typeof setInterval>
   private matchClockInterval?: ReturnType<typeof setInterval>
   private botControllerInterval?: ReturnType<typeof setInterval>
@@ -187,7 +186,6 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       this.state.debtReason = ''
       this.state.winnerSessionId = ''
       this.clearAuction(false)
-      this.startTradeWindow()
       this.startMatchClock()
       this.startBotController()
       this.broadcast('game:started', { mode: this.state.mode })
@@ -204,6 +202,14 @@ export class GameRoom extends Room<{ state: LobbyState }> {
         return
       }
       this.rollForPlayer(client.sessionId)
+    },
+    stationRentRoll: (client: Client) => {
+      const player = this.state.players.get(client.sessionId)
+      if (this.state.status !== 'playing' || this.state.turnPhase !== 'station-rent' || client.sessionId !== this.state.activePlayerSessionId || !player) {
+        client.send('room:error', { message: 'Só a pessoa da vez pode rolar o aluguel da estação.' })
+        return
+      }
+      this.rollForStationRent(client.sessionId)
     },
     devRoll: (client: Client, payload: { diceOne?: unknown; diceTwo?: unknown } = {}) => {
       const requester = this.state.players.get(client.sessionId)
@@ -401,6 +407,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       debtor.cash = 0
       debtor.isBankrupt = true
       debtor.isJailed = false
+      if (this.state.tradeOfferFromSessionId === client.sessionId || this.state.tradeOfferToSessionId === client.sessionId) this.clearTradeOffer()
       const name = debtor.name
       this.clearDebt()
       const survivors = Array.from(this.state.players.entries()).filter(([, player]) => !player.isBankrupt)
@@ -470,8 +477,8 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       propertiesOffered?: unknown
       propertiesRequested?: unknown
     }) => {
-      if (!this.isTradeWindowOpen() || client.sessionId !== this.state.activePlayerSessionId) {
-        client.send('room:error', { message: 'A negociação só pode ser iniciada pela pessoa da vez durante a janela aberta.' })
+      if (!this.isTradeAvailable()) {
+        client.send('room:error', { message: 'Só é possível negociar durante uma partida ativa.' })
         return
       }
       if (this.state.tradeOfferId > 0) {
@@ -526,13 +533,8 @@ export class GameRoom extends Room<{ state: LobbyState }> {
     },
     tradeAccept: (client: Client, payload: { offerId?: unknown }) => {
       const offerId = payload?.offerId
-      if (!this.isTradeWindowOpen() || offerId !== this.state.tradeOfferId || client.sessionId !== this.state.tradeOfferToSessionId) {
+      if (!this.isTradeAvailable() || offerId !== this.state.tradeOfferId || client.sessionId !== this.state.tradeOfferToSessionId) {
         client.send('room:error', { message: 'Essa oferta não está mais disponível para você.' })
-        return
-      }
-      if (this.state.activePlayerSessionId !== this.state.tradeOfferFromSessionId) {
-        client.send('room:error', { message: 'A vez mudou; a proposta expirou.' })
-        this.clearTradeOffer()
         return
       }
       const senderSessionId = this.state.tradeOfferFromSessionId
@@ -810,9 +812,8 @@ export class GameRoom extends Room<{ state: LobbyState }> {
     })
   }
 
-  private isTradeWindowOpen() {
+  private isTradeAvailable() {
     return this.state.status === 'playing'
-      && this.state.tradeSeconds > 0
       && Boolean(this.state.activePlayerSessionId)
       && !this.state.players.get(this.state.activePlayerSessionId)?.isBankrupt
   }
@@ -825,13 +826,6 @@ export class GameRoom extends Room<{ state: LobbyState }> {
     this.state.tradeOfferCashRequested = 0
     this.state.tradeOfferPropertiesOffered = ''
     this.state.tradeOfferPropertiesRequested = ''
-  }
-
-  private stopTradeWindow() {
-    if (this.tradeInterval) clearInterval(this.tradeInterval)
-    this.tradeInterval = undefined
-    this.state.tradeSeconds = 0
-    this.clearTradeOffer()
   }
 
   private startMatchClock() {
@@ -866,10 +860,10 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       this.turnTimerKey = key
       this.state.turnSeconds = phase === 'roll'
         ? TURN_ROLL_SECONDS
-      : ['purchase', 'resolve', 'jail', 'world-cup', 'world-tour', 'debt'].includes(phase) ? TURN_DECISION_SECONDS : 0
+      : ['purchase', 'resolve', 'jail', 'world-cup', 'world-tour', 'station-rent', 'debt'].includes(phase) ? TURN_DECISION_SECONDS : 0
       return
     }
-    if (this.state.turnSeconds === 0 || !['roll', 'purchase', 'resolve', 'jail', 'world-cup', 'world-tour', 'debt'].includes(phase)) return
+    if (this.state.turnSeconds === 0 || !['roll', 'purchase', 'resolve', 'jail', 'world-cup', 'world-tour', 'station-rent', 'debt'].includes(phase)) return
     this.state.turnSeconds -= 1
     if (this.state.turnSeconds > 0) return
 
@@ -883,6 +877,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
     else if (phase === 'jail') this.messages.finishTurn(client)
     else if (phase === 'world-cup') this.chooseDefaultWorldCup(client, sessionId)
     else if (phase === 'world-tour') this.messages.chooseWorldTour(client, { spaceId: this.getWorldTourDefaultDestination(sessionId) })
+    else if (phase === 'station-rent') this.rollForStationRent(sessionId)
     else {
       this.autoResolveDebt(sessionId)
       if (this.state.turnPhase === 'debt' && this.state.activePlayerSessionId === sessionId) this.state.turnSeconds = TURN_DECISION_SECONDS
@@ -930,9 +925,39 @@ export class GameRoom extends Room<{ state: LobbyState }> {
     })
   }
 
+  private rollForStationRent(sessionId: string) {
+    const player = this.state.players.get(sessionId)
+    const propertyId = this.state.pendingPropertyId
+    const space = boardSpaces[propertyId]
+    const property = this.state.properties.get(String(propertyId))
+    if (this.state.status !== 'playing' || this.state.turnPhase !== 'station-rent' || sessionId !== this.state.activePlayerSessionId || !player) return
+    if (space?.kind !== 'property' || space.buildable || !property?.ownerSessionId || property.ownerSessionId === sessionId || property.isMortgaged) {
+      this.state.turnPhase = 'resolve'
+      this.state.landingDescription = 'Não há aluguel a rolar nesta estação.'
+      this.finishExpiredPhaseIfReady()
+      return
+    }
+
+    const stationDie = randomInt(1, 7)
+    this.state.diceSequence += 1
+    this.state.diceOne = stationDie
+    this.state.diceTwo = 0
+    this.state.turnPhase = 'station-rent-rolling'
+    this.state.presentationSpeed = this.state.animationSpeed
+    this.state.landingDescription = `${player.name} rolou o dado da estação.`
+    this.schedulePresentation(getAnimationDuration(DICE_ANIMATION_DURATION_MS, this.state.presentationSpeed), () => {
+      if (this.state.turnPhase !== 'station-rent-rolling' || this.state.activePlayerSessionId !== sessionId) return
+      const rent = calculateStationRent(stationDie) * (space.id === this.state.worldCupSpaceId ? 3 : 1)
+      this.state.turnPhase = 'resolve'
+      this.state.landingDescription = `${space.name}: o dado caiu em ${stationDie}. Aluguel de R$ ${rent.toLocaleString('pt-BR')}.`
+      this.collectPayment(sessionId, player, rent, property.ownerSessionId, 'Aluguel')
+      this.finishExpiredPhaseIfReady()
+    })
+  }
+
   private expireExpressPhase() {
     if (this.state.status !== 'playing' || this.state.mode !== 'express') return
-    if (['rolling', 'moving', 'debt'].includes(this.state.turnPhase)) return
+    if (['rolling', 'station-rent-rolling', 'moving', 'debt'].includes(this.state.turnPhase)) return
     if (this.state.turnPhase === 'purchase') {
       const space = boardSpaces[this.state.pendingPropertyId]
       this.state.pendingPropertyId = 255
@@ -943,6 +968,10 @@ export class GameRoom extends Room<{ state: LobbyState }> {
     }
     const sessionId = this.state.activePlayerSessionId
     const internalClient = { sessionId, send: () => undefined } as unknown as Client
+    if (this.state.turnPhase === 'station-rent') {
+      this.rollForStationRent(sessionId)
+      return
+    }
     if (this.state.turnPhase === 'jail') {
       this.messages.finishTurn(internalClient)
       return
@@ -973,7 +1002,6 @@ export class GameRoom extends Room<{ state: LobbyState }> {
 
   private stopClocks() {
     this.stopMatchClock()
-    this.stopTradeWindow()
     this.clearAuction(true)
     this.stopBotController()
     for (const timer of this.presentationTimers) clearTimeout(timer)
@@ -994,7 +1022,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
   /** Runs one authoritative action for a bot-controlled player. Public to support deterministic server-side self-play tests. */
   processBotStep() {
     if (this.state.status !== 'playing') return
-    if (this.state.turnPhase === 'rolling' || this.state.turnPhase === 'moving') return
+    if (this.state.turnPhase === 'rolling' || this.state.turnPhase === 'station-rent-rolling' || this.state.turnPhase === 'moving') return
     const fakeClient = (sessionId: string) => ({ sessionId, send: () => undefined }) as unknown as Client
 
     if (this.state.tradeOfferId > 0) {
@@ -1039,7 +1067,9 @@ export class GameRoom extends Room<{ state: LobbyState }> {
     if (!player || player.isBankrupt || (!player.isBot && !player.isBotControlled)) return
     const client = fakeClient(sessionId)
 
-    if (this.state.turnPhase === 'roll') {
+    if (this.state.turnPhase === 'station-rent') {
+      this.rollForStationRent(sessionId)
+    } else if (this.state.turnPhase === 'roll') {
       this.messages.roll(client)
     } else if (this.state.turnPhase === 'purchase') {
       const space = boardSpaces[this.state.pendingPropertyId]
@@ -1100,6 +1130,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
   private finishMatch(forcedWinnerSessionId?: string) {
     if (this.state.status === 'ended') return
     this.clearAuction(true)
+    this.clearTradeOffer()
     const activePlayers = Array.from(this.state.players.entries()).filter(([, player]) => !player.isBankrupt)
     const holdings = this.getHoldings()
     const ranked = activePlayers.map(([sessionId, player]) => ({
@@ -1152,22 +1183,6 @@ export class GameRoom extends Room<{ state: LobbyState }> {
   private compareScores(first: { player: LobbyPlayerState; netWorth: number }, second: { player: LobbyPlayerState; netWorth: number }) {
     if (this.state.mode === 'express' && first.player.cash !== second.player.cash) return second.player.cash - first.player.cash
     return second.netWorth - first.netWorth
-  }
-
-  private startTradeWindow() {
-    this.stopTradeWindow()
-    this.state.tradeSeconds = this.state.mode === 'express' ? 40 : 45
-    this.tradeInterval = setInterval(() => {
-      if (this.state.status !== 'playing') {
-        this.stopTradeWindow()
-        return
-      }
-      if (this.state.tradeSeconds <= 1) {
-        this.stopTradeWindow()
-        return
-      }
-      this.state.tradeSeconds -= 1
-    }, 1000)
   }
 
   private startAuctionClock() {
@@ -1233,7 +1248,6 @@ export class GameRoom extends Room<{ state: LobbyState }> {
     this.state.pendingPropertyId = 255
     this.state.pawnMoveMode = 'walk'
     const roomPlayerIds = Array.from(this.state.players.entries()).map(([sessionId]) => sessionId)
-    this.stopTradeWindow()
     const solventPlayers = roomPlayerIds.filter((sessionId) => !this.state.players.get(sessionId)?.isBankrupt)
     if (solventPlayers.length <= 1) {
       this.finishMatch(solventPlayers[0])
@@ -1273,7 +1287,6 @@ export class GameRoom extends Room<{ state: LobbyState }> {
     this.state.landingDescription = nextPlayer?.isJailed ? `Você está preso. Este é um dos seus ${nextPlayer.jailTurns} turnos de prisão.` : ''
     this.state.activeCardTitle = ''
     this.state.activeCardDescription = ''
-    this.startTradeWindow()
   }
 
   private collectPayment(debtorSessionId: string, debtor: LobbyPlayerState, amount: number, creditorSessionId: string, reason: string) {
@@ -1375,10 +1388,11 @@ export class GameRoom extends Room<{ state: LobbyState }> {
           this.state.landingDescription += ` ${space.name} está hipotecada; não há aluguel.`
         } else if (owner) {
           if (!space.buildable) {
-            const stationDie = randomInt(1, 7)
-            const stationRent = calculateStationRent(stationDie) * (space.id === this.state.worldCupSpaceId ? 3 : 1)
-            this.state.landingDescription += ` Dado da estação: ${stationDie}; aluguel de R$ ${stationRent.toLocaleString('pt-BR')}.`
-            this.collectPayment(sessionId, player, stationRent, property.ownerSessionId, 'Aluguel')
+            this.state.pendingPropertyId = space.id
+            this.state.turnPhase = 'station-rent'
+            this.state.turnSeconds = TURN_DECISION_SECONDS
+            this.turnTimerKey = `${this.state.turnNumber}:${sessionId}:station-rent`
+            this.state.landingDescription += ` Jogue o dado para definir o aluguel de ${space.name} (R$ 50.000 por ponto).`
           } else {
             this.collectPayment(sessionId, player, rent, property.ownerSessionId, 'Aluguel')
           }

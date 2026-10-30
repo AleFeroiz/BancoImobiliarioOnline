@@ -1,8 +1,8 @@
-export type DicePresentationPhase = 'roll' | 'rolling' | 'moving' | 'resolve' | 'purchase' | 'jail' | 'world-cup' | 'world-tour' | 'debt' | 'ended'
+export type DicePresentationPhase = 'roll' | 'rolling' | 'station-rent' | 'station-rent-rolling' | 'moving' | 'resolve' | 'purchase' | 'jail' | 'world-cup' | 'world-tour' | 'debt' | 'ended'
 export type DiceRotation = [number, number, number]
 
 export function shouldShowRolledDice(phase: DicePresentationPhase, belongsToPawnMovement: boolean) {
-  return phase === 'rolling' || (phase === 'moving' && belongsToPawnMovement)
+  return phase === 'rolling' || phase === 'station-rent-rolling' || (phase === 'moving' && belongsToPawnMovement)
 }
 
 export function getDiceRollRotation(start: DiceRotation, progress: number): DiceRotation {

@@ -1,4 +1,4 @@
-export type GameSound = 'dice' | 'purchase' | 'money-in' | 'money-out' | 'auction' | 'milestone' | 'construction' | 'demolition' | 'ownership' | 'mortgage' | 'redemption'
+export type GameSound = 'none' | 'dice' | 'purchase' | 'money-in' | 'money-out' | 'auction' | 'milestone' | 'construction' | 'demolition' | 'ownership' | 'mortgage' | 'redemption'
 export type PropertyVisualState = { ownerSessionId: string; houses: number; isMortgaged?: boolean }
 export type PropertyVisualChange = 'placed' | 'built' | 'demolished' | 'ownership' | 'released' | 'mortgaged' | 'redeemed'
 
@@ -27,6 +27,7 @@ export function getPropertyChangeSound(change: PropertyVisualChange): GameSound 
 
 export function getGameSound(description: string): GameSound {
   const text = description.toLocaleLowerCase('pt-BR')
+  if (text.includes('jogue o dado para definir o aluguel')) return 'none'
   if (text.includes('construção vendida') || text.includes('hotel devolvido')) return 'demolition'
   if (text.includes('construída') || text.includes('construido')) return 'construction'
   if (text.includes('hipotecada')) return 'mortgage'

@@ -465,3 +465,9 @@
 - `npm run verify`: 153 testes em 25 arquivos passaram; build web e build do servidor passaram. O build web mantém o aviso conhecido do chunk 3D acima de 500 kB. `git diff --check` passou.
 - Em uma partida local no navegador integrado (1280 × 720), testei inclinação de 0°, 16° e 75° e giros horizontais de 0°, 45° e 90°. O tabuleiro completo permaneceu no enquadramento e o slider horizontal foi reposicionado para liberar a área das casas no ângulo padrão.
 - A integração do servidor valida os três turnos completos na prisão, o aluguel triplicado na propriedade escolhida pela Copa, a rejeição de propriedade rival na Volta ao Mundo e o teletransporte para Partida sem bônus.
+# Perfil, propostas, sons e rolagem de aluguel — 2026-10-30
+
+- `npm run verify`: 214 testes em 40 arquivos passaram; builds frontend e servidor passaram. O build ainda apresenta o aviso conhecido de chunk de cena 3D em 956,43 KB (259,81 KB gzip).
+- `git diff --check` passou. Testes de regressão cobrem proposta que permanece ativa ao trocar a vez, envio fora da vez e revalidação no aceite; rolagem autoritativa da estação e apresentação de apenas um dado 3D; mapeamento de sons para caixa, perda distorcida, dados, construção e silêncio.
+- Playtest visual não concluído: `npm run dev:server` retornou `EADDRINUSE` na porta 2567. `Get-NetTCPConnection`, `netstat -ano` e enumeração de processos disponíveis não identificaram o listener para encerrar com segurança; sem servidor Colyseus não foi possível abrir a sala nem capturar o perfil ou a estação no navegador.
+- `graphify update .` não executou: o comando `graphify` não está instalado neste ambiente.

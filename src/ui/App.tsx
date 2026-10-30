@@ -14,6 +14,7 @@ import { PLAYER_COLORS } from './playerPalette'
 import { getCashToastPlacement, getGameSound, getPropertyChangeSound, getPropertyVisualChange, formatCashDelta, type GameSound } from './gameFeedback'
 import { CashChangeToast } from './CashChangeToast'
 import { stepDieValue } from './forcedDice'
+import { getPropertyRentLabel } from './propertyRentLabel'
 import { appendGameFeedback, personalizePlayerFeedback, type GameFeedbackItem } from './feedbackQueue'
 import { playGameSound, startGameMusic, stopGameMusic, unlockGameAudio } from './gameAudio'
 import { getTurnActivityLabel, shouldShowTurnCard, shouldSuppressTurnCardForFeedback } from './turnActivity'
@@ -28,7 +29,7 @@ import { dismissCardRevealOnPointerDown } from './cardRevealInput'
 
 type Mode = GameMode
 type Screen = 'home' | 'room' | 'game'
-type TurnPhase = 'roll' | 'rolling' | 'moving' | 'resolve' | 'purchase' | 'jail' | 'world-cup' | 'world-tour' | 'debt' | 'ended'
+type TurnPhase = 'roll' | 'rolling' | 'station-rent' | 'station-rent-rolling' | 'moving' | 'resolve' | 'purchase' | 'jail' | 'world-cup' | 'world-tour' | 'debt' | 'ended'
 type SyncedPlayer = LobbyPlayer & { sessionId: string; cash: number; isJailed: boolean; jailTurns: number; isBankrupt: boolean; finalCash: number; finalNetWorth: number; tieBreakRoll: number }
 type TradeOfferView = { id: number; fromSessionId: string; toSessionId: string; cashOffered: number; cashRequested: number; propertiesOffered: number[]; propertiesRequested: number[] }
 const BoardScene = lazy(() => import('./BoardScene'))
@@ -105,6 +106,7 @@ function App() {
   const [debtCreditorSessionId, setDebtCreditorSessionId] = useState('')
   const [winnerSessionId, setWinnerSessionId] = useState('')
   const [showPropertyPanel, setShowPropertyPanel] = useState(false)
+  const [profilePlayerSessionId, setProfilePlayerSessionId] = useState('')
   const [showTradePanel, setShowTradePanel] = useState(false)
   const [showAuctionPanel, setShowAuctionPanel] = useState(false)
   const [showHelp, setShowHelp] = useState(false)
@@ -117,7 +119,6 @@ function App() {
   const [auctionHighestBidderSessionId, setAuctionHighestBidderSessionId] = useState('')
   const [auctionBidAmount, setAuctionBidAmount] = useState('10000')
   const [auctionStartingBids, setAuctionStartingBids] = useState<Record<number, string>>({})
-  const [tradeSeconds, setTradeSeconds] = useState(0)
   const [tradeOffer, setTradeOffer] = useState<TradeOfferView | null>(null)
   const [tradeTargetSessionId, setTradeTargetSessionId] = useState('')
   const [tradeCashOffered, setTradeCashOffered] = useState('0')
@@ -140,7 +141,7 @@ function App() {
   const activePlayer = roomPlayers.find((player) => player.sessionId === activePlayerSessionId)
   const activeSpace = boardSpaces[activePlayer?.position ?? 0]
   const isMyTurn = room?.sessionId === activePlayerSessionId
-  const isPresentationAnimating = turnPhase === 'rolling' || turnPhase === 'moving'
+  const isPresentationAnimating = turnPhase === 'rolling' || turnPhase === 'station-rent-rolling' || turnPhase === 'moving'
   const turnActivityLabel = getTurnActivityLabel(turnPhase)
   const showTurnCard = shouldShowTurnCard(isMyTurn, turnPhase) && !isPresentationAnimating && !['roll', 'resolve', 'world-cup', 'world-tour'].includes(turnPhase) && !activeCardTitle
   const feedbackToast = feedbackQueue[0]
@@ -151,6 +152,7 @@ function App() {
     : [0, 3, 6, 9].map((position, seatIndex) => ({ id: `preview-${seatIndex}`, position, color: PLAYER_COLORS[seatIndex] ?? PLAYER_COLORS[0], seatIndex, cash: 1_500_000, characterType: 'pawn' as CharacterType }))
   const incomingTradeOffer = tradeOffer?.toSessionId === room?.sessionId
   const outgoingTradeOffer = tradeOffer?.fromSessionId === room?.sessionId
+  const profilePlayer = roomPlayers.find((player) => player.sessionId === profilePlayerSessionId)
   const auctionSeller = roomPlayers.find((player) => player.sessionId === auctionSellerSessionId)
   const auctionHighBidder = roomPlayers.find((player) => player.sessionId === auctionHighestBidderSessionId)
   const auctionMinimumBid = auctionHighestBid > 0 ? auctionHighestBid + AUCTION_MIN_BID_INCREMENT : auctionStartingBid
@@ -185,10 +187,14 @@ function App() {
     .map(([id, holding]) => ({ spaceId: Number(id), holding, space: boardSpaces[Number(id)] }))
     .filter((entry) => entry.space)
     .sort((first, second) => first.spaceId - second.spaceId)
-  const availableTradePartners = roomPlayers.filter((player) => player.sessionId !== room?.sessionId && !player.isBankrupt)
-  const tradeTarget = availableTradePartners.find((player) => player.sessionId === tradeTargetSessionId) ?? availableTradePartners[0]
+  const tradeTarget = roomPlayers.find((player) => player.sessionId === tradeTargetSessionId && player.sessionId !== room?.sessionId && !player.isBankrupt)
   const targetProperties = Array.from(roomProperties.entries())
     .filter(([_, holding]) => holding.ownerSessionId === tradeTarget?.sessionId)
+    .map(([id, holding]) => ({ spaceId: Number(id), holding, space: boardSpaces[Number(id)] }))
+    .filter((entry) => entry.space)
+    .sort((first, second) => first.spaceId - second.spaceId)
+  const profileProperties = Array.from(roomProperties.entries())
+    .filter(([, holding]) => holding.ownerSessionId === profilePlayer?.sessionId)
     .map(([id, holding]) => ({ spaceId: Number(id), holding, space: boardSpaces[Number(id)] }))
     .filter((entry) => entry.space)
     .sort((first, second) => first.spaceId - second.spaceId)
@@ -211,7 +217,7 @@ function App() {
   const revealKey = revealKind ? `${turnNumber}:${activePlayerSessionId}:${revealKind}:${activeCardTitle}` : ''
   const showTransientReveal = Boolean(revealKind && revealKey !== dismissedRevealKey)
   const showDice = shouldShowRolledDice(turnPhase, diceForPawnMovement)
-  const modalVisible = !isPresentationAnimating && (showAuctionPanel || showTradePanel || showPropertyPanel || showObjectivePanel || Boolean(incomingTradeOffer) || showTransientReveal || (isMyTurn && (turnPhase === 'purchase' || ownPropertyLanding || turnPhase === 'debt' || turnPhase === 'ended')))
+  const modalVisible = !isPresentationAnimating && (showAuctionPanel || showPropertyPanel || showObjectivePanel || showTransientReveal || (isMyTurn && (turnPhase === 'purchase' || ownPropertyLanding || turnPhase === 'debt' || turnPhase === 'ended')))
   const propertyBuildings = Array.from(roomProperties.entries()).map(([id, holding]) => ({
     spaceId: Number(id),
     ownerSessionId: holding.ownerSessionId,
@@ -284,6 +290,13 @@ function App() {
   }, [tradeOffer?.id])
 
   useEffect(() => {
+    if (incomingTradeOffer && room?.sessionId) {
+      setProfilePlayerSessionId(room.sessionId)
+      setShowTradePanel(false)
+    }
+  }, [incomingTradeOffer, room?.sessionId, tradeOffer?.id])
+
+  useEffect(() => {
     setPendingPurchaseHouses(0)
   }, [pendingPropertyId])
 
@@ -337,7 +350,6 @@ function App() {
         debtReason: string
         debtCreditorSessionId: string
         winnerSessionId: string
-        tradeSeconds: number
         tradeOfferId: number
         tradeOfferFromSessionId: string
         tradeOfferToSessionId: string
@@ -376,21 +388,23 @@ function App() {
         if (didRoll) {
           setDiceRollSequence((sequence) => sequence + 1)
           setDiceForPawnMovement(true)
-        } else if (!['rolling', 'moving'].includes(snapshot.turnPhase)) {
+        } else if (!['rolling', 'station-rent-rolling', 'moving'].includes(snapshot.turnPhase)) {
           setDiceForPawnMovement(false)
         }
         if (reducedMotion) setPresentationStage('idle')
-        else if (snapshot.turnPhase === 'rolling') setPresentationStage('dice')
+        else if (snapshot.turnPhase === 'rolling' || snapshot.turnPhase === 'station-rent-rolling') setPresentationStage('dice')
         else if (snapshot.turnPhase === 'moving') setPresentationStage('pawn')
         else setPresentationStage('idle')
         if (snapshot.landingDescription && snapshot.landingDescription !== previous.description) {
           const localCashDelta = (nextPlayerFacts.get(room.sessionId)?.cash ?? 0) - (previous.players.get(room.sessionId)?.cash ?? 0)
           const delta = formatCashDelta(localCashDelta)
           const cashSound = localCashDelta > 0 ? 'money-in' : localCashDelta < 0 ? 'money-out' : null
+          const cashChanged = nextPlayers.some((player) => player.cash !== previous.players.get(player.sessionId)?.cash)
           const actor = nextPlayers.find((player) => player.sessionId === snapshot.activePlayerSessionId)
           const actorSeat = nextPlayers.findIndex((player) => player.sessionId === snapshot.activePlayerSessionId)
           const actorColor = PLAYER_COLORS[actorSeat] ?? PLAYER_COLORS[0]
-          showGameFeedback(`${snapshot.landingDescription}${delta ? ` · ${delta}` : ''}`, cashSound ?? propertySound ?? getGameSound(snapshot.landingDescription), actor ? { name: actor.name, color: actorColor } : undefined)
+          showGameFeedback(`${snapshot.landingDescription}${delta ? ` · ${delta}` : ''}`, cashSound ?? propertySound ?? (cashChanged ? 'none' : getGameSound(snapshot.landingDescription)), actor ? { name: actor.name, color: actorColor } : undefined)
+          if (cashSound && propertySound === 'construction' && soundEnabled) playGameSound('construction')
         } else if (nextPlayers.some((player) => player.sessionId === room.sessionId && player.cash !== previous.players.get(player.sessionId)?.cash)) {
           const localCashDelta = (nextPlayerFacts.get(room.sessionId)?.cash ?? 0) - (previous.players.get(room.sessionId)?.cash ?? 0)
           if (soundEnabled && localCashDelta !== 0) playGameSound(localCashDelta > 0 ? 'money-in' : 'money-out')
@@ -432,7 +446,6 @@ function App() {
       setDebtReason(snapshot.debtReason)
       setDebtCreditorSessionId(snapshot.debtCreditorSessionId)
       setWinnerSessionId(snapshot.winnerSessionId)
-      setTradeSeconds(snapshot.tradeSeconds)
       setTradeOffer(snapshot.tradeOfferId > 0 ? {
         id: snapshot.tradeOfferId,
         fromSessionId: snapshot.tradeOfferFromSessionId,
@@ -585,7 +598,6 @@ function App() {
     setShowPropertyPanel(false)
     setShowTradePanel(false)
     setTradeOffer(null)
-    setTradeSeconds(0)
     setIsReconnecting(false)
     setTradeTargetSessionId('')
     setTradeCashOffered('0')
@@ -723,9 +735,9 @@ function App() {
 
       {screen === 'game' && (
         <section className="game-overlay">
-          <div className="game-topline"><button className="back-link" onClick={() => setScreen('room')}>← Sala {roomCode}</button><div className={`game-pill ${matchEnding || (mode === 'classic' && matchSeconds <= 60) ? 'clock-warning' : ''}`}>{modeDetails[mode].title.toUpperCase()} <span>·</span> {mode === 'classic' ? formatClock(matchSeconds) : `RODADA ${expressRound}/${6} · ${phaseSeconds}s`}</div><div className="game-tools">{mode === 'express' && expressObjective && turnPhase !== 'ended' && <button className={`portfolio-toggle objective-toggle ${expressObjective.completed ? 'objective-complete' : ''}`} aria-expanded={showObjectivePanel} onClick={() => { setShowObjectivePanel((open) => !open); setShowAuctionPanel(false); setShowTradePanel(false); setShowPropertyPanel(false) }}>{expressObjective.completed ? '✓ Meta' : `Meta ${expressObjective.progress}/${expressObjective.target}`}</button>}{auctionId > 0 && <button className="portfolio-toggle auction-toggle-active" aria-expanded={showAuctionPanel} onClick={() => { setShowAuctionPanel((open) => !open); setShowTradePanel(false); setShowPropertyPanel(false); setShowObjectivePanel(false); setError('') }}>{`Leilão · ${auctionSeconds}s`}</button>}<button className="portfolio-toggle" aria-expanded={showTradePanel || Boolean(incomingTradeOffer)} disabled={(tradeSeconds === 0 && !incomingTradeOffer) || auctionId > 0} onClick={() => { setShowTradePanel((open) => !open); setShowAuctionPanel(false); setShowPropertyPanel(false); setShowObjectivePanel(false); setError('') }}>{incomingTradeOffer ? 'Oferta recebida' : `Negociar · ${tradeSeconds}s`}</button><button className="portfolio-toggle" aria-expanded={showPropertyPanel} onClick={() => { setShowPropertyPanel((open) => !open); setShowAuctionPanel(false); setShowTradePanel(false); setShowObjectivePanel(false) }}>{showPropertyPanel ? '← Jogada' : `Imóveis · ${myProperties.length}`}</button></div></div>
+          <div className="game-topline"><button className="back-link" onClick={() => setScreen('room')}>← Sala {roomCode}</button><div className={`game-pill ${matchEnding || (mode === 'classic' && matchSeconds <= 60) ? 'clock-warning' : ''}`}>{modeDetails[mode].title.toUpperCase()} <span>·</span> {mode === 'classic' ? formatClock(matchSeconds) : `RODADA ${expressRound}/${6} · ${phaseSeconds}s`}</div><div className="game-tools">{mode === 'express' && expressObjective && turnPhase !== 'ended' && <button className={`portfolio-toggle objective-toggle ${expressObjective.completed ? 'objective-complete' : ''}`} aria-expanded={showObjectivePanel} onClick={() => { setShowObjectivePanel((open) => !open); setShowAuctionPanel(false); setShowTradePanel(false); setShowPropertyPanel(false) }}>{expressObjective.completed ? '✓ Meta' : `Meta ${expressObjective.progress}/${expressObjective.target}`}</button>}{auctionId > 0 && <button className="portfolio-toggle auction-toggle-active" aria-expanded={showAuctionPanel} onClick={() => { setShowAuctionPanel((open) => !open); setShowTradePanel(false); setShowPropertyPanel(false); setShowObjectivePanel(false); setError('') }}>{`Leilão · ${auctionSeconds}s`}</button>}</div></div>
           <div className="game-topline-camera-hint" aria-label="Controles da câmera">Arraste para girar · scroll ou pinça para zoom</div>
-          <div className="player-hud">{roomPlayers.map((player, index) => <div className={`player-card seat-${index} ${player.sessionId === activePlayerSessionId ? 'active' : ''} ${player.isBankrupt ? 'bankrupt' : ''} ${player.isConnected === false ? 'disconnected' : ''}`} key={player.sessionId} style={{ backgroundColor: PLAYER_COLORS[index] ?? PLAYER_COLORS[0] }}><div className="player-card-main"><strong>{player.name}</strong><b>{formatMoney(player.cash)}</b></div><CashChangeToast cash={player.cash} playerName={player.name} placement={getCashToastPlacement(index)} /><span className="player-money-anchor" data-cash-anchor={player.sessionId} aria-hidden="true"><CashHudSymbols cash={player.cash} /></span></div>)}</div>
+          <div className="player-hud">{roomPlayers.map((player, index) => <button type="button" aria-label={`Ver perfil de ${player.name}, saldo ${formatMoney(player.cash)}`} aria-expanded={profilePlayerSessionId === player.sessionId} className={`player-card seat-${index} ${player.sessionId === activePlayerSessionId ? 'active' : ''} ${player.isBankrupt ? 'bankrupt' : ''} ${player.isConnected === false ? 'disconnected' : ''} ${tradeOffer?.toSessionId === player.sessionId ? 'has-trade-offer' : ''}`} key={player.sessionId} style={{ backgroundColor: PLAYER_COLORS[index] ?? PLAYER_COLORS[0] }} onClick={() => { setProfilePlayerSessionId(player.sessionId); setTradeTargetSessionId(player.sessionId); setShowTradePanel(false); setShowPropertyPanel(false); setShowAuctionPanel(false); setShowObjectivePanel(false); setSelectedSpaceId(null); setError('') }}><div className="player-card-main"><strong>{player.name}</strong><b>{formatMoney(player.cash)}</b></div><CashChangeToast cash={player.cash} playerName={player.name} placement={getCashToastPlacement(index)} /><span className="player-money-anchor" data-cash-anchor={player.sessionId} aria-hidden="true"><CashHudSymbols cash={player.cash} /></span>{tradeOffer?.toSessionId === player.sessionId && <span className="player-card-offer-badge">PROPOSTA</span>}</button>)}</div>
           {modalVisible && !feedbackPending && <div className="game-modal-backdrop" aria-hidden="true" />}
           {selectedSpace && turnPhase !== 'ended' && !ownPropertyLanding && !(isMyTurn && (turnPhase === 'purchase' || turnPhase === 'world-cup' || turnPhase === 'world-tour')) && !showTradePanel && !incomingTradeOffer && !showPropertyPanel && !showObjectivePanel && (
             <aside className="space-inspector" aria-label={`Detalhes de ${selectedSpace.name}`}>
@@ -782,45 +794,6 @@ function App() {
                 </>
               )}
             </aside>
-          ) : !feedbackPending && (showTradePanel || incomingTradeOffer) && turnPhase !== 'ended' ? (
-            <aside className="turn-card trade-panel" aria-label="Negociação entre jogadores">
-              <div className="asset-panel-heading"><span className="turn-label">NEGOCIAÇÃO · {tradeSeconds}s</span><button className="trade-close" onClick={() => setShowTradePanel(false)} aria-label="Fechar negociação">×</button></div>
-              {error && <p className="form-error" role="alert">{error}</p>}
-              {tradeOffer ? incomingTradeOffer ? (
-                <>
-                  <h2>Proposta de {tradeCounterparty?.name ?? 'jogador'}</h2>
-                  <p>Você oferece {formatMoney(tradeOffer.cashRequested)}{tradeOffer.propertiesRequested.length ? ` e ${tradeOffer.propertiesRequested.map((id) => boardSpaces[id].name).join(', ')}` : ''}. Em troca, recebe {formatMoney(tradeOffer.cashOffered)}{tradeOffer.propertiesOffered.length ? ` e ${tradeOffer.propertiesOffered.map((id) => boardSpaces[id].name).join(', ')}` : ''}.</p>
-                  <div className="trade-actions"><button className="roll-button" disabled={tradeSeconds === 0} onClick={() => room?.send('tradeAccept', { offerId: tradeOffer.id })}>Aceitar troca</button><button className="secondary-action" onClick={() => room?.send('tradeReject', { offerId: tradeOffer.id })}>Recusar</button></div>
-                </>
-              ) : outgoingTradeOffer ? (
-                <>
-                  <h2>Aguardando {tradeCounterparty?.name ?? 'jogador'}</h2>
-                  <p>Proposta enviada. A outra pessoa pode aceitar ou recusar enquanto a janela estiver aberta.</p>
-                  <button className="secondary-action trade-full-button" onClick={() => room?.send('tradeCancel', { offerId: tradeOffer.id })}>Cancelar oferta</button>
-                </>
-              ) : (
-                <>
-                  <h2>Troca em andamento</h2>
-                  <p>{roomPlayers.find((player) => player.sessionId === tradeOffer.fromSessionId)?.name ?? 'Um jogador'} enviou uma proposta para {roomPlayers.find((player) => player.sessionId === tradeOffer.toSessionId)?.name ?? 'outro jogador'}.</p>
-                </>
-              ) : (
-                <>
-                  <h2>Propor uma troca</h2>
-                  <label className="trade-label">NEGOCIAR COM</label><div className="trade-partner-choices" role="group" aria-label="Escolher parceiro da troca">{availableTradePartners.map((player) => <button key={player.sessionId} type="button" aria-pressed={tradeTarget?.sessionId === player.sessionId} className={tradeTarget?.sessionId === player.sessionId ? 'selected' : ''} onClick={() => setTradeTargetSessionId(player.sessionId)}>{player.name}</button>)}</div>
-                  <div className="trade-columns">
-                    <div><label className="trade-label">VOCÊ OFERECE · DINHEIRO<input className="trade-input" type="number" min="0" max={localPlayer?.cash ?? 0} value={tradeCashOffered} onChange={(event) => setTradeCashOffered(event.target.value)} /></label>
-                      <label className="trade-label">VOCÊ OFERECE · IMÓVEIS</label><div className="trade-property-list">{myProperties.length ? myProperties.map(({ spaceId, holding, space }) => <button type="button" className={`trade-property ${tradePropertiesOffered.includes(spaceId) ? 'selected' : ''}`} key={`offer-${spaceId}`} aria-pressed={tradePropertiesOffered.includes(spaceId)} disabled={isTradePropertyLocked(spaceId)} onClick={() => setTradePropertiesOffered((current) => toggleSelection(current, spaceId))}><span>{space.name}</span><small>{holding.isMortgaged ? 'Hipotecado' : isTradePropertyLocked(spaceId) ? 'Venda as construções do grupo' : 'Imóvel'}</small></button>) : <small>Nenhum imóvel disponível</small>}</div>
-                    </div>
-                    <div><label className="trade-label">VOCÊ PEDE · DINHEIRO<input className="trade-input" type="number" min="0" max={tradeTarget?.cash ?? 0} value={tradeCashRequested} onChange={(event) => setTradeCashRequested(event.target.value)} /></label>
-                      <label className="trade-label">VOCÊ PEDE · IMÓVEIS</label><div className="trade-property-list">{targetProperties.length ? targetProperties.map(({ spaceId, holding, space }) => <button type="button" className={`trade-property ${tradePropertiesRequested.includes(spaceId) ? 'selected' : ''}`} key={`request-${spaceId}`} aria-pressed={tradePropertiesRequested.includes(spaceId)} disabled={isTradePropertyLocked(spaceId)} onClick={() => setTradePropertiesRequested((current) => toggleSelection(current, spaceId))}><span>{space.name}</span><small>{holding.isMortgaged ? 'Hipotecado' : isTradePropertyLocked(spaceId) ? 'Venda as construções do grupo' : 'Imóvel'}</small></button>) : <small>Nenhum imóvel disponível</small>}</div>
-                    </div>
-                  </div>
-                  <p className="trade-note">Imóvel hipotecado mantém a hipoteca. Proposta expira quando o tempo de negociação termina.</p>
-                  {error && <p className="form-error" role="alert">{error}</p>}
-                  <button className="roll-button trade-full-button" disabled={!isMyTurn || tradeSeconds === 0 || !tradeTarget} onClick={() => { room?.send('tradeOffer', { toSessionId: tradeTarget?.sessionId, cashOffered: Number(tradeCashOffered), cashRequested: Number(tradeCashRequested), propertiesOffered: tradePropertiesOffered, propertiesRequested: tradePropertiesRequested }); setError('') }}>Enviar proposta</button>
-                </>
-              )}
-            </aside>
           ) : !feedbackPending && showPropertyPanel && turnPhase !== 'ended' ? (
             <aside className="turn-card asset-panel" aria-label="Minha carteira de imóveis">
               <div className="asset-panel-heading"><span className="turn-label">{turnPhase === 'debt' ? 'LIQUIDAÇÃO DE DÍVIDA' : 'CARTEIRA DA PARTIDA'}</span>{turnPhase === 'debt' ? <button className="trade-close" onClick={() => setShowPropertyPanel(false)} aria-label="Voltar para a dívida">×</button> : <span>{formatMoney(localPlayer?.cash ?? 0)}</span>}</div>
@@ -858,7 +831,7 @@ function App() {
               </div>
               {expressObjective.completed && <p className="objective-complete-note">Objetivo cumprido! {formatMoney(expressObjective.rewardAwarded)} adicionados ao saldo. Continue jogando: a vitória é decidida ao fim da partida.</p>}
             </aside>
-          ) : shouldSuppressTurnCardForFeedback(feedbackPending, turnPhase) || !showTurnCard || (selectedSpace && turnPhase !== 'ended' && !ownPropertyLanding && !(turnPhase === 'purchase' && selectedSpace.id === pendingPropertyId) && !showTradePanel && !incomingTradeOffer && !showPropertyPanel && !showObjectivePanel) ? null : (
+          ) : shouldSuppressTurnCardForFeedback(feedbackPending, turnPhase) || !showTurnCard || (selectedSpace && turnPhase !== 'ended' && !ownPropertyLanding && !(turnPhase === 'purchase' && selectedSpace.id === pendingPropertyId) && !showPropertyPanel && !showObjectivePanel) ? null : (
             <div className={`turn-card${turnPhase === 'ended' ? ' final-result-card' : ''}${turnPhase === 'purchase' ? ' purchase-panel' : ''}${turnPhase === 'world-cup' || turnPhase === 'world-tour' ? ' corner-choice-panel' : ''}`}>
               <span className="turn-label">{turnPhase === 'ended' ? 'PARTIDA ENCERRADA' : turnPhase === 'debt' ? 'DÍVIDA EM ABERTO' : matchEnding ? 'TEMPO ESGOTADO · CONCLUA A JOGADA' : `TURNO ${turnNumber} · ${isMyTurn ? 'SUA VEZ' : `VEZ DE ${activePlayer?.name ?? '…'}`}`}{turnPhase !== 'ended' && turnSeconds > 0 && <b className="turn-countdown" aria-label={`${turnSeconds} segundos restantes`}>{turnSeconds}s</b>}</span>
               <h2>{presentationStage === 'dice' ? 'Rolando os dados…' : presentationStage === 'pawn' ? 'Peão em movimento…' : turnPhase === 'ended' ? (roomPlayers.find((player) => player.sessionId === winnerSessionId)?.name ?? 'Partida encerrada') : turnPhase === 'debt' ? 'Hora de liquidar bens' : activeCardTitle || (turnPhase === 'purchase' ? `Comprar ${pendingPurchaseSpace?.name ?? 'propriedade'}` : activeSpace.name)}</h2>
@@ -889,6 +862,8 @@ function App() {
                   <small className="final-score-criteria">{scoreCriteria(mode)}</small>
                   <button className="roll-button" onClick={() => void leaveRoom()}>Voltar ao início <span>↗</span></button>
                 </div>
+              ) : turnPhase === 'station-rent' ? (
+                <div className="station-rent-actions"><p>Um dado decide o aluguel desta estação: cada ponto vale R$ 50.000. Role para descobrir o valor.</p><button className="roll-button" onClick={() => room?.send('stationRentRoll')} disabled={!isMyTurn}>Girar dado da estação <span>🎲</span></button></div>
               ) : turnPhase === 'debt' ? (
                 <div className="debt-actions"><strong>Dívida: {formatMoney(debtAmount)}</strong><p>{debtReason} · credor: {roomPlayers.find((player) => player.sessionId === debtCreditorSessionId)?.name ?? 'banco'}</p><button className="roll-button" onClick={() => room?.send('payDebt')} disabled={!isMyTurn || (localPlayer?.cash ?? 0) < debtAmount}>Pagar dívida <span>{formatMoney(debtAmount)}</span></button><button className="secondary-action" onClick={() => setShowPropertyPanel(true)} disabled={!isMyTurn}>Ver bens para liquidar</button><button className="secondary-action" onClick={() => room?.send('declareBankruptcy')} disabled={!isMyTurn || (localPlayer?.cash ?? 0) >= debtAmount || hasLiquidatableAssets(room?.sessionId ?? '', holdingsById)}>Declarar falência</button></div>
               ) : turnPhase === 'jail' ? (
@@ -917,6 +892,29 @@ function App() {
               )}
             </div>
           )}
+          {profilePlayer && turnPhase !== 'ended' && <aside className="player-profile-panel" aria-label={`Perfil de ${profilePlayer.name}`} style={{ '--profile-player-color': PLAYER_COLORS[Math.max(0, roomPlayers.findIndex((player) => player.sessionId === profilePlayer.sessionId))] ?? PLAYER_COLORS[0] } as CSSProperties}>
+            <div className="player-profile-heading"><div><span className="turn-label">PERFIL DO JOGADOR</span><h2>{profilePlayer.name}</h2><strong>{formatMoney(profilePlayer.cash)}</strong></div><button className="trade-close" aria-label="Fechar perfil" onClick={() => { setProfilePlayerSessionId(''); setShowTradePanel(false) }}>×</button></div>
+            {incomingTradeOffer && tradeOffer && <section className="profile-offer-card" aria-label="Proposta recebida"><span className="turn-label">PROPOSTA RECEBIDA</span><h3>{tradeCounterparty?.name ?? 'Jogador'} propõe uma troca</h3><p>Você entrega {formatMoney(tradeOffer.cashRequested)}{tradeOffer.propertiesRequested.length ? ` e ${tradeOffer.propertiesRequested.map((id) => boardSpaces[id].name).join(', ')}` : ''}. Você recebe {formatMoney(tradeOffer.cashOffered)}{tradeOffer.propertiesOffered.length ? ` e ${tradeOffer.propertiesOffered.map((id) => boardSpaces[id].name).join(', ')}` : ''}.</p><div className="trade-actions"><button className="roll-button" onClick={() => room?.send('tradeAccept', { offerId: tradeOffer.id })}>Aceitar</button><button className="secondary-action" onClick={() => room?.send('tradeReject', { offerId: tradeOffer.id })}>Recusar</button></div></section>}
+            {outgoingTradeOffer && tradeOffer && <section className="profile-offer-card" aria-label="Proposta enviada"><span className="turn-label">PROPOSTA PENDENTE</span><h3>Aguardando {tradeCounterparty?.name ?? 'jogador'}</h3><p>A proposta fica disponível até a outra pessoa responder. Você pode cancelá-la quando quiser.</p><button className="secondary-action trade-full-button" onClick={() => room?.send('tradeCancel', { offerId: tradeOffer.id })}>Cancelar proposta</button></section>}
+            {tradeOffer && !incomingTradeOffer && !outgoingTradeOffer && <p className="trade-note">Já existe outra proposta aguardando resposta.</p>}
+            <div className="profile-property-list" aria-label={`Imóveis de ${profilePlayer.name}`}>
+              {profileProperties.length === 0 ? <span className="asset-empty">Este jogador ainda não tem imóveis.</span> : profileProperties.map(({ spaceId, holding, space }) => {
+                const icon = !space.buildable ? '🚉' : holding.houses === PROPERTY_HOTEL_LEVEL ? '🏨' : holding.houses > 0 ? '🏠'.repeat(holding.houses) : '🏡'
+                const type = !space.buildable ? 'Estação' : holding.houses === PROPERTY_HOTEL_LEVEL ? 'Hotel' : holding.houses > 0 ? `${holding.houses} ${holding.houses === 1 ? 'casa' : 'casas'}` : 'Terreno'
+                const rentLabel = getPropertyRentLabel(spaceId, propertyBuildings, worldCupSpaceId) ?? '—'
+                return <div className="profile-property-row" key={spaceId}><span className="profile-property-icon" aria-label={type}>{icon}</span><span className="profile-property-copy"><strong>{space.name}</strong><small>{type}{holding.isMortgaged ? ' · hipotecado' : ''}</small></span><span className="profile-property-rent"><small>ALUGUEL</small><b>{rentLabel}</b></span></div>
+              })}
+            </div>
+            {profilePlayer.sessionId !== room?.sessionId && !profilePlayer.isBankrupt && !incomingTradeOffer && !outgoingTradeOffer && <div className="profile-trade-actions">{showTradePanel ? <button className="secondary-action trade-full-button" onClick={() => setShowTradePanel(false)}>Fechar proposta</button> : <button className="roll-button trade-full-button" disabled={Boolean(tradeOffer) || auctionId > 0} onClick={() => { setTradeTargetSessionId(profilePlayer.sessionId); setShowTradePanel(true); setTradePropertiesOffered([]); setTradePropertiesRequested([]); setError('') }}>Propor troca</button>}</div>}
+            {showTradePanel && !tradeOffer && profilePlayer.sessionId !== room?.sessionId && <section className="profile-trade-composer" aria-label={`Proposta para ${profilePlayer.name}`}>
+              <div className="trade-columns">
+                <div><label className="trade-label">VOCÊ OFERECE · DINHEIRO<input className="trade-input" type="number" min="0" max={localPlayer?.cash ?? 0} value={tradeCashOffered} onChange={(event) => setTradeCashOffered(event.target.value)} /></label><label className="trade-label">IMÓVEIS QUE VOCÊ OFERECE</label><div className="trade-property-list">{myProperties.length ? myProperties.map(({ spaceId, holding, space }) => <button type="button" className={`trade-property ${tradePropertiesOffered.includes(spaceId) ? 'selected' : ''}`} key={`offer-${spaceId}`} aria-pressed={tradePropertiesOffered.includes(spaceId)} disabled={isTradePropertyLocked(spaceId)} onClick={() => setTradePropertiesOffered((current) => toggleSelection(current, spaceId))}><span>{space.name}</span><small>{holding.isMortgaged ? 'Hipotecado' : isTradePropertyLocked(spaceId) ? 'Venda construções primeiro' : 'Selecionar imóvel'}</small></button>) : <small>Você não tem imóveis.</small>}</div></div>
+                <div><label className="trade-label">VOCÊ PEDE · DINHEIRO<input className="trade-input" type="number" min="0" max={tradeTarget?.cash ?? 0} value={tradeCashRequested} onChange={(event) => setTradeCashRequested(event.target.value)} /></label><label className="trade-label">IMÓVEIS QUE VOCÊ PEDE</label><div className="trade-property-list">{targetProperties.length ? targetProperties.map(({ spaceId, holding, space }) => <button type="button" className={`trade-property ${tradePropertiesRequested.includes(spaceId) ? 'selected' : ''}`} key={`request-${spaceId}`} aria-pressed={tradePropertiesRequested.includes(spaceId)} disabled={isTradePropertyLocked(spaceId)} onClick={() => setTradePropertiesRequested((current) => toggleSelection(current, spaceId))}><span>{space.name}</span><small>{holding.isMortgaged ? 'Hipotecado' : isTradePropertyLocked(spaceId) ? 'Venda construções primeiro' : 'Selecionar imóvel'}</small></button>) : <small>Este jogador não tem imóveis.</small>}</div></div>
+              </div>
+              <p className="trade-note">Imóveis hipotecados continuam hipotecados. A troca só acontece se a outra pessoa aceitar.</p>{error && <p className="form-error" role="alert">{error}</p>}
+              <button className="roll-button trade-full-button" disabled={!tradeTarget || Boolean(tradeOffer) || auctionId > 0} onClick={() => { room?.send('tradeOffer', { toSessionId: tradeTarget?.sessionId, cashOffered: Number(tradeCashOffered), cashRequested: Number(tradeCashRequested), propertiesOffered: tradePropertiesOffered, propertiesRequested: tradePropertiesRequested }); setError('') }}>Enviar proposta</button>
+            </section>}
+          </aside>}
           {turnPhase === 'roll' && !feedbackPending && (isMyTurn || (isHost && devModeEnabled)) && <div className={`roll-control${isHost && devModeEnabled ? ' roll-control-dev' : ''}`}>
             {isMyTurn && <button className="roll-control-button" type="button" onClick={() => room?.send('roll')}>Girar dados</button>}
             {isHost && devModeEnabled && <form className="dev-dice-controls" aria-label="Forçar resultado dos dados" onSubmit={(event) => { event.preventDefault(); room?.send('devRoll', { diceOne: forcedDice[0], diceTwo: forcedDice[1] }) }}>

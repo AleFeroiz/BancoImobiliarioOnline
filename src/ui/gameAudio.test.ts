@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { getBackgroundMusicFrequency } from './gameAudio'
+import { getBackgroundMusicFrequency, getGameAudioEffectStyle } from './gameAudio'
 
 describe('background game music', () => {
   it('uses a calm repeating phrase in a safe audible range', () => {
@@ -9,5 +9,15 @@ describe('background game music', () => {
     expect(phrase.every((frequency) => frequency >= 200 && frequency <= 450)).toBe(true)
     expect(getBackgroundMusicFrequency(16)).toBe(phrase[0])
     expect(getBackgroundMusicFrequency(-1)).toBe(phrase[15])
+  })
+})
+
+describe('identidade dos efeitos de áudio', () => {
+  it('diferencia dinheiro recebido, perda, dados e construção', () => {
+    expect(getGameAudioEffectStyle('money-in')).toBe('cash-register')
+    expect(getGameAudioEffectStyle('money-out')).toBe('distorted-loss')
+    expect(getGameAudioEffectStyle('dice')).toBe('dice-rattle')
+    expect(getGameAudioEffectStyle('construction')).toBe('musical')
+    expect(getGameAudioEffectStyle('none')).toBe('silent')
   })
 })

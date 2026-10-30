@@ -9,6 +9,15 @@
 
 > Retrato de trabalho para retomar o projeto entre sessões. Para requisitos e decisões, consulte os documentos de origem indicados em `AGENTS.md`.
 
+## Perfil de jogador, propostas, sons e rolagem de estação — implementação concluída (2026-10-30)
+
+- Pedido atual: remover os atalhos “Imóveis” e “Negociar”; abrir perfil/carteira ao clicar em qualquer cartão; incluir efeitos de dinheiro, construção e dado; tornar manual e visível a rolagem do aluguel das estações; permitir propostas que dependem do aceite do destinatário.
+- Implementação: cartões abrem painel não modal com todos os imóveis, ícone/tipo, construções e aluguel atualizado. O painel inicia proposta com dinheiro e títulos; uma oferta por sala fica pendente até resposta ou cancelamento e sobrevive à troca de turno. O servidor revalida saldo e títulos ao aceitar e limpa ofertas em falência/fim de partida. A estação abre fase de decisão, mostra um dado 3D, cobra um dado × R$ 50.000 após clique e rolagem animada; expiração ainda rola automaticamente. Áudio sintetizado agora diferencia caixa registradora, perda distorcida, chocalho de dados e construção.
+- Documentação de regras, decisões, plano e README atualizada. `npm run verify` passou com 214 testes em 40 arquivos, build frontend e build servidor; chunk 3D conhecido de 956,43 KB (259,81 KB gzip). `git diff --check` passou. Graphify update foi tentado, mas a CLI não está instalada.
+- Playtest visual pendente: a inicialização Colyseus retornou `EADDRINUSE` na porta 2567, embora a enumeração não tenha revelado listener ou processo que pudesse ser identificado e substituído; não foi aberta captura de jogo nesta rodada.
+- Estado inicial do Git: manter fora desta tarefa `assets/blender/special-corners.blend` modificado e `assets/blender/special-corners.blend1` não rastreado.
+- Próximo passo: repetir o playtest de carteira, proposta e estação quando a porta Colyseus estiver livre; publicar em `main` apenas os arquivos desta tarefa e preservar os arquivos Blender locais.
+
 ## Rótulos de aluguel, escolha da Copa e seletores DEV — implementação concluída (2026-10-30)
 
 - Pedido atual: colocar os avisos de saldo abaixo dos cartões superiores e acima dos inferiores; consertar os seletores dos dados forçados; permitir sede da Copa apenas em imóvel próprio; exibir o aluguel em texto 3D voltado para a câmera.

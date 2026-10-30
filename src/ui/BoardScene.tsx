@@ -86,7 +86,7 @@ function CameraDragAnywhere({ enabled }: { enabled: boolean }) {
 
   useEffect(() => {
     if (!enabled) return
-    const interactiveSelector = 'button, a, input, select, textarea, summary, [role="button"], [data-camera-drag="off"], .game-modal-backdrop, .game-event-card, .turn-card, .space-inspector'
+    const interactiveSelector = 'button, a, input, select, textarea, summary, [role="button"], [data-camera-drag="off"], .game-modal-backdrop, .game-event-card, .turn-card, .space-inspector, .player-profile-panel'
     const isInteractive = (target: EventTarget | null) => target instanceof Element && Boolean(target.closest(interactiveSelector))
     const orbit = controls as CameraOrbitControls | null
     const onPointerDown = (event: PointerEvent) => {
@@ -633,8 +633,8 @@ function Board({ players, propertyBuildings, worldCupSpaceId, highlightedSpaceId
       {players.map((player) => <AnimatedPawn key={player.id} player={player} seatIndex={player.seatIndex} reducedMotion={reducedMotion} movementEnabled={pawnMovementEnabled} moveMode={pawnMoveMode} presentationSpeed={presentationSpeed} onMovementComplete={onMovementComplete} />)}
       {diceVisible && <>
         <AnimatedDie position={[-0.34, 0.23, -0.23]} rotation={[0.12, 0.25, 0.25]} sequence={diceRollSequence} value={dice[0] || 1} reducedMotion={reducedMotion} visible={diceVisible} presentationSpeed={presentationSpeed} />
-        <AnimatedDie position={[0.38, 0.23, 0.2]} rotation={[-0.18, 0.3, -0.2]} sequence={diceRollSequence} value={dice[1] || 1} reducedMotion={reducedMotion} visible={diceVisible} presentationSpeed={presentationSpeed} />
-        {diceResultVisible && <Html position={[0.02, 1.05, -0.02]} center distanceFactor={9} zIndexRange={[6, 6]}><div className="dice-result-badge" role="status" aria-live="polite"><small>TOTAL</small><strong>{dice[0] + dice[1]}</strong></div></Html>}
+        {dice[1] > 0 && <AnimatedDie position={[0.38, 0.23, 0.2]} rotation={[-0.18, 0.3, -0.2]} sequence={diceRollSequence} value={dice[1]} reducedMotion={reducedMotion} visible={diceVisible} presentationSpeed={presentationSpeed} />}
+        {diceResultVisible && <Html position={[0.02, 1.05, -0.02]} center distanceFactor={9} zIndexRange={[6, 6]}><div className="dice-result-badge" role="status" aria-live="polite"><small>{dice[1] > 0 ? 'TOTAL' : 'ESTAÇÃO'}</small><strong>{dice[1] > 0 ? dice[0] + dice[1] : dice[0]}</strong></div></Html>}
       </>}
     </group>
   )

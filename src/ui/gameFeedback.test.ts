@@ -8,6 +8,7 @@ describe('feedback da partida', () => {
     expect(getGameSound('Bia venceu o leilão por 200.000.')).toBe('auction')
     expect(getGameSound('Objetivo cumprido!')).toBe('milestone')
     expect(getGameSound('Você escolheu não comprar.')).toBe('dice')
+    expect(getGameSound('Jogue o dado para definir o aluguel desta estação.')).toBe('none')
   })
 
   it('formata ganhos e perdas sem exibir zero', () => {

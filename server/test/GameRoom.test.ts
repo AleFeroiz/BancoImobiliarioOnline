@@ -406,7 +406,7 @@ describe('sala privada', () => {
     expect(otherBots.every(([sessionId]) => room.state.players.get(sessionId)?.position === 0)).toBe(true)
   })
 
-  it('abre a janela de negociação de 45 segundos e troca dinheiro e títulos entre as duas pessoas', async () => {
+  it('troca dinheiro e títulos entre as duas pessoas após a aceitação da proposta', async () => {
     const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
     const host = await colyseus.connectTo(room, { name: 'Ana' })
     const guest = await colyseus.connectTo(room, { name: 'Bia' })
@@ -416,7 +416,6 @@ describe('sala privada', () => {
     ])
     host.send('start')
     await started
-    expect(room.state.tradeSeconds).toBe(45)
 
     const hostTitle = new PropertyState()
     hostTitle.ownerSessionId = host.sessionId
@@ -441,7 +440,7 @@ describe('sala privada', () => {
     expect(room.state.tradeOfferId).toBe(0)
   })
 
-  it('abre janela express de 40 segundos e rejeita oferta após a janela expirar', async () => {
+  it('mantém propostas até resposta mesmo após a vez mudar', async () => {
     const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'express' })
     const host = await colyseus.connectTo(room, { name: 'Eva' })
     const guest = await colyseus.connectTo(room, { name: 'Fábio' })
@@ -451,13 +450,21 @@ describe('sala privada', () => {
     ])
     host.send('start')
     await started
-    expect(room.state.tradeSeconds).toBe(40)
-
-    room.state.tradeSeconds = 0
-    const expiredMessage = new Promise<{ message: string }>((resolve) => host.onMessage('room:error', resolve))
-    host.send('tradeOffer', { toSessionId: guest.sessionId, cashOffered: 1_000, cashRequested: 0 })
-    await expect(expiredMessage).resolves.toMatchObject({ message: expect.stringContaining('janela aberta') })
+    const hostCash = room.state.players.get(host.sessionId)!.cash
+    const guestCash = room.state.players.get(guest.sessionId)!.cash
+    guest.send('tradeOffer', { toSessionId: host.sessionId, cashOffered: 1_000, cashRequested: 0 })
+    await new Promise((resolve) => setTimeout(resolve, 30))
+    const offerId = room.state.tradeOfferId
+    expect(offerId).toBeGreaterThan(0)
+    room.state.turnNumber += 1
+    room.state.activePlayerSessionId = host.sessionId
+    await new Promise((resolve) => setTimeout(resolve, 30))
+    expect(room.state.tradeOfferId).toBe(offerId)
+    host.send('tradeAccept', { offerId })
+    await new Promise((resolve) => setTimeout(resolve, 30))
     expect(room.state.tradeOfferId).toBe(0)
+    expect(room.state.players.get(host.sessionId)!.cash).toBe(hostCash + 1_000)
+    expect(room.state.players.get(guest.sessionId)!.cash).toBe(guestCash - 1_000)
   })
 
   it('permite uma oferta pendente por sala e revalida o saldo antes de aceitar', async () => {
@@ -489,7 +496,7 @@ describe('sala privada', () => {
     expect(room.state.tradeOfferId).toBe(offerId)
   })
 
-  it('rejeita negociação fora da vez, imóveis sem dono ou com construções e aceite por terceiro', async () => {
+  it('permite propostas fora da vez e ainda rejeita imóveis sem dono ou com construções e aceite por terceiro', async () => {
     const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
     const host = await colyseus.connectTo(room, { name: 'Gabi' })
     const guest = await colyseus.connectTo(room, { name: 'Hugo' })
@@ -502,9 +509,12 @@ describe('sala privada', () => {
     host.send('start')
     await started
 
-    const outOfTurn = new Promise<{ message: string }>((resolve) => guest.onMessage('room:error', resolve))
-    guest.send('tradeOffer', { toSessionId: host.sessionId, cashOffered: 0, cashRequested: 0 })
-    await expect(outOfTurn).resolves.toMatchObject({ message: expect.stringContaining('pessoa da vez') })
+    guest.send('tradeOffer', { toSessionId: host.sessionId, cashOffered: 1_000, cashRequested: 0 })
+    await new Promise((resolve) => setTimeout(resolve, 30))
+    expect(room.state.tradeOfferId).toBeGreaterThan(0)
+    guest.send('tradeCancel', { offerId: room.state.tradeOfferId })
+    await new Promise((resolve) => setTimeout(resolve, 30))
+    expect(room.state.tradeOfferId).toBe(0)
 
     const builtTitle = new PropertyState()
     builtTitle.ownerSessionId = host.sessionId
@@ -972,6 +982,7 @@ describe('sala privada', () => {
     title.ownerSessionId = ownerClient.sessionId
     room.state.properties.set(String(station.id), title)
     room.state.activePlayerSessionId = visitorClient.sessionId
+    room.state.animationSpeed = 2
     const visitor = room.state.players.get(visitorClient.sessionId)!
     const owner = room.state.players.get(ownerClient.sessionId)!
     visitor.position = station.id
@@ -981,12 +992,23 @@ describe('sala privada', () => {
     const privateRoom = room as unknown as { resolveSpace: (sessionId: string, player: typeof visitor) => void }
     privateRoom.resolveSpace(visitorClient.sessionId, visitor)
 
+    const cashBeforeRoll = visitor.cash
+    expect(room.state.turnPhase).toBe('station-rent')
+    expect(owner.cash).toBe(STARTING_CASH)
+    const initialDiceSequence = room.state.diceSequence
+    visitorClient.send('stationRentRoll')
+    await waitFor(() => room.state.turnPhase === 'station-rent-rolling')
+    expect(room.state.diceSequence).toBe(initialDiceSequence + 1)
+    expect(room.state.diceOne).toBeGreaterThanOrEqual(1)
+    expect(room.state.diceOne).toBeLessThanOrEqual(6)
+    expect(room.state.diceTwo).toBe(0)
+    await waitFor(() => room.state.turnPhase === 'resolve' || room.state.turnPhase === 'debt', 4_000)
     const rent = STARTING_CASH - visitor.cash
     expect(rent).toBeGreaterThanOrEqual(50_000)
     expect(rent).toBeLessThanOrEqual(300_000)
     expect(rent % 50_000).toBe(0)
     expect(owner.cash).toBe(STARTING_CASH + rent)
-    expect(room.state.landingDescription).toMatch(/Dado da estação: [1-6]; aluguel de R\$ [\d.]+/)
+    expect(room.state.landingDescription).toMatch(/dado caiu em [1-6]. Aluguel de R\$ [\d.]+/)
   })
 
   it('aplica a sede da Copa ao aluguel e impede a Volta ao Mundo para imóvel de outra pessoa', async () => {

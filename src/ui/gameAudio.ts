@@ -26,6 +26,7 @@ function getAudioContext() {
 }
 
 const soundNotes: Record<GameSound, number[]> = {
+  none: [],
   dice: [392, 523],
   purchase: [523, 659, 784],
   'money-in': [523, 659, 784, 1047],
@@ -39,10 +40,104 @@ const soundNotes: Record<GameSound, number[]> = {
   redemption: [494, 659],
 }
 
+export type GameAudioEffectStyle = 'silent' | 'cash-register' | 'distorted-loss' | 'dice-rattle' | 'musical'
+
+export function getGameAudioEffectStyle(sound: GameSound): GameAudioEffectStyle {
+  if (sound === 'money-in') return 'cash-register'
+  if (sound === 'money-out') return 'distorted-loss'
+  if (sound === 'dice') return 'dice-rattle'
+  if (sound === 'none') return 'silent'
+  return 'musical'
+}
+
+function playNoise(audio: AudioContext, start: number, duration: number, frequency: number, volume: number) {
+  const frames = Math.max(1, Math.floor(audio.sampleRate * duration))
+  const buffer = audio.createBuffer(1, frames, audio.sampleRate)
+  const samples = buffer.getChannelData(0)
+  for (let index = 0; index < frames; index += 1) samples[index] = Math.random() * 2 - 1
+
+  const source = audio.createBufferSource()
+  const filter = audio.createBiquadFilter()
+  const envelope = audio.createGain()
+  source.buffer = buffer
+  filter.type = 'bandpass'
+  filter.frequency.setValueAtTime(frequency, start)
+  envelope.gain.setValueAtTime(volume, start)
+  envelope.gain.exponentialRampToValueAtTime(0.0001, start + duration)
+  source.connect(filter)
+  filter.connect(envelope)
+  envelope.connect(audio.destination)
+  source.start(start)
+  source.stop(start + duration)
+}
+
+function playCashRegister(audio: AudioContext) {
+  const start = audio.currentTime
+  playNoise(audio, start, 0.055, 950, 0.055)
+  for (const [index, frequency] of [1318.5, 1760].entries()) {
+    const onset = start + 0.035 + index * 0.085
+    const oscillator = audio.createOscillator()
+    const envelope = audio.createGain()
+    oscillator.type = 'triangle'
+    oscillator.frequency.setValueAtTime(frequency, onset)
+    envelope.gain.setValueAtTime(0.0001, onset)
+    envelope.gain.exponentialRampToValueAtTime(0.075, onset + 0.012)
+    envelope.gain.exponentialRampToValueAtTime(0.0001, onset + 0.3)
+    oscillator.connect(envelope)
+    envelope.connect(audio.destination)
+    oscillator.start(onset)
+    oscillator.stop(onset + 0.31)
+  }
+}
+
+function playDistortedLoss(audio: AudioContext) {
+  const start = audio.currentTime
+  playNoise(audio, start, 0.24, 360, 0.075)
+  const oscillator = audio.createOscillator()
+  const distortion = audio.createWaveShaper()
+  const envelope = audio.createGain()
+  const curve = new Float32Array(256)
+  for (let index = 0; index < curve.length; index += 1) curve[index] = Math.tanh(((index / (curve.length - 1)) * 2 - 1) * 4)
+  distortion.curve = curve
+  distortion.oversample = '2x'
+  oscillator.type = 'sawtooth'
+  oscillator.frequency.setValueAtTime(480, start)
+  oscillator.frequency.exponentialRampToValueAtTime(125, start + 0.34)
+  envelope.gain.setValueAtTime(0.0001, start)
+  envelope.gain.exponentialRampToValueAtTime(0.11, start + 0.025)
+  envelope.gain.exponentialRampToValueAtTime(0.0001, start + 0.38)
+  oscillator.connect(distortion)
+  distortion.connect(envelope)
+  envelope.connect(audio.destination)
+  oscillator.start(start)
+  oscillator.stop(start + 0.39)
+}
+
+function playDiceRattle(audio: AudioContext) {
+  const start = audio.currentTime
+  playNoise(audio, start, 0.23, 1800, 0.085)
+  playNoise(audio, start + 0.065, 0.19, 1150, 0.065)
+  playNoise(audio, start + 0.13, 0.15, 2100, 0.05)
+}
+
 export function playGameSound(sound: GameSound) {
+  if (getGameAudioEffectStyle(sound) === 'silent') return
   const audio = getAudioContext()
   if (!audio) return
   try {
+    const style = getGameAudioEffectStyle(sound)
+    if (style === 'cash-register') {
+      playCashRegister(audio)
+      return
+    }
+    if (style === 'distorted-loss') {
+      playDistortedLoss(audio)
+      return
+    }
+    if (style === 'dice-rattle') {
+      playDiceRattle(audio)
+      return
+    }
     const start = audio.currentTime
     soundNotes[sound].forEach((frequency, index) => {
       const oscillator = audio.createOscillator()
