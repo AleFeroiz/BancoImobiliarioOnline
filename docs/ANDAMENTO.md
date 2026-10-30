@@ -1,3 +1,10 @@
+## Cartões coloridos, avisos identificados e visibilidade das peças — concluído (2026-10-30)
+
+- Pedido atual: controles de botões para o lance inicial de leilão em mouse/touch; avisos com nome e cor do participante; cartões sem avatar/status, contendo nome e saldo em destaque sobre a cor integral do jogador e preservando os símbolos de dinheiro no canto superior direito; contorno para todas as fichas e aumento leve das construções.
+- Estado inicial: `main` alinhada com `origin/main`; preservar `assets/blender/special-corners.blend` e `assets/blender/special-corners.blend1`, que já estavam modificados. A correção de aeroporto já estava na cena Blender do usuário; exportei os 38 meshes ao GLB do jogo em Y-up sem salvar por cima do `.blend` local.
+- Implementação concluída: controles de lance em passos de R$ 10.000 com mínimo protegido; avisos identificam e colorizam a pessoa ativa; cartões mostram somente nome e saldo grande na cor do participante e mantêm os símbolos 3D no alto à direita; contornos traseiros nas fichas e construções na escala 1,25.
+- `npm run verify`: 204 testes e builds de frontend/servidor passaram, inclusive no hook de pré-commit. A revisão visual em partidas locais confirmou cartões simplificados e o aeroporto na casa Volta ao Mundo. A personalização de avisos, os passos do lance e o material de contorno têm testes de regressão. Graphify update foi tentado, mas a CLI não está instalada.
+- Próximo passo concreto: conferir a leitura dos cartões em diferentes resoluções após os próximos playtests humanos.
 # Andamento do projeto
 
 > Retrato de trabalho para retomar o projeto entre sessões. Para requisitos e decisões, consulte os documentos de origem indicados em `AGENTS.md`.

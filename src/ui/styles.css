@@ -659,6 +659,21 @@ button:disabled{opacity:.55;cursor:not-allowed}
 .inspector-auction-actions .auction-start-label{gap:4px;font-size:7px}
 .inspector-auction-actions .trade-input{min-height:36px;padding:0 9px;font-size:10px}
 .auction-inspector-button{align-self:end;justify-items:center;min-height:36px;padding:6px 10px;background:#f2eddc;color:#6e5a34;font-size:9px}
+.auction-bid-stepper{display:grid;grid-template-columns:42px minmax(0,1fr) 42px;align-items:center;gap:5px;margin-top:3px}
+.auction-bid-stepper button{min-width:42px;min-height:42px;border:1px solid #d5d9ca;border-radius:9px;background:#f1efdf;color:#47634a;font-size:21px;font-weight:700;line-height:1;touch-action:manipulation}
+.auction-bid-stepper button:hover:not(:disabled){background:#e3e9d6;border-color:#aebd9f}
+.auction-bid-stepper button:disabled{opacity:.45;cursor:not-allowed}
+.auction-bid-stepper output{min-height:42px;display:grid;place-items:center;padding:0 5px;border:1px solid #d5d9ca;border-radius:9px;background:#fffdf4;color:#354b3e;font-size:11px;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+.game-feedback-toast{color:color-mix(in srgb,var(--feedback-player-color,#405a43) 68%,#33483a)}
+.game-feedback-toast>strong{color:var(--feedback-player-color,#405a43);font-weight:800}
+.screen-game .player-card{display:flex;flex-direction:column;justify-content:center;align-items:stretch;min-height:92px;padding:13px 15px;border:1px solid rgba(255,255,255,.52);border-left:5px solid rgba(35,45,36,.34);color:#251a15}
+.screen-game .player-card.seat-1{color:#13272a}
+.screen-game .player-card.seat-2{color:#fffaf0}
+.screen-game .player-card.seat-3{color:#30230c}
+.player-card-main{display:grid;gap:8px;min-width:0;padding-top:5px}
+.player-card-main strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;font-weight:700;line-height:1.2}
+.player-card-main b{grid-column:auto;grid-row:auto;margin:0;color:inherit;font-size:22px;font-weight:800;line-height:1.05;letter-spacing:-.025em;font-variant-numeric:tabular-nums;white-space:nowrap}
+@media(max-width:640px){.screen-game .player-card{min-height:80px;padding:8px 9px}.player-card-main{gap:5px;padding-top:24px}.player-card-main strong{font-size:10px}.player-card-main b{font-size:16px}}
 @media(max-width:640px){
   .game-topline-camera-hint{top:59px;padding:4px 8px;font-size:6px}
   .screen-game .turn-card.purchase-panel{width:calc(100vw - 20px);padding:13px 11px}

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { BoxGeometry, Color, Group, Mesh, MeshBasicMaterial, MeshStandardMaterial } from 'three'
-import { applySelectionContrast, createUnlitMaterial, getOwnerTintOverride, reduceColorContrast } from './sceneMaterials'
+import { BackSide, BoxGeometry, Color, Group, Mesh, MeshBasicMaterial, MeshStandardMaterial } from 'three'
+import { applySelectionContrast, createTokenOutlineMaterial, createUnlitMaterial, getOwnerTintOverride, reduceColorContrast } from './sceneMaterials'
 
 describe('materiais da cena sem luzes', () => {
   it('converte materiais PBR para cores sem iluminação e preserva a cor original', () => {
@@ -11,6 +11,14 @@ describe('materiais da cena sem luzes', () => {
     expect(unlit.color.getHex()).toBe(source.color.getHex())
     expect(unlit.transparent).toBe(true)
     expect(unlit.opacity).toBeCloseTo(0.7)
+  })
+
+  it('cria o material escuro de verso usado para contornar fichas 3D', () => {
+    const outline = createTokenOutlineMaterial()
+
+    expect(outline).toBeInstanceOf(MeshBasicMaterial)
+    expect(outline.color.getHexString()).toBe('26352f')
+    expect(outline.side).toBe(BackSide)
   })
 
   it('usa a cor do dono no limite de pedra do canteiro', () => {

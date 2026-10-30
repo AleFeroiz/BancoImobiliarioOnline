@@ -1,3 +1,10 @@
+## 2026-10-30 — Cartões do jogador, lance de leilão e airport GLB
+
+- `npm run verify`: 204 testes passaram; builds de frontend e servidor passaram. O chunk 3D conhecido permanece em 956,28 KB (259,73 KB gzip). `git diff --check` passou.
+- Playtest em aba local nova, partida Clássica com quatro lugares preenchidos: os cartões exibiram somente nome e saldo em destaque, fundo sólido na cor de cada jogador e os ícones 3D de dinheiro no alto à direita. A árvore de acessibilidade também expôs apenas nome e saldo para esses cartões.
+- O Blender conectado estava em 5.2.2 LTS, addon 1.8. O airport GLB anterior ainda colocava a peça fora do tabuleiro; a cena corrigida do usuário continha 38 meshes. Exportei apenas esses meshes em GLB Y-up, sem salvar por cima do `.blend` local. Em uma partida local nova, o aeroporto carregou dentro da casa Volta ao Mundo.
+- Os controles +/− usam botões de pelo menos 42 px com `touch-action: manipulation`; a lógica dos passos de R$ 10.000 e do lance mínimo tem testes de regressão; um teste de materiais verifica a silhueta traseira escura das fichas. Não percorri manualmente a abertura do painel de leilão nesta rodada; a revisão de toast foi coberta pelo teste unitário de personalização, e a imagem de jogo confirma a disposição dos cartões.
+- Graphify update não executou porque a CLI `graphify` não está instalada neste ambiente.
 # Validação visual e de navegador
 
 ## 2026-10-30 — Compra, prisão e origem dos modelos

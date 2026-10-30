@@ -7,3 +7,10 @@ export function normalizeAuctionBidInput(currentValue: string, minimumBid: numbe
     ? currentValue
     : String(requiredBid)
 }
+
+export function adjustAuctionStartingBid(currentValue: string, direction: -1 | 1, minimumBid: number) {
+  const step = AUCTION_MIN_BID_INCREMENT
+  const parsed = Number(currentValue)
+  const current = Number.isFinite(parsed) ? parsed : minimumBid
+  return String(Math.max(minimumBid, current + direction * step))
+}

@@ -1,7 +1,7 @@
 import { Canvas } from '@react-three/fiber'
 import { Html, OrbitControls } from '@react-three/drei'
 import { memo, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import { Box3, CanvasTexture, DoubleSide, Path, PerspectiveCamera, Shape, ShapeGeometry, SRGBColorSpace, type Group, type Mesh, type Object3D } from 'three'
+import { BackSide, Box3, CanvasTexture, DoubleSide, Path, PerspectiveCamera, Shape, ShapeGeometry, SRGBColorSpace, type Group, type Mesh, type Object3D } from 'three'
 import { useFrame, useThree } from '@react-three/fiber'
 import { useGLTF } from '@react-three/drei'
 import { boardSpaces, positionOnBoard } from '../game/board'
@@ -18,7 +18,7 @@ import { shouldStartCameraDrag } from './cameraDrag'
 import { BUILDING_ANIMATION_DURATION_MS, DICE_ANIMATION_DURATION_MS, LANDING_PULSE_DURATION_MS, PAWN_STEP_ANIMATION_DURATION_MS, PAWN_TELEPORT_ANIMATION_DURATION_MS, PROPERTY_HOTEL_LEVEL, getAnimationDuration, type AnimationSpeed } from '../../shared/game'
 import type { FrameRateAccumulator } from './fpsMeter'
 import { recordRenderedFrame } from './fpsMeter'
-import { applySelectionContrast, createUnlitMaterial, getOwnerTintOverride } from './sceneMaterials'
+import { applySelectionContrast, createTokenOutlineMaterial, createUnlitMaterial, getOwnerTintOverride } from './sceneMaterials'
 import { getBuildingInnerEdgeOffset, getCenteredModelPlacement, getModelFootprintDepth } from './modelPlacement'
 
 type PropertyBuilding = { spaceId: number; ownerSessionId: string; houses: number; isMortgaged: boolean; ownerColor: string }
@@ -242,8 +242,20 @@ function AnimatedPawn({ player, seatIndex, reducedMotion, movementEnabled, moveM
       mesh.raycast = skipRaycast
     })
     makeSceneMaterialsUnlit(clone, false, player.color)
-    return clone
+    const outline = clone.clone(true)
+    outline.traverse((object) => {
+      const mesh = object as Mesh
+      if (!mesh.isMesh) return
+      mesh.raycast = skipRaycast
+      const blackShell = createTokenOutlineMaterial
+      mesh.material = Array.isArray(mesh.material) ? mesh.material.map(blackShell) : blackShell()
+    })
+    return { object: clone, outline }
   }, [player.characterType, player.color, tokenScene])
+  useEffect(() => () => model?.outline.traverse((object) => {
+    const mesh = object as Mesh
+    if (mesh.isMesh) (Array.isArray(mesh.material) ? mesh.material : [mesh.material]).forEach((material) => material.dispose())
+  }), [model])
 
   useEffect(() => {
     if (player.position === visualSpace.current) return
@@ -298,6 +310,16 @@ function AnimatedPawn({ player, seatIndex, reducedMotion, movementEnabled, moveM
     <group ref={group} position={[initial.x + offsetX, baseY, initial.z + offsetZ]} rotation={[0, player.position <= 10 ? Math.PI / 2 : player.position <= 20 ? Math.PI : player.position <= 30 ? -Math.PI / 2 : 0, 0]}>
       <TokenHighlight color={player.color} baseY={baseY} />
       {player.characterType === 'pawn' ? <>
+        <group scale={1.24}>
+          <mesh position={[0, 0.17, 0]} raycast={skipRaycast}>
+            <cylinderGeometry args={[0.16, 0.23, 0.25, 7]} />
+            <meshBasicMaterial color="#26352f" side={BackSide} toneMapped={false} />
+          </mesh>
+          <mesh position={[0, 0.39, 0]} raycast={skipRaycast}>
+            <sphereGeometry args={[0.16, 14, 12]} />
+            <meshBasicMaterial color="#26352f" side={BackSide} toneMapped={false} />
+          </mesh>
+        </group>
         <group scale={1.12}>
           <mesh position={[0, 0.17, 0]} raycast={skipRaycast}>
             <cylinderGeometry args={[0.16, 0.23, 0.25, 7]} />
@@ -308,7 +330,7 @@ function AnimatedPawn({ player, seatIndex, reducedMotion, movementEnabled, moveM
             <meshBasicMaterial color={player.color} />
           </mesh>
         </group>
-      </> : model && <primitive object={model} scale={0.54} />}
+      </> : model && <><primitive object={model.outline} scale={0.61} /><primitive object={model.object} scale={0.56} /></>}
       {player.activity && <Html position={[0, player.characterType === 'pawn' ? 0.86 : 0.66, 0]} center distanceFactor={12} zIndexRange={[6, 0]} style={{ pointerEvents: 'none' }}><div className="turn-activity-bubble" role="status" aria-live="polite">{player.activity}</div></Html>}
     </group>
   )
@@ -472,7 +494,7 @@ function AnimatedBuilding({ spaceId, houses, ownerColor, ownerSessionId, reduced
     makeSceneMaterialsUnlit(clone, dimmed, displayColor)
     return { object: clone, footprintDepth }
   }, [dimmed, displayColor, ownerSessionId, scene, variantName])
-  const modelScale = 1.16
+  const modelScale = 1.25
   const [offsetX, offsetZ] = modelData ? getBuildingInnerEdgeOffset(spaceId, 0.98, modelData.footprintDepth, modelScale) : decoration.buildingOffset
   return (
     <group ref={group} position={[x + offsetX, BUILDING_GROUP_Y, z + offsetZ]} rotation={[0, buildingRotation, 0]}>

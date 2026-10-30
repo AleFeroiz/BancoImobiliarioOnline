@@ -1,4 +1,4 @@
-import { Color, MeshBasicMaterial, type ColorRepresentation, type Material, type Object3D, type Texture } from 'three'
+import { BackSide, Color, MeshBasicMaterial, type ColorRepresentation, type Material, type Object3D, type Texture } from 'three'
 
 type MaterialWithSurface = Material & {
   color?: Color
@@ -14,6 +14,10 @@ type MaterialWithSurface = Material & {
 }
 
 const originalColors = new WeakMap<Material, Color>()
+
+export function createTokenOutlineMaterial() {
+  return new MeshBasicMaterial({ color: '#26352f', side: BackSide, toneMapped: false })
+}
 
 export function getOwnerTintOverride(meshName: string, materialName: string, ownerColor?: ColorRepresentation) {
   return materialName.startsWith('OWNER_TINT') || meshName === 'Limestone parcel curb' ? ownerColor : undefined
