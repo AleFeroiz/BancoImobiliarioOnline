@@ -2,6 +2,18 @@
 
 > Retrato de trabalho para retomar o projeto entre sessões. Para requisitos e decisões, consulte os documentos de origem indicados em `AGENTS.md`.
 
+## Investigação de travamento no Chrome — correção validada, publicação pendente (2026-10-29)
+
+- Pedido confirmado: reproduzir no Chrome os travamentos fortes da partida e corrigir a causa.
+- Estado inicial verificado: árvore limpa em `main`, alinhada a `origin/main`; portas locais 5173 e 2567 estavam livres.
+- Histórico relacionado: otimizações anteriores já usam React Three Fiber com renderização sob demanda, teto de DPR, materiais sem luzes/sombras e texturas de rótulos menores; as medições anteriores foram no navegador integrado e não confirmaram o Chrome do usuário.
+- Reprodução controlada em Chrome 156, GTX 970, 1365×900 e DPR 1: a revisão `07646a4` ficou em ~97 FPS; `2def5f6` e a versão atual travavam a ~7 FPS durante arrasto. `2def5f6` introduziu os efeitos CSS responsáveis. Em cópia temporária, retirar apenas o overlay grande não recuperou o desempenho; simplificar os efeitos CSS dos símbolos de dinheiro recuperou ~99 FPS. A roleta não alterou a medição.
+- Correção: remover `filter`, perspectiva, transformações 3D, recortes `clip-path` e sombra CSS dos símbolos de dinheiro; gradientes, bordas e camadas simples mantêm a leitura visual. Teste de regressão impede reintroduzir essas propriedades nos seletores `.cash-*`.
+- Validação final na versão corrigida em partida local com bot: Chrome 156, 1365×900/DPR 1, arrasto real da câmera por 2,5 s, 74,8 FPS (monitor de 75 Hz), mediana de 13,3 ms e zero quadros acima de 50 ms. Captura temporária em `%TEMP%\banco-chrome-fixed-main.png`.
+- `npm run verify` passou: 181 testes em 34 arquivos, build web e build do servidor. O aviso conhecido de tamanho do chunk GLTF permanece em 956,10 KB (259,64 KB gzip); `git diff --check` passou.
+- `graphify update .` foi tentado e falhou porque a CLI não está instalada; o MCP Graphify da sessão aponta para outro repositório.
+- Próximo passo: conferir alterações locais e commits remotos, então publicar em `main` pelo hook normal.
+
 ## Remoção de luzes e sombras 3D — validação local concluída (2026-10-29)
 
 - Pedido confirmado: eliminar toda iluminação e sombra da cena e destacar destinos elegíveis pela diferença dos materiais, sem placas/sombras sobrepostas. Destinos indisponíveis devem ficar 80% menos contrastados/mais apagados em pisos, modelos, detalhes e rótulos; destinos válidos preservam ou elevam as cores originais.

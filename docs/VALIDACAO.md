@@ -1,5 +1,12 @@
 # Validação visual e de navegador
 
+## 2026-10-29 — Travamento da HUD de dinheiro no Chrome
+
+- Comparação controlada em Chrome 156 com GTX 970, 1365×900 e DPR 1: durante o mesmo arrasto da câmera, `07646a4` registrou ~97 FPS e `2def5f6` ~7 FPS, com intervalos de quadro de até 146,7 ms. No A/B da cópia temporária, desligar o overlay grande não resolveu; remover os efeitos CSS de filtro/perspectiva/3D/recorte dos símbolos de dinheiro restaurou ~99 FPS, e desligar a roleta não mudou o resultado.
+- Depois da correção, iniciei uma sala Colyseus local com um bot e arrastei a câmera na partida em Chrome 156: 74,8 FPS em 2,5 s, mediana de 13,3 ms, nenhum intervalo acima de 50 ms (monitor de 75 Hz). Captura da partida: `%TEMP%\banco-chrome-fixed-main.png`.
+- Teste de regressão em `src/ui/cashHudSymbols.test.ts` mantém os seletores `.cash-*` livres de filtro, perspectiva, transformação, recorte e sombra CSS. `npm run verify` passou com 181 testes em 34 arquivos e builds frontend/servidor; `git diff --check` passou.
+- `graphify update .` foi tentado e falhou porque a CLI não está instalada; o MCP Graphify disponível aponta para outro repositório.
+
 ## 2026-10-29 — Cena sem luzes e sombras
 
 - `npm run verify`: 180 testes em 33 arquivos passaram; builds frontend e servidor passaram. `git diff --check` passou. O chunk GLTF continua grande (956,03 KB / 259,61 KB gzip).
