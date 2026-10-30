@@ -2,7 +2,7 @@
 
 > Retrato de trabalho para retomar o projeto entre sessões. Para requisitos e decisões, consulte os documentos de origem indicados em `AGENTS.md`.
 
-## Investigação de travamento no Chrome — correção validada, publicação pendente (2026-10-29)
+## Investigação de travamento no Chrome — correção concluída (2026-10-29)
 
 - Pedido confirmado: reproduzir no Chrome os travamentos fortes da partida e corrigir a causa.
 - Estado inicial verificado: árvore limpa em `main`, alinhada a `origin/main`; portas locais 5173 e 2567 estavam livres.
@@ -12,7 +12,8 @@
 - Validação final na versão corrigida em partida local com bot: Chrome 156, 1365×900/DPR 1, arrasto real da câmera por 2,5 s, 74,8 FPS (monitor de 75 Hz), mediana de 13,3 ms e zero quadros acima de 50 ms. Captura temporária em `%TEMP%\banco-chrome-fixed-main.png`.
 - `npm run verify` passou: 181 testes em 34 arquivos, build web e build do servidor. O aviso conhecido de tamanho do chunk GLTF permanece em 956,10 KB (259,64 KB gzip); `git diff --check` passou.
 - `graphify update .` foi tentado e falhou porque a CLI não está instalada; o MCP Graphify da sessão aponta para outro repositório.
-- Próximo passo: conferir alterações locais e commits remotos, então publicar em `main` pelo hook normal.
+- Publicado em `main` pelo hook normal: `dec234f` (`Fix Chrome lag from cash HUD CSS effects`); `origin/main` confirmado no mesmo commit.
+- Próximo passo: acompanhar próximos playtests; se outro hardware ainda apresentar quadros longos, repetir a medição de arrasto nesse Chrome e comparar a GPU usada.
 
 ## Remoção de luzes e sombras 3D — validação local concluída (2026-10-29)
 
