@@ -484,3 +484,10 @@
 - Regressões: broadcast e validação de emote no Colyseus, símbolos dos seis emotes, som ligado aos cantos Aeroporto/Prisão/Copa e tintura da fachada azul do hotel com preservação do material dos vidros.
 - Playtest de navegador não concluído: `npm run dev:server` retornou `EADDRINUSE` na porta 2567 mesmo sem listener listado; a sessão recém-iniciada foi encerrada, e não foi encerrado nenhum processo desconhecido. Não capturei screenshot das novas opções, do balão de emote ou do aluguel ampliado.
 - Graphify query foi tentado, mas o único repositório consultável era `GustavoGLD/Hospital`, sem relação com este jogo; a CLI e ferramenta de atualização do grafo deste checkout não estão disponíveis.
+
+## HUD de turno, atalhos e leitura do aluguel — 2026-10-30
+
+- `npm run verify`: 225 testes em 44 arquivos passaram; builds frontend e servidor passaram. O aviso existente sobre o chunk 3D maior que 500 KB continua. `git diff --check` passou.
+- Regressão adicionada: `getBuildingRentLabelPosition` mantém o rótulo acima do topo e na mesma faixa lateral da construção para os lados do tabuleiro.
+- Revisão visual local pendente: as portas 5173/2567 pareciam livres, mas o servidor Colyseus retornou `EADDRINUSE` na porta 2567. Encerrei a sessão recém-iniciada; nenhum processo desconhecido foi encerrado. Assim, a organização desktop/celular e a leitura da inspeção ainda não foram capturadas no navegador.
+- Graphify MCP não tem índice deste repositório e `graphify update .` falhou porque a CLI não está instalada.

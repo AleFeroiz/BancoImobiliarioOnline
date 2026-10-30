@@ -19,7 +19,7 @@ import { BUILDING_ANIMATION_DURATION_MS, DICE_ANIMATION_DURATION_MS, LANDING_PUL
 import type { FrameRateAccumulator } from './fpsMeter'
 import { recordRenderedFrame } from './fpsMeter'
 import { applySelectionContrast, createTokenOutlineMaterial, createUnlitMaterial, getOwnerTintOverride } from './sceneMaterials'
-import { getBuildingInnerEdgeOffset, getCenteredModelPlacement, getModelFootprintDepth } from './modelPlacement'
+import { getBuildingInnerEdgeOffset, getBuildingRentLabelPosition, getCenteredModelPlacement, getModelFootprintDepth } from './modelPlacement'
 import { getPropertyRentLabel } from './propertyRentLabel'
 import { playGameSound } from './gameAudio'
 import { getGraphicsDprRange, type GraphicsQuality } from './graphicsQuality'
@@ -550,12 +550,19 @@ function AnimatedMortgageBadge({ position, mortgaged, reducedMotion, presentatio
 }
 
 function Board({ players, propertyBuildings, worldCupSpaceId, highlightedSpaceIds, selectionMode, landingPulseSpaceId, landingPulseSequence, diceRollSequence, dice, diceVisible, diceResultVisible, presentationSpeed, reducedMotion, pawnMovementEnabled, pawnMoveMode, pawnStepSoundEnabled, onMovementComplete, onSelectSpace }: { players: PlayerToken[]; propertyBuildings: PropertyBuilding[]; worldCupSpaceId: number; highlightedSpaceIds: readonly number[]; selectionMode: boolean; landingPulseSpaceId: number; landingPulseSequence: number; dice: [number, number]; diceVisible: boolean; diceResultVisible: boolean; diceRollSequence: number; presentationSpeed: AnimationSpeed; reducedMotion: boolean; pawnMovementEnabled: boolean; pawnMoveMode: 'walk' | 'teleport'; pawnStepSoundEnabled: boolean; onMovementComplete: () => void; onSelectSpace: (spaceId: number) => void }) {
+  const { scene: buildingScene } = useGLTF('/assets/board-models/board-models.glb')
   const propertyRentLabels = useMemo(() => boardSpaces
     .filter((space) => space.kind === 'property' && propertyBuildings.some((holding) => holding.spaceId === space.id && Boolean(holding.ownerSessionId)))
     .map((space) => {
+      const holding = propertyBuildings.find((item) => item.spaceId === space.id)
+      const houses = holding?.houses ?? 0
+      const variantName = houses === 0 ? 'Board_Land' : houses === PROPERTY_HOTEL_LEVEL ? 'Board_Hotel' : `Board_House_${houses}`
+      const model = buildingScene.getObjectByName(variantName)
+      const bounds = model ? new Box3().setFromObject(model) : null
       const { x, z } = positionOnBoard(space.id)
-      return { id: space.id, position: [x, 0.88, z] as [number, number, number], text: getPropertyRentLabel(space.id, propertyBuildings, worldCupSpaceId) ?? '' }
-    }), [propertyBuildings, worldCupSpaceId])
+      const local = bounds ? getBuildingRentLabelPosition(space.id, bounds, 0.98, 1.25, 0.02, 0.2, BUILDING_GROUP_Y) : [0, 0.95, 0] as [number, number, number]
+      return { id: space.id, position: [x + local[0], local[1], z + local[2]] as [number, number, number], text: getPropertyRentLabel(space.id, propertyBuildings, worldCupSpaceId) ?? '' }
+    }), [buildingScene, propertyBuildings, worldCupSpaceId])
 
   return (
     <group>

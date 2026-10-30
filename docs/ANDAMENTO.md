@@ -9,6 +9,15 @@
 
 > Retrato de trabalho para retomar o projeto entre sessões. Para requisitos e decisões, consulte os documentos de origem indicados em `AGENTS.md`.
 
+## HUD de turno, atalhos e leitura do aluguel — implementação concluída (2026-10-30)
+
+- Pedido atual: colocar o valor 3D de aluguel sobre o modelo da construção; destacar melhor os aluguéis na inspeção; mover Configurações, Emote e Regras para junto do cartão do jogador e ampliar os botões; levar o ritmo para o topo ao lado do relógio de partida e mostrar também o relógio do turno.
+- Estado inicial: `main` no commit `abea502`, alinhada a `origin/main`; alterações existentes em `assets/blender/special-corners.blend` e `assets/blender/special-corners.blend1` devem ser preservadas e não entram neste escopo.
+- Implementação: rótulos acompanham o modelo de construção e aparecem acima do topo, com a mesma posição lateral alinhada à borda interna; aluguel recebeu tipografia maior no resumo e nas opções da inspeção. Configurações, Emote e Regras agora ficam em botões maiores ao lado do cartão local no desktop e em faixa dedicada no celular. Ritmo e relógio do tempo restante da etapa/vez aparecem ampliados no topo com o relógio da partida.
+- Testes/builds: `npm run verify` passou com 225 testes em 44 arquivos e builds frontend/servidor; `git diff --check` passou. Regressão de posição vertical e lateral do rótulo coberta em `modelPlacement.test.ts`.
+- Revisão visual não concluída: as portas 5173 e 2567 apareceram livres na enumeração, mas o servidor Colyseus retornou `EADDRINUSE` ao tentar iniciar; a sessão foi encerrada e nenhum processo desconhecido foi interrompido. A ferramenta `graphify` não está instalada, e o Graphify MCP só indexa `GustavoGLD/Hospital`, que não é este projeto.
+- Próximo passo concreto: publicar em `main` somente os arquivos desta frente, preservando alterações locais do Blender.
+
 ## Aluguéis 3D, opções em tela inteira, emotes e sons de chegada — implementação concluída (2026-10-30)
 
 - Pedido atual: aumentar os valores de aluguel 3D; abrir configurações em tela cheia sem pausar a partida e oferecer ajustes de imagem/desempenho; adicionar seis emotes sincronizados; trocar a cor azul fixa da fachada dos hotéis pela cor do proprietário; tocar sons ao chegar ao Aeroporto, Prisão e Copa.

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { getBuildingInnerEdgeOffset, getCenteredModelPlacement } from './modelPlacement'
+import { getBuildingInnerEdgeOffset, getBuildingRentLabelPosition, getCenteredModelPlacement } from './modelPlacement'
 
 describe('posicionamento de modelos de canto', () => {
   it('centraliza o aeroporto e apoia a base no piso sem duplicar a posição original', () => {
@@ -27,6 +27,15 @@ describe('posicionamento de modelos de canto', () => {
       expect(centerOffset - 0.6 * 1.16 / 2).toBeCloseTo(0.98 / 2 + 0.02)
     }
     expect(getBuildingInnerEdgeOffset(15, 0.98, 0.8, 1.16)[0]).toBeLessThan(0)
+  })
+
+  it('posiciona o rótulo do aluguel acima da construção e no mesmo alinhamento da borda interna', () => {
+    const bounds = { min: { x: -0.4, y: -0.1, z: -0.3 }, max: { x: 0.4, y: 0.7, z: 0.3 } }
+    const position = getBuildingRentLabelPosition(15, bounds)
+    expect(position[0]).toBeLessThan(0)
+    expect(position[1]).toBeCloseTo(0.16 + 0.8 * 1.25 + 0.2)
+    expect(position[2]).toBe(0)
+    expect(position[1]).toBeGreaterThan(1)
   })
 
 })
