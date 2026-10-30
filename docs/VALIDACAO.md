@@ -1,3 +1,10 @@
+## 2026-10-30 — Pop-up de saldo, modo DEV no lobby e aluguel das estações
+
+- `npm run verify`: 207 testes passaram; builds frontend e servidor passaram. O chunk 3D conhecido permanece em 956,28 KB (259,73 KB gzip). `git diff --check` passou.
+- Playtest na aba local: criei uma sala Clássica, habilitei Modo DEV no lobby, confirmei o estado ativado, adicionei um bot e iniciei a partida. O painel para escolher os dois dados e forçar o resultado apareceu no turno do anfitrião; a velocidade 1× estava selecionada. A captura da partida confirma o painel do DEV e o layout dos cartões. Logs do navegador sem erros.
+- Testes Colyseus confirmam que o convidado não pode habilitar a opção, a anfitriã pode configurá-la no lobby e a rolagem forçada funciona no servidor de produção quando a opção foi habilitada. O teste das estações verifica pagamento ao dono com rolagem válida e múltiplos de R$ 50.000. O pop-up de saldo e a classificação verde/vermelho têm lógica unitária; a animação não foi vista com uma mudança de saldo real no playtest desta rodada.
+- Graphify update não executou porque a CLI `graphify` não está instalada neste ambiente.
+
 ## 2026-10-30 — Cartões do jogador, lance de leilão e airport GLB
 
 - `npm run verify`: 204 testes passaram; builds de frontend e servidor passaram. O chunk 3D conhecido permanece em 956,28 KB (259,73 KB gzip). `git diff --check` passou.

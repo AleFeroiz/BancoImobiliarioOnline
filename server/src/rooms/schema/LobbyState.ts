@@ -35,6 +35,7 @@ export const LobbyState = schema({
   roomCode: t.string().default(''),
   mode: t.string().default('classic'),
   animationSpeed: t.float32().default(DEFAULT_ANIMATION_SPEED),
+  devToolsEnabled: t.boolean().default(false),
   presentationSpeed: t.float32().default(DEFAULT_ANIMATION_SPEED),
   status: t.string().default('waiting'),
   turnPhase: t.string().default('roll'),

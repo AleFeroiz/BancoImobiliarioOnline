@@ -9,6 +9,16 @@
 
 > Retrato de trabalho para retomar o projeto entre sessões. Para requisitos e decisões, consulte os documentos de origem indicados em `AGENTS.md`.
 
+## Retorno de saldo, ferramenta DEV no lobby e aluguel de estações — concluído (2026-10-30)
+
+- Pedido atual: animar ganhos/perdas junto aos cartões de todos os jogadores; exibir a configuração DEV no lobby antes do início e permitir ao anfitrião habilitar os dados forçados no Chrome; cobrar aluguel das estações com resultado de um dado × R$ 50.000; explicar de forma simples o posicionamento das casas para alguém familiarizado com Unity.
+- Implementação: cada cartão recebe fila própria de pop-ups de saldo, verde para ganho e vermelho para perda, que some em 1,2 s. No lobby, apenas a anfitriã pode alternar as ferramentas DEV; o estado Colyseus fica visível para todas as pessoas e o servidor só aceita a rolagem forçada quando habilitada, pelo anfitrião, na fase válida e com dados de 1 a 6. Ao cair em estação alheia não hipotecada, o servidor rola um dado e cobra R$ 50.000 por ponto (R$ 50.000–300.000); a interface mostra a faixa.
+- Documentação de regras e decisão atualizada. Foi preservada a regra da opção DEV somente como configuração consentida no lobby, sem mexer em regra geral do modo de jogo.
+- `npm run verify`: 207 testes passaram; builds do frontend e servidor passaram. O aviso conhecido do chunk de cena 3D segue em 956,28 KB (259,73 KB gzip). `git diff --check` passou. Graphify update foi tentado, mas a CLI não está instalada.
+- Playtest local no navegador: criei uma sala, habilitei Modo DEV no lobby, confirmei o estado “Ativado para esta partida”, adicionei um bot e iniciei; o painel DEV com seleção dos dois dados apareceu em jogo, com 1× selecionado. Os testes confirmam que só a anfitriã muda a opção no lobby e que o servidor aceita o dado forçado quando a sala está em modo DEV mesmo com `NODE_ENV=production`. Os logs do navegador não registraram erros.
+- A rolagem de estação foi validada por teste de integração Colyseus: o pagamento ao dono fica entre R$ 50.000 e R$ 300.000, em múltiplos de R$ 50.000, e a mensagem mostra o resultado do dado. A animação do pop-up de saldo foi revisada no código e a classificação de ganhos/perdas tem teste unitário; não foi possível gerar uma mudança de saldo no playtest visual desta rodada.
+- Próximo passo concreto: revisar o diff, publicar somente os arquivos relacionados em `main` e preservar os arquivos Blender já alterados no workspace.
+
 ## Correções de compra, prisão e origens 3D — concluído (2026-10-30)
 
 - Pedido atual: restaurar os painéis de compra/construção quando há avisos na tela; adicionar fuga da prisão por duplas e pagamento de R$ 200.000; deixar inspeção disponível fora da vez; mostrar aluguel; inverter orientação dos textos; alinhar construções pela borda interna e normalizar origens dos modelos.

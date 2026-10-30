@@ -630,6 +630,22 @@ button:disabled{opacity:.55;cursor:not-allowed}
 .screen-game{touch-action:none}
 .screen-game .turn-card,.screen-game .space-inspector{touch-action:pan-y}
 .screen-game .player-card{user-select:none;-webkit-user-select:none}
+
+.screen-game .player-card{overflow:visible}
+.cash-change-toast{position:absolute;z-index:12;left:50%;bottom:calc(100% + 7px);translate:-50% 0;pointer-events:none;white-space:nowrap;padding:6px 11px;border:1px solid currentColor;border-radius:999px;background:rgba(255,252,239,.97);text-shadow:0 1px 1px rgba(30,45,35,.15);font-size:clamp(16px,1.5vw,22px);font-weight:900;line-height:1.1;font-variant-numeric:tabular-nums;animation:cash-change-pop 1.2s cubic-bezier(.2,.75,.25,1) both}
+.cash-change-gain{color:#198447}
+.cash-change-loss{color:#cf3e37}
+@keyframes cash-change-pop{0%{opacity:0;translate:-50% 9px;scale:.82}16%{opacity:1;translate:-50% 0;scale:1.06}28%{scale:1}76%{opacity:1}100%{opacity:0;translate:-50% -15px;scale:.96}}
+@media(max-width:640px){.cash-change-toast{font-size:15px;padding:5px 9px}}
+@media(prefers-reduced-motion:reduce){.cash-change-toast{animation:none}}
+.dev-tools-setting{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:15px;padding:11px 12px;border:1px solid rgba(237,240,225,.16);background:rgba(16,27,37,.35);border-radius:4px}
+.dev-tools-setting strong,.dev-tools-setting small{display:block}
+.dev-tools-setting strong{font-size:10px;color:#f0ead8}
+.dev-tools-setting small{margin-top:4px;font-size:9px;color:#aeb9b2}
+.dev-tools-setting.enabled{border-color:rgba(119,190,142,.62);background:rgba(50,100,65,.22)}
+.dev-tools-setting.enabled small{color:#a9dfb4}
+.dev-tools-setting button{min-width:72px;padding:7px 10px;border:1px solid rgba(237,240,225,.26);border-radius:3px;background:rgba(16,27,37,.45);color:#e7d18c;font-size:9px;font-weight:700}
+@media(max-width:640px){.dev-tools-setting{margin-top:12px;padding:9px}.dev-tools-setting strong{font-size:9px}}
 .screen-game .turn-card.purchase-panel{width:min(540px,calc(100vw - 28px));padding:18px 20px}
 .screen-game .purchase-panel h2{margin-bottom:4px}
 .screen-game .purchase-panel>p{margin-bottom:7px}

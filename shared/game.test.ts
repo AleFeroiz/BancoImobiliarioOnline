@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { boardSpaces } from './board.js'
-import { ANIMATION_SPEEDS, DEFAULT_ANIMATION_SPEED, DICE_ANIMATION_DURATION_MS, PAWN_STEP_ANIMATION_DURATION_MS, TURN_DECISION_SECONDS, areDiceDoubles, calculateNetWorth, getAnimationDuration, isAnimationSpeed, liquidatablePropertyIds } from './game.js'
+import { ANIMATION_SPEEDS, DEFAULT_ANIMATION_SPEED, DICE_ANIMATION_DURATION_MS, PAWN_STEP_ANIMATION_DURATION_MS, TURN_DECISION_SECONDS, areDiceDoubles, calculateNetWorth, calculateStationRent, getAnimationDuration, isAnimationSpeed, liquidatablePropertyIds } from './game.js'
 
 describe('tentativas para sair da prisão', () => {
   it('reconhece dois dados iguais como duplas', () => {
@@ -24,6 +24,14 @@ describe('velocidade da apresentação', () => {
     expect(ANIMATION_SPEEDS.every(isAnimationSpeed)).toBe(true)
     expect(isAnimationSpeed(0.75)).toBe(false)
     expect(isAnimationSpeed('1')).toBe(false)
+  })
+})
+
+describe('aluguel das estações', () => {
+  it('multiplica a rolagem única por R$ 50.000 e só aceita resultados de 1 a 6', () => {
+    expect([1, 2, 3, 4, 5, 6].map(calculateStationRent)).toEqual([50_000, 100_000, 150_000, 200_000, 250_000, 300_000])
+    expect(() => calculateStationRent(0)).toThrow(RangeError)
+    expect(() => calculateStationRent(7)).toThrow(RangeError)
   })
 })
 

@@ -2,7 +2,7 @@ import { randomInt } from 'node:crypto'
 import { CloseCode, Client, Room } from '@colyseus/core'
 import type { GameMode } from '../../../shared/lobby.js'
 import { isCharacterType, isGameMode, normalizePlayerName } from '../../../shared/lobby.js'
-import { AUCTION_DURATION_SECONDS, AUCTION_MIN_BID_INCREMENT, CLASSIC_MATCH_SECONDS, DEFAULT_ANIMATION_SPEED, DICE_ANIMATION_DURATION_MS, EXPRESS_PHASE_SECONDS, EXPRESS_ROUNDS, JAIL_TURNS, PAWN_STEP_ANIMATION_DURATION_MS, PAWN_TELEPORT_ANIMATION_DURATION_MS, PROPERTY_BUILD_LEVELS, PROPERTY_HOTEL_LEVEL, START_BONUS, STARTING_CASH, TURN_DECISION_SECONDS, TURN_ROLL_SECONDS, areDiceDoubles, buildingSaleValue, calculateNetWorth, calculateRent, canBuildHotel, canBuildProperty, canMortgageProperty, canRedeemMortgage, canSellBuilding, constructionCost, describeLanding, getAnimationDuration, hasLiquidatableAssets, hotelConstructionCost, isAnimationSpeed, mortgageRedemptionCost, mortgageValue, movePosition, taxForSpace } from '../../../shared/game.js'
+import { AUCTION_DURATION_SECONDS, AUCTION_MIN_BID_INCREMENT, CLASSIC_MATCH_SECONDS, DEFAULT_ANIMATION_SPEED, DICE_ANIMATION_DURATION_MS, EXPRESS_PHASE_SECONDS, EXPRESS_ROUNDS, JAIL_TURNS, PAWN_STEP_ANIMATION_DURATION_MS, PAWN_TELEPORT_ANIMATION_DURATION_MS, PROPERTY_BUILD_LEVELS, PROPERTY_HOTEL_LEVEL, START_BONUS, STARTING_CASH, TURN_DECISION_SECONDS, TURN_ROLL_SECONDS, areDiceDoubles, buildingSaleValue, calculateNetWorth, calculateRent, calculateStationRent, canBuildHotel, canBuildProperty, canMortgageProperty, canRedeemMortgage, canSellBuilding, constructionCost, describeLanding, getAnimationDuration, hasLiquidatableAssets, hotelConstructionCost, isAnimationSpeed, mortgageRedemptionCost, mortgageValue, movePosition, taxForSpace } from '../../../shared/game.js'
 import { boardSpaces } from '../../../shared/board.js'
 import { EVENT_CARDS } from '../../../shared/cards.js'
 import { EMPTY_OBJECTIVE_ACTIVITY, EXPRESS_OBJECTIVES, getExpressObjectiveProgress, type ExpressObjectiveId, type ExpressObjectiveUpdate, type ObjectiveActivity } from '../../../shared/objectives.js'
@@ -98,6 +98,14 @@ export class GameRoom extends Room<{ state: LobbyState }> {
         return
       }
       this.state.animationSpeed = payload.speed
+    },
+    setDevToolsEnabled: (client: Client, payload: { enabled?: unknown }) => {
+      const requester = this.state.players.get(client.sessionId)
+      if (this.state.status !== 'waiting' || !requester?.isHost || typeof payload?.enabled !== 'boolean') {
+        client.send('room:error', { message: 'Só a pessoa anfitriã pode alterar o modo DEV enquanto a sala está no lobby.' })
+        return
+      }
+      this.state.devToolsEnabled = payload.enabled
     },
     addBot: (client: Client) => {
       const requester = this.state.players.get(client.sessionId)
@@ -202,8 +210,8 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       const diceOne = payload?.diceOne
       const diceTwo = payload?.diceTwo
       const activePlayer = this.state.players.get(this.state.activePlayerSessionId)
-      if (process.env.NODE_ENV === 'production' || !requester?.isHost) {
-        client.send('room:error', { message: 'A rolagem DEV está disponível apenas para a pessoa anfitriã em desenvolvimento.' })
+      if (!requester?.isHost || !this.state.devToolsEnabled) {
+        client.send('room:error', { message: 'A rolagem DEV está desativada ou disponível apenas para a pessoa anfitriã.' })
         return
       }
       if (this.state.status !== 'playing' || this.state.turnPhase !== 'roll' || !activePlayer || activePlayer.isJailed) {
@@ -1355,7 +1363,14 @@ export class GameRoom extends Room<{ state: LobbyState }> {
         if (owner && property.isMortgaged) {
           this.state.landingDescription += ` ${space.name} está hipotecada; não há aluguel.`
         } else if (owner) {
-          this.collectPayment(sessionId, player, rent, property.ownerSessionId, 'Aluguel')
+          if (!space.buildable) {
+            const stationDie = randomInt(1, 7)
+            const stationRent = calculateStationRent(stationDie) * (space.id === this.state.worldCupSpaceId ? 3 : 1)
+            this.state.landingDescription += ` Dado da estação: ${stationDie}; aluguel de R$ ${stationRent.toLocaleString('pt-BR')}.`
+            this.collectPayment(sessionId, player, stationRent, property.ownerSessionId, 'Aluguel')
+          } else {
+            this.collectPayment(sessionId, player, rent, property.ownerSessionId, 'Aluguel')
+          }
         }
       }
     } else if (space.kind === 'tax') {

@@ -177,13 +177,19 @@ describe('sala privada', () => {
     const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
     const host = await colyseus.connectTo(room, { name: 'Caio' })
     const guest = await colyseus.connectTo(room, { name: 'Duda' })
+    const unauthorizedSetting = new Promise<{ message: string }>((resolve) => guest.onMessage('room:error', resolve))
+    guest.send('setDevToolsEnabled', { enabled: true })
+    await expect(unauthorizedSetting).resolves.toMatchObject({ message: 'Só a pessoa anfitriã pode alterar o modo DEV enquanto a sala está no lobby.' })
+    expect(room.state.devToolsEnabled).toBe(false)
+    host.send('setDevToolsEnabled', { enabled: true })
+    await waitFor(() => room.state.devToolsEnabled)
     const started = new Promise<void>((resolve) => host.onMessage('game:started', () => resolve()))
     host.send('start')
     await started
 
     const unauthorized = new Promise<{ message: string }>((resolve) => guest.onMessage('room:error', resolve))
     guest.send('devRoll', { diceOne: 6, diceTwo: 4 })
-    await expect(unauthorized).resolves.toMatchObject({ message: 'A rolagem DEV está disponível apenas para a pessoa anfitriã em desenvolvimento.' })
+    await expect(unauthorized).resolves.toMatchObject({ message: 'A rolagem DEV está desativada ou disponível apenas para a pessoa anfitriã.' })
     expect(room.state.turnPhase).toBe('roll')
 
     const invalid = new Promise<{ message: string }>((resolve) => host.onMessage('room:error', resolve))
@@ -191,10 +197,17 @@ describe('sala privada', () => {
     await expect(invalid).resolves.toMatchObject({ message: 'Escolha um valor inteiro entre 1 e 6 para cada dado.' })
     expect(room.state.turnPhase).toBe('roll')
 
-    host.send('devRoll', { diceOne: 6, diceTwo: 4 })
-    await waitFor(() => room.state.turnPhase === 'rolling')
-    expect(room.state.diceOne).toBe(6)
-    expect(room.state.diceTwo).toBe(4)
+    const originalNodeEnv = process.env.NODE_ENV
+    process.env.NODE_ENV = 'production'
+    try {
+      host.send('devRoll', { diceOne: 6, diceTwo: 4 })
+      await waitFor(() => room.state.turnPhase === 'rolling')
+      expect(room.state.diceOne).toBe(6)
+      expect(room.state.diceTwo).toBe(4)
+    } finally {
+      if (originalNodeEnv === undefined) delete process.env.NODE_ENV
+      else process.env.NODE_ENV = originalNodeEnv
+    }
   })
 
   it('sincroniza a reconexão e bloqueia o início enquanto alguém está offline', async () => {
@@ -944,6 +957,36 @@ describe('sala privada', () => {
     expect(player).toMatchObject({ isJailed: false, jailTurns: 0, cash: 100_000 })
     expect(room.state.landingDescription).toContain('R$ 200.000')
     expect(guest.sessionId).not.toBe(room.state.activePlayerSessionId)
+  })
+
+  it('cobra nas estações o resultado de um dado multiplicado por R$ 50.000', async () => {
+    const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
+    const visitorClient = await colyseus.connectTo(room, { name: 'Ana' })
+    const ownerClient = await colyseus.connectTo(room, { name: 'Bia' })
+    const started = new Promise<void>((resolve) => visitorClient.onMessage('game:started', () => resolve()))
+    visitorClient.send('start')
+    await started
+
+    const station = boardSpaces.find((space) => space.kind === 'property' && !space.buildable)!
+    const title = new PropertyState()
+    title.ownerSessionId = ownerClient.sessionId
+    room.state.properties.set(String(station.id), title)
+    room.state.activePlayerSessionId = visitorClient.sessionId
+    const visitor = room.state.players.get(visitorClient.sessionId)!
+    const owner = room.state.players.get(ownerClient.sessionId)!
+    visitor.position = station.id
+    visitor.cash = STARTING_CASH
+    owner.cash = STARTING_CASH
+
+    const privateRoom = room as unknown as { resolveSpace: (sessionId: string, player: typeof visitor) => void }
+    privateRoom.resolveSpace(visitorClient.sessionId, visitor)
+
+    const rent = STARTING_CASH - visitor.cash
+    expect(rent).toBeGreaterThanOrEqual(50_000)
+    expect(rent).toBeLessThanOrEqual(300_000)
+    expect(rent % 50_000).toBe(0)
+    expect(owner.cash).toBe(STARTING_CASH + rent)
+    expect(room.state.landingDescription).toMatch(/Dado da estação: [1-6]; aluguel de R\$ [\d.]+/)
   })
 
   it('aplica a sede da Copa ao aluguel e impede a Volta ao Mundo para imóvel de outra pessoa', async () => {

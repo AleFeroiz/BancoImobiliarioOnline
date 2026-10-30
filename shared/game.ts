@@ -83,6 +83,11 @@ export function calculateRent(spaceId: number, ownership: ReadonlyMap<number, st
   return spaceId === worldCupSpaceId ? rent * 3 : rent
 }
 
+export function calculateStationRent(dieRoll: number) {
+  if (!Number.isInteger(dieRoll) || dieRoll < 1 || dieRoll > 6) throw new RangeError('O dado da estação deve mostrar um valor entre 1 e 6.')
+  return dieRoll * 50_000
+}
+
 export function constructionCost(spaceId: number) {
   const space = boardSpaces[spaceId]
   return space?.kind === 'property' && space.buildable && typeof space.price === 'number'

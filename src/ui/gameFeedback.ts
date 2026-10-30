@@ -45,3 +45,9 @@ export function formatCashDelta(delta: number) {
   const amount = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(Math.abs(delta))
   return `${delta > 0 ? '+' : '−'}${amount}`
 }
+
+export function getCashChangeTone(delta: number): 'gain' | 'loss' | null {
+  if (delta > 0) return 'gain'
+  if (delta < 0) return 'loss'
+  return null
+}
