@@ -414,6 +414,7 @@ function AnimatedBuilding({ spaceId, houses, ownerColor, ownerSessionId, reduced
   const group = useRef<Group>(null)
   const { invalidate } = useThree()
   const elapsed = useRef(0)
+  const buildingRotationRef = useRef(0)
   const [displayHouses, setDisplayHouses] = useState(houses)
   const [displayColor, setDisplayColor] = useState(ownerColor)
   const previous = useRef({ ownerSessionId, houses: 0 })
@@ -475,7 +476,7 @@ function AnimatedBuilding({ spaceId, houses, ownerColor, ownerSessionId, reduced
     if (progress >= 1) {
       building.scale.setScalar(1)
       building.position.y = 0
-      building.rotation.set(0, 0, 0)
+      building.rotation.set(0, buildingRotationRef.current, 0)
       if (transition.current !== 'ownership') setDisplayHouses(houses)
       setDisplayColor(ownerColor)
       transition.current = null
@@ -485,6 +486,7 @@ function AnimatedBuilding({ spaceId, houses, ownerColor, ownerSessionId, reduced
   const { x, z } = positionOnBoard(spaceId)
   const decoration = getBoardSpaceDecoration(spaceId)
   const buildingRotation = decoration.buildingRotation
+  buildingRotationRef.current = buildingRotation
   const variantName = displayHouses === 0 ? 'Board_Land' : displayHouses === PROPERTY_HOTEL_LEVEL ? 'Board_Hotel' : `Board_House_${displayHouses}`
   const modelData = useMemo(() => {
     if (!ownerSessionId) return null
