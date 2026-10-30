@@ -19,7 +19,7 @@ import { BUILDING_ANIMATION_DURATION_MS, DICE_ANIMATION_DURATION_MS, LANDING_PUL
 import type { FrameRateAccumulator } from './fpsMeter'
 import { recordRenderedFrame } from './fpsMeter'
 import { applySelectionContrast, createUnlitMaterial, getOwnerTintOverride } from './sceneMaterials'
-import { getCenteredModelPlacement } from './modelPlacement'
+import { getBuildingInnerEdgeOffset, getCenteredModelPlacement, getModelFootprintDepth } from './modelPlacement'
 
 type PropertyBuilding = { spaceId: number; ownerSessionId: string; houses: number; isMortgaged: boolean; ownerColor: string }
 type PlayerToken = { id: string; position: number; color: string; seatIndex: number; cash: number; characterType: 'pawn' | 'car' | 'motorcycle' | 'airplane'; activity?: string }
@@ -231,6 +231,11 @@ function AnimatedPawn({ player, seatIndex, reducedMotion, movementEnabled, moveM
     const source = tokenScene.getObjectByName(({ car: 'Token_Car', motorcycle: 'Token_Motorcycle', airplane: 'Token_Airplane' } as const)[player.characterType])
     if (!source) return null
     const clone = source.clone(true)
+    const bounds = new Box3().setFromObject(clone)
+    const placement = getCenteredModelPlacement(bounds)
+    clone.position.x += placement[0]
+    clone.position.y += placement[1]
+    clone.position.z += placement[2]
     clone.traverse((object) => {
       const mesh = object as Mesh
       if (!mesh.isMesh) return
@@ -446,10 +451,9 @@ function AnimatedBuilding({ spaceId, houses, ownerColor, ownerSessionId, reduced
 
   const { x, z } = positionOnBoard(spaceId)
   const decoration = getBoardSpaceDecoration(spaceId)
-  const [offsetX, offsetZ] = decoration.buildingOffset
   const buildingRotation = decoration.buildingRotation
   const variantName = displayHouses === 0 ? 'Board_Land' : displayHouses === PROPERTY_HOTEL_LEVEL ? 'Board_Hotel' : `Board_House_${displayHouses}`
-  const model = useMemo(() => {
+  const modelData = useMemo(() => {
     if (!ownerSessionId) return null
     const source = scene.getObjectByName(variantName)
     if (!source) return null
@@ -457,17 +461,22 @@ function AnimatedBuilding({ spaceId, houses, ownerColor, ownerSessionId, reduced
     clone.position.set(0, 0, 0)
     clone.rotation.set(0, 0, 0)
     clone.scale.set(1, 1, 1)
+    const bounds = new Box3().setFromObject(clone)
+    const footprintDepth = getModelFootprintDepth(bounds)
+    clone.position.set(...getCenteredModelPlacement(bounds))
     clone.traverse((object) => {
       const mesh = object as Mesh
       if (!mesh.isMesh) return
       mesh.raycast = skipRaycast
     })
     makeSceneMaterialsUnlit(clone, dimmed, displayColor)
-    return clone
+    return { object: clone, footprintDepth }
   }, [dimmed, displayColor, ownerSessionId, scene, variantName])
+  const modelScale = 1.16
+  const [offsetX, offsetZ] = modelData ? getBuildingInnerEdgeOffset(spaceId, 0.98, modelData.footprintDepth, modelScale) : decoration.buildingOffset
   return (
     <group ref={group} position={[x + offsetX, BUILDING_GROUP_Y, z + offsetZ]} rotation={[0, buildingRotation, 0]}>
-      {model && <primitive object={model} position={[0, BUILDING_MODEL_Y_OFFSET, 0]} scale={1.16} />}
+      {modelData && <primitive object={modelData.object} position={[0, BUILDING_MODEL_Y_OFFSET, 0]} scale={modelScale} />}
     </group>
   )
 }
@@ -627,10 +636,11 @@ function CornerLandmark({ type, position, dimmed }: { type: 'stadium' | 'airport
   const model = useMemo(() => {
     const clone = scene.clone(true)
     clone.userData.selectionContrastManaged = true
-    if (type === 'airport') {
-      const bounds = new Box3().setFromObject(clone)
-      clone.position.set(...getCenteredModelPlacement(bounds))
-    }
+    const bounds = new Box3().setFromObject(clone)
+    const placement = getCenteredModelPlacement(bounds)
+    clone.position.x += placement[0]
+    clone.position.y += placement[1]
+    clone.position.z += placement[2]
     clone.traverse((object) => {
       const mesh = object as Mesh
       if (mesh.isMesh) mesh.raycast = skipRaycast

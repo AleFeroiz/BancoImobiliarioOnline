@@ -1,5 +1,13 @@
 # Validação visual e de navegador
 
+## 2026-10-30 — Compra, prisão e origem dos modelos
+
+- `npm run verify`: 200 testes passaram; os builds de frontend e servidor passaram. Os testes Colyseus exigiram loopback local aprovado; a primeira execução sem ele recebeu `fetch failed`.
+- Playtest no navegador interno: partida Clássica com anfitrião e dois bots; velocidade 1× apareceu selecionada, MODO DEV mostrou controles para os dois dados. Forcei uma rolagem até Jardim das Flores, comprei a propriedade com uma casa e confirmei o painel com aluguel por parada, custo total, conclusão da compra e saldo atualizado.
+- A roda do mouse alterou o zoom do tabuleiro. A revisão visual mostrou a construção na área interna; a função de posicionamento tem teste geométrico nos quatro lados com profundidades diferentes. Revisão manual em aparelho com pinça não foi feita.
+- A integração Colyseus confirmou que o pagamento de R$ 200.000 tira a pessoa da prisão, mantém sua vez e permite rolar; saldo inferior mantém o estado preso. A regra de duplas usa o helper compartilhado testado por igualdade dos dados.
+- Não houve erros de runtime no navegador; ficou apenas o aviso do cliente Colyseus de que o listener `game:started` é registrado depois do evento inicial da sala de teste.
+
 ## 2026-10-29 — Correções de casas, aeroporto, cartas e testes DEV
 
 - `npm run verify`: 194 testes em 38 arquivos passaram; build do frontend e do servidor passaram. O aviso já conhecido do chunk 3D permanece em 956,20 KB (259,70 KB gzip). `git diff --check` passou.

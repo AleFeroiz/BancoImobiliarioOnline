@@ -4,6 +4,10 @@ export function shouldShowTurnCard(isMyTurn: boolean, phase: ActivityPhase) {
   return isMyTurn || phase === 'ended'
 }
 
+export function shouldSuppressTurnCardForFeedback(feedbackPending: boolean, phase: ActivityPhase) {
+  return feedbackPending && !['purchase', 'jail', 'debt'].includes(phase)
+}
+
 export function getTurnActivityLabel(phase: ActivityPhase) {
   switch (phase) {
     case 'roll': return 'Aguardando a jogada'

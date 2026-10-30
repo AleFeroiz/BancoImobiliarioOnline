@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { getTurnActivityLabel, shouldShowTurnCard } from './turnActivity.js'
+import { getTurnActivityLabel, shouldShowTurnCard, shouldSuppressTurnCardForFeedback } from './turnActivity.js'
 
 describe('atividade do jogador da vez', () => {
   it('descreve cada fase para os outros participantes', () => {
@@ -18,5 +18,12 @@ describe('atividade do jogador da vez', () => {
     expect(shouldShowTurnCard(false, 'purchase')).toBe(false)
     expect(shouldShowTurnCard(false, 'rolling')).toBe(false)
     expect(shouldShowTurnCard(false, 'ended')).toBe(true)
+  })
+
+  it('mantém decisões que precisam de ação visíveis enquanto avisos transitórios estão na fila', () => {
+    expect(shouldSuppressTurnCardForFeedback(true, 'purchase')).toBe(false)
+    expect(shouldSuppressTurnCardForFeedback(true, 'jail')).toBe(false)
+    expect(shouldSuppressTurnCardForFeedback(true, 'debt')).toBe(false)
+    expect(shouldSuppressTurnCardForFeedback(true, 'roll')).toBe(true)
   })
 })

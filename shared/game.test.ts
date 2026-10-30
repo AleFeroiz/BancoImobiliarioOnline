@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import { boardSpaces } from './board.js'
-import { ANIMATION_SPEEDS, DEFAULT_ANIMATION_SPEED, DICE_ANIMATION_DURATION_MS, PAWN_STEP_ANIMATION_DURATION_MS, TURN_DECISION_SECONDS, calculateNetWorth, getAnimationDuration, isAnimationSpeed, liquidatablePropertyIds } from './game.js'
+import { ANIMATION_SPEEDS, DEFAULT_ANIMATION_SPEED, DICE_ANIMATION_DURATION_MS, PAWN_STEP_ANIMATION_DURATION_MS, TURN_DECISION_SECONDS, areDiceDoubles, calculateNetWorth, getAnimationDuration, isAnimationSpeed, liquidatablePropertyIds } from './game.js'
+
+describe('tentativas para sair da prisão', () => {
+  it('reconhece dois dados iguais como duplas', () => {
+    expect(areDiceDoubles([4, 4])).toBe(true)
+    expect(areDiceDoubles([4, 5])).toBe(false)
+  })
+})
 
 describe('velocidade da apresentação', () => {
   it('começa em 1x e aplica 0,5x e 2x proporcionalmente', () => {

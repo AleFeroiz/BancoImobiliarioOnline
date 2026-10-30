@@ -53,6 +53,10 @@ export function movePosition(position: number, dice: DiceRoll) {
   return (position + dice[0] + dice[1]) % spaces
 }
 
+export function areDiceDoubles(dice: DiceRoll) {
+  return dice[0] === dice[1]
+}
+
 export function describeLanding(spaceId: number) {
   const space = boardSpaces[spaceId]
   if (!space) throw new RangeError(`Casa inválida: ${spaceId}`)
@@ -62,7 +66,7 @@ export function describeLanding(spaceId: number) {
     event: 'Você parou em uma casa de evento.',
     tax: 'Você parou em uma casa de taxa.',
     rest: 'Você parou em uma casa de descanso.',
-    prison: 'Você caiu na prisão e ficará preso por três turnos.',
+    prison: 'Você caiu na prisão. Aguarde, tente duplas ou pague R$ 200.000 para sair.',
     'world-cup': 'Escolha uma propriedade para sediar a Copa do Mundo; o aluguel dela triplica.',
     'world-tour': 'Escolha uma propriedade sua, livre ou casa especial para visitar.',
   } satisfies Record<typeof space.kind, string>

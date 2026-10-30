@@ -2,6 +2,17 @@
 
 > Retrato de trabalho para retomar o projeto entre sessões. Para requisitos e decisões, consulte os documentos de origem indicados em `AGENTS.md`.
 
+## Correções de compra, prisão e origens 3D — concluído (2026-10-30)
+
+- Pedido atual: restaurar os painéis de compra/construção quando há avisos na tela; adicionar fuga da prisão por duplas e pagamento de R$ 200.000; deixar inspeção disponível fora da vez; mostrar aluguel; inverter orientação dos textos; alinhar construções pela borda interna e normalizar origens dos modelos.
+- Estado inicial: `main` sincronizada com `origin/main` no commit `9eb2bbc`; preservar alterações preexistentes em `assets/blender/special-corners.blend` e `.blend1`.
+- Achados: `feedbackPending` suprime painéis de decisão essenciais; a prisão ainda rejeita os comandos de duplas/fiança; os offsets das construções são fixos embora as caixas dos modelos variem.
+- Graphify query falhou porque o comando `graphify` não está instalado neste ambiente; continuar por leitura local e tentar atualização do grafo depois das mudanças.
+- Implementação: painéis de compra/prisão/dívida e inspeção não somem atrás da fila de avisos; a câmera continua habilitada com painéis; a prisão oferece espera, tentativa autoritativa de duplas com movimento pela soma, ou pagamento de R$ 200.000 com rolagem na mesma vez. Compra e inspeção mostram claramente o aluguel por parada. Construções têm origem centralizada na base e deslocamento calculado pela profundidade real do modelo para alinhar a borda externa com a borda interna do piso; fichas, estádio, aeroporto e modelos de dinheiro também usam origem central/baseada no chão. Os rótulos foram girados em 180° em relação ao ajuste anterior.
+- `npm run verify`: 200 testes, build do frontend e build do servidor passaram com loopback aprovado; aviso conhecido de chunk 3D (956,20 KB / 259,70 KB gzip) permanece. Graphify update não rodou: `graphify` não está instalado.
+- Playtest local: criei partida Clássica com dois bots, confirmei 1× selecionado e modo DEV visível; forcei uma rolagem, comprei Jardim das Flores com uma casa e vi o aluguel/custo no painel e a atualização de saldo e propriedade. A rolagem do mouse alterou o zoom no navegador. Nenhum erro JavaScript foi registrado. O pagamento de prisão foi exercitado na integração Colyseus; toque/pinça em aparelho físico não foi testado.
+- Próximo passo: publicar apenas os arquivos desta frente diretamente em `main`; preservar os arquivos Blender locais.
+
 ## Correções de casas e interações — concluído (2026-10-29)
 
 - Pedido confirmado pelas capturas e pelo esclarecimento sobre a câmera externa: em todas as bordas, construções devem ficar apoiadas e alinhadas à borda interna com a fachada para fora; textos também devem apontar para fora. Completar ainda clique/toque global para dispensar cartas sem acionar o tabuleiro, posicionar o aeroporto no canto Volta ao Mundo, substituir a placa quadrada pela borda do canteiro na cor do dono, expor melhor o controle DEV e aumentar para 15 segundos as janelas de decisão.

@@ -2,7 +2,7 @@ import { randomInt } from 'node:crypto'
 import { CloseCode, Client, Room } from '@colyseus/core'
 import type { GameMode } from '../../../shared/lobby.js'
 import { isCharacterType, isGameMode, normalizePlayerName } from '../../../shared/lobby.js'
-import { AUCTION_DURATION_SECONDS, AUCTION_MIN_BID_INCREMENT, CLASSIC_MATCH_SECONDS, DEFAULT_ANIMATION_SPEED, DICE_ANIMATION_DURATION_MS, EXPRESS_PHASE_SECONDS, EXPRESS_ROUNDS, JAIL_TURNS, PAWN_STEP_ANIMATION_DURATION_MS, PAWN_TELEPORT_ANIMATION_DURATION_MS, PROPERTY_BUILD_LEVELS, PROPERTY_HOTEL_LEVEL, START_BONUS, STARTING_CASH, TURN_DECISION_SECONDS, TURN_ROLL_SECONDS, buildingSaleValue, calculateNetWorth, calculateRent, canBuildHotel, canBuildProperty, canMortgageProperty, canRedeemMortgage, canSellBuilding, constructionCost, describeLanding, getAnimationDuration, hasLiquidatableAssets, hotelConstructionCost, isAnimationSpeed, mortgageRedemptionCost, mortgageValue, movePosition, taxForSpace } from '../../../shared/game.js'
+import { AUCTION_DURATION_SECONDS, AUCTION_MIN_BID_INCREMENT, CLASSIC_MATCH_SECONDS, DEFAULT_ANIMATION_SPEED, DICE_ANIMATION_DURATION_MS, EXPRESS_PHASE_SECONDS, EXPRESS_ROUNDS, JAIL_TURNS, PAWN_STEP_ANIMATION_DURATION_MS, PAWN_TELEPORT_ANIMATION_DURATION_MS, PROPERTY_BUILD_LEVELS, PROPERTY_HOTEL_LEVEL, START_BONUS, STARTING_CASH, TURN_DECISION_SECONDS, TURN_ROLL_SECONDS, areDiceDoubles, buildingSaleValue, calculateNetWorth, calculateRent, canBuildHotel, canBuildProperty, canMortgageProperty, canRedeemMortgage, canSellBuilding, constructionCost, describeLanding, getAnimationDuration, hasLiquidatableAssets, hotelConstructionCost, isAnimationSpeed, mortgageRedemptionCost, mortgageValue, movePosition, taxForSpace } from '../../../shared/game.js'
 import { boardSpaces } from '../../../shared/board.js'
 import { EVENT_CARDS } from '../../../shared/cards.js'
 import { EMPTY_OBJECTIVE_ACTIVITY, EXPRESS_OBJECTIVES, getExpressObjectiveProgress, type ExpressObjectiveId, type ExpressObjectiveUpdate, type ObjectiveActivity } from '../../../shared/objectives.js'
@@ -405,10 +405,55 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       this.advanceTurn()
     },
     jailRoll: (client: Client) => {
-      client.send('room:error', { message: 'Na prisão, você perde três turnos completos. Não há rolagem para sair.' })
+      const player = this.state.players.get(client.sessionId)
+      if (this.state.status !== 'playing' || this.state.turnPhase !== 'jail' || client.sessionId !== this.state.activePlayerSessionId || !player?.isJailed) {
+        client.send('room:error', { message: 'Só é possível tentar duplas na sua vez, enquanto estiver preso.' })
+        return
+      }
+      const diceOne = randomInt(1, 7)
+      const diceTwo = randomInt(1, 7)
+      if (areDiceDoubles([diceOne, diceTwo])) {
+        player.isJailed = false
+        player.jailTurns = 0
+        this.state.turnPhase = 'roll'
+        this.state.turnSeconds = TURN_ROLL_SECONDS
+        this.turnTimerKey = `${this.state.turnNumber}:${client.sessionId}:roll`
+        this.state.landingDescription = `Duplas (${diceOne} e ${diceTwo})! Você saiu da prisão e avançará ${diceOne + diceTwo} casas.`
+        this.rollForPlayer(client.sessionId, [diceOne, diceTwo])
+        return
+      }
+      this.state.diceSequence += 1
+      this.state.diceOne = diceOne
+      this.state.diceTwo = diceTwo
+      this.state.turnPhase = 'rolling'
+      this.state.presentationSpeed = this.state.animationSpeed
+      this.state.landingDescription = `Não saiu duplas (${diceOne} e ${diceTwo}). Você continua preso.`
+      this.schedulePresentation(getAnimationDuration(DICE_ANIMATION_DURATION_MS, this.state.presentationSpeed), () => {
+        if (this.state.turnPhase !== 'rolling' || this.state.activePlayerSessionId !== client.sessionId) return
+        player.jailTurns = Math.max(0, player.jailTurns - 1)
+        if (player.jailTurns === 0) player.isJailed = false
+        this.advanceTurn()
+      })
     },
     jailPay: (client: Client) => {
-      client.send('room:error', { message: 'A prisão dura três turnos completos e não pode ser paga.' })
+      const player = this.state.players.get(client.sessionId)
+      if (this.state.status !== 'playing' || this.state.turnPhase !== 'jail' || client.sessionId !== this.state.activePlayerSessionId || !player?.isJailed) {
+        client.send('room:error', { message: 'Só é possível pagar para sair na sua vez, enquanto estiver preso.' })
+        return
+      }
+      if (player.cash < 200_000) {
+        client.send('room:error', { message: 'Você precisa ter R$ 200.000 para pagar e sair da prisão.' })
+        return
+      }
+      player.cash -= 200_000
+      player.isJailed = false
+      player.jailTurns = 0
+      this.state.turnPhase = 'roll'
+      this.state.turnSeconds = TURN_ROLL_SECONDS
+      this.turnTimerKey = `${this.state.turnNumber}:${client.sessionId}:roll`
+      this.state.diceOne = 0
+      this.state.diceTwo = 0
+      this.state.landingDescription = 'Você pagou R$ 200.000 para sair da prisão. Lance os dados para continuar.'
     },
     tradeOffer: (client: Client, payload: {
       toSessionId?: unknown

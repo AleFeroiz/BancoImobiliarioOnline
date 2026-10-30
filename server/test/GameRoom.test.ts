@@ -915,6 +915,37 @@ describe('sala privada', () => {
     expect(player.cash).toBe(STARTING_CASH)
   })
 
+  it('permite pagar R$ 200.000 para sair da prisão e continuar rolando na mesma vez', async () => {
+    const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
+    const host = await colyseus.connectTo(room, { name: 'Ana' })
+    const guest = await colyseus.connectTo(room, { name: 'Bia' })
+    const started = new Promise<void>((resolve) => host.onMessage('game:started', () => resolve()))
+    host.send('start')
+    await started
+    const player = room.state.players.get(host.sessionId)!
+    player.position = 10
+    player.isJailed = true
+    player.jailTurns = 3
+    player.cash = 300_000
+    room.state.activePlayerSessionId = host.sessionId
+    room.state.turnPhase = 'jail'
+
+    const insufficient = new Promise<{ message: string }>((resolve) => host.onMessage('room:error', resolve))
+    player.cash = 100_000
+    host.send('jailPay')
+    await expect(insufficient).resolves.toMatchObject({ message: expect.stringContaining('R$ 200.000') })
+    expect(player.isJailed).toBe(true)
+
+    player.cash = 300_000
+    host.send('jailPay')
+    await waitFor(() => room.state.turnPhase === 'roll')
+
+    expect(room.state.activePlayerSessionId).toBe(host.sessionId)
+    expect(player).toMatchObject({ isJailed: false, jailTurns: 0, cash: 100_000 })
+    expect(room.state.landingDescription).toContain('R$ 200.000')
+    expect(guest.sessionId).not.toBe(room.state.activePlayerSessionId)
+  })
+
   it('aplica a sede da Copa ao aluguel e impede a Volta ao Mundo para imóvel de outra pessoa', async () => {
     const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
     const host = await colyseus.connectTo(room, { name: 'Ana' })
