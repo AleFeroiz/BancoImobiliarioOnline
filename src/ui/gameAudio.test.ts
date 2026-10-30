@@ -17,6 +17,7 @@ describe('identidade dos efeitos de áudio', () => {
     expect(getGameAudioEffectStyle('money-in')).toBe('cash-register')
     expect(getGameAudioEffectStyle('money-out')).toBe('distorted-loss')
     expect(getGameAudioEffectStyle('dice')).toBe('dice-rattle')
+    expect(getGameAudioEffectStyle('pawn-step')).toBe('pawn-puff')
     expect(getGameAudioEffectStyle('construction')).toBe('musical')
     expect(getGameAudioEffectStyle('none')).toBe('silent')
   })

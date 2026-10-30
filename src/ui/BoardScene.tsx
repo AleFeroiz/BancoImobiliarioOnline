@@ -21,6 +21,8 @@ import { recordRenderedFrame } from './fpsMeter'
 import { applySelectionContrast, createTokenOutlineMaterial, createUnlitMaterial, getOwnerTintOverride } from './sceneMaterials'
 import { getBuildingInnerEdgeOffset, getCenteredModelPlacement, getModelFootprintDepth } from './modelPlacement'
 import { getPropertyRentLabel } from './propertyRentLabel'
+import { playGameSound } from './gameAudio'
+import { getGraphicsDprRange, type GraphicsQuality } from './graphicsQuality'
 
 type PropertyBuilding = { spaceId: number; ownerSessionId: string; houses: number; isMortgaged: boolean; ownerColor: string }
 type PlayerToken = { id: string; position: number; color: string; seatIndex: number; cash: number; characterType: 'pawn' | 'car' | 'motorcycle' | 'airplane'; activity?: string }
@@ -86,7 +88,7 @@ function CameraDragAnywhere({ enabled }: { enabled: boolean }) {
 
   useEffect(() => {
     if (!enabled) return
-    const interactiveSelector = 'button, a, input, select, textarea, summary, [role="button"], [data-camera-drag="off"], .game-modal-backdrop, .game-event-card, .turn-card, .space-inspector, .player-profile-panel'
+    const interactiveSelector = 'button, a, input, select, textarea, summary, [role="button"], [data-camera-drag="off"], .game-modal-backdrop, .game-event-card, .turn-card, .space-inspector, .player-profile-panel, .game-options-panel'
     const isInteractive = (target: EventTarget | null) => target instanceof Element && Boolean(target.closest(interactiveSelector))
     const orbit = controls as CameraOrbitControls | null
     const onPointerDown = (event: PointerEvent) => {
@@ -211,7 +213,7 @@ function SpaceLabel({ name, size, ink, outline, outwardRotation }: { name: strin
   )
 }
 
-function AnimatedPawn({ player, seatIndex, reducedMotion, movementEnabled, moveMode, presentationSpeed, onMovementComplete }: { player: PlayerToken; seatIndex: number; reducedMotion: boolean; movementEnabled: boolean; moveMode: 'walk' | 'teleport'; presentationSpeed: AnimationSpeed; onMovementComplete: () => void }) {
+function AnimatedPawn({ player, seatIndex, reducedMotion, movementEnabled, moveMode, presentationSpeed, pawnStepSoundEnabled, onMovementComplete }: { player: PlayerToken; seatIndex: number; reducedMotion: boolean; movementEnabled: boolean; moveMode: 'walk' | 'teleport'; presentationSpeed: AnimationSpeed; pawnStepSoundEnabled: boolean; onMovementComplete: () => void }) {
   const group = useRef<Group>(null)
   const { invalidate } = useThree()
   const { scene: tokenScene } = useGLTF('/assets/player-tokens.glb')
@@ -219,6 +221,7 @@ function AnimatedPawn({ player, seatIndex, reducedMotion, movementEnabled, moveM
   const hopPath = useRef<number[]>([])
   const hopStart = useRef({ x: 0, z: 0 })
   const elapsed = useRef(0)
+  const lastStepSoundIndex = useRef(-1)
   const hopDuration = useRef(getAnimationDuration(PAWN_STEP_ANIMATION_DURATION_MS, presentationSpeed) / 1000)
   const onMovementCompleteRef = useRef(onMovementComplete)
   onMovementCompleteRef.current = onMovementComplete
@@ -273,6 +276,7 @@ function AnimatedPawn({ player, seatIndex, reducedMotion, movementEnabled, moveM
     }
     hopStart.current = group.current ? { x: group.current.position.x, z: group.current.position.z } : { x: initial.x + offsetX, z: initial.z + offsetZ }
     hopPath.current = path
+    lastStepSoundIndex.current = -1
     hopDuration.current = getAnimationDuration(moveMode === 'teleport' ? PAWN_TELEPORT_ANIMATION_DURATION_MS : PAWN_STEP_ANIMATION_DURATION_MS, presentationSpeed) / 1000
     elapsed.current = 0
   }, [player.position, initial.x, initial.z, offsetX, offsetZ, presentationSpeed, reducedMotion, movementEnabled, moveMode])
@@ -295,6 +299,10 @@ function AnimatedPawn({ player, seatIndex, reducedMotion, movementEnabled, moveM
         return
       }
       invalidate()
+      if (moveMode === 'walk' && pawnStepSoundEnabled && hopIndex !== lastStepSoundIndex.current) {
+        lastStepSoundIndex.current = hopIndex
+        playGameSound('pawn-step')
+      }
       const progress = Math.min((elapsed.current - hopIndex * hopDuration.current) / hopDuration.current, 1)
       const from = hopIndex === 0 ? hopStart.current : positionOnBoard(path[hopIndex - 1] ?? player.position)
       const to = positionOnBoard(path[hopIndex] ?? player.position)
@@ -539,9 +547,9 @@ function AnimatedMortgageBadge({ position, mortgaged, reducedMotion, presentatio
   return <group ref={group} position={position} scale={mortgaged ? 1 : 0}><mesh rotation={[-Math.PI / 2, 0, 0]}><circleGeometry args={[0.11, 8]} /><meshBasicMaterial color="#71858a" /></mesh></group>
 }
 
-function Board({ players, propertyBuildings, worldCupSpaceId, highlightedSpaceIds, selectionMode, landingPulseSpaceId, landingPulseSequence, diceRollSequence, dice, diceVisible, diceResultVisible, presentationSpeed, reducedMotion, pawnMovementEnabled, pawnMoveMode, onMovementComplete, onSelectSpace }: { players: PlayerToken[]; propertyBuildings: PropertyBuilding[]; worldCupSpaceId: number; highlightedSpaceIds: readonly number[]; selectionMode: boolean; landingPulseSpaceId: number; landingPulseSequence: number; dice: [number, number]; diceVisible: boolean; diceResultVisible: boolean; diceRollSequence: number; presentationSpeed: AnimationSpeed; reducedMotion: boolean; pawnMovementEnabled: boolean; pawnMoveMode: 'walk' | 'teleport'; onMovementComplete: () => void; onSelectSpace: (spaceId: number) => void }) {
+function Board({ players, propertyBuildings, worldCupSpaceId, highlightedSpaceIds, selectionMode, landingPulseSpaceId, landingPulseSequence, diceRollSequence, dice, diceVisible, diceResultVisible, presentationSpeed, reducedMotion, pawnMovementEnabled, pawnMoveMode, pawnStepSoundEnabled, onMovementComplete, onSelectSpace }: { players: PlayerToken[]; propertyBuildings: PropertyBuilding[]; worldCupSpaceId: number; highlightedSpaceIds: readonly number[]; selectionMode: boolean; landingPulseSpaceId: number; landingPulseSequence: number; dice: [number, number]; diceVisible: boolean; diceResultVisible: boolean; diceRollSequence: number; presentationSpeed: AnimationSpeed; reducedMotion: boolean; pawnMovementEnabled: boolean; pawnMoveMode: 'walk' | 'teleport'; pawnStepSoundEnabled: boolean; onMovementComplete: () => void; onSelectSpace: (spaceId: number) => void }) {
   const propertyRentLabels = useMemo(() => boardSpaces
-    .filter((space) => space.kind === 'property')
+    .filter((space) => space.kind === 'property' && propertyBuildings.some((holding) => holding.spaceId === space.id && Boolean(holding.ownerSessionId)))
     .map((space) => {
       const { x, z } = positionOnBoard(space.id)
       return { id: space.id, position: [x, 0.88, z] as [number, number, number], text: getPropertyRentLabel(space.id, propertyBuildings, worldCupSpaceId) ?? '' }
@@ -630,7 +638,7 @@ function Board({ players, propertyBuildings, worldCupSpaceId, highlightedSpaceId
       <Suspense fallback={null}>
         {propertyBuildings.filter(({ ownerSessionId }) => Boolean(ownerSessionId)).map(({ spaceId, houses, ownerColor, ownerSessionId }) => <AnimatedBuilding key={`buildings-${spaceId}`} spaceId={spaceId} houses={houses} ownerColor={ownerColor} ownerSessionId={ownerSessionId} reducedMotion={reducedMotion} presentationSpeed={presentationSpeed} dimmed={selectionMode && !highlightedSpaceIds.includes(spaceId)} />)}
       </Suspense>
-      {players.map((player) => <AnimatedPawn key={player.id} player={player} seatIndex={player.seatIndex} reducedMotion={reducedMotion} movementEnabled={pawnMovementEnabled} moveMode={pawnMoveMode} presentationSpeed={presentationSpeed} onMovementComplete={onMovementComplete} />)}
+      {players.map((player) => <AnimatedPawn key={player.id} player={player} seatIndex={player.seatIndex} reducedMotion={reducedMotion} movementEnabled={pawnMovementEnabled} moveMode={pawnMoveMode} presentationSpeed={presentationSpeed} pawnStepSoundEnabled={pawnStepSoundEnabled} onMovementComplete={onMovementComplete} />)}
       {diceVisible && <>
         <AnimatedDie position={[-0.34, 0.23, -0.23]} rotation={[0.12, 0.25, 0.25]} sequence={diceRollSequence} value={dice[0] || 1} reducedMotion={reducedMotion} visible={diceVisible} presentationSpeed={presentationSpeed} />
         {dice[1] > 0 && <AnimatedDie position={[0.38, 0.23, 0.2]} rotation={[-0.18, 0.3, -0.2]} sequence={diceRollSequence} value={dice[1]} reducedMotion={reducedMotion} visible={diceVisible} presentationSpeed={presentationSpeed} />}
@@ -682,7 +690,7 @@ function CornerLandmark({ type, position, dimmed }: { type: 'stadium' | 'airport
   return <group position={position}><primitive object={model} scale={type === 'stadium' ? 0.64 : 0.36} /></group>
 }
 
-type BoardSceneProps = { players: PlayerToken[]; propertyBuildings: PropertyBuilding[]; worldCupSpaceId?: number; highlightedSpaceIds?: readonly number[]; selectionMode?: boolean; landingPulseSpaceId?: number; landingPulseSequence?: number; diceRollSequence?: number; dice?: [number, number]; diceVisible?: boolean; diceResultVisible?: boolean; presentationSpeed?: AnimationSpeed; reducedMotion?: boolean; pawnMovementEnabled?: boolean; pawnMoveMode?: 'walk' | 'teleport'; cameraEnabled?: boolean; fpsMeterEnabled?: boolean; fpsSamples?: { current: FrameRateAccumulator }; onMovementComplete: () => void; onSelectSpace: (spaceId: number) => void }
+type BoardSceneProps = { players: PlayerToken[]; propertyBuildings: PropertyBuilding[]; worldCupSpaceId?: number; highlightedSpaceIds?: readonly number[]; selectionMode?: boolean; landingPulseSpaceId?: number; landingPulseSequence?: number; diceRollSequence?: number; dice?: [number, number]; diceVisible?: boolean; diceResultVisible?: boolean; presentationSpeed?: AnimationSpeed; reducedMotion?: boolean; pawnMovementEnabled?: boolean; pawnMoveMode?: 'walk' | 'teleport'; pawnStepSoundEnabled?: boolean; cameraEnabled?: boolean; graphicsQuality?: GraphicsQuality; fpsMeterEnabled?: boolean; fpsSamples?: { current: FrameRateAccumulator }; onMovementComplete: () => void; onSelectSpace: (spaceId: number) => void }
 
 function FrameRateProbe({ samples }: { samples: { current: FrameRateAccumulator } }) {
   useFrame(() => {
@@ -691,16 +699,16 @@ function FrameRateProbe({ samples }: { samples: { current: FrameRateAccumulator 
   return null
 }
 
-function BoardSceneCanvas({ players, propertyBuildings, worldCupSpaceId = 255, highlightedSpaceIds = [], selectionMode = false, landingPulseSpaceId = -1, landingPulseSequence = 0, diceRollSequence = 0, dice = [0, 0], diceVisible = false, diceResultVisible = false, presentationSpeed = 1, reducedMotion = false, pawnMovementEnabled = false, pawnMoveMode = 'walk', cameraEnabled = true, fpsMeterEnabled = false, fpsSamples, onMovementComplete, onSelectSpace }: BoardSceneProps) {
+function BoardSceneCanvas({ players, propertyBuildings, worldCupSpaceId = 255, highlightedSpaceIds = [], selectionMode = false, landingPulseSpaceId = -1, landingPulseSequence = 0, diceRollSequence = 0, dice = [0, 0], diceVisible = false, diceResultVisible = false, presentationSpeed = 1, reducedMotion = false, pawnMovementEnabled = false, pawnMoveMode = 'walk', pawnStepSoundEnabled = false, cameraEnabled = true, graphicsQuality = 'high', fpsMeterEnabled = false, fpsSamples, onMovementComplete, onSelectSpace }: BoardSceneProps) {
   return (
-    <Canvas camera={{ position: [12.5, 15.5, 15.5], fov: 34 }} dpr={[0.8, 1.1]} frameloop="demand" gl={{ antialias: false, powerPreference: 'high-performance', stencil: false }}>
+    <Canvas camera={{ position: [12.5, 15.5, 15.5], fov: 34 }} dpr={getGraphicsDprRange(graphicsQuality)} frameloop="demand" gl={{ antialias: false, powerPreference: 'high-performance', stencil: false }}>
       <color attach="background" args={['#9bbcc1']} />
       <ResponsiveCamera tilt={16} horizontal={45} />
       <OrbitControls makeDefault enabled={cameraEnabled} enablePan={false} enableZoom enableRotate minPolarAngle={Math.PI / 12} maxPolarAngle={Math.PI / 2} rotateSpeed={0.72} zoomSpeed={0.75} enableDamping dampingFactor={0.1} />
       <CameraZoomBounds />
       <CameraDragAnywhere enabled={cameraEnabled} />
       {fpsMeterEnabled && fpsSamples && <FrameRateProbe samples={fpsSamples} />}
-      <Board players={players} propertyBuildings={propertyBuildings} worldCupSpaceId={worldCupSpaceId} highlightedSpaceIds={highlightedSpaceIds} selectionMode={selectionMode} landingPulseSpaceId={landingPulseSpaceId} landingPulseSequence={landingPulseSequence} diceRollSequence={diceRollSequence} dice={dice} diceVisible={diceVisible} diceResultVisible={diceResultVisible} presentationSpeed={presentationSpeed} reducedMotion={reducedMotion} pawnMovementEnabled={pawnMovementEnabled} pawnMoveMode={pawnMoveMode} onMovementComplete={onMovementComplete} onSelectSpace={onSelectSpace} />
+      <Board players={players} propertyBuildings={propertyBuildings} worldCupSpaceId={worldCupSpaceId} highlightedSpaceIds={highlightedSpaceIds} selectionMode={selectionMode} landingPulseSpaceId={landingPulseSpaceId} landingPulseSequence={landingPulseSequence} diceRollSequence={diceRollSequence} dice={dice} diceVisible={diceVisible} diceResultVisible={diceResultVisible} presentationSpeed={presentationSpeed} reducedMotion={reducedMotion} pawnMovementEnabled={pawnMovementEnabled} pawnMoveMode={pawnMoveMode} pawnStepSoundEnabled={pawnStepSoundEnabled} onMovementComplete={onMovementComplete} onSelectSpace={onSelectSpace} />
     </Canvas>
   )
 }
@@ -740,7 +748,9 @@ function areScenePropsEqual(first: BoardSceneProps, second: BoardSceneProps) {
     && first.reducedMotion === second.reducedMotion
     && first.pawnMovementEnabled === second.pawnMovementEnabled
     && first.pawnMoveMode === second.pawnMoveMode
+    && first.pawnStepSoundEnabled === second.pawnStepSoundEnabled
     && first.cameraEnabled === second.cameraEnabled
+    && first.graphicsQuality === second.graphicsQuality
     && first.fpsMeterEnabled === second.fpsMeterEnabled
     && first.fpsSamples === second.fpsSamples
 }

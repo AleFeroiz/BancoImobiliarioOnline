@@ -471,3 +471,9 @@
 - `git diff --check` passou. Testes de regressão cobrem proposta que permanece ativa ao trocar a vez, envio fora da vez e revalidação no aceite; rolagem autoritativa da estação e apresentação de apenas um dado 3D; mapeamento de sons para caixa, perda distorcida, dados, construção e silêncio.
 - Playtest visual não concluído: `npm run dev:server` retornou `EADDRINUSE` na porta 2567. `Get-NetTCPConnection`, `netstat -ano` e enumeração de processos disponíveis não identificaram o listener para encerrar com segurança; sem servidor Colyseus não foi possível abrir a sala nem capturar o perfil ou a estação no navegador.
 - `graphify update .` não executou: o comando `graphify` não está instalado neste ambiente.
+# Painel de compra, inspeção, controles e nitidez — 2026-10-30
+
+- `npm run verify`: 218 testes em 42 arquivos passaram; builds frontend e servidor passaram. O chunk de cena 3D mantém o aviso conhecido (956,43 KB / 259,81 KB gzip).
+- `git diff --check` passou. Testes cobrem a decisão de compra mesmo com casa inspecionada anteriormente, labels de aluguel apenas com proprietário, steppers com limites de saldo, estilo de som de passo e faixas de DPR com qualidade alta padrão.
+- Revisão visual pendente: a porta 2567 aparentou livre na enumeração, mas o servidor terminou com `EADDRINUSE`; não foi possível identificar um processo/listener para encerrar. Sem a sala Colyseus, não capturei a inspeção ou as opções gráficas no navegador.
+- `graphify update .` não executou porque a CLI `graphify` não está instalada.

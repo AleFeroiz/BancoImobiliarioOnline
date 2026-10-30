@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { getTurnActivityLabel, shouldShowTurnCard, shouldSuppressTurnCardForFeedback } from './turnActivity.js'
+import { getTurnActivityLabel, shouldShowTurnCard, shouldSuppressTurnCardForFeedback, shouldSuppressTurnCardForSpaceSelection } from './turnActivity.js'
 
 describe('atividade do jogador da vez', () => {
   it('descreve cada fase para os outros participantes', () => {
@@ -25,5 +25,10 @@ describe('atividade do jogador da vez', () => {
     expect(shouldSuppressTurnCardForFeedback(true, 'jail')).toBe(false)
     expect(shouldSuppressTurnCardForFeedback(true, 'debt')).toBe(false)
     expect(shouldSuppressTurnCardForFeedback(true, 'roll')).toBe(true)
+  })
+
+  it('não deixa uma inspeção antiga esconder o painel de compra, mesmo sem saldo suficiente', () => {
+    expect(shouldSuppressTurnCardForSpaceSelection(true, 'purchase', false, false, false)).toBe(false)
+    expect(shouldSuppressTurnCardForSpaceSelection(true, 'resolve', false, false, false)).toBe(true)
   })
 })

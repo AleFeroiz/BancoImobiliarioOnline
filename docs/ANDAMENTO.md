@@ -9,6 +9,14 @@
 
 > Retrato de trabalho para retomar o projeto entre sessões. Para requisitos e decisões, consulte os documentos de origem indicados em `AGENTS.md`.
 
+## Painel de compra, inspeção, passos do peão e qualidade gráfica — implementação concluída (2026-10-30)
+
+- Pedido atual: manter a decisão de compra visível sem saldo e com casa previamente selecionada; mostrar rótulos 3D somente em propriedades possuídas; corrigir layout de perfil com só um imóvel; substituir campos numéricos por botões; tocar um efeito suave por passo do peão; incluir inspeção de níveis e valores; expor controle gráfico com padrão de maior resolução.
+- Implementação: decisão de compra não é mais ocultada por seleção antiga do inspetor, mesmo se não houver saldo. Rótulos 3D só são criados para imóveis com dono. A carteira usa altura sem rolagem quando só há um imóvel. Inspeção residencial agora mostra terreno e níveis de uma a três casas, aluguel/custo e seleção do nível atual; hotel aparece quando aplicável. Proposta e lances usam steppers de dinheiro em R$ 10.000 com limites de saldo, e outros valores continuam seguindo o padrão de botões. O peão toca “puf” em cada passo caminhado. O menu ⚙ oferece desempenho, equilibrado e alta resolução; o padrão usa DPR de 1–2×.
+- Testes e build: `npm run verify` passou com 218 testes em 42 arquivos e builds de frontend/servidor. Aviso conhecido de chunk 3D em 956,43 KB (259,81 KB gzip). `git diff --check` passou. Regressões cobertas: compra não escondida por seleção, ausência de aluguel 3D sem dono, steppers limitados e qualidade gráfica padrão.
+- Playtest visual pendente: o servidor local retornou `EADDRINUSE` em 2567; consultas de listener/processos não identificaram o proprietário da porta. Graphify update não executou porque o comando não está instalado.
+- Próximo passo: publicar em `main` somente os arquivos desta tarefa, mantendo fora do commit os dois arquivos locais do Blender.
+
 ## Perfil de jogador, propostas, sons e rolagem de estação — implementação concluída (2026-10-30)
 
 - Pedido atual: remover os atalhos “Imóveis” e “Negociar”; abrir perfil/carteira ao clicar em qualquer cartão; incluir efeitos de dinheiro, construção e dado; tornar manual e visível a rolagem do aluguel das estações; permitir propostas que dependem do aceite do destinatário.

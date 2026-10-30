@@ -28,6 +28,7 @@ function getAudioContext() {
 const soundNotes: Record<GameSound, number[]> = {
   none: [],
   dice: [392, 523],
+  'pawn-step': [],
   purchase: [523, 659, 784],
   'money-in': [523, 659, 784, 1047],
   'money-out': [784, 659, 523, 392],
@@ -40,12 +41,13 @@ const soundNotes: Record<GameSound, number[]> = {
   redemption: [494, 659],
 }
 
-export type GameAudioEffectStyle = 'silent' | 'cash-register' | 'distorted-loss' | 'dice-rattle' | 'musical'
+export type GameAudioEffectStyle = 'silent' | 'cash-register' | 'distorted-loss' | 'dice-rattle' | 'pawn-puff' | 'musical'
 
 export function getGameAudioEffectStyle(sound: GameSound): GameAudioEffectStyle {
   if (sound === 'money-in') return 'cash-register'
   if (sound === 'money-out') return 'distorted-loss'
   if (sound === 'dice') return 'dice-rattle'
+  if (sound === 'pawn-step') return 'pawn-puff'
   if (sound === 'none') return 'silent'
   return 'musical'
 }
@@ -120,6 +122,23 @@ function playDiceRattle(audio: AudioContext) {
   playNoise(audio, start + 0.13, 0.15, 2100, 0.05)
 }
 
+function playPawnPuff(audio: AudioContext) {
+  const start = audio.currentTime
+  playNoise(audio, start, 0.095, 520, 0.035)
+  const oscillator = audio.createOscillator()
+  const envelope = audio.createGain()
+  oscillator.type = 'triangle'
+  oscillator.frequency.setValueAtTime(185, start)
+  oscillator.frequency.exponentialRampToValueAtTime(95, start + 0.085)
+  envelope.gain.setValueAtTime(0.0001, start)
+  envelope.gain.exponentialRampToValueAtTime(0.045, start + 0.008)
+  envelope.gain.exponentialRampToValueAtTime(0.0001, start + 0.105)
+  oscillator.connect(envelope)
+  envelope.connect(audio.destination)
+  oscillator.start(start)
+  oscillator.stop(start + 0.11)
+}
+
 export function playGameSound(sound: GameSound) {
   if (getGameAudioEffectStyle(sound) === 'silent') return
   const audio = getAudioContext()
@@ -136,6 +155,10 @@ export function playGameSound(sound: GameSound) {
     }
     if (style === 'dice-rattle') {
       playDiceRattle(audio)
+      return
+    }
+    if (style === 'pawn-puff') {
+      playPawnPuff(audio)
       return
     }
     const start = audio.currentTime

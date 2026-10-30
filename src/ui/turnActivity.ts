@@ -8,6 +8,10 @@ export function shouldSuppressTurnCardForFeedback(feedbackPending: boolean, phas
   return feedbackPending && !['purchase', 'jail', 'debt'].includes(phase)
 }
 
+export function shouldSuppressTurnCardForSpaceSelection(hasSelectedSpace: boolean, phase: ActivityPhase, ownPropertyLanding: boolean, showPropertyPanel: boolean, showObjectivePanel: boolean) {
+  return hasSelectedSpace && phase !== 'ended' && phase !== 'purchase' && !ownPropertyLanding && !showPropertyPanel && !showObjectivePanel
+}
+
 export function getTurnActivityLabel(phase: ActivityPhase) {
   switch (phase) {
     case 'roll': return 'Aguardando a jogada'

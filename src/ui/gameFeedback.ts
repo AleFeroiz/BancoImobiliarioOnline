@@ -1,4 +1,4 @@
-export type GameSound = 'none' | 'dice' | 'purchase' | 'money-in' | 'money-out' | 'auction' | 'milestone' | 'construction' | 'demolition' | 'ownership' | 'mortgage' | 'redemption'
+export type GameSound = 'none' | 'dice' | 'pawn-step' | 'purchase' | 'money-in' | 'money-out' | 'auction' | 'milestone' | 'construction' | 'demolition' | 'ownership' | 'mortgage' | 'redemption'
 export type PropertyVisualState = { ownerSessionId: string; houses: number; isMortgaged?: boolean }
 export type PropertyVisualChange = 'placed' | 'built' | 'demolished' | 'ownership' | 'released' | 'mortgaged' | 'redeemed'
 

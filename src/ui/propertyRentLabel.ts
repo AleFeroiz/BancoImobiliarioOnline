@@ -7,6 +7,7 @@ export function getPropertyRentLabel(spaceId: number, holdings: readonly Propert
   const space = boardSpaces[spaceId]
   if (space?.kind !== 'property') return null
   const holding = holdings.find((item) => item.spaceId === spaceId)
+  if (!holding?.ownerSessionId) return null
   if (holding?.isMortgaged) return 'HIPOTECADA'
   if (!space.buildable) {
     const multiplier = spaceId === worldCupSpaceId ? 3 : 1
