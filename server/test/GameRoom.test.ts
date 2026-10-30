@@ -1312,6 +1312,31 @@ describe('sala privada', () => {
     expect(guestObjectives).toHaveLength(1)
   })
 
+  it('abre o painel de compra ao resolver imóvel livre após avançar três casas por carta', async () => {
+    const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
+    const host = await colyseus.connectTo(room, { name: 'Ana' })
+    await colyseus.connectTo(room, { name: 'Bia' })
+    host.send('start')
+    await waitFor(() => room.state.status === 'playing')
+
+    const player = room.state.players.get(host.sessionId)!
+    const property = boardSpaces.find((space) => space.kind === 'property' && space.buildable)!
+    player.position = property.id
+    room.state.activePlayerSessionId = host.sessionId
+    room.state.turnPhase = 'moving'
+    room.state.activeCardTitle = 'Atalho pela cidade'
+    room.state.activeCardDescription = 'Avance três casas e resolva onde parar.'
+
+    const resolveSpace = (room as unknown as { resolveSpace: (sessionId: string, target: typeof player, drawEvent: boolean, descriptionPrefix: string) => void }).resolveSpace
+    resolveSpace.call(room, host.sessionId, player, false, 'Avance três casas e resolva onde parar.')
+
+    expect(room.state.turnPhase).toBe('purchase')
+    expect(room.state.pendingPropertyId).toBe(property.id)
+    expect(room.state.activeCardTitle).toBe('')
+    expect(room.state.activeCardDescription).toBe('')
+    expect(room.state.landingDescription).toContain(property.name)
+  })
+
   it('acompanha aluguel pago e recebido em atividade direta de Express', async () => {
     const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'express' })
     const host = await colyseus.connectTo(room, { name: 'Ana' })

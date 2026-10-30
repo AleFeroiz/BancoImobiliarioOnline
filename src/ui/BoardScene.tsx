@@ -9,7 +9,7 @@ import { getCameraFraming } from './cameraFraming'
 import { getCameraZoomLimits } from './cameraZoom'
 import { BUILDING_GROUP_Y, BUILDING_MODEL_Y_OFFSET, getBoardSpaceDecoration } from './boardDecoration'
 import { getBoardTileTheme } from './boardTileTheme'
-import { fitSpaceLabel } from './spaceLabel'
+import { fitSpaceLabel, shouldRenderSpaceLabel } from './spaceLabel'
 import { getPawnStepPath } from './pawnPath'
 import { getPropertyVisualChange } from './gameFeedback'
 import { getDiceRollRotation } from './dicePresentation'
@@ -626,7 +626,7 @@ function Board({ players, propertyBuildings, worldCupSpaceId, highlightedSpaceId
             {space.kind === 'world-tour' && <Suspense fallback={null}><CornerLandmark type="airport" position={[0, 0.08, 0]} dimmed={selectionMode && !selectable} /></Suspense>}
             {space.kind === 'rest' && <mesh position={[size * 0.31, 0.11, size * 0.3]} raycast={skipRaycast}><cylinderGeometry args={[0.07, 0.09, 0.035, 6]} /><meshBasicMaterial color={theme.trim} /></mesh>}
             {space.kind === 'start' && <mesh position={[size * 0.31, 0.13, size * 0.3]} rotation={[0, Math.PI / 4, 0]} raycast={skipRaycast}><boxGeometry args={[0.14, 0.045, 0.14]} /><meshBasicMaterial color={theme.trim} /></mesh>}
-            <SpaceLabel name={space.name} size={size} ink={theme.ink} outline={theme.outline} outwardRotation={decoration.labelRotation} />
+            {shouldRenderSpaceLabel(space.kind) && <SpaceLabel name={space.name} size={size} ink={theme.ink} outline={theme.outline} outwardRotation={decoration.labelRotation} />}
             {highlightedSpaceIds.includes(space.id) && (
               <mesh position={[0, 0.092, 0]} rotation={[-Math.PI / 2, 0, 0]} raycast={skipRaycast}>
                 <ringGeometry args={[size * 0.38, size * 0.47, 40]} />

@@ -1,3 +1,9 @@
+import type { SpaceKind } from '../../shared/board'
+
+export function shouldRenderSpaceLabel(kind: SpaceKind) {
+  return kind !== 'event'
+}
+
 export function wrapSpaceLabel(name: string, maxWidth: number, measureText: (text: string) => number) {
   const words = name.toLocaleUpperCase('pt-BR').trim().split(/\s+/).filter(Boolean)
   const lines: string[] = []

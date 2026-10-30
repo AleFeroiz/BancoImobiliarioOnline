@@ -491,3 +491,11 @@
 - Regressão adicionada: `getBuildingRentLabelPosition` mantém o rótulo acima do topo e na mesma faixa lateral da construção para os lados do tabuleiro.
 - Revisão visual local pendente: as portas 5173/2567 pareciam livres, mas o servidor Colyseus retornou `EADDRINUSE` na porta 2567. Encerrei a sessão recém-iniciada; nenhum processo desconhecido foi encerrado. Assim, a organização desktop/celular e a leitura da inspeção ainda não foram capturadas no navegador.
 - Graphify MCP não tem índice deste repositório e `graphify update .` falhou porque a CLI não está instalada.
+
+## Compra depois de carta de avanço e piso sem texto — 2026-10-30
+
+- Regressão do servidor: ao concluir o movimento de três casas iniciado por uma carta, a resolução de destino limpa o título/descrição da carta antes de publicar a fase da casa. Se o destino estiver livre, continua em `purchase` com o `pendingPropertyId` correto; isso permite que o cliente volte a renderizar o painel de compra.
+- Regressão visual: as casas `event` não renderizam `SpaceLabel`; a roleta de setores permanece no piso. Os demais espaços mantêm seus nomes.
+- `npm run verify`: 227 testes em 44 arquivos passaram; builds do frontend e servidor passaram. `git diff --check` passou. O aviso já conhecido de chunk 3D acima de 500 KB permanece.
+- Playtest visual indisponível: as portas 5173/2567 pareciam livres, mas o servidor Colyseus retornou `EADDRINUSE` na 2567. Encerrei a sessão recém-iniciada sem interromper processos desconhecidos.
+- `graphify update .` não executou porque a CLI `graphify` não está instalada; o índice MCP disponível pertence a outro repositório.

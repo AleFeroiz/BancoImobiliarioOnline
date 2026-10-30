@@ -1382,6 +1382,10 @@ export class GameRoom extends Room<{ state: LobbyState }> {
     this.state.pendingPropertyId = 255
     this.state.turnPhase = 'resolve'
     this.state.landingDescription = `${descriptionPrefix ? `${descriptionPrefix} ` : ''}${describeLanding(player.position)}`
+    if (!drawEvent) {
+      this.state.activeCardTitle = ''
+      this.state.activeCardDescription = ''
+    }
     if (space.kind === 'property') {
       const property = this.state.properties.get(String(space.id))
       if (!property?.ownerSessionId) {

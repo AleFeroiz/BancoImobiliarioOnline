@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { boardSpaces } from '../game/board'
-import { fitSpaceLabel, wrapSpaceLabel } from './spaceLabel'
+import { fitSpaceLabel, shouldRenderSpaceLabel, wrapSpaceLabel } from './spaceLabel'
 
 describe('quebra de nomes nas casas 3D', () => {
   const measureByCharacter = (text: string) => text.length * 10
@@ -25,5 +25,11 @@ describe('quebra de nomes nas casas 3D', () => {
       expect(fitted.lines.length, space.name).toBeLessThanOrEqual(3)
       expect(fitted.fontSize, space.name).toBeGreaterThanOrEqual(104)
     }
+  })
+
+  it('deixa a roleta sem texto nas casas Sorte ou Revés e preserva os outros nomes', () => {
+    expect(shouldRenderSpaceLabel('event')).toBe(false)
+    expect(shouldRenderSpaceLabel('property')).toBe(true)
+    expect(boardSpaces.filter((space) => space.kind === 'event').every((space) => !shouldRenderSpaceLabel(space.kind))).toBe(true)
   })
 })
