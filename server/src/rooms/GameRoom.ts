@@ -688,8 +688,8 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       const propertyId = typeof payload?.propertyId === 'number' ? payload.propertyId : -1
       const space = boardSpaces[propertyId]
       if (this.state.status !== 'playing' || this.state.turnPhase !== 'world-cup' || client.sessionId !== this.state.activePlayerSessionId) return
-      if (!space || space.kind !== 'property') {
-        client.send('room:error', { message: 'Escolha uma propriedade válida para sediar a Copa do Mundo.' })
+      if (!space || space.kind !== 'property' || this.state.properties.get(String(propertyId))?.ownerSessionId !== client.sessionId) {
+        client.send('room:error', { message: 'Escolha uma propriedade sua para sediar a Copa do Mundo.' })
         return
       }
       this.state.worldCupSpaceId = propertyId
@@ -881,7 +881,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
     else if (phase === 'purchase') this.messages.declinePurchase(client)
     else if (phase === 'resolve') this.messages.finishTurn(client)
     else if (phase === 'jail') this.messages.finishTurn(client)
-    else if (phase === 'world-cup') this.messages.chooseWorldCup(client, { propertyId: this.getWorldCupDefaultPropertyId() })
+    else if (phase === 'world-cup') this.chooseDefaultWorldCup(client, sessionId)
     else if (phase === 'world-tour') this.messages.chooseWorldTour(client, { spaceId: this.getWorldTourDefaultDestination(sessionId) })
     else {
       this.autoResolveDebt(sessionId)
@@ -948,7 +948,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       return
     }
     if (this.state.turnPhase === 'world-cup') {
-      this.messages.chooseWorldCup(internalClient, { propertyId: this.getWorldCupDefaultPropertyId() })
+      this.chooseDefaultWorldCup(internalClient, sessionId)
       this.advanceTurn()
       return
     }
@@ -1055,7 +1055,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
     } else if (this.state.turnPhase === 'jail') {
       this.messages.finishTurn(client)
     } else if (this.state.turnPhase === 'world-cup') {
-      this.messages.chooseWorldCup(client, { propertyId: this.getWorldCupDefaultPropertyId() })
+      this.chooseDefaultWorldCup(client, sessionId)
     } else if (this.state.turnPhase === 'world-tour') {
       this.messages.chooseWorldTour(client, { spaceId: this.getWorldTourDefaultDestination(sessionId) })
     } else if (this.state.turnPhase === 'debt') {
@@ -1306,10 +1306,21 @@ export class GameRoom extends Room<{ state: LobbyState }> {
     }
   }
 
-  private getWorldCupDefaultPropertyId() {
+  private getWorldCupDefaultPropertyId(sessionId: string) {
     return boardSpaces
-      .filter((space) => space.kind === 'property')
-      .sort((first, second) => (second.price ?? 0) - (first.price ?? 0))[0]?.id ?? 1
+      .filter((space) => space.kind === 'property' && this.state.properties.get(String(space.id))?.ownerSessionId === sessionId)
+      .sort((first, second) => (second.price ?? 0) - (first.price ?? 0))[0]?.id ?? -1
+  }
+
+  private chooseDefaultWorldCup(client: Client, sessionId: string) {
+    const propertyId = this.getWorldCupDefaultPropertyId(sessionId)
+    if (propertyId < 0) {
+      this.state.turnPhase = 'resolve'
+      this.state.landingDescription += ' Você não possui propriedades para sediar a Copa; não há uma sede disponível.'
+      this.finishExpiredPhaseIfReady()
+      return
+    }
+    this.messages.chooseWorldCup(client, { propertyId })
   }
 
   private getWorldTourDefaultDestination(sessionId: string) {
@@ -1381,8 +1392,14 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       player.jailTurns = JAIL_TURNS
       this.state.landingDescription = `${describeLanding(space.id)} Você perderá os próximos três turnos.`
     } else if (space.kind === 'world-cup') {
-      this.state.turnPhase = 'world-cup'
-      this.state.landingDescription = `${describeLanding(space.id)} Escolha uma propriedade para sediar o evento.`
+      this.state.landingDescription = describeLanding(space.id)
+      if (this.getWorldCupDefaultPropertyId(sessionId) < 0) {
+        this.state.turnPhase = 'resolve'
+        this.state.landingDescription += ' Você não possui propriedades para sediar a Copa; não há uma sede disponível.'
+      } else {
+        this.state.turnPhase = 'world-cup'
+        this.state.landingDescription += ' Escolha uma propriedade sua para sediar o evento.'
+      }
     } else if (space.kind === 'world-tour') {
       this.state.turnPhase = 'world-tour'
       this.state.landingDescription = `${describeLanding(space.id)} Escolha sua próxima casa.`

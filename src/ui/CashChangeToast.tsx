@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { formatCashDelta, getCashChangeTone } from './gameFeedback'
 
-type CashChangeToastProps = { cash: number; playerName: string }
+type CashChangeToastProps = { cash: number; playerName: string; placement: 'below' | 'above' }
 type CashChange = { id: number; delta: number }
 
-export function CashChangeToast({ cash, playerName }: CashChangeToastProps) {
+export function CashChangeToast({ cash, playerName, placement }: CashChangeToastProps) {
   const previousCash = useRef(cash)
   const nextId = useRef(0)
   const [queue, setQueue] = useState<CashChange[]>([])
@@ -30,5 +30,5 @@ export function CashChangeToast({ cash, playerName }: CashChangeToastProps) {
   if (!tone) return null
   const amount = formatCashDelta(current.delta)
 
-  return <span key={current.id} className={`cash-change-toast cash-change-${tone}`} role="status" aria-label={`${playerName} ${tone === 'gain' ? 'ganhou' : 'perdeu'} ${amount.replace(/^[+−]/, '')}`}>{amount}</span>
+  return <span key={current.id} className={`cash-change-toast cash-change-${tone} cash-change-${placement}`} role="status" aria-label={`${playerName} ${tone === 'gain' ? 'ganhou' : 'perdeu'} ${amount.replace(/^[+−]/, '')}`}>{amount}</span>
 }

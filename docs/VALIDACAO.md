@@ -14,6 +14,13 @@
 - Graphify update não executou porque a CLI `graphify` não está instalada neste ambiente.
 # Validação visual e de navegador
 
+## 2026-10-30 — Pop-ups posicionados, seletores DEV, Copa e aluguel 3D
+
+- `npm run verify`: 213 testes passaram; builds do frontend e servidor passaram. O chunk conhecido `sceneMaterials` ficou em 956,43 KB (259,81 KB gzip). `git diff --check` passou.
+- Testes de regressão cobrem os pop-ups abaixo dos cartões superiores/acima dos inferiores, os botões de dados com incremento/decremento e retorno entre 1 e 6, a Copa sem opções quando não há imóveis próprios, a rejeição de imóvel livre/de outro jogador e os valores de aluguel base, grupo/construções, hipoteca e estação.
+- A revisão visual no navegador não foi concluída: iniciar o servidor local retornou `EADDRINUSE` na porta 2567 e as consultas de listener não identificaram o processo ocupando a porta. Não capturei screenshot nem confirmei visualmente o billboard nesta rodada.
+- `graphify update .` foi tentado, mas a CLI `graphify` não está instalada.
+
 ## 2026-10-30 — Compra, prisão e origem dos modelos
 
 - `npm run verify`: 200 testes passaram; os builds de frontend e servidor passaram. Os testes Colyseus exigiram loopback local aprovado; a primeira execução sem ele recebeu `fetch failed`.

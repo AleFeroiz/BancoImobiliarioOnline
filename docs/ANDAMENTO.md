@@ -9,6 +9,14 @@
 
 > Retrato de trabalho para retomar o projeto entre sessões. Para requisitos e decisões, consulte os documentos de origem indicados em `AGENTS.md`.
 
+## Rótulos de aluguel, escolha da Copa e seletores DEV — implementação concluída (2026-10-30)
+
+- Pedido atual: colocar os avisos de saldo abaixo dos cartões superiores e acima dos inferiores; consertar os seletores dos dados forçados; permitir sede da Copa apenas em imóvel próprio; exibir o aluguel em texto 3D voltado para a câmera.
+- Implementação: posicionamento do pop-up usa o assento do jogador; o seletor DEV usa botões −/+ clicáveis e com suporte a toque, avançando em ciclo de 1 a 6; cliente e servidor limitam a Copa aos imóveis do jogador ativo e a fase é encerrada sem sede quando não há propriedades próprias; cada propriedade mostra aluguel atualizado, incluindo grupo completo, construções, hipoteca e faixa das estações, em texto billboard que acompanha a câmera.
+- Testes e builds: `npm run verify` passou com 213 testes; builds do frontend e servidor passaram. O chunk 3D conhecido ficou em 956,43 KB (259,81 KB gzip). `git diff --check` passou após os ajustes.
+- Graphify query/update foram tentados; a CLI `graphify` não está instalada. O playtest visual ficou pendente: a inicialização Colyseus retornou `EADDRINUSE` na porta 2567, sem processo/listener identificável pelas ferramentas de porta disponíveis. Nenhuma captura visual foi feita nesta rodada.
+- Próximo passo concreto: revisar e publicar em `main` apenas os arquivos desta mudança, mantendo fora do commit os dois arquivos Blender locais preexistentes.
+
 ## Retorno de saldo, ferramenta DEV no lobby e aluguel de estações — concluído (2026-10-30)
 
 - Pedido atual: animar ganhos/perdas junto aos cartões de todos os jogadores; exibir a configuração DEV no lobby antes do início e permitir ao anfitrião habilitar os dados forçados no Chrome; cobrar aluguel das estações com resultado de um dado × R$ 50.000; explicar de forma simples o posicionamento das casas para alguém familiarizado com Unity.

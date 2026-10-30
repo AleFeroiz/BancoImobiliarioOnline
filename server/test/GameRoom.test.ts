@@ -996,44 +996,76 @@ describe('sala privada', () => {
     const started = new Promise<void>((resolve) => host.onMessage('game:started', () => resolve()))
     host.send('start')
     await started
-    const owner = room.state.players.get(guest.sessionId)!
-    const visitor = room.state.players.get(host.sessionId)!
-    const property = boardSpaces.find((space) => space.kind === 'property')!
+    const owner = room.state.players.get(host.sessionId)!
+    const visitor = room.state.players.get(guest.sessionId)!
+    const property = boardSpaces.find((space) => space.kind === 'property' && space.buildable)!
+    const opponentProperty = boardSpaces.find((space) => space.kind === 'property' && space.id !== property.id)!
+    const unownedProperty = boardSpaces.find((space) => space.kind === 'property' && space.id !== property.id && space.id !== opponentProperty.id)!
     const title = new PropertyState()
-    title.ownerSessionId = guest.sessionId
+    title.ownerSessionId = host.sessionId
     room.state.properties.set(String(property.id), title)
-    const normalRent = calculateRent(property.id, new Map([[property.id, guest.sessionId]]))
+    const opponentTitle = new PropertyState()
+    opponentTitle.ownerSessionId = guest.sessionId
+    room.state.properties.set(String(opponentProperty.id), opponentTitle)
+    const normalRent = calculateRent(property.id, new Map([[property.id, host.sessionId]]))
 
     room.state.activePlayerSessionId = host.sessionId
     room.state.turnPhase = 'world-cup'
+    const freeVenue = new Promise<{ message: string }>((resolve) => host.onMessage('room:error', resolve))
+    host.send('chooseWorldCup', { propertyId: unownedProperty.id })
+    await expect(freeVenue).resolves.toMatchObject({ message: 'Escolha uma propriedade sua para sediar a Copa do Mundo.' })
+    const opponentVenue = new Promise<{ message: string }>((resolve) => host.onMessage('room:error', resolve))
+    host.send('chooseWorldCup', { propertyId: opponentProperty.id })
+    await expect(opponentVenue).resolves.toMatchObject({ message: 'Escolha uma propriedade sua para sediar a Copa do Mundo.' })
     host.send('chooseWorldCup', { propertyId: property.id })
     await waitFor(() => room.state.turnPhase === 'resolve')
     expect(room.state.worldCupSpaceId).toBe(property.id)
 
     const privateRoom = room as unknown as { resolveSpace: (sessionId: string, player: typeof visitor) => void }
+    room.state.activePlayerSessionId = guest.sessionId
     visitor.position = property.id
     visitor.cash = STARTING_CASH
     owner.cash = STARTING_CASH
-    privateRoom.resolveSpace(host.sessionId, visitor)
+    privateRoom.resolveSpace(guest.sessionId, visitor)
     expect(visitor.cash).toBe(STARTING_CASH - normalRent * 3)
     expect(owner.cash).toBe(STARTING_CASH + normalRent * 3)
 
     visitor.position = 10
-    privateRoom.resolveSpace(host.sessionId, visitor)
+    privateRoom.resolveSpace(guest.sessionId, visitor)
     expect(visitor).toMatchObject({ isJailed: true, jailTurns: 3 })
 
     room.state.turnPhase = 'world-tour'
     visitor.position = 30
-    const invalidDestination = new Promise<{ message: string }>((resolve) => host.onMessage('room:error', resolve))
-    host.send('chooseWorldTour', { spaceId: property.id })
+    const invalidDestination = new Promise<{ message: string }>((resolve) => guest.onMessage('room:error', resolve))
+    guest.send('chooseWorldTour', { spaceId: property.id })
     await expect(invalidDestination).resolves.toMatchObject({ message: expect.stringContaining('propriedade sua, livre') })
 
     room.state.animationSpeed = 2
-    host.send('chooseWorldTour', { spaceId: 0 })
+    guest.send('chooseWorldTour', { spaceId: 0 })
     await waitFor(() => room.state.turnPhase === 'resolve', 2_500)
     expect(visitor.position).toBe(0)
     expect(visitor.cash).toBe(STARTING_CASH - normalRent * 3)
     expect(room.state.landingDescription).toContain('sem bônus por passagem pela Partida')
+  })
+
+  it('não oferece sede da Copa quando a pessoa da vez não possui propriedades', async () => {
+    const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
+    const host = await colyseus.connectTo(room, { name: 'Ana' })
+    const guest = await colyseus.connectTo(room, { name: 'Bia' })
+    const started = new Promise<void>((resolve) => host.onMessage('game:started', () => resolve()))
+    host.send('start')
+    await started
+    const player = room.state.players.get(host.sessionId)!
+    player.position = 20
+    room.state.activePlayerSessionId = host.sessionId
+    const privateRoom = room as unknown as { resolveSpace: (sessionId: string, target: typeof player) => void }
+
+    privateRoom.resolveSpace(host.sessionId, player)
+
+    expect(room.state.turnPhase).toBe('resolve')
+    expect(room.state.worldCupSpaceId).toBe(255)
+    expect(room.state.landingDescription).toContain('Você não possui propriedades para sediar a Copa')
+    expect(guest.sessionId).not.toBe(room.state.activePlayerSessionId)
   })
 
   it('autoriza apenas a pessoa da vez a rolar e só avança após concluir a casa', async () => {

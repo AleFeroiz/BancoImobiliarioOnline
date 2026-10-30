@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatCashDelta, getCashChangeTone, getGameSound, getPropertyChangeSound, getPropertyVisualChange } from './gameFeedback'
+import { formatCashDelta, getCashChangeTone, getCashToastPlacement, getGameSound, getPropertyChangeSound, getPropertyVisualChange } from './gameFeedback'
 
 describe('feedback da partida', () => {
   it('escolhe sons curtos de acordo com a jogada', () => {
@@ -20,6 +20,10 @@ describe('feedback da partida', () => {
     expect(getCashChangeTone(1)).toBe('gain')
     expect(getCashChangeTone(-1)).toBe('loss')
     expect(getCashChangeTone(0)).toBeNull()
+  })
+
+  it('posiciona o retorno do saldo para dentro da tela nos quatro cartões', () => {
+    expect([0, 1, 2, 3].map(getCashToastPlacement)).toEqual(['below', 'below', 'above', 'above'])
   })
 
   it('classifica construção, demolição, hipoteca e troca de dono para animações e sons', () => {

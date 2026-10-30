@@ -51,3 +51,7 @@ export function getCashChangeTone(delta: number): 'gain' | 'loss' | null {
   if (delta < 0) return 'loss'
   return null
 }
+
+export function getCashToastPlacement(seatIndex: number): 'below' | 'above' {
+  return seatIndex < 2 ? 'below' : 'above'
+}
