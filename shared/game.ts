@@ -12,7 +12,7 @@ export const PAWN_TELEPORT_ANIMATION_DURATION_MS = 1_800
 export const BUILDING_ANIMATION_DURATION_MS = 1_400
 export const ANIMATION_SPEEDS = [0.5, 1, 2] as const
 export type AnimationSpeed = (typeof ANIMATION_SPEEDS)[number]
-export const DEFAULT_ANIMATION_SPEED: AnimationSpeed = 0.5
+export const DEFAULT_ANIMATION_SPEED: AnimationSpeed = 1
 
 export function isAnimationSpeed(value: unknown): value is AnimationSpeed {
   return typeof value === 'number' && ANIMATION_SPEEDS.some((speed) => speed === value)

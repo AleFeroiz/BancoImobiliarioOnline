@@ -2,6 +2,19 @@
 
 > Retrato de trabalho para retomar o projeto entre sessões. Para requisitos e decisões, consulte os documentos de origem indicados em `AGENTS.md`.
 
+## Polimento da cena, interação de inspeção e controles de teste — implementação validada (2026-10-29)
+
+- Pedido confirmado: alinhar casas na borda interna e orientá-las em altura, orientar rótulos para fora por lado do tabuleiro, reposicionar aeroporto, liberar câmera durante animação e inspeção fora da vez, polir a apresentação, adicionar modo DEV do anfitrião para dados forçados e mudar velocidade inicial para 1×.
+- Estado inicial verificado: branch `main` no commit `40d4f56`, com `origin/main` alinhada; alterações preexistentes em `assets/blender/special-corners.blend` e arquivo `.blend1` permanecem fora do escopo.
+- Graphify query tentou o repositório `AleFeroiz/BancoImobiliarioOnline`, mas o Graphify autorizado está indexando somente `GustavoGLD/Hospital`. A leitura da cena prossegue por busca local.
+- Implementação: construções foram movidas para a borda interna e elevadas, rótulos recebem orientação por lado, aeroporto é recentrado e apoiado na superfície pelo renderer, paleta da mesa ganhou contraste, câmera segue ativa durante o movimento e inspeção de casas funciona fora da vez. A velocidade compartilhada inicial é 1×.
+- Ferramenta DEV aparece somente para anfitrião no build local; o servidor revalida anfitrião, fase, jogador ativo, prisão e valores dos dados, e a recusa em produção foi exercitada em teste de servidor.
+- `npm run verify` passou: 187 testes em 36 arquivos, build web e build do servidor. O aviso conhecido de chunk 3D permanece em 956,10 KB (259,64 KB gzip). `git diff --check` passou.
+- Playtest local: forçar 3+4 exibiu total 7; 1× estava selecionado por padrão; ao clicar Praça Central durante o movimento do bot, o inspetor abriu e o peão continuou se movendo. Zoom e aro contrastante das fichas já estavam implementados e visíveis. Não houve simulação de pinça em hardware móvel.
+- O Blender MCP não conectou; o lançador instalado não abriu nesta sessão. O aeroporto foi reposicionado em runtime sem alterar o asset Blender. `graphify update .` não poderá rodar porque a CLI continua ausente.
+- Nota de trabalho: [polimento da cena e ferramentas DEV](trabalho/polimento-cena-e-dev.md).
+- Próximo passo: revisar e publicar em `main`, sem incluir as alterações preexistentes dos arquivos Blender.
+
 ## Zoom da câmera e destaque das fichas — implementação validada (2026-10-29)
 
 - Pedido confirmado: permitir zoom pela roda do mouse e gesto de pinça no celular; destacar visualmente as fichas dos participantes.

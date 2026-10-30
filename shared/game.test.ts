@@ -3,13 +3,13 @@ import { boardSpaces } from './board.js'
 import { ANIMATION_SPEEDS, DEFAULT_ANIMATION_SPEED, DICE_ANIMATION_DURATION_MS, PAWN_STEP_ANIMATION_DURATION_MS, calculateNetWorth, getAnimationDuration, isAnimationSpeed, liquidatablePropertyIds } from './game.js'
 
 describe('velocidade da apresentação', () => {
-  it('mantém o ritmo atual em 0,5x e reduz proporcionalmente a 1x e 2x', () => {
-    expect(DEFAULT_ANIMATION_SPEED).toBe(0.5)
+  it('começa em 1x e aplica 0,5x e 2x proporcionalmente', () => {
+    expect(DEFAULT_ANIMATION_SPEED).toBe(1)
     expect(ANIMATION_SPEEDS).toEqual([0.5, 1, 2])
-    expect(getAnimationDuration(DICE_ANIMATION_DURATION_MS, 0.5)).toBe(2_800)
-    expect(getAnimationDuration(DICE_ANIMATION_DURATION_MS, 1)).toBe(1_400)
-    expect(getAnimationDuration(DICE_ANIMATION_DURATION_MS, 2)).toBe(700)
-    expect(getAnimationDuration(PAWN_STEP_ANIMATION_DURATION_MS, 2)).toBe(188)
+    expect(getAnimationDuration(DICE_ANIMATION_DURATION_MS, 0.5)).toBe(5_600)
+    expect(getAnimationDuration(DICE_ANIMATION_DURATION_MS, 1)).toBe(2_800)
+    expect(getAnimationDuration(DICE_ANIMATION_DURATION_MS, 2)).toBe(1_400)
+    expect(getAnimationDuration(PAWN_STEP_ANIMATION_DURATION_MS, 2)).toBe(375)
     expect(getAnimationDuration(DICE_ANIMATION_DURATION_MS, 0.75)).toBe(2_800)
   })
 

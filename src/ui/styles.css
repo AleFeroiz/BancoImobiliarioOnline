@@ -677,8 +677,7 @@ button:disabled{opacity:.55;cursor:not-allowed}
 
 /* A rolagem e o movimento deixam a mesa livre; os dados não ficam sob os painéis. */
 .screen-game.game-presentation-active .game-modal-backdrop,
-.screen-game.game-presentation-active .turn-card,
-.screen-game.game-presentation-active .space-inspector{display:none!important}
+.screen-game.game-presentation-active .turn-card{display:none!important}
 .animation-speed-control{display:flex;align-items:center;gap:5px;padding:4px 6px 4px 9px;border:1px solid rgba(105,132,97,.3);border-radius:999px;background:rgba(250,248,237,.92);color:#62745d;font-size:7px;font-weight:700;letter-spacing:.08em;white-space:nowrap}
 .animation-speed-control select{min-height:24px;padding:0 5px;border:0;border-radius:999px;background:#e8eddf;color:#405943;font-size:9px;font-weight:700;cursor:pointer}
 .turn-activity-bubble{position:relative;padding:7px 10px;border:1px solid rgba(114,139,104,.42);border-radius:13px;background:rgba(255,252,239,.97);box-shadow:0 6px 18px rgba(38,57,41,.24);color:#3c5741;font:700 13px/1.15 system-ui,sans-serif;white-space:nowrap;animation:turn-bubble-enter .18s ease-out both}
@@ -717,6 +716,14 @@ button:disabled{opacity:.55;cursor:not-allowed}
 .roll-control,.turn-action-control{bottom:68px}
 .roll-control-button,.turn-action-control button{min-height:42px;padding:0 22px;border:1px solid #e0c578;border-radius:999px;background:#f8f4e9;color:#3d5942;box-shadow:0 8px 24px rgba(37,61,43,.2);font-size:12px;font-weight:800;letter-spacing:.02em}
 .roll-control-button{background:linear-gradient(115deg,#547c56,#416848);color:#fff8e8}
+.roll-control-dev{display:flex;align-items:center;gap:8px;max-width:calc(100vw - 28px);padding:8px;border:1px solid rgba(224,197,120,.75);border-radius:18px;background:rgba(248,244,233,.96);box-shadow:0 8px 24px rgba(37,61,43,.2)}
+.dev-dice-controls{display:flex;align-items:center;gap:7px}
+.dev-dice-controls>span{padding:5px 7px;border-radius:7px;background:#a54836;color:#fff8e8;font-size:9px;font-weight:900;letter-spacing:.1em}
+.dev-dice-controls label{display:grid;gap:2px;color:#647362;font-size:7px;font-weight:700}
+.dev-dice-controls select{min-width:38px;min-height:30px;padding:0 6px;border:1px solid #d1d9c7;border-radius:8px;background:#fffdf6;color:#3d5942;font-size:12px;font-weight:800}
+.dev-dice-controls button{min-height:36px;padding:0 12px;border:1px solid #c28e58;border-radius:999px;background:#c07b42;color:white;font-size:10px;font-weight:800;white-space:nowrap}
+.game-session-tools .dev-mode-toggle{width:36px;font-size:8px;font-weight:800;letter-spacing:-.04em}
+.game-session-tools .dev-mode-toggle[aria-pressed="true"]{border-color:#a54836;background:#a54836;color:#fff8e8}
 .roll-control-button:hover,.turn-action-control button:hover{transform:translateY(-1px);box-shadow:0 11px 27px rgba(37,61,43,.25)}
 .map-choice-prompt{bottom:66px;max-width:calc(100vw - 28px);padding:9px 14px;border:1px solid rgba(144,166,119,.5);border-radius:999px;background:rgba(249,247,235,.95);box-shadow:0 6px 20px rgba(37,61,43,.16);color:#50674f;font-size:10px;font-weight:700;text-align:center}
 .dice-result-badge{display:grid;justify-items:center;gap:0;min-width:35px;padding:3px 7px;border:1px solid rgba(174,146,72,.7);border-radius:8px;background:#fff9e9;box-shadow:0 4px 10px rgba(25,43,37,.25);color:#3e5944;pointer-events:none}
@@ -752,6 +759,11 @@ button:disabled{opacity:.55;cursor:not-allowed}
   .cash-silver{left:22px}.cash-note{left:45px}
   .roll-control,.turn-action-control{bottom:55px}
   .roll-control-button,.turn-action-control button{min-height:38px;padding:0 18px;font-size:11px}
+  .roll-control-dev{gap:5px;padding:6px}
+  .dev-dice-controls{gap:4px}
+  .dev-dice-controls label{font-size:6px}
+  .dev-dice-controls select{min-width:32px;min-height:27px;padding:0 3px;font-size:10px}
+  .dev-dice-controls button{min-height:32px;padding:0 8px;font-size:9px}
   .map-choice-prompt{bottom:54px;padding:8px 11px;font-size:8px}
   .game-event-card{width:min(270px,calc(100vw - 34px));padding:14px 15px 12px}
   .event-card-art{width:78px;height:66px;margin:8px auto;font-size:34px}

@@ -87,6 +87,8 @@ function App() {
   const [turnPhase, setTurnPhase] = useState<TurnPhase>('roll')
   const [animationSpeed, setAnimationSpeed] = useState<AnimationSpeed>(DEFAULT_ANIMATION_SPEED)
   const [presentationSpeed, setPresentationSpeed] = useState<AnimationSpeed>(DEFAULT_ANIMATION_SPEED)
+  const [devModeEnabled, setDevModeEnabled] = useState(false)
+  const [forcedDice, setForcedDice] = useState<[number, number]>([3, 4])
   const [dice, setDice] = useState<[number, number]>([0, 0])
   const [landingDescription, setLandingDescription] = useState('')
   const [activeCardTitle, setActiveCardTitle] = useState('')
@@ -205,7 +207,7 @@ function App() {
   const revealKey = revealKind ? `${turnNumber}:${activePlayerSessionId}:${revealKind}:${activeCardTitle}` : ''
   const showTransientReveal = Boolean(revealKind && revealKey !== dismissedRevealKey)
   const showDice = shouldShowRolledDice(turnPhase, diceForPawnMovement)
-  const modalVisible = !isPresentationAnimating && (showAuctionPanel || showTradePanel || showPropertyPanel || showObjectivePanel || Boolean(incomingTradeOffer) || showTransientReveal || (selectedSpaceId !== null && !ownPropertyLanding && !['purchase', 'world-cup', 'world-tour'].includes(turnPhase)) || (isMyTurn && (turnPhase === 'purchase' || ownPropertyLanding || turnPhase === 'debt' || turnPhase === 'ended')))
+  const modalVisible = !isPresentationAnimating && (showAuctionPanel || showTradePanel || showPropertyPanel || showObjectivePanel || Boolean(incomingTradeOffer) || showTransientReveal || (isMyTurn && (turnPhase === 'purchase' || ownPropertyLanding || turnPhase === 'debt' || turnPhase === 'ended')))
   const propertyBuildings = Array.from(roomProperties.entries()).map(([id, holding]) => ({
     spaceId: Number(id),
     ownerSessionId: holding.ownerSessionId,
@@ -552,6 +554,7 @@ function App() {
     previousObjectiveComplete.current = false
     setShowObjectivePanel(false)
     setIsHost(false)
+    setDevModeEnabled(false)
     setActivePlayerSessionId('')
     setTurnNumber(0)
     setDice([0, 0])
@@ -595,7 +598,7 @@ function App() {
   }
 
   function handleSelectSpace(spaceId: number) {
-    const phase = turnPhase === 'world-cup' || turnPhase === 'world-tour' ? turnPhase : 'inspect'
+    const phase = isMyTurn && (turnPhase === 'world-cup' || turnPhase === 'world-tour') ? turnPhase : 'inspect'
     const interaction = getBoardSpaceInteraction(phase, isMyTurn, spaceId, highlightedSpaceIds)
     if (interaction.type === 'choose-world-cup') {
       room?.send('chooseWorldCup', { propertyId: interaction.spaceId })
@@ -621,7 +624,7 @@ function App() {
       <div className="scene-backdrop">
         {sceneReady && (
           <Suspense fallback={<div className="scene-placeholder" aria-hidden="true" />}>
-            <BoardScene players={playerTokens} propertyBuildings={propertyBuildings} highlightedSpaceIds={highlightedSpaceIds} selectionMode={(turnPhase === 'world-cup' || turnPhase === 'world-tour') && isMyTurn && !isPresentationAnimating} landingPulseSpaceId={landingPulseSpaceId} landingPulseSequence={landingPulseSequence} diceRollSequence={diceRollSequence} dice={dice} diceVisible={showDice} diceResultVisible={turnPhase === 'moving' && diceForPawnMovement} presentationSpeed={presentationSpeed} reducedMotion={reducedMotion} pawnMovementEnabled={turnPhase === 'moving'} pawnMoveMode={pawnMoveMode} cameraEnabled={screen === 'game' && !modalVisible && turnPhase !== 'ended' && !isPresentationAnimating} fpsMeterEnabled={fpsMeterEnabled} fpsSamples={fpsSamples} onMovementComplete={() => setPresentationStage('idle')} onSelectSpace={handleSelectSpace} />
+            <BoardScene players={playerTokens} propertyBuildings={propertyBuildings} highlightedSpaceIds={highlightedSpaceIds} selectionMode={(turnPhase === 'world-cup' || turnPhase === 'world-tour') && isMyTurn && !isPresentationAnimating} landingPulseSpaceId={landingPulseSpaceId} landingPulseSequence={landingPulseSequence} diceRollSequence={diceRollSequence} dice={dice} diceVisible={showDice} diceResultVisible={turnPhase === 'moving' && diceForPawnMovement} presentationSpeed={presentationSpeed} reducedMotion={reducedMotion} pawnMovementEnabled={turnPhase === 'moving'} pawnMoveMode={pawnMoveMode} cameraEnabled={screen === 'game' && !modalVisible && turnPhase !== 'ended'} fpsMeterEnabled={fpsMeterEnabled} fpsSamples={fpsSamples} onMovementComplete={() => setPresentationStage('idle')} onSelectSpace={handleSelectSpace} />
           </Suspense>
         )}
       </div>
@@ -704,7 +707,7 @@ function App() {
           <div className="game-topline-camera-hint" aria-label="Controles da câmera">Arraste para girar · scroll ou pinça para zoom</div>
           <div className="player-hud">{roomPlayers.map((player, index) => <div className={`player-card seat-${index} ${player.sessionId === activePlayerSessionId ? 'active' : ''} ${player.isBankrupt ? 'bankrupt' : ''} ${player.isConnected === false ? 'disconnected' : ''}`} key={player.sessionId}><span className={`player-avatar player-${index}`}>{player.name.slice(0, 1).toUpperCase()}</span><div className="player-info"><strong>{player.name}</strong><small>{player.isBankrupt ? 'FALIU' : player.isBot ? 'BOT' : player.isBotControlled ? 'BOT NO CONTROLE' : player.isConnected === false ? player.reconnectionExpired ? 'OFFLINE' : 'RECONECTANDO' : player.isJailed ? `PRESO · ${player.jailTurns} turnos` : player.sessionId === activePlayerSessionId ? 'VEZ ATUAL' : `CASA ${String(player.position + 1).padStart(2, '0')}`}</small></div><b>{formatMoney(player.cash)}</b><span className="player-money-anchor" data-cash-anchor={player.sessionId} aria-hidden="true"><CashHudSymbols cash={player.cash} /></span></div>)}</div>
           {modalVisible && !feedbackPending && <div className="game-modal-backdrop" aria-hidden="true" />}
-          {selectedSpace && !feedbackPending && !isPresentationAnimating && !['ended', 'world-cup', 'world-tour'].includes(turnPhase) && !ownPropertyLanding && !(turnPhase === 'purchase' && selectedSpace.id === pendingPropertyId) && !showTradePanel && !incomingTradeOffer && !showPropertyPanel && !showObjectivePanel && (
+          {selectedSpace && !feedbackPending && turnPhase !== 'ended' && !ownPropertyLanding && !(isMyTurn && (turnPhase === 'purchase' || turnPhase === 'world-cup' || turnPhase === 'world-tour')) && !showTradePanel && !incomingTradeOffer && !showPropertyPanel && !showObjectivePanel && (
             <aside className="space-inspector" aria-label={`Detalhes de ${selectedSpace.name}`}>
               <button className="trade-close" aria-label="Fechar detalhes" onClick={() => setSelectedSpaceId(null)}>×</button>
               <span className="turn-label">CASA {String(selectedSpace.id + 1).padStart(2, '0')} · {selectedSpace.kind === 'property' ? 'PROPRIEDADE' : 'ESPAÇO ESPECIAL'}</span>
@@ -894,12 +897,20 @@ function App() {
               )}
             </div>
           )}
-          {isMyTurn && turnPhase === 'roll' && !feedbackPending && <div className="roll-control"><button className="roll-control-button" type="button" onClick={() => room?.send('roll')}>Girar dados</button></div>}
+          {turnPhase === 'roll' && !feedbackPending && (isMyTurn || (isHost && devModeEnabled && import.meta.env.DEV)) && <div className={`roll-control${isHost && devModeEnabled && import.meta.env.DEV ? ' roll-control-dev' : ''}`}>
+            {isMyTurn && <button className="roll-control-button" type="button" onClick={() => room?.send('roll')}>Girar dados</button>}
+            {isHost && devModeEnabled && import.meta.env.DEV && <form className="dev-dice-controls" aria-label="Forçar resultado dos dados" onSubmit={(event) => { event.preventDefault(); room?.send('devRoll', { diceOne: forcedDice[0], diceTwo: forcedDice[1] }) }}>
+              <span>DEV</span>
+              <label><span>Dado 1</span><select aria-label="Valor do dado 1" value={forcedDice[0]} onChange={(event) => setForcedDice((current) => [Number(event.target.value), current[1]])}>{[1, 2, 3, 4, 5, 6].map((value) => <option key={value} value={value}>{value}</option>)}</select></label>
+              <label><span>Dado 2</span><select aria-label="Valor do dado 2" value={forcedDice[1]} onChange={(event) => setForcedDice((current) => [current[0], Number(event.target.value)])}>{[1, 2, 3, 4, 5, 6].map((value) => <option key={value} value={value}>{value}</option>)}</select></label>
+              <button type="submit">Forçar</button>
+            </form>}
+          </div>}
           {isMyTurn && turnPhase === 'resolve' && !ownPropertyLanding && !activeCardTitle && !feedbackPending && <div className="turn-action-control"><button type="button" onClick={() => room?.send('finishTurn')}>Continuar</button></div>}
           {isMyTurn && !showTransientReveal && !feedbackPending && turnPhase === 'world-cup' && <div className="map-choice-prompt" role="status">Toque em uma casa iluminada para escolher a sede da Copa</div>}
           {isMyTurn && !showTransientReveal && !feedbackPending && turnPhase === 'world-tour' && <div className="map-choice-prompt" role="status">Toque em uma casa iluminada para escolher o destino</div>}
           {showTransientReveal && <div className="card-reveal-backdrop" role="button" tabIndex={0} aria-label="Fechar carta e continuar" onPointerDown={dismissTransientReveal} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') dismissTransientReveal() }}><article className="game-event-card" aria-live="polite"><span className="event-card-kicker">{revealKind === 'event' ? 'SORTE OU REVÉS' : revealKind === 'world-cup' ? 'COPA DO MUNDO' : 'VOLTA AO MUNDO'}</span><div className="event-card-art" aria-hidden="true">{revealKind === 'world-cup' ? '✦' : revealKind === 'world-tour' ? '↗' : '◆'}</div><h2>{revealKind === 'event' ? activeCardTitle : revealKind === 'world-cup' ? 'Escolha a sede' : 'Escolha para onde viajar'}</h2><p>{revealKind === 'event' ? activeCardDescription : revealKind === 'world-cup' ? 'Toque em uma propriedade iluminada no tabuleiro. O aluguel dela vale três vezes.' : 'Toque em uma casa iluminada. Propriedades de outras pessoas ficam indisponíveis.'}</p><small>Toque em qualquer lugar para continuar · {turnSeconds || 10}s</small></article></div>}
-          <div className="game-bottom"><span className="game-sync-label">JOGADA SINCRONIZADA · {modeDetails[mode].title.toUpperCase()}</span><div className="game-session-tools">{animationSpeedControl}<button className="game-preference fps-toggle" aria-pressed={fpsMeterEnabled} aria-label={`Medidor de FPS ${fpsMeterEnabled ? 'ativado' : 'desativado'}`} title={`Medidor de FPS ${fpsMeterEnabled ? 'ativado' : 'desativado'}`} onClick={() => setFpsMeterEnabled((enabled) => !enabled)}>FPS</button><button className="game-preference" aria-pressed={soundEnabled} aria-label={`Áudio da partida ${soundEnabled ? 'ativado' : 'desativado'}`} title={`Trilha e efeitos ${soundEnabled ? 'ativados' : 'desativados'}`} onClick={() => { unlockGameAudio(); setSoundEnabled((enabled) => !enabled) }}>{soundEnabled ? '♫' : '♪̸'}</button><button className="game-preference" aria-pressed={reducedMotion} aria-label={`Movimento reduzido ${reducedMotion ? 'ativado' : 'desativado'}`} title={`Movimento reduzido ${reducedMotion ? 'ativado' : 'desativado'}`} onClick={() => setReducedMotion((enabled) => !enabled)}>◌</button><button className="game-preference" aria-label="Ajuda" aria-expanded={showHelp} aria-controls="game-help-dialog" onClick={() => setShowHelp((open) => !open)}>?</button></div><button className="leave-button" onClick={() => void leaveRoom()}>Sair da mesa</button></div>
+          <div className="game-bottom"><span className="game-sync-label">JOGADA SINCRONIZADA · {modeDetails[mode].title.toUpperCase()}</span><div className="game-session-tools">{animationSpeedControl}{isHost && import.meta.env.DEV && <button className="game-preference dev-mode-toggle" type="button" aria-pressed={devModeEnabled} title="Ferramentas locais de teste" onClick={() => setDevModeEnabled((enabled) => !enabled)}>DEV</button>}<button className="game-preference fps-toggle" aria-pressed={fpsMeterEnabled} aria-label={`Medidor de FPS ${fpsMeterEnabled ? 'ativado' : 'desativado'}`} title={`Medidor de FPS ${fpsMeterEnabled ? 'ativado' : 'desativado'}`} onClick={() => setFpsMeterEnabled((enabled) => !enabled)}>FPS</button><button className="game-preference" aria-pressed={soundEnabled} aria-label={`Áudio da partida ${soundEnabled ? 'ativado' : 'desativado'}`} title={`Trilha e efeitos ${soundEnabled ? 'ativados' : 'desativados'}`} onClick={() => { unlockGameAudio(); setSoundEnabled((enabled) => !enabled) }}>{soundEnabled ? '♫' : '♪̸'}</button><button className="game-preference" aria-pressed={reducedMotion} aria-label={`Movimento reduzido ${reducedMotion ? 'ativado' : 'desativado'}`} title={`Movimento reduzido ${reducedMotion ? 'ativado' : 'desativado'}`} onClick={() => setReducedMotion((enabled) => !enabled)}>◌</button><button className="game-preference" aria-label="Ajuda" aria-expanded={showHelp} aria-controls="game-help-dialog" onClick={() => setShowHelp((open) => !open)}>?</button></div><button className="leave-button" onClick={() => void leaveRoom()}>Sair da mesa</button></div>
         </section>
       )}
       {screen === 'game' && <Suspense fallback={null}><CashHudOverlay players={roomPlayers.map((player) => ({ id: player.sessionId, cash: player.cash }))} /></Suspense>}

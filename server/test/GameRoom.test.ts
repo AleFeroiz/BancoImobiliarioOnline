@@ -158,19 +158,43 @@ describe('sala privada', () => {
     host.send('start')
     await started
 
-    expect(room.state.animationSpeed).toBe(0.5)
-    expect(room.state.presentationSpeed).toBe(0.5)
+    expect(room.state.animationSpeed).toBe(1)
+    expect(room.state.presentationSpeed).toBe(1)
     const unauthorized = new Promise<{ message: string }>((resolve) => guest.onMessage('room:error', resolve))
     guest.send('setAnimationSpeed', { speed: 2 })
     await expect(unauthorized).resolves.toMatchObject({ message: 'Só a pessoa anfitriã pode alterar a velocidade das animações.' })
-    expect(room.state.animationSpeed).toBe(0.5)
+    expect(room.state.animationSpeed).toBe(1)
 
     host.send('setAnimationSpeed', { speed: 2 })
     await waitFor(() => room.state.animationSpeed === 2)
-    expect(room.state.presentationSpeed).toBe(0.5)
+    expect(room.state.presentationSpeed).toBe(1)
     host.send('roll')
     await waitFor(() => room.state.turnPhase === 'rolling')
     expect(room.state.presentationSpeed).toBe(2)
+  })
+
+  it('permite ao anfitrião forçar valores de dados em desenvolvimento com validação autoritativa', async () => {
+    const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
+    const host = await colyseus.connectTo(room, { name: 'Caio' })
+    const guest = await colyseus.connectTo(room, { name: 'Duda' })
+    const started = new Promise<void>((resolve) => host.onMessage('game:started', () => resolve()))
+    host.send('start')
+    await started
+
+    const unauthorized = new Promise<{ message: string }>((resolve) => guest.onMessage('room:error', resolve))
+    guest.send('devRoll', { diceOne: 6, diceTwo: 4 })
+    await expect(unauthorized).resolves.toMatchObject({ message: 'A rolagem DEV está disponível apenas para a pessoa anfitriã em desenvolvimento.' })
+    expect(room.state.turnPhase).toBe('roll')
+
+    const invalid = new Promise<{ message: string }>((resolve) => host.onMessage('room:error', resolve))
+    host.send('devRoll', { diceOne: 7, diceTwo: 1 })
+    await expect(invalid).resolves.toMatchObject({ message: 'Escolha um valor inteiro entre 1 e 6 para cada dado.' })
+    expect(room.state.turnPhase).toBe('roll')
+
+    host.send('devRoll', { diceOne: 6, diceTwo: 4 })
+    await waitFor(() => room.state.turnPhase === 'rolling')
+    expect(room.state.diceOne).toBe(6)
+    expect(room.state.diceTwo).toBe(4)
   })
 
   it('sincroniza a reconexão e bloqueia o início enquanto alguém está offline', async () => {

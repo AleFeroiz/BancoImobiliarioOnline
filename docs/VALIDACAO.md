@@ -1,5 +1,13 @@
 # Validação visual e de navegador
 
+## 2026-10-29 — Casas, inspeção durante jogadas e modo DEV
+
+- `npm run verify` passou: 187 testes em 36 arquivos; builds frontend e servidor passaram. O aviso existente de chunk 3D continua em 956,10 KB (259,64 KB gzip). `git diff --check` passou.
+- Playtest local com um bot em viewport integrado 690×865: velocidade 1× selecionada ao iniciar; anfitrião ativou DEV, forçou 3+4 e a mesa mostrou total 7. Na vez do bot, o controle DEV continuou disponível ao anfitrião.
+- Durante a animação do peão do bot, cliquei em Praça Central e o inspetor abriu com preço/aluguel, enquanto o movimento continuou. A cena mostrou os rótulos ao redor do tabuleiro e o aeroporto reposicionado no canto Volta ao Mundo.
+- Zoom pela pinça não foi simulado em dispositivo touch nesta sessão. Blender MCP estava indisponível; o ajuste do aeroporto foi feito no renderer sem alterar o asset.
+- `graphify update .` não rodou porque a CLI não está instalada; o MCP Graphify conectado aponta para outro repositório.
+
 ## 2026-10-29 — Zoom da câmera e destaque das fichas
 
 - `npm run verify` passou: 183 testes em 35 arquivos; builds frontend e servidor passaram. O aviso existente de chunk 3D continua em 956,10 KB (259,64 KB gzip). `git diff --check` passou.

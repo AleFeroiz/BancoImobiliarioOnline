@@ -197,6 +197,25 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       }
       this.rollForPlayer(client.sessionId)
     },
+    devRoll: (client: Client, payload: { diceOne?: unknown; diceTwo?: unknown } = {}) => {
+      const requester = this.state.players.get(client.sessionId)
+      const diceOne = payload?.diceOne
+      const diceTwo = payload?.diceTwo
+      const activePlayer = this.state.players.get(this.state.activePlayerSessionId)
+      if (process.env.NODE_ENV === 'production' || !requester?.isHost) {
+        client.send('room:error', { message: 'A rolagem DEV está disponível apenas para a pessoa anfitriã em desenvolvimento.' })
+        return
+      }
+      if (this.state.status !== 'playing' || this.state.turnPhase !== 'roll' || !activePlayer || activePlayer.isJailed) {
+        client.send('room:error', { message: 'Só é possível forçar os dados durante uma etapa válida de rolagem.' })
+        return
+      }
+      if (typeof diceOne !== 'number' || !Number.isInteger(diceOne) || diceOne < 1 || diceOne > 6 || typeof diceTwo !== 'number' || !Number.isInteger(diceTwo) || diceTwo < 1 || diceTwo > 6) {
+        client.send('room:error', { message: 'Escolha um valor inteiro entre 1 e 6 para cada dado.' })
+        return
+      }
+      this.rollForPlayer(this.state.activePlayerSessionId, [diceOne, diceTwo])
+    },
     buy: (client: Client, payload: { houses?: unknown } = {}) => {
       if (this.state.status !== 'playing' || this.state.turnPhase !== 'purchase' || client.sessionId !== this.state.activePlayerSessionId) return
       const player = this.state.players.get(client.sessionId)
@@ -837,11 +856,11 @@ export class GameRoom extends Room<{ state: LobbyState }> {
     else this.messages.declareBankruptcy(client)
   }
 
-  private rollForPlayer(sessionId: string) {
+  private rollForPlayer(sessionId: string, forcedDice?: [number, number]) {
     const player = this.state.players.get(sessionId)
     if (this.state.status !== 'playing' || this.state.turnPhase !== 'roll' || sessionId !== this.state.activePlayerSessionId || !player || player.isJailed) return
-    const diceOne = randomInt(1, 7)
-    const diceTwo = randomInt(1, 7)
+    const diceOne = forcedDice?.[0] ?? randomInt(1, 7)
+    const diceTwo = forcedDice?.[1] ?? randomInt(1, 7)
     const startPosition = player.position
     this.state.diceSequence += 1
     this.state.diceOne = diceOne
