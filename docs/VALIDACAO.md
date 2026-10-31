@@ -47,6 +47,12 @@
 
 ## 2026-10-31 — Redução adicional da altura dos dados
 
+- Em sala local BANTEC com Modo DEV, iniciei uma rolagem real e capturei a cena no centro da FATEC. Com posição-base Y=2,23 e salto de 0,10, os dados ficaram mais baixos e não apresentaram interseção visual com os prédios ou a torre.
+- O teste `src/ui/dicePresentation.test.ts` usa o raio geométrico do dado (0,381 unidade) e valida uma folga mínima de 0,03 acima do topo da torre (Y≈1,81), inclusive sob rotação. O indicador do resultado foi reposicionado para Y=2,92.
+- `npm run verify`: 240 testes em 46 arquivos passaram e os builds de frontend e servidor foram executados. Os testes Colyseus passaram após permitir loopback local; a primeira tentativa no sandbox falhou com `fetch failed`.
+
+## 2026-10-31 — Redução anterior da altura dos dados
+
 - A rolagem agora usa posição-base Y=2,3 e salto vertical de 0,16 (antes 2,45 e 0,48). O total acompanha a mudança e fica em Y=3,05. A rotação dos dados ainda mantém margem sobre o topo da torre da FATEC (Y≈1,81).
 - Teste de regressão verifica o envelope vertical dos dados enquanto giram e saltam, para mantê-los visíveis sem atravessar a torre. Numa sala local nova de 15 minutos, com um bot e DEV, vi os dados durante o movimento do peão: ficaram suspensos sobre a FATEC, baixos e sem interseção visível com os prédios. Encerrei a sala temporária e deixei a aba na página inicial.
 

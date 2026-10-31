@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { DICE_PRESENTATION_POSITIONS, DICE_RESULT_BADGE_POSITION, DICE_ROLL_BOUNCE_HEIGHT, getDiceRollRotation, shouldShowRolledDice } from './dicePresentation'
 
 const FATEC_TOWER_TOP_Y = 1.81
-const DICE_ROTATION_BOUNDING_RADIUS = 0.4
+const DICE_ROTATION_BOUNDING_RADIUS = Math.hypot(0.225, 0.21, 0.225)
 
 describe('apresentação minimalista dos dados', () => {
   it('mantém dados na rolagem e no movimento que foi iniciado por ela', () => {
@@ -21,15 +21,15 @@ describe('apresentação minimalista dos dados', () => {
 
   it('mantém os dados baixos sobre a FATEC durante a rolagem, sem atravessar a torre', () => {
     expect(DICE_PRESENTATION_POSITIONS).toHaveLength(2)
-    expect(DICE_PRESENTATION_POSITIONS.every((position) => position[1] >= 2.25 && position[1] <= 2.35)).toBe(true)
-    expect(DICE_PRESENTATION_POSITIONS.every((position) => position[1] - DICE_ROTATION_BOUNDING_RADIUS - FATEC_TOWER_TOP_Y >= 0.08)).toBe(true)
-    expect(DICE_ROLL_BOUNCE_HEIGHT).toBeLessThan(0.2)
+    expect(DICE_PRESENTATION_POSITIONS.every((position) => position[1] >= 2.22 && position[1] <= 2.24)).toBe(true)
+    expect(DICE_PRESENTATION_POSITIONS.every((position) => position[1] - DICE_ROTATION_BOUNDING_RADIUS - FATEC_TOWER_TOP_Y >= 0.03)).toBe(true)
+    expect(DICE_ROLL_BOUNCE_HEIGHT).toBeLessThan(0.12)
     expect(DICE_PRESENTATION_POSITIONS.every((position) => position[1] + DICE_ROLL_BOUNCE_HEIGHT + DICE_ROTATION_BOUNDING_RADIUS < 2.9)).toBe(true)
     expect(DICE_PRESENTATION_POSITIONS[0]?.[0]).toBeLessThan(0)
     expect(DICE_PRESENTATION_POSITIONS[1]?.[0]).toBeGreaterThan(0)
     expect(Math.sign(DICE_PRESENTATION_POSITIONS[0]![2])).toBe(-Math.sign(DICE_PRESENTATION_POSITIONS[1]![2]!))
     expect(Math.abs(DICE_RESULT_BADGE_POSITION[0])).toBeLessThan(0.1)
     expect(DICE_RESULT_BADGE_POSITION[1]).toBeGreaterThan(DICE_PRESENTATION_POSITIONS[0]![1] + DICE_ROLL_BOUNCE_HEIGHT + DICE_ROTATION_BOUNDING_RADIUS + 0.1)
-    expect(DICE_RESULT_BADGE_POSITION[1]).toBeLessThan(3.2)
+    expect(DICE_RESULT_BADGE_POSITION[1]).toBeLessThan(3)
   })
 })

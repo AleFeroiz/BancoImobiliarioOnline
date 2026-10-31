@@ -1,8 +1,7 @@
-## Dados mais baixos durante a rolagem — concluído (2026-10-31)
+## Dados ainda mais baixos durante a rolagem — concluído (2026-10-31)
 
-- Depois do novo pedido para baixar mais os dados sem deixá-los entrar na FATEC, a posição-base passou para Y=2,3, o salto da animação para 0,16 e o indicador do total para Y=3,05. A margem inferior considera a rotação do cubo sobre o topo da torre, em Y≈1,81.
-- Em partida local ativa, conferi visualmente a rolagem dos dois dados sobre os prédios da FATEC: ficaram baixos, legíveis e sem interseção visível com o modelo. O teste de apresentação verifica a margem durante giro e salto.
-- `npm run verify` passou com 240 testes em 46 arquivos e builds do frontend e servidor; `npm run graphify -- update .` concluiu. A alteração está publicada em `origin/main` no commit `858c3a8`.
+- A pedido do usuário, a posição-base dos dados foi reduzida de Y=2,3 para Y=2,23, o salto de 0,16 para 0,10 e o indicador do total foi reposicionado para Y=2,92. O teste usa o raio geométrico da caixa do dado girando e mantém pelo menos 0,03 unidade acima do topo da torre da FATEC (Y≈1,81).
+- Em sala local, forcei uma rolagem e conferi os dados baixos sobre os prédios centrais, sem interseção visível com a Fatec. `npm run verify` passou com 240 testes em 46 arquivos; os testes Colyseus precisaram de acesso de loopback aprovado. Registro visual em [VALIDACAO.md](VALIDACAO.md#2026-10-31--redução-adicional-da-altura-dos-dados).
 - Próximo passo da reforma completa: concluir a revisão visual das cartas autorais (incluindo confirmar o efeito de Apagão em uma cobrança posterior), fazer playtests humanos de equilíbrio/ritmo e concluir a decisão de hospedagem.
 
 ## Recompra após aluguel — concluída (2026-10-31)
