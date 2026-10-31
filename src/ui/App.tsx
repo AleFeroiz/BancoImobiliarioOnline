@@ -31,6 +31,7 @@ import { adjustMoneyValue } from './moneyStepper'
 import { DEFAULT_GRAPHICS_QUALITY, type GraphicsQuality } from './graphicsQuality'
 import { isPlayerEmote, PLAYER_EMOTES, type PlayerEmote } from '../../shared/playerEmotes'
 import { getRevealKicker } from './revealCopy'
+import { HOME_REGION_ROUTE } from './homeRegionRoute'
 
 type Mode = GameMode
 type Screen = 'home' | 'room' | 'game'
@@ -843,10 +844,16 @@ function App() {
             <span className="eyebrow"><span className="eyebrow-dot" /> MESA ABERTA, AMIGOS A CAMINHO</span>
             <h1>BANTEC.<br /><em>Seu Brasil, seu negócio.</em></h1>
             <p>Reúna a turma, invista nas cidades brasileiras e conquiste o maior patrimônio.</p>
+            <div className="home-region-route" aria-label="Percurso pelas cinco regiões do Brasil">
+              <div className="region-route-heading"><span>DO NORTE AO SUDESTE</span><span>24 CIDADES · 5 REGIÕES</span></div>
+              <ol className="region-route-list">
+                {HOME_REGION_ROUTE.map((region) => <li key={region.id} className="region-route-stop" style={{ '--region-color': region.color } as CSSProperties}><span className="region-route-node" /><span>{region.name}</span></li>)}
+              </ol>
+            </div>
             <div className="mode-switch match-duration-selector" role="group" aria-label="Duração da partida">
               {MATCH_DURATIONS.map((duration) => <button key={duration} type="button" aria-pressed={matchDuration === duration} className={`mode-tab${matchDuration === duration ? ' selected' : ''}`} onClick={() => setMatchDuration(duration)}><span>{durationLabel(duration)}</span><small>{duration === 900 ? 'Partida rápida' : duration === 1800 ? 'Clássica' : 'Partida longa'}</small></button>)}
             </div>
-            <div className="mode-note"><span className="note-icon">✦</span><span>Monopólios regionais e cidades do Brasil</span><span className="player-limit">2–4 JOGADORES</span></div>
+            <div className="mode-note"><span className="note-icon">✦</span><span>Complete regiões, monopolize linhas e vença.</span><span className="player-limit">2–4 JOGADORES</span></div>
           </div>
 
           <section className="entry-card" aria-label="Criar ou entrar em uma sala">
@@ -859,7 +866,7 @@ function App() {
             {error && <p className="form-error" role="alert">{error}</p>}
             <div className="privacy-note"><span>◈</span> Salas temporárias. Seu nome aparece só para quem tem o código.</div>
           </section>
-          <div className="home-footer"><span>UMA MESA PARA A SUA TURMA</span><span>01 <i>/</i> 03</span></div>
+          <div className="home-footer"><span>UMA MESA PARA A SUA TURMA</span><span>40 CASAS <i>·</i> 4 COMPANHIAS</span></div>
         </section>
       )}
 

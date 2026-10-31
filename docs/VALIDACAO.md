@@ -14,6 +14,13 @@
 - Graphify update não executou porque a CLI `graphify` não está instalada neste ambiente.
 # Validação visual e de navegador
 
+## 2026-10-31 — Rota regional na home BANTEC
+
+- A home agora exibe o percurso visual Norte → Centro-Oeste → Nordeste → Sul → Sudeste com as cinco cores usadas no tabuleiro, além de informar 24 cidades, 40 casas e quatro companhias. Removi o marcador “01/03”, que sugeria telas inexistentes.
+- Revisão visual no navegador local em 964×883, 390×844 e 320×568. No celular de 320 px, encontrei uma barra horizontal causada pelo `min-width: 320px` do `body` junto à barra vertical do navegador; removi o piso e confirmei que a barra horizontal desapareceu. Em 390 px, a rota coube numa linha e a rolagem levou ao formulário completo. Desktop mantém título, percurso e duração ao lado do formulário principal.
+- `npm run verify`: 233 testes em 46 arquivos passaram; builds do frontend e servidor passaram. O aviso conhecido de chunk 3D acima de 500 KB permanece. `git diff --check` passou.
+- A home foi revisada sem serviço de salas; a inicialização Colyseus retornou `EADDRINUSE` na porta 2567 e nenhuma entrada apareceu em `Get-NetTCPConnection` ou `netstat`, portanto não encerrei processo desconhecido. A porta 5173 serviu a home normalmente.
+
 ## 2026-10-31 — Posição dos dados, tema noturno e partida BANTEC
 
 - `npm run verify`: 225 testes em 44 arquivos passaram; builds do frontend e servidor passaram. O build mantém o aviso conhecido de chunk de cena 3D com 956,45 KB (259,83 KB gzip). `git diff --check` passou.
