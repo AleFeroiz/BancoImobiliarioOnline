@@ -2,7 +2,7 @@ import { randomInt } from 'node:crypto'
 import { CloseCode, Client, Room } from '@colyseus/core'
 import type { GameMode } from '../../../shared/lobby.js'
 import { isCharacterType, isGameMode, normalizePlayerName } from '../../../shared/lobby.js'
-import { AUCTION_DURATION_SECONDS, AUCTION_MIN_BID_INCREMENT, CLASSIC_MATCH_SECONDS, DEFAULT_ANIMATION_SPEED, DICE_ANIMATION_DURATION_MS, JAIL_TURNS, MATCH_DURATIONS, PAWN_STEP_ANIMATION_DURATION_MS, PAWN_TELEPORT_ANIMATION_DURATION_MS, PROPERTY_BUILD_LEVELS, PROPERTY_HOTEL_LEVEL, START_BONUS, STARTING_CASH, TURN_DECISION_SECONDS, TURN_ROLL_SECONDS, areDiceDoubles, bankReturnValue, buildingSaleValue, calculateCompanyRent, calculateNetWorth, calculateRent, canBuildHotel, canBuildProperty, canReturnPropertyToBank, canSellBuilding, constructionCost, describeLanding, forcedBuybackCost, getAnimationDuration, hasLiquidatableAssets, hasWinningMonopoly, hotelConstructionCost, isAnimationSpeed, isMatchDuration, movePosition, taxForSpace } from '../../../shared/game.js'
+import { AUCTION_DURATION_SECONDS, AUCTION_MIN_BID_INCREMENT, CLASSIC_MATCH_SECONDS, DEFAULT_ANIMATION_SPEED, DICE_ANIMATION_DURATION_MS, JAIL_TURNS, MATCH_DURATIONS, PAWN_STEP_ANIMATION_DURATION_MS, PAWN_TELEPORT_ANIMATION_DURATION_MS, PROPERTY_BUILD_LEVELS, PROPERTY_HOTEL_LEVEL, START_BONUS, STARTING_CASH, TURN_DECISION_SECONDS, TURN_ROLL_SECONDS, areDiceDoubles, bankReturnValue, buildingSaleValue, calculateCompanyRent, calculateNetWorth, calculateRent, canBuildHotel, canBuildProperty, canReturnPropertyToBank, canSellBuilding, constructionCost, describeLanding, forcedBuybackCost, getAnimationDuration, getMonopolyWinReason, hasLiquidatableAssets, hotelConstructionCost, isAnimationSpeed, isMatchDuration, movePosition, taxForSpace, type MatchEndReason } from '../../../shared/game.js'
 import { boardSpaces } from '../../../shared/board.js'
 import { PLAYER_COLORS, isPlayerColor } from '../../../shared/playerColors.js'
 import { isPlayerEmote } from '../../../shared/playerEmotes.js'
@@ -217,6 +217,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       this.state.debtCreditorSessionId = ''
       this.state.debtReason = ''
       this.state.winnerSessionId = ''
+      this.state.matchEndReason = ''
       this.consecutiveDoubles = 0
       this.lastRollWasDouble = false
       this.clearAuction(false)
@@ -532,7 +533,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       this.clearDebt()
       const survivors = Array.from(this.state.players.entries()).filter(([, player]) => !player.isBankrupt)
       if (survivors.length <= 1) {
-        this.finishMatch(survivors[0]?.[0])
+        this.finishMatch(survivors.length ? 'bankruptcy' : 'no-solvent-players', survivors[0]?.[0])
         this.state.landingDescription = survivors.length ? `${name} faliu. ${survivors[0][1].name} venceu a partida.` : `${name} faliu. A partida terminou sem vencedor.`
         return
       }
@@ -806,7 +807,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
         player.jailTurns = Math.max(0, player.jailTurns - 1)
         if (player.jailTurns === 0) player.isJailed = false
       }
-      if (this.state.mode === 'classic' && this.state.matchEnding) this.finishMatch()
+      if (this.state.mode === 'classic' && this.state.matchEnding) this.finishMatch('timeout')
       else if (this.lastRollWasDouble && !this.state.players.get(client.sessionId)?.isJailed) {
         this.lastRollWasDouble = false
         this.state.turnPhase = 'roll'
@@ -993,7 +994,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       if (this.state.matchSeconds > 0) this.state.matchSeconds -= 1
       if (this.state.matchSeconds === 0) {
         this.state.matchEnding = true
-        if (['roll', 'resolve', 'jail'].includes(this.state.turnPhase)) this.finishMatch()
+        if (['roll', 'resolve', 'jail'].includes(this.state.turnPhase)) this.finishMatch('timeout')
       }
     }, 1000)
   }
@@ -1106,7 +1107,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
   private finishExpiredPhaseIfReady() {
     if (this.state.status !== 'playing') return
     if (this.state.mode === 'classic' && this.state.matchEnding && this.state.turnPhase === 'resolve') {
-      this.finishMatch()
+      this.finishMatch('timeout')
     }
   }
 
@@ -1234,7 +1235,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
     }
   }
 
-  private finishMatch(forcedWinnerSessionId?: string) {
+  private finishMatch(reason: MatchEndReason, forcedWinnerSessionId?: string) {
     if (this.state.status === 'ended') return
     this.clearAuction(true)
     this.clearTradeOffer()
@@ -1271,12 +1272,9 @@ export class GameRoom extends Room<{ state: LobbyState }> {
     this.state.status = 'ended'
     this.state.turnPhase = 'ended'
     this.state.winnerSessionId = winner?.sessionId ?? ''
+    this.state.matchEndReason = reason
     this.stopClocks()
-    const endingReason = forcedWinnerSessionId
-      ? 'Partida encerrada após falência.'
-      : this.state.matchEnding
-        ? 'Tempo esgotado.'
-        : 'Partida encerrada.'
+    const endingReason = reason === 'timeout' ? 'Tempo esgotado.' : reason === 'bankruptcy' ? 'Partida encerrada após falência.' : reason === 'no-solvent-players' ? 'Partida encerrada sem jogadores solventes.' : 'Partida encerrada por monopólio.'
     const tieBreak = winner?.player.tieBreakRoll ? ` Desempate nos dados: ${winner.player.tieBreakRoll}.` : ''
     this.state.landingDescription = winner
       ? `${endingReason} ${winner.player.name} venceu por patrimônio de ${winner.player.finalNetWorth.toLocaleString('pt-BR')}; dinheiro disponível: ${winner.player.finalCash.toLocaleString('pt-BR')}.${tieBreak}`
@@ -1286,10 +1284,11 @@ export class GameRoom extends Room<{ state: LobbyState }> {
   private checkMonopolyVictory(sessionId: string) {
     if (this.state.status !== 'playing' || !this.state.players.has(sessionId)) return false
     const ownership = new Map(Array.from(this.state.properties.entries()).map(([id, property]) => [Number(id), property.ownerSessionId]))
-    if (!hasWinningMonopoly(ownership, sessionId)) return false
+    const reason = getMonopolyWinReason(ownership, sessionId)
+    if (!reason) return false
     const winner = this.state.players.get(sessionId)
-    this.finishMatch(sessionId)
-    this.state.landingDescription = `${winner?.name ?? 'Jogador'} venceu ao completar um monopólio.`
+    this.finishMatch(reason, sessionId)
+    this.state.landingDescription = `${winner?.name ?? 'Jogador'} venceu: ${reason === 'monopoly-line' ? 'Monopólio em Linha' : reason === 'double-regional-monopoly' ? 'Monopólio Duplo Regional' : 'quatro companhias'}.`
     return true
   }
 
@@ -1374,7 +1373,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
     const roomPlayerIds = Array.from(this.state.players.entries()).map(([sessionId]) => sessionId)
     const solventPlayers = roomPlayerIds.filter((sessionId) => !this.state.players.get(sessionId)?.isBankrupt)
     if (solventPlayers.length <= 1) {
-      this.finishMatch(solventPlayers[0])
+      this.finishMatch(solventPlayers.length ? 'bankruptcy' : 'no-solvent-players', solventPlayers[0])
       return
     }
     const activeIndex = roomPlayerIds.indexOf(this.state.activePlayerSessionId)
@@ -1388,7 +1387,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       }
     }
     if (nextIndex < 0) {
-      this.finishMatch()
+      this.finishMatch('no-solvent-players')
       return
     }
     this.state.activePlayerSessionId = roomPlayerIds[nextIndex]

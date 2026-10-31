@@ -834,9 +834,9 @@ describe('sala privada', () => {
       .map((space) => space.id)
     const companyIds = boardSpaces.filter((space) => space.company).map((space) => space.id)
     const winConditions = [
-      { label: 'Monopólio em Linha', propertyIds: getLineTitleIds(0) },
-      { label: 'Monopólio Duplo Regional', propertyIds: regionalIds },
-      { label: 'quatro companhias', propertyIds: companyIds },
+      { label: 'Monopólio em Linha', reason: 'monopoly-line', propertyIds: getLineTitleIds(0) },
+      { label: 'Monopólio Duplo Regional', reason: 'double-regional-monopoly', propertyIds: regionalIds },
+      { label: 'quatro companhias', reason: 'all-companies', propertyIds: companyIds },
     ]
 
     for (const condition of winConditions) {
@@ -857,8 +857,30 @@ describe('sala privada', () => {
       expect(room.state.status, condition.label).toBe('ended')
       expect(room.state.turnPhase, condition.label).toBe('ended')
       expect(room.state.winnerSessionId, condition.label).toBe(host.sessionId)
-      expect(room.state.landingDescription, condition.label).toContain('venceu ao completar um monopólio')
+      expect(room.state.matchEndReason, condition.label).toBe(condition.reason)
+      expect(room.state.landingDescription, condition.label).toContain('venceu:')
     }
+  })
+
+  it('registra a falência como causa quando resta uma pessoa solvente', async () => {
+    const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
+    const host = await colyseus.connectTo(room, { name: 'Ana' })
+    const guest = await colyseus.connectTo(room, { name: 'Bia' })
+    host.send('start')
+    await waitFor(() => room.state.status === 'playing')
+    room.state.activePlayerSessionId = host.sessionId
+    room.state.turnPhase = 'debt'
+    room.state.debtAmount = 1_000_000
+    room.state.debtCreditorSessionId = guest.sessionId
+    room.state.debtReason = 'Aluguel'
+    room.state.players.get(host.sessionId)!.cash = 0
+
+    host.send('declareBankruptcy')
+    await waitFor(() => room.state.status === 'ended')
+
+    expect(room.state.winnerSessionId).toBe(guest.sessionId)
+    expect(room.state.matchEndReason).toBe('bankruptcy')
+    expect(room.state.landingDescription).toContain('faliu')
   })
 
   it('valida construções no servidor, permite até três casas e hotel em visita posterior', async () => {
@@ -1842,6 +1864,7 @@ describe('sala privada', () => {
     host.send('payDebt')
     await waitFor(() => room.state.status === 'ended')
     expect(room.state.winnerSessionId).toBe(host.sessionId)
+    expect(room.state.matchEndReason).toBe('timeout')
     expect(room.state.players.get(host.sessionId)).toMatchObject({ finalCash: 1_450_000, finalNetWorth: 1_650_000 })
     expect(room.state.players.get(host.sessionId)?.tieBreakRoll).toBe(0)
   })
@@ -1861,6 +1884,7 @@ describe('sala privada', () => {
     expect(room.state.players.get(host.sessionId)?.tieBreakRoll).toBeGreaterThanOrEqual(2)
     expect(room.state.players.get(host.sessionId)?.tieBreakRoll).toBeLessThanOrEqual(12)
     expect(room.state.landingDescription).toContain('Desempate nos dados')
+    expect(room.state.matchEndReason).toBe('timeout')
   })
 
   it('avança para o próximo jogador não falido e mantém a ordem após falência', async () => {

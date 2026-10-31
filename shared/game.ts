@@ -1,6 +1,7 @@
 import { boardSpaces, companyIds, getLineTitleIds, type RegionId } from './board.js'
 
 export type DiceRoll = readonly [number, number]
+export type MatchEndReason = 'timeout' | 'bankruptcy' | 'no-solvent-players' | 'monopoly-line' | 'double-regional-monopoly' | 'all-companies'
 
 export const STARTING_CASH = 2_000_000
 export const START_BONUS = 200_000
@@ -90,7 +91,7 @@ export function calculateCompanyRent(ownership: ReadonlyMap<number, string>, own
   return [0, 100_000, 250_000, 450_000, 750_000][ownedCount] ?? 0
 }
 
-export function hasWinningMonopoly(ownership: ReadonlyMap<number, string>, ownerSessionId: string) {
+export function getMonopolyWinReason(ownership: ReadonlyMap<number, string>, ownerSessionId: string): MatchEndReason | null {
   const completeRegion = (region: RegionId) => boardSpaces
     .filter((space) => space.region === region)
     .every((space) => ownership.get(space.id) === ownerSessionId)
@@ -98,7 +99,26 @@ export function hasWinningMonopoly(ownership: ReadonlyMap<number, string>, owner
   const completedRegions = regionIds.filter(completeRegion).length
   const completeLine = [0, 1, 2, 3].some((side) => getLineTitleIds(side).every((spaceId) => ownership.get(spaceId) === ownerSessionId))
   const allCompanies = companyIds.every((spaceId) => ownership.get(spaceId) === ownerSessionId)
-  return completeLine || completedRegions >= 2 || allCompanies
+  if (completeLine) return 'monopoly-line'
+  if (completedRegions >= 2) return 'double-regional-monopoly'
+  if (allCompanies) return 'all-companies'
+  return null
+}
+
+export function hasWinningMonopoly(ownership: ReadonlyMap<number, string>, ownerSessionId: string) {
+  return getMonopolyWinReason(ownership, ownerSessionId) !== null
+}
+
+export function getMatchEndSummary(reason: MatchEndReason | '') {
+  const summaries: Record<MatchEndReason, string> = {
+    timeout: 'Tempo esgotado: resultado definido pelo patrimônio final.',
+    bankruptcy: 'Vitória após a falência do último adversário solvente.',
+    'no-solvent-players': 'A partida terminou sem participantes solventes.',
+    'monopoly-line': 'Vitória por Monopólio em Linha.',
+    'double-regional-monopoly': 'Vitória por Monopólio Duplo Regional.',
+    'all-companies': 'Vitória pelas quatro companhias.',
+  }
+  return reason ? summaries[reason] : 'Partida encerrada.'
 }
 
 export function constructionCost(spaceId: number) {

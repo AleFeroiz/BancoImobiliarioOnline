@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { boardSpaces } from './board.js'
-import { ANIMATION_SPEEDS, DEFAULT_ANIMATION_SPEED, DICE_ANIMATION_DURATION_MS, PAWN_STEP_ANIMATION_DURATION_MS, TURN_DECISION_SECONDS, areDiceDoubles, calculateCompanyRent, calculateNetWorth, calculateRent, forcedBuybackCost, getAnimationDuration, hasWinningMonopoly, isAnimationSpeed, liquidatablePropertyIds } from './game.js'
+import { ANIMATION_SPEEDS, DEFAULT_ANIMATION_SPEED, DICE_ANIMATION_DURATION_MS, PAWN_STEP_ANIMATION_DURATION_MS, TURN_DECISION_SECONDS, areDiceDoubles, calculateCompanyRent, calculateNetWorth, calculateRent, forcedBuybackCost, getAnimationDuration, getMatchEndSummary, getMonopolyWinReason, hasWinningMonopoly, isAnimationSpeed, liquidatablePropertyIds } from './game.js'
 
 describe('tentativas para sair da prisão', () => {
   it('reconhece dois dados iguais como duplas', () => {
@@ -31,6 +31,7 @@ describe('vitórias e companhias do tabuleiro regional', () => {
   it('vence ao completar seis casas e uma companhia em qualquer lado', () => {
     const ownership = new Map([1, 3, 4, 5, 7, 8, 9].map((spaceId) => [spaceId, 'ana']))
     expect(hasWinningMonopoly(ownership, 'ana')).toBe(true)
+    expect(getMonopolyWinReason(ownership, 'ana')).toBe('monopoly-line')
     expect(hasWinningMonopoly(ownership, 'bia')).toBe(false)
   })
 
@@ -40,13 +41,22 @@ describe('vitórias e companhias do tabuleiro regional', () => {
     const companyTitles = boardSpaces.filter((space) => space.company).slice(0, 3)
     companyTitles.forEach((space) => ownership.set(space.id, 'ana'))
     expect(hasWinningMonopoly(ownership, 'ana')).toBe(true)
+    expect(getMonopolyWinReason(ownership, 'ana')).toBe('monopoly-line')
     expect(calculateCompanyRent(ownership, 'ana')).toBe(450_000)
   })
 
   it('vence ao possuir as quatro companhias', () => {
     const ownership = new Map(boardSpaces.filter((space) => space.company).map((space) => [space.id, 'ana']))
     expect(hasWinningMonopoly(ownership, 'ana')).toBe(true)
+    expect(getMonopolyWinReason(ownership, 'ana')).toBe('all-companies')
     expect(calculateCompanyRent(ownership, 'ana')).toBe(750_000)
+  })
+
+  it('descreve a causa da partida no resultado final', () => {
+    expect(getMatchEndSummary('timeout')).toContain('Tempo esgotado')
+    expect(getMatchEndSummary('bankruptcy')).toContain('falência')
+    expect(getMatchEndSummary('double-regional-monopoly')).toContain('Monopólio Duplo Regional')
+    expect(getMatchEndSummary('all-companies')).toContain('quatro companhias')
   })
 })
 

@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react'
 import type { Room } from '@colyseus/sdk'
 import { CHARACTER_OPTIONS, type CharacterType, type GameMode, type LobbyPlayer } from '../../shared/lobby'
+import { getMatchEndSummary, type MatchEndReason } from '../../shared/game'
 import { EVENT_CARDS } from '../../shared/cards'
 import { scheduleSceneLoad } from './sceneLoading'
 import { roomClient } from './roomClient'
@@ -146,6 +147,7 @@ function App() {
   const [debtReason, setDebtReason] = useState('')
   const [debtCreditorSessionId, setDebtCreditorSessionId] = useState('')
   const [winnerSessionId, setWinnerSessionId] = useState('')
+  const [matchEndReason, setMatchEndReason] = useState<MatchEndReason | ''>('')
   const [showPropertyPanel, setShowPropertyPanel] = useState(false)
   const [portfolioBoardSelection, setPortfolioBoardSelection] = useState(false)
   const [profilePlayerSessionId, setProfilePlayerSessionId] = useState('')
@@ -485,6 +487,7 @@ function App() {
         debtReason: string
         debtCreditorSessionId: string
         winnerSessionId: string
+        matchEndReason: MatchEndReason | ''
         tradeOfferId: number
         tradeOfferFromSessionId: string
         tradeOfferToSessionId: string
@@ -587,6 +590,7 @@ function App() {
       setDebtReason(snapshot.debtReason)
       setDebtCreditorSessionId(snapshot.debtCreditorSessionId)
       setWinnerSessionId(snapshot.winnerSessionId)
+      setMatchEndReason(snapshot.matchEndReason)
       setTradeOffer(snapshot.tradeOfferId > 0 ? {
         id: snapshot.tradeOfferId,
         fromSessionId: snapshot.tradeOfferFromSessionId,
@@ -1052,6 +1056,7 @@ function App() {
               ) : turnPhase === 'ended' ? (
                 <div className="final-result-content">
                   <div className="winner-banner"><span aria-hidden="true">✦</span><strong>{winnerSessionId ? 'VENCEDOR DA PARTIDA' : 'PARTIDA ENCERRADA'}</strong><span aria-hidden="true">✦</span></div>
+                  <p className="final-result-reason" role="status">{getMatchEndSummary(matchEndReason)}</p>
                   {winnerSessionId && (() => {
                     const winner = roomPlayers.find((player) => player.sessionId === winnerSessionId)
                     if (!winner) return null

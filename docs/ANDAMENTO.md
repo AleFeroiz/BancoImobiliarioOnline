@@ -1,3 +1,8 @@
+## Motivo do encerramento explícito no resultado — em validação (2026-10-31)
+
+- A tela final escondia `landingDescription`, então não mostrava por que a partida acabou; o estado também não diferenciava os três monopólios. O servidor passa a sincronizar `matchEndReason` e a interface mostra tempo, falência, Monopólio em Linha, Monopólio Duplo Regional, quatro companhias ou ausência de pessoas solventes.
+- Regressões adicionadas para as três causas de monopólio, falência e encerramento por tempo. `npm run graphify -- update .` atualizou o grafo para 939 nós e 1.745 arestas; `npm run verify` passou com 246 testes em 46 arquivos e builds frontend/servidor; o aviso de chunk 3D acima de 500 kB continua. Na revisão visual, o anfitrião com saldo zero caiu em AgroBrasil, devia R$ 250.000 e declarou falência; o painel encerrou a partida mostrando Bot 1 vencedor, a causa da falência e a classificação com patrimônios/saldos.
+
 ## Preparação de cartas pelo Modo DEV — implementação concluída; revisão manual parcial (2026-10-31)
 
 - Acrescentei ao Modo DEV uma seleção da próxima carta, validada no servidor, acessível apenas à anfitriã e consumida uma única vez no próximo sorteio Sorte ou Revés. Regressões cobrem permissão, id inválido, consumo único, seleção de alvo e efeito de Apagão.

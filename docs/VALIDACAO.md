@@ -697,3 +697,10 @@
 - O teste de integração prepara Apagão pelo protocolo DEV, confirma que somente a anfitriã pode armar uma carta válida durante a fase de rolagem e que a carta é consumida uma única vez. Depois da seleção de Parauapebas, o servidor aplicou três turnos de suspensão de aluguel.
 - No navegador, a anfitriã armou Apagão e o sorteio abriu a tela de escolha. Com Bot 1 proprietário de Parauapebas, a propriedade elegível ficou iluminada com aro dourado e as demais casas ficaram apagadas. O clique no alvo não foi confirmado antes do prazo, então a conclusão visual do alvo e a suspensão de aluguel permanecem pendentes.
 - Não foi feita revisão visual das outras cartas. `npm run graphify -- update .` atualizou o grafo para 934 nós e 1.732 arestas. `npm run verify`: 243 testes em 46 arquivos passaram; builds do frontend e servidor passaram. `git diff --check` passou. O build mantém o aviso já conhecido de chunk de cena 3D acima de 500 kB.
+
+## 2026-10-31 — Causa exibida no resultado final
+
+- O estado autoritativo agora sincroniza uma causa para tempo, falência, ausência de participantes solventes e cada vitória imediata. A tela final mostra um resumo correspondente; a condição de monopólio é identificada na origem do servidor.
+- Testes de integração verificam causas por tempo, falência, Monopólio em Linha, Monopólio Duplo Regional e quatro companhias. Testes unitários cobrem os textos do resultado.
+- Em sala local com Modo DEV, Bot 1 possuía AgroBrasil e Aviação Brasil. Com saldo zero e sem imóveis, o anfitrião foi teleportado para AgroBrasil, registrou dívida de aluguel de R$ 250.000 e declarou falência. A captura confirmou o painel “PARTIDA ENCERRADA”, Bot 1 vencedor, a mensagem “Vitória após a falência do último adversário solvente.” e a classificação com patrimônio/saldo.
+- `npm run graphify -- update .` atualizou o grafo para 939 nós e 1.745 arestas. `npm run verify`: 246 testes em 46 arquivos passaram; builds do frontend e servidor passaram. O chunk 3D mantém o aviso conhecido acima de 500 kB.

@@ -329,6 +329,7 @@ button:disabled{opacity:.55;cursor:not-allowed}
 .final-result-content{display:grid;gap:10px}
 .winner-banner{display:flex;justify-content:center;align-items:center;gap:9px;color:#9b824b;font-size:8px;font-weight:700;letter-spacing:.16em}
 .winner-banner span{color:#c5aa5e;font-size:12px}
+.final-result-reason{margin:0;color:#5c6658;font-size:12px;line-height:1.45;text-align:center}
 .winner-metrics{display:grid;grid-template-columns:1.2fr 1fr;gap:7px}
 .winner-metrics>div{display:grid;gap:5px;padding:10px 12px;border:1px solid #e0e3d7;border-radius:10px;background:#f3f2e7}
 .winner-metrics>div:first-child{border-color:#c8b577;background:#f7f0dc}
