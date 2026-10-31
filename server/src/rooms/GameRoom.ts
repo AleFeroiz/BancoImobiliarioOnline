@@ -348,8 +348,11 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       const space = boardSpaces[propertyId]
       if (!buyer || !property || !space || space.kind !== 'property' || !property.ownerSessionId || property.ownerSessionId === client.sessionId) return
       const owner = this.state.players.get(property.ownerSessionId)
-      const ownership = new Map(Array.from(this.state.properties.entries()).map(([id, item]) => [Number(id), item.ownerSessionId]))
-      if (payload.accept && property.houses !== PROPERTY_HOTEL_LEVEL) {
+      if (payload.accept && property.houses === PROPERTY_HOTEL_LEVEL) {
+        client.send('room:error', { message: 'Propriedades com hotel não podem ser recompradas.' })
+        return
+      }
+      if (payload.accept) {
         const price = forcedBuybackCost(propertyId, property.houses)
         if (!this.canSpend(buyer, price)) {
           client.send('room:error', { message: `A recompra custa ${price.toLocaleString('pt-BR')}; seu saldo é insuficiente.` })
@@ -362,13 +365,10 @@ export class GameRoom extends Room<{ state: LobbyState }> {
         this.spendCash(buyer, price)
         if (owner && !owner.isBankrupt) this.creditCash(owner, price)
         property.ownerSessionId = client.sessionId
-        this.state.landingDescription = `${space.name} recomprada por ${price.toLocaleString('pt-BR')}; o valor foi pago ao antigo proprietário.`
+        this.state.landingDescription += ` ${space.name} recomprada por ${price.toLocaleString('pt-BR')}; o valor integral da recompra foi pago ao antigo proprietário.`
         this.checkMonopolyVictory(client.sessionId)
       } else {
-        const rent = space.company
-          ? calculateCompanyRent(ownership, property.ownerSessionId) * (propertyId === this.state.worldCupSpaceId ? 3 : 1)
-          : calculateRent(propertyId, ownership, property.houses, this.state.worldCupSpaceId)
-        if (owner) this.collectPayment(client.sessionId, buyer, rent, property.ownerSessionId, 'Aluguel')
+        this.state.landingDescription += ' Você escolheu continuar sem recomprar; o aluguel já foi pago.'
       }
       this.state.pendingPropertyId = 255
       const debtOpened = (this.state as LobbyState).turnPhase === 'debt'
@@ -474,6 +474,9 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       if (this.pendingCardPaymentActorSessionId) {
         this.resumeCardPayments()
         return
+      }
+      if (reason === 'Aluguel' || reason === 'Aluguel da companhia') {
+        if (!this.offerBuybackAfterRent(client.sessionId, this.state.pendingPropertyId)) this.state.pendingPropertyId = 255
       }
       this.finishExpiredPhaseIfReady()
     },
@@ -1535,6 +1538,24 @@ export class GameRoom extends Room<{ state: LobbyState }> {
     this.state.landingDescription += ` Dívida de ${amount.toLocaleString('pt-BR')} ${creditor ? `com ${creditor.name}` : 'com o banco'}. Venda construções ou devolva imóveis ao banco para pagar.`
   }
 
+  private offerBuybackAfterRent(sessionId: string, propertyId: number) {
+    const buyer = this.state.players.get(sessionId)
+    const property = this.state.properties.get(String(propertyId))
+    const space = boardSpaces[propertyId]
+    const owner = property?.ownerSessionId ? this.state.players.get(property.ownerSessionId) : undefined
+    if (!buyer || !property || !space || space.kind !== 'property' || !owner || owner.isBankrupt || property.ownerSessionId === sessionId || property.houses === PROPERTY_HOTEL_LEVEL) return false
+
+    const price = forcedBuybackCost(propertyId, property.houses)
+    if (!this.canSpend(buyer, price) || owner.cash + price > MAX_SCHEMA_CASH) return false
+
+    this.state.pendingPropertyId = propertyId
+    this.state.turnPhase = 'buyback'
+    this.state.turnSeconds = TURN_DECISION_SECONDS
+    this.turnTimerKey = `${this.state.turnNumber}:${sessionId}:buyback`
+    this.state.landingDescription += ` Aluguel quitado. Você ainda pode recomprar ${space.name} por ${price.toLocaleString('pt-BR')} (1,5× o investimento).`
+    return true
+  }
+
   private movePlayer(sessionId: string, player: LobbyPlayerState, spaces: number) {
     const previousPosition = player.position
     player.position = movePosition(player.position, [spaces, 0])
@@ -1615,18 +1636,18 @@ export class GameRoom extends Room<{ state: LobbyState }> {
         const rent = calculateRent(space.id, ownership, property.houses, this.state.worldCupSpaceId)
         if (owner && property.blackoutTurns > 0 && property.houses !== PROPERTY_HOTEL_LEVEL) {
           this.state.landingDescription += ` ${space.name} está em apagão; não há aluguel por ${property.blackoutTurns} turno(s) do dono.`
-        } else if (owner && property.houses !== PROPERTY_HOTEL_LEVEL) {
-          this.state.pendingPropertyId = space.id
-          this.state.turnPhase = 'buyback'
-          this.state.turnSeconds = TURN_DECISION_SECONDS
-          this.turnTimerKey = `${this.state.turnNumber}:${sessionId}:buyback`
-          this.state.landingDescription += ` Você pode tomar esta propriedade por ${forcedBuybackCost(space.id, property.houses).toLocaleString('pt-BR')} (1,5× o investimento) ou pagar o aluguel.`
         } else if (owner) {
-          if (space.company) {
-            const companyRent = calculateCompanyRent(ownership, property.ownerSessionId) * (space.id === this.state.worldCupSpaceId ? 3 : 1)
-            this.collectPayment(sessionId, player, companyRent, property.ownerSessionId, 'Aluguel da companhia')
-          } else {
-            this.collectPayment(sessionId, player, rent, property.ownerSessionId, 'Aluguel')
+          const amount = space.company
+            ? calculateCompanyRent(ownership, property.ownerSessionId) * (space.id === this.state.worldCupSpaceId ? 3 : 1)
+            : rent
+          const reason = space.company ? 'Aluguel da companhia' : 'Aluguel'
+          if (property.houses !== PROPERTY_HOTEL_LEVEL) this.state.pendingPropertyId = space.id
+          this.collectPayment(sessionId, player, amount, property.ownerSessionId, reason)
+          const debtOpened = (this.state as LobbyState).turnPhase === 'debt'
+          if (!debtOpened && property.houses !== PROPERTY_HOTEL_LEVEL) {
+            if (!this.offerBuybackAfterRent(sessionId, space.id)) this.state.pendingPropertyId = 255
+          } else if (!debtOpened) {
+            this.state.pendingPropertyId = 255
           }
         }
       }

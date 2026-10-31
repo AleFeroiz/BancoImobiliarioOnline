@@ -1,3 +1,9 @@
+## 2026-10-31 — Recompra depois do aluguel
+
+- No jogo local, o teleporte DEV levou o anfitrião a Parauapebas, do Bot 1. A interface exibiu primeiro “Aluguel: R$ 192.500 pagos a Bot 1” e, na mesma resolução, ofereceu a recompra por R$ 1.031.250. “Continuar sem recomprar” aparece como opção de recusa, sem cobrar o aluguel novamente.
+- Aceitei a recompra: o anfitrião passou de R$ 1.607.500 (após o aluguel) para R$ 576.250; Bot 1 recebeu R$ 1.031.250 e passou de R$ 1.505.000 para R$ 2.536.250. A descrição confirmou pagamento integral ao antigo proprietário e a posse mudou para o anfitrião.
+- Testes de servidor cobrem saldo insuficiente após aluguel, hotel sem recompra e recompra depois de quitar aluguel em dívida. `npm run verify`: 240 testes em 46 arquivos passaram; builds frontend e servidor passaram. `graphify update .` atualizou o grafo. O aviso conhecido de chunk 3D acima de 500 KB permanece.
+
 ## 2026-10-31 — Vitórias por Monopólio Duplo Regional e em Linha
 
 - Em sala DEV local, comprei as cinco cidades do Norte e as cinco do Centro-Oeste. A compra de Brasília completou o segundo monopólio regional e abriu imediatamente “PARTIDA ENCERRADA”; o painel mostrou Codex QA como vencedor, patrimônio final de R$ 3.875.000, saldo R$ 0 e classificação.

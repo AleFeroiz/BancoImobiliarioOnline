@@ -1,3 +1,10 @@
+## Recompra após aluguel — concluída (2026-10-31)
+
+- Regra implementada conforme confirmação: aluguel normal primeiro; depois, se houver caixa suficiente para 1,5× do investimento e não for hotel, aparece a recompra. O preço integral vai ao antigo dono e a posse passa ao comprador. Se o aluguel exigir liquidação de dívida, a opção só aparece após pagar a dívida e se ainda houver saldo.
+- Testes de servidor cobrem recompra, saldo insuficiente após aluguel, hotel e recompra após quitar dívida. Revisão manual no navegador confirmou a ordem: aluguel de R$ 192.500 pago ao Bot 1; opção de R$ 1.031.250; após aceitar, o Bot recebeu esse valor e o título passou ao anfitrião.
+- Validação completa: `npm run verify` passou com 240 testes em 46 arquivos e builds de frontend/servidor. `graphify update .` atualizou o índice. Evidências em [VALIDACAO.md](VALIDACAO.md#2026-10-31--recompra-depois-do-aluguel).
+- Próximo passo da reforma completa: revisar visualmente as cartas autorais restantes e registrar os itens ainda pendentes em `docs/trabalho/reforma-bantec.md`.
+
 ## Recompra forçada na interface — concluído (2026-10-31)
 
 - Bot 1 comprou Manaus e três casas por R$ 1.625.000, sem hotel. O anfitrião foi à propriedade pelo teleporte DEV; a tela ofereceu “Recomprar por R$ 2.437.500” ou “Pagar aluguel”, sem pedir aceite ao dono.

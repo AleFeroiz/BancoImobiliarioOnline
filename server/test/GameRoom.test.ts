@@ -1101,14 +1101,125 @@ describe('sala privada', () => {
     privateRoom.resolveSpace(visitorClient.sessionId, visitor)
 
     expect(room.state.turnPhase).toBe('buyback')
+    const rent = calculateRent(propertySpace.id, new Map([[propertySpace.id, ownerClient.sessionId]]), 1)
     const price = forcedBuybackCost(propertySpace.id, 1)
+    expect(visitor.cash).toBe(2_147_000_000 - rent)
+    expect(owner.cash).toBe(STARTING_CASH + rent)
     visitorClient.send('buyback', { accept: true })
     await waitFor(() => room.state.turnPhase === 'resolve')
-    expect(visitor.cash).toBe(2_147_000_000 - price)
-    expect(owner.cash).toBe(STARTING_CASH + price)
+    expect(visitor.cash).toBe(2_147_000_000 - rent - price)
+    expect(owner.cash).toBe(STARTING_CASH + rent + price)
     expect(room.state.properties.get(String(propertySpace.id))?.ownerSessionId).toBe(visitorClient.sessionId)
     expect(room.state.properties.get(String(propertySpace.id))?.houses).toBe(1)
-    expect(room.state.landingDescription).toContain('recomprada')
+    expect(room.state.landingDescription).toContain('Aluguel:')
+    expect(room.state.landingDescription).toContain('valor integral da recompra foi pago')
+  })
+
+  it('não oferece recompra quando o saldo restante após o aluguel é insuficiente', async () => {
+    const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
+    const visitorClient = await colyseus.connectTo(room, { name: 'Ana' })
+    const ownerClient = await colyseus.connectTo(room, { name: 'Bia' })
+    const started = new Promise<void>((resolve) => visitorClient.onMessage('game:started', () => resolve()))
+    visitorClient.send('start')
+    await started
+
+    const propertySpace = boardSpaces.find((space) => space.kind === 'property' && space.buildable)!
+    const property = new PropertyState()
+    property.ownerSessionId = ownerClient.sessionId
+    property.houses = 1
+    room.state.properties.set(String(propertySpace.id), property)
+    room.state.activePlayerSessionId = visitorClient.sessionId
+    const visitor = room.state.players.get(visitorClient.sessionId)!
+    const owner = room.state.players.get(ownerClient.sessionId)!
+    const rent = calculateRent(propertySpace.id, new Map([[propertySpace.id, ownerClient.sessionId]]), 1)
+    const price = forcedBuybackCost(propertySpace.id, 1)
+    visitor.position = propertySpace.id
+    visitor.cash = rent + price - 1
+
+    const privateRoom = room as unknown as { resolveSpace: (sessionId: string, player: typeof visitor) => void }
+    privateRoom.resolveSpace(visitorClient.sessionId, visitor)
+
+    expect(room.state.turnPhase).toBe('resolve')
+    expect(visitor.cash).toBe(price - 1)
+    expect(owner.cash).toBe(STARTING_CASH + rent)
+    expect(property.ownerSessionId).toBe(ownerClient.sessionId)
+  })
+
+  it('cobra aluguel de hotel sem oferecer recompra', async () => {
+    const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
+    const visitorClient = await colyseus.connectTo(room, { name: 'Ana' })
+    const ownerClient = await colyseus.connectTo(room, { name: 'Bia' })
+    const started = new Promise<void>((resolve) => visitorClient.onMessage('game:started', () => resolve()))
+    visitorClient.send('start')
+    await started
+
+    const propertySpace = boardSpaces.find((space) => space.kind === 'property' && space.buildable)!
+    const property = new PropertyState()
+    property.ownerSessionId = ownerClient.sessionId
+    property.houses = PROPERTY_HOTEL_LEVEL
+    room.state.properties.set(String(propertySpace.id), property)
+    room.state.activePlayerSessionId = visitorClient.sessionId
+    const visitor = room.state.players.get(visitorClient.sessionId)!
+    const owner = room.state.players.get(ownerClient.sessionId)!
+    const rent = calculateRent(propertySpace.id, new Map([[propertySpace.id, ownerClient.sessionId]]), PROPERTY_HOTEL_LEVEL)
+    visitor.position = propertySpace.id
+    visitor.cash = rent + 100_000
+
+    const privateRoom = room as unknown as { resolveSpace: (sessionId: string, player: typeof visitor) => void }
+    privateRoom.resolveSpace(visitorClient.sessionId, visitor)
+
+    expect(room.state.turnPhase).toBe('resolve')
+    expect(visitor.cash).toBe(100_000)
+    expect(owner.cash).toBe(STARTING_CASH + rent)
+    expect(property.ownerSessionId).toBe(ownerClient.sessionId)
+  })
+
+  it('oferece recompra depois de quitar aluguel por meio da dívida', async () => {
+    const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
+    const visitorClient = await colyseus.connectTo(room, { name: 'Ana' })
+    const ownerClient = await colyseus.connectTo(room, { name: 'Bia' })
+    const started = new Promise<void>((resolve) => visitorClient.onMessage('game:started', () => resolve()))
+    visitorClient.send('start')
+    await started
+
+    const propertySpace = boardSpaces.find((space) => space.kind === 'property' && space.buildable)!
+    const property = new PropertyState()
+    property.ownerSessionId = ownerClient.sessionId
+    property.houses = 1
+    room.state.properties.set(String(propertySpace.id), property)
+    const debtorAsset = [...boardSpaces].reverse().find((space) => space.kind === 'property' && space.buildable && space.id !== propertySpace.id)!
+    const debtorTitle = new PropertyState()
+    debtorTitle.ownerSessionId = visitorClient.sessionId
+    room.state.properties.set(String(debtorAsset.id), debtorTitle)
+    room.state.activePlayerSessionId = visitorClient.sessionId
+    const visitor = room.state.players.get(visitorClient.sessionId)!
+    const owner = room.state.players.get(ownerClient.sessionId)!
+    const rent = calculateRent(propertySpace.id, new Map([[propertySpace.id, ownerClient.sessionId]]), 1)
+    const returnValue = bankReturnValue(debtorAsset.id)
+    const price = forcedBuybackCost(propertySpace.id, 1)
+    visitor.position = propertySpace.id
+    visitor.cash = rent - 10_000
+    const initialCash = visitor.cash
+
+    const privateRoom = room as unknown as { resolveSpace: (sessionId: string, player: typeof visitor) => void }
+    privateRoom.resolveSpace(visitorClient.sessionId, visitor)
+    expect(room.state.turnPhase).toBe('debt')
+    expect(room.state.pendingPropertyId).toBe(propertySpace.id)
+
+    visitorClient.send('returnPropertyToBank', { propertyId: debtorAsset.id })
+    await waitFor(() => visitor.cash === returnValue + initialCash)
+    expect(visitor.cash).toBe(returnValue + initialCash)
+    visitorClient.send('payDebt')
+    await waitFor(() => room.state.turnPhase !== 'debt')
+    expect(room.state.turnPhase).toBe('buyback')
+    expect(visitor.cash).toBe(returnValue + initialCash - rent)
+    expect(owner.cash).toBe(STARTING_CASH + rent)
+
+    visitorClient.send('buyback', { accept: true })
+    await waitFor(() => room.state.turnPhase === 'resolve')
+    expect(visitor.cash).toBe(returnValue + initialCash - rent - price)
+    expect(owner.cash).toBe(STARTING_CASH + rent + price)
+    expect(property.ownerSessionId).toBe(visitorClient.sessionId)
   })
 
   it('aplica a sede da Copa ao aluguel e impede a Volta ao Mundo para imóvel de outra pessoa', async () => {

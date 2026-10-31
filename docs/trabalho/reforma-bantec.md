@@ -10,7 +10,7 @@ Atualizar o jogo para um tabuleiro inspirado nas economias das cinco regiões br
 - Percurso do menor ao maior PIB regional total: Norte → Centro-Oeste → Nordeste → Sul → Sudeste. Cidades seguem do menor ao maior PIB municipal dentro de cada região; São Paulo encerra a volta antes da Partida.
 - Cores de piso por região e preços das 24 cidades conforme `docs/DECISOES.md`.
 - Vitórias imediatas por Monopólio em Linha (seis cidades e companhia do lado), Monopólio Duplo Regional (duas regiões completas) ou posse das quatro companhias.
-- Taxas proporcionais ao número de cidades e companhias do jogador; títulos entregues ao banco deixam de ser seus. Recompra custa 1,5× o investimento no imóvel, paga diretamente ao dono e não pode tomar imóvel com hotel.
+- Taxas proporcionais ao número de cidades e companhias do jogador; títulos entregues ao banco deixam de ser seus. Recompra custa 1,5× o investimento no imóvel, paga diretamente ao dono e não pode tomar imóvel com hotel. A sequência aprovada em 2026-10-31 cobra primeiro o aluguel e só depois oferece recompra se restar saldo suficiente.
 - Durante dívida insuficiente, devolver um título ao banco paga 50% do preço e o libera para venda; não há título hipotecado ou resgate.
 - Doze cartas autorais descritas em `docs/REGRAS-DE-JOGO.md`; Apagão e Proteção duram três turnos do dono. Terremoto devolve imóvel sem hotel ao banco livre de construções e sem compensação. Troca de posição não resolve as casas de chegada.
 - O canto Volta ao Mundo passa a Volta ao Brasil e concede R$ 200.000 na chegada. Lobby com tempos de 15, 30 ou 60 minutos; Express removido.

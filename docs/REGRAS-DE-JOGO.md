@@ -26,7 +26,7 @@ Este documento descreve somente as regras atuais do BANTEC. Referências ao Expr
 - O aluguel de cidade é calculado sobre o preço P: terreno 10% de P, uma casa 20%, duas casas 40%, três casas 70% e hotel 100%. Monopólio Regional dobra o valor e a sede da Copa do Mundo triplica o aluguel calculado.
 - As companhias são AgroBrasil, Aviação Brasil, Energia Brasil e Mineração Brasil. Cada uma custa R$ 500.000. O aluguel total do dono escala por quantidade de companhias: uma R$ 100.000, duas R$ 250.000, três R$ 450.000 e quatro R$ 750.000. Possuir as quatro vence a partida.
 - As quatro taxas cobram por imóvel que a pessoa possui: R$ 10.000, R$ 15.000, R$ 20.000 e R$ 25.000. Cidades e companhias contam; construções não. Títulos já vendidos ou devolvidos ao banco não contam.
-- Ao cair num imóvel de outra pessoa, pode-se fazer uma recompra forçada por 1,5× o investimento total da propriedade. O pagamento vai diretamente ao dono, cuja aceitação não é necessária. Propriedades com hotel não podem ser recompradas.
+- Ao cair num imóvel de outra pessoa, primeiro se paga o aluguel normal ao dono. Depois, se ainda houver saldo para pagar 1,5× o investimento total da propriedade e ela não tiver hotel, aparece a opção de recompra. O valor integral da recompra vai diretamente ao dono, sem depender da aceitação dele; a posse passa ao comprador. Hotel impede recompra. Se o aluguel entrar em dívida, a opção só aparece depois que a dívida for quitada e se restar saldo suficiente.
 
 ## Dívidas e falência
 
