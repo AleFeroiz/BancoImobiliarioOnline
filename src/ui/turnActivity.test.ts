@@ -20,6 +20,13 @@ describe('atividade do jogador da vez', () => {
     expect(shouldShowTurnCard(false, 'ended')).toBe(true)
   })
 
+  it('prioriza o resultado final sobre carta ativa e animação que ficaram pendentes', () => {
+    expect(shouldShowTurnCard(false, 'ended', true, true)).toBe(true)
+    expect(shouldSuppressTurnCardForFeedback(true, 'ended')).toBe(false)
+    expect(shouldShowTurnCard(true, 'purchase', true, false)).toBe(false)
+    expect(shouldShowTurnCard(true, 'purchase', false, true)).toBe(false)
+  })
+
   it('mantém decisões que precisam de ação visíveis enquanto avisos transitórios estão na fila', () => {
     expect(shouldSuppressTurnCardForFeedback(true, 'purchase')).toBe(false)
     expect(shouldSuppressTurnCardForFeedback(true, 'jail')).toBe(false)

@@ -543,3 +543,10 @@
 - Unifiquei a interação de seleção no tabuleiro para alvos de carta, propriedades liquidáveis durante dívida, títulos que entram em uma troca e inspeção de imóveis pela carteira. A cena existente ilumina as opções válidas, reduz o contraste das demais e só aceita cliques nas válidas; a seleção de jogadores continua nos controles de jogadores.
 - Em partida local com três participantes, comprei Parauapebas por R$ 275.000, abri Bens e ativei “Escolher imóvel no tabuleiro”. O screenshot confirmou Parauapebas iluminada com aro dourado, casas não selecionáveis apagadas e o tabuleiro clicável. Ao clicar na casa, abriu o inspetor de Parauapebas com preço, aluguel e níveis. Nenhum erro de interação foi observado.
 - `npm run graphify -- update .` atualizou o grafo para 882 nós e 1.640 relações. `git diff --check` passou. `npm run verify`: 228 testes em 44 arquivos passaram; builds frontend e servidor passaram. O chunk 3D mantém o aviso existente acima de 500 KB.
+# Correção do painel de encerramento — 2026-10-31
+
+- Investigação: a tela final era bloqueada quando havia título de carta ativo ou avisos transitórios na fila. Uma animação local pendente também podia substituir o nome do vencedor e a mensagem do resultado.
+- Implementação: prioridade explícita para resultado encerrado; reset de animação, feedback e painéis locais ao entrar na fase final. Ajuda e configurações deixam de renderizar sobre o resultado no mesmo ciclo de atualização.
+- Regressão automatizada focada: `src/ui/turnActivity.test.ts` cobre a prioridade diante de carta, animação e feedback pendentes.
+- `npm run verify`: 229 testes em 44 arquivos passaram; builds frontend e servidor passaram. Para os testes Colyseus, o loopback local foi liberado após `fetch failed` no sandbox. O aviso conhecido de chunk de cena 3D acima de 500 KB permanece. Graphify atualizado.
+- Limite: o estado final não foi alcançado manualmente na interface nesta sessão; testes de integração existentes verificam o encerramento autoritativo do servidor e a regressão exercita a decisão de visibilidade do cartão.

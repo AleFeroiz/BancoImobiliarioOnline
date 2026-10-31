@@ -193,7 +193,7 @@ function App() {
   const isMyTurn = room?.sessionId === activePlayerSessionId
   const isPresentationAnimating = turnPhase === 'rolling' || turnPhase === 'moving'
   const turnActivityLabel = getTurnActivityLabel(turnPhase)
-  const showTurnCard = shouldShowTurnCard(isMyTurn, turnPhase) && !isPresentationAnimating && !['roll', 'resolve', 'world-cup', 'world-tour'].includes(turnPhase) && (!activeCardTitle || turnPhase === 'card-target')
+  const showTurnCard = shouldShowTurnCard(isMyTurn, turnPhase, Boolean(activeCardTitle), isPresentationAnimating)
   const feedbackToast = feedbackQueue[0]
   const feedbackPending = feedbackQueue.length > 0
   const animationSpeedControl = isHost && turnPhase !== 'ended' ? <div className="animation-speed-control" role="group" aria-label="Velocidade das animações da sala" title="Vale nas próximas animações"><span>RITMO</span><div>{ANIMATION_SPEEDS.map((speed) => <button key={speed} type="button" aria-pressed={animationSpeed === speed} onClick={() => room?.send('setAnimationSpeed', { speed })}>{speed.toLocaleString('pt-BR')}×</button>)}</div></div> : null
@@ -399,6 +399,22 @@ function App() {
       setShowAuctionPanel(false)
       setShowTradePanel(false)
     }
+  }, [turnPhase])
+
+  useEffect(() => {
+    if (turnPhase !== 'ended') return
+    setPresentationStage('idle')
+    setFeedbackQueue([])
+    setShowPropertyPanel(false)
+    setPortfolioBoardSelection(false)
+    setProfilePlayerSessionId('')
+    setShowTradePanel(false)
+    setTradeBoardSelectionTarget(null)
+    setShowAuctionPanel(false)
+    setShowHelp(false)
+    setShowOptions(false)
+    setShowEmotePicker(false)
+    setSelectedSpaceId(null)
   }, [turnPhase])
 
   useEffect(() => {
@@ -979,8 +995,8 @@ function App() {
           ) : shouldSuppressTurnCardForFeedback(feedbackPending, turnPhase) || !showTurnCard || shouldSuppressTurnCardForSpaceSelection(Boolean(selectedSpace), turnPhase, ownPropertyLanding, showPropertyPanel && turnPhase !== 'debt', false) ? null : (
             <div className={`turn-card${turnPhase === 'ended' ? ' final-result-card' : ''}${turnPhase === 'purchase' ? ' purchase-panel' : ''}${turnPhase === 'world-cup' || turnPhase === 'world-tour' ? ' corner-choice-panel' : ''}`}>
               <span className="turn-label">{turnPhase === 'ended' ? 'PARTIDA ENCERRADA' : turnPhase === 'debt' ? 'DÍVIDA EM ABERTO' : matchEnding ? 'TEMPO ESGOTADO · CONCLUA A JOGADA' : `TURNO ${turnNumber} · ${isMyTurn ? 'SUA VEZ' : `VEZ DE ${activePlayer?.name ?? '…'}`}`}{turnPhase !== 'ended' && turnSeconds > 0 && <b className="turn-countdown" aria-label={`${turnSeconds} segundos restantes`}>{turnSeconds}s</b>}</span>
-              <h2>{presentationStage === 'dice' ? 'Rolando os dados…' : presentationStage === 'pawn' ? 'Peão em movimento…' : turnPhase === 'ended' ? (roomPlayers.find((player) => player.sessionId === winnerSessionId)?.name ?? 'Partida encerrada') : turnPhase === 'debt' ? 'Hora de liquidar bens' : activeCardTitle || (turnPhase === 'purchase' ? `Comprar ${pendingPurchaseSpace?.name ?? 'propriedade'}` : turnPhase === 'buyback' ? `Recomprar ${pendingPurchaseSpace?.name ?? 'propriedade'}` : activeSpace.name)}</h2>
-              {presentationStage !== 'idle' ? <p role="status" aria-live="polite">A próxima ação aparece quando a etapa atual terminar.</p> : turnPhase !== 'ended' && <p>{turnPhase === 'purchase' ? 'Este terreno está livre. Você escolhe se quer comprar; se recusar, ele continua sem dono.' : landingDescription || activeCardDescription || (activeSpace.kind === 'property' ? `Propriedade · ${formatMoney(activeSpace.price ?? 0)}` : 'Aguardando a jogada.')}</p>}
+              <h2>{turnPhase === 'ended' ? (roomPlayers.find((player) => player.sessionId === winnerSessionId)?.name ?? 'Partida encerrada') : presentationStage === 'dice' ? 'Rolando os dados…' : presentationStage === 'pawn' ? 'Peão em movimento…' : turnPhase === 'debt' ? 'Hora de liquidar bens' : activeCardTitle || (turnPhase === 'purchase' ? `Comprar ${pendingPurchaseSpace?.name ?? 'propriedade'}` : turnPhase === 'buyback' ? `Recomprar ${pendingPurchaseSpace?.name ?? 'propriedade'}` : activeSpace.name)}</h2>
+              {turnPhase === 'ended' ? null : presentationStage !== 'idle' ? <p role="status" aria-live="polite">A próxima ação aparece quando a etapa atual terminar.</p> : <p>{turnPhase === 'purchase' ? 'Este terreno está livre. Você escolhe se quer comprar; se recusar, ele continua sem dono.' : landingDescription || activeCardDescription || (activeSpace.kind === 'property' ? `Propriedade · ${formatMoney(activeSpace.price ?? 0)}` : 'Aguardando a jogada.')}</p>}
               {presentationStage === 'idle' && turnPhase === 'purchase' && pendingPurchaseSpace?.kind === 'property' && <>
                 {pendingPurchaseSpace.buildable && <div className="property-build-levels purchase-level-options" role="group" aria-label="Pacotes de terreno e casas">{Array.from({ length: PROPERTY_BUILD_LEVELS + 1 }, (_, houses) => {
                   const total = (pendingPurchaseSpace.price ?? 0) + houses * constructionCost(pendingPurchaseSpace.id)
@@ -1098,7 +1114,7 @@ function App() {
           <div className="game-bottom"><span className="game-sync-label">JOGADA SINCRONIZADA · {modeDetails[mode].title.toUpperCase()}</span><button className="leave-button" onClick={() => void leaveRoom()}>Sair da mesa</button></div>
         </section>
       )}
-      {screen === 'game' && showOptions && <div className="game-settings-backdrop" onPointerDown={(event) => { if (event.target === event.currentTarget) setShowOptions(false) }}>
+      {screen === 'game' && turnPhase !== 'ended' && showOptions && <div className="game-settings-backdrop" onPointerDown={(event) => { if (event.target === event.currentTarget) setShowOptions(false) }}>
         <section className="game-settings-screen" role="dialog" aria-modal="true" aria-labelledby="game-settings-title">
           <header className="game-settings-heading"><div><span className="eyebrow">PREFERÊNCIAS LOCAIS</span><h2 id="game-settings-title">Opções da partida</h2><p>A partida continua normalmente enquanto esta tela estiver aberta.</p></div><button className="game-settings-close" type="button" onClick={() => setShowOptions(false)} aria-label="Fechar opções">×</button></header>
           <div className="game-settings-content">
@@ -1110,7 +1126,7 @@ function App() {
       </div>}
       {screen === 'game' && <Suspense fallback={null}><CashHudOverlay players={roomPlayers.map((player) => ({ id: player.sessionId, cash: player.cash }))} /></Suspense>}
       {screen === 'game' && fpsMeterEnabled && <FpsMeter samples={fpsSamples} />}
-      {showHelp && <div className="help-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setShowHelp(false) }}><section id="game-help-dialog" className="help-dialog" role="dialog" aria-modal="true" aria-labelledby="help-title"><button className="help-close" onClick={() => setShowHelp(false)} aria-label="Fechar ajuda">×</button><span className="eyebrow">GUIA RÁPIDO</span><h2 id="help-title">Como jogar</h2><p>Jogue com amigos na mesma sala. Na sua vez, lance os dados, acompanhe o peão e responda à ação da casa.</p><ul><li><strong>20 segundos:</strong> sem ação, os dados são lançados automaticamente.</li><li><strong>15 segundos:</strong> para decidir. Compra sem resposta é recusada; cobranças e eventos são confirmados automaticamente. Na prisão, você pode aguardar, tentar duplas ou pagar R$ 200.000 para sair.</li><li><strong>Copa do Mundo:</strong> escolha uma propriedade; o aluguel dela triplica até outra sede ser escolhida.</li><li><strong>Volta ao Brasil:</strong> escolha uma propriedade sua, livre ou uma casa especial. Receba R$ 200.000 ao chegar ao canto; a chegada em outra casa não recebe bônus.</li><li><strong>Comprar:</strong> propriedades livres podem ser compradas pelo preço indicado; recusar mantém o terreno livre. Ao cair num imóvel sem hotel de outra pessoa, você pode recomprá-lo por 1,5× o investimento ou pagar o aluguel.</li><li><strong>Dinheiro:</strong> sons ascendentes indicam entrada; sons descendentes indicam saída. Use o controle de áudio para silenciar.</li><li><strong>Partida:</strong> vence quem completar uma condição de monopólio ou tiver o maior patrimônio ao fim do tempo definido no lobby.</li></ul><button className="roll-button help-ok" onClick={() => setShowHelp(false)}>Entendi</button></section></div>}
+      {showHelp && !(screen === 'game' && turnPhase === 'ended') && <div className="help-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setShowHelp(false) }}><section id="game-help-dialog" className="help-dialog" role="dialog" aria-modal="true" aria-labelledby="help-title"><button className="help-close" onClick={() => setShowHelp(false)} aria-label="Fechar ajuda">×</button><span className="eyebrow">GUIA RÁPIDO</span><h2 id="help-title">Como jogar</h2><p>Jogue com amigos na mesma sala. Na sua vez, lance os dados, acompanhe o peão e responda à ação da casa.</p><ul><li><strong>20 segundos:</strong> sem ação, os dados são lançados automaticamente.</li><li><strong>15 segundos:</strong> para decidir. Compra sem resposta é recusada; cobranças e eventos são confirmados automaticamente. Na prisão, você pode aguardar, tentar duplas ou pagar R$ 200.000 para sair.</li><li><strong>Copa do Mundo:</strong> escolha uma propriedade; o aluguel dela triplica até outra sede ser escolhida.</li><li><strong>Volta ao Brasil:</strong> escolha uma propriedade sua, livre ou uma casa especial. Receba R$ 200.000 ao chegar ao canto; a chegada em outra casa não recebe bônus.</li><li><strong>Comprar:</strong> propriedades livres podem ser compradas pelo preço indicado; recusar mantém o terreno livre. Ao cair num imóvel sem hotel de outra pessoa, você pode recomprá-lo por 1,5× o investimento ou pagar o aluguel.</li><li><strong>Dinheiro:</strong> sons ascendentes indicam entrada; sons descendentes indicam saída. Use o controle de áudio para silenciar.</li><li><strong>Partida:</strong> vence quem completar uma condição de monopólio ou tiver o maior patrimônio ao fim do tempo definido no lobby.</li></ul><button className="roll-button help-ok" onClick={() => setShowHelp(false)}>Entendi</button></section></div>}
     </main>
   )
 }

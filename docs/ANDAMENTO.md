@@ -7,6 +7,15 @@
 - Próximo passo concreto: conferir a leitura dos cartões em diferentes resoluções após os próximos playtests humanos.
 # Andamento do projeto
 
+## Painel de encerramento da partida — concluído (2026-10-31)
+
+- Relato: ao finalizar a partida, o painel de resultado pode sumir ou ficar com estado visual incorreto.
+- Causa confirmada no frontend: o cartão final herdava condições transitórias de carta ativa e de fila de avisos; a etapa visual de dados/peão também podia manter texto de espera no resultado. Modais locais abertos (ajuda, configurações, carteira, leilão ou troca) podiam continuar sobre a partida encerrada.
+- Correção: resultado final passa a ter prioridade sobre cartas, animações e avisos pendentes; ao receber o estado encerrado, a interface limpa animações, avisos e painéis locais. Ajuda e configurações não podem cobrir o resultado final.
+- `npm run verify`: 229 testes em 44 arquivos e builds do frontend/servidor passaram; `npm run graphify -- update .` atualizou o grafo. O build mantém o aviso conhecido de chunk 3D acima de 500 KB.
+- A lógica que escolhe o painel final está coberta por regressão automatizada. Não consegui reproduzir uma partida final pela interface nesta sessão; o estado terminal foi exercitado nos testes de integração do servidor, mas falta revisão visual real dessa tela.
+- Próximo passo concreto: revisão visual do estado final em uma partida real.
+
 ## Reforma BANTEC — implementação em andamento (2026-10-31)
 
 - Decisões aprovadas e preços das 24 cidades, cinco regiões, cores de piso, monopólios, impostos diferenciados, recompra por 1,5×, saldo inicial de R$ 2 milhões para playtest e partidas de 15/30/60 minutos estão em `docs/DECISOES.md`, `docs/REGRAS-DE-JOGO.md` e `docs/PLANO.md`.

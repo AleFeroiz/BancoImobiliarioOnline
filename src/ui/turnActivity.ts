@@ -1,11 +1,12 @@
 type ActivityPhase = 'roll' | 'rolling' | 'moving' | 'resolve' | 'purchase' | 'buyback' | 'jail' | 'world-cup' | 'world-tour' | 'card-target' | 'debt' | 'ended'
 
-export function shouldShowTurnCard(isMyTurn: boolean, phase: ActivityPhase) {
-  return isMyTurn || phase === 'ended'
+export function shouldShowTurnCard(isMyTurn: boolean, phase: ActivityPhase, hasActiveCardTitle = false, isPresentationAnimating = false) {
+  if (phase === 'ended') return true
+  return isMyTurn && !isPresentationAnimating && !['roll', 'resolve', 'world-cup', 'world-tour'].includes(phase) && (!hasActiveCardTitle || phase === 'card-target')
 }
 
 export function shouldSuppressTurnCardForFeedback(feedbackPending: boolean, phase: ActivityPhase) {
-  return feedbackPending && !['purchase', 'buyback', 'jail', 'debt'].includes(phase)
+  return phase !== 'ended' && feedbackPending && !['purchase', 'buyback', 'jail', 'debt'].includes(phase)
 }
 
 export function shouldSuppressTurnCardForSpaceSelection(hasSelectedSpace: boolean, phase: ActivityPhase, ownPropertyLanding: boolean, showPropertyPanel: boolean, showObjectivePanel: boolean) {
