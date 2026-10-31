@@ -1,3 +1,10 @@
+# Altura dos dados durante a rolagem — concluído (2026-10-31)
+
+- Reduzi a posição-base dos dados de Y=1,18 para Y=1,12 e a escala de 0,82 para 0,68; o salto permanece em 0,065 e o indicador do resultado foi ajustado para Y=1,62.
+- A escala menor mantém ao menos 0,01 unidade de folga geométrica sobre os telhados da FATEC, incluindo a caixa dos dados girando; as posições continuam afastadas da torre.
+- A rolagem foi observada no navegador local: os dados permanecem suspensos junto aos prédios, sem entrar no volume central. `npm run graphify -- update .` atualizou o grafo para 940 nós e 1.746 arestas. `npm run verify` passou com 246 testes em 46 arquivos e builds web/servidor; permanece o aviso conhecido do chunk 3D acima de 500 kB.
+- Próximo passo da reforma completa: concluir a revisão visual das cartas autorais e fazer playtests humanos de equilíbrio/ritmo; a escolha do provedor de hospedagem e do limite de custo ainda depende do usuário.
+
 ## Motivo do encerramento explícito no resultado — em validação (2026-10-31)
 
 - A tela final escondia `landingDescription`, então não mostrava por que a partida acabou; o estado também não diferenciava os três monopólios. O servidor passa a sincronizar `matchEndReason` e a interface mostra tempo, falência, Monopólio em Linha, Monopólio Duplo Regional, quatro companhias ou ausência de pessoas solventes.

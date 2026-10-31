@@ -1,8 +1,8 @@
 ## 2026-10-31 — Dados ainda mais baixos sobre a FATEC
 
-- Baixei a posição-base dos dados de Y=1,23 para Y=1,18, reduzi a escala de 0,9 para 0,82 e reposicionei o indicador do resultado para Y=1,7.
-- A rolagem real no navegador confirmou os dados mais próximos dos telhados e sem entrar nos prédios nem na torre. O teste geométrico focalizado exige folga mínima de 0,02 acima do telhado em qualquer orientação e confirma que a torre fica fora do volume dos dados.
-- O teste focado passou com 3 casos. `npm run verify` passou com 242 testes em 46 arquivos e builds do frontend e servidor; permanece o aviso conhecido do chunk 3D acima de 500 kB.
+- Baixei a posição-base dos dados de Y=1,18 para Y=1,12, reduzi a escala de 0,82 para 0,68 e reposicionei o indicador do resultado para Y=1,62.
+- A rolagem real no navegador confirmou os dados suspensos mais próximos dos telhados e sem entrar nos prédios nem na torre. O teste geométrico calcula folga mínima de aproximadamente 0,016 sobre o telhado em qualquer orientação e confirma que a torre fica fora do volume dos dados.
+- O teste focado passou com 3 casos. `npm run verify` passou com 246 testes em 46 arquivos e builds do frontend e servidor; permanece o aviso conhecido do chunk 3D acima de 500 kB.
 
 ## 2026-10-31 — Dados mais baixos sem atravessar a FATEC
 

@@ -21,17 +21,17 @@ describe('apresentação minimalista dos dados', () => {
     expect(getDiceRollRotation([0.12, -0.28, 0.31], 0)).toEqual([0.12, -0.28, 0.31])
   })
 
-  it('mantém os dados baixos sobre os prédios da FATEC e fora do volume da torre durante o giro', () => {
+  it('mantém os dados mais baixos sobre os prédios da FATEC e fora do volume da torre durante o giro', () => {
     expect(DICE_PRESENTATION_POSITIONS).toHaveLength(2)
-    expect(DICE_PRESENTATION_POSITIONS.every((position) => position[1] >= 1.17 && position[1] <= 1.19)).toBe(true)
-    expect(DICE_PRESENTATION_POSITIONS.every((position) => position[1] - DICE_ROTATION_BOUNDING_RADIUS - FATEC_MAIN_ROOF_TOP_Y >= 0.02)).toBe(true)
+    expect(DICE_PRESENTATION_POSITIONS.every((position) => position[1] >= 1.11 && position[1] <= 1.13)).toBe(true)
+    expect(DICE_PRESENTATION_POSITIONS.every((position) => position[1] - DICE_ROTATION_BOUNDING_RADIUS - FATEC_MAIN_ROOF_TOP_Y >= 0.01)).toBe(true)
     expect(DICE_PRESENTATION_POSITIONS.every((position) => {
       const horizontalDistance = Math.hypot(position[0] - FATEC_TOWER_CENTER[0], position[2] - FATEC_TOWER_CENTER[1])
       const towerCornerRadius = Math.hypot(FATEC_TOWER_HALF_FOOTPRINT, FATEC_TOWER_HALF_FOOTPRINT)
       return horizontalDistance - DICE_ROTATION_BOUNDING_RADIUS - towerCornerRadius > 0
     })).toBe(true)
     expect(DICE_ROLL_BOUNCE_HEIGHT).toBeLessThan(0.08)
-    expect(DICE_VISUAL_SCALE).toBeLessThan(0.85)
+    expect(DICE_VISUAL_SCALE).toBeLessThan(0.7)
     expect(DICE_PRESENTATION_POSITIONS.every((position) => position[1] + DICE_ROLL_BOUNCE_HEIGHT + DICE_ROTATION_BOUNDING_RADIUS < 2.1)).toBe(true)
     expect(DICE_PRESENTATION_POSITIONS[0]?.[0]).toBeLessThan(0)
     expect(DICE_PRESENTATION_POSITIONS[1]?.[0]).toBeGreaterThan(0)
