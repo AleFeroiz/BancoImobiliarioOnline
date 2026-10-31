@@ -1,3 +1,11 @@
+## 2026-10-31 — Ferramentas DEV de teleporte e saldo
+
+- O anfitrião ativou o Modo DEV no lobby, iniciou uma sala local com um bot e escolheu Canaã dos Carajás na lista de 40 casas. O peão apareceu diretamente na cidade e o painel normal de compra foi aberto; o saldo não recebeu bônus por casas puladas. Comprei o terreno por R$ 200.000.
+- No turno seguinte do anfitrião, defini manualmente o saldo para R$ 1.230.000 e confirmei a atualização no cartão do jogador. A caixa de dinheiro infinito foi habilitada e permaneceu marcada.
+- O teste de integração em `server/test/GameRoom.test.ts` confirma validação de anfitrião, Modo DEV, destino e saldo; aterrissagem que abre compra; construção e aluguel sem descontar o saldo infinito, enquanto o dono recebe o aluguel. A suíte focada passou.
+- `npm run verify`: 237 testes em 46 arquivos passaram; builds frontend e servidor passaram. `npm run graphify -- update .` foi concluído. O chunk de cena 3D continua acima de 500 KB. `git diff --check` passou.
+- Revisão visual na partida local: painel DEV com dados, destino, jogador, saldo e dinheiro infinito visível. A sala temporária e os servidores locais foram encerrados depois da captura.
+
 ## 2026-10-30 — Pop-up de saldo, modo DEV no lobby e aluguel das estações
 
 - `npm run verify`: 207 testes passaram; builds frontend e servidor passaram. O chunk 3D conhecido permanece em 956,28 KB (259,73 KB gzip). `git diff --check` passou.

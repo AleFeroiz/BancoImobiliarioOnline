@@ -189,6 +189,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       for (const player of this.state.players.values()) {
         player.position = 0
         player.cash = STARTING_CASH
+        player.devInfiniteCash = false
         player.isJailed = false
         player.jailTurns = 0
         player.isBankrupt = false
@@ -252,6 +253,57 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       }
       this.rollForPlayer(this.state.activePlayerSessionId, [diceOne, diceTwo])
     },
+    devTeleport: (client: Client, payload: { spaceId?: unknown } = {}) => {
+      const requester = this.state.players.get(client.sessionId)
+      const player = this.state.players.get(this.state.activePlayerSessionId)
+      const spaceId = payload?.spaceId
+      if (!requester?.isHost || !this.state.devToolsEnabled) {
+        client.send('room:error', { message: 'O teleporte DEV está desativado ou disponível apenas para a pessoa anfitriã.' })
+        return
+      }
+      if (this.state.status !== 'playing' || this.state.turnPhase !== 'roll' || !player) {
+        client.send('room:error', { message: 'Só é possível teleportar durante a etapa de rolagem.' })
+        return
+      }
+      if (typeof spaceId !== 'number' || !Number.isInteger(spaceId) || spaceId < 0 || spaceId >= boardSpaces.length) {
+        client.send('room:error', { message: 'Escolha uma casa válida do tabuleiro.' })
+        return
+      }
+      player.position = spaceId
+      player.isJailed = false
+      player.jailTurns = 0
+      this.consecutiveDoubles = 0
+      this.lastRollWasDouble = false
+      this.state.pawnMoveMode = 'teleport'
+      this.state.turnPhase = 'moving'
+      this.state.landingDescription = `Teleporte DEV para ${boardSpaces[spaceId].name}.`
+      this.state.pendingPropertyId = 255
+      this.state.activeCardTitle = ''
+      this.state.activeCardDescription = ''
+      this.state.activeCardId = ''
+      this.state.presentationSpeed = this.state.animationSpeed
+      const sessionId = this.state.activePlayerSessionId
+      this.schedulePresentation(getAnimationDuration(PAWN_TELEPORT_ANIMATION_DURATION_MS, this.state.presentationSpeed), () => {
+        if (this.state.turnPhase !== 'moving' || this.state.activePlayerSessionId !== sessionId || player.position !== spaceId) return
+        this.state.pawnMoveMode = 'walk'
+        this.resolveSpace(sessionId, player, true, `Teleporte DEV para ${boardSpaces[spaceId].name}.`)
+        this.finishExpiredPhaseIfReady()
+      })
+    },
+    devSetCash: (client: Client, payload: { sessionId?: unknown; cash?: unknown; infinite?: unknown } = {}) => {
+      const requester = this.state.players.get(client.sessionId)
+      const target = typeof payload?.sessionId === 'string' ? this.state.players.get(payload.sessionId) : undefined
+      if (!requester?.isHost || !this.state.devToolsEnabled || this.state.status !== 'playing') {
+        client.send('room:error', { message: 'O ajuste de dinheiro DEV está desativado ou disponível apenas para a anfitriã durante a partida.' })
+        return
+      }
+      if (!target || target.isBankrupt || typeof payload?.cash !== 'number' || !Number.isSafeInteger(payload.cash) || payload.cash < 0 || payload.cash > MAX_SCHEMA_CASH || typeof payload?.infinite !== 'boolean') {
+        client.send('room:error', { message: 'Escolha um participante ativo e um saldo inteiro válido.' })
+        return
+      }
+      target.cash = payload.cash
+      target.devInfiniteCash = payload.infinite
+    },
     buy: (client: Client, payload: { houses?: unknown } = {}) => {
       if (this.state.status !== 'playing' || this.state.turnPhase !== 'purchase' || client.sessionId !== this.state.activePlayerSessionId) return
       const player = this.state.players.get(client.sessionId)
@@ -262,12 +314,12 @@ export class GameRoom extends Room<{ state: LobbyState }> {
         return
       }
       const totalCost = space.price + houses * constructionCost(space.id)
-      if (player.cash < totalCost) {
+      if (!this.canSpend(player, totalCost)) {
         client.send('room:error', { message: 'Seu saldo não cobre o terreno e as construções selecionadas.' })
         return
       }
       this.state.presentationSpeed = this.state.animationSpeed
-      player.cash -= totalCost
+      this.spendCash(player, totalCost)
       const property = new PropertyState()
       property.ownerSessionId = client.sessionId
       property.houses = houses
@@ -299,7 +351,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       const ownership = new Map(Array.from(this.state.properties.entries()).map(([id, item]) => [Number(id), item.ownerSessionId]))
       if (payload.accept && property.houses !== PROPERTY_HOTEL_LEVEL) {
         const price = forcedBuybackCost(propertyId, property.houses)
-        if (buyer.cash < price) {
+        if (!this.canSpend(buyer, price)) {
           client.send('room:error', { message: `A recompra custa ${price.toLocaleString('pt-BR')}; seu saldo é insuficiente.` })
           return
         }
@@ -307,8 +359,8 @@ export class GameRoom extends Room<{ state: LobbyState }> {
           client.send('room:error', { message: 'O saldo do antigo proprietário não comporta o valor integral da recompra.' })
           return
         }
-        buyer.cash -= price
-        if (owner && !owner.isBankrupt) owner.cash += price
+        this.spendCash(buyer, price)
+        if (owner && !owner.isBankrupt) this.creditCash(owner, price)
         property.ownerSessionId = client.sessionId
         this.state.landingDescription = `${space.name} recomprada por ${price.toLocaleString('pt-BR')}; o valor foi pago ao antigo proprietário.`
         this.checkMonopolyVictory(client.sessionId)
@@ -336,24 +388,24 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       }
       const space = boardSpaces[propertyId]
       if (payload.hotel === true) {
-        if (!canBuildHotel(propertyId, client.sessionId, holdings, player.cash)) {
+        if (!canBuildHotel(propertyId, client.sessionId, holdings, this.availableCash(player))) {
           client.send('room:error', { message: 'O hotel só pode ser comprado ao cair num imóvel com três casas e ter saldo suficiente.' })
           return
         }
         this.state.presentationSpeed = this.state.animationSpeed
         const cost = hotelConstructionCost(propertyId)
-        player.cash -= cost
+        this.spendCash(player, cost)
         property.houses = PROPERTY_HOTEL_LEVEL
         this.state.landingDescription = `Hotel construído em ${space.name} por ${cost.toLocaleString('pt-BR')}.`
       } else {
         const targetHouses = payload.targetHouses
-        if (typeof targetHouses !== 'number' || !Number.isInteger(targetHouses) || !canBuildProperty(propertyId, client.sessionId, holdings, player.cash, targetHouses)) {
+        if (typeof targetHouses !== 'number' || !Number.isInteger(targetHouses) || !canBuildProperty(propertyId, client.sessionId, holdings, this.availableCash(player), targetHouses)) {
           client.send('room:error', { message: 'Escolha um total de uma a três casas maior que o atual e tenha saldo suficiente.' })
           return
         }
         this.state.presentationSpeed = this.state.animationSpeed
         const cost = (targetHouses - property.houses) * constructionCost(propertyId)
-        player.cash -= cost
+        this.spendCash(player, cost)
         property.houses = targetHouses
         this.state.landingDescription = `${targetHouses} ${targetHouses === 1 ? 'casa construída' : 'casas construídas'} em ${space.name} por ${cost.toLocaleString('pt-BR')}.`
       }
@@ -361,7 +413,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
     },
     sellBuilding: (client: Client, payload: { propertyId?: unknown }) => {
       if (this.state.status !== 'playing' || !['resolve', 'debt'].includes(this.state.turnPhase) || client.sessionId !== this.state.activePlayerSessionId) return
-      if (this.state.turnPhase === 'debt' && (this.state.players.get(client.sessionId)?.cash ?? 0) >= this.state.debtAmount) {
+      if (this.state.turnPhase === 'debt' && this.state.players.get(client.sessionId) && this.canSpend(this.state.players.get(client.sessionId)!, this.state.debtAmount)) {
         client.send('room:error', { message: 'Seu saldo já cobre a dívida; liquide bens apenas quando precisar completar o pagamento.' })
         return
       }
@@ -377,7 +429,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       this.state.presentationSpeed = this.state.animationSpeed
       const amount = buildingSaleValue(propertyId, previousLevel)
       property.houses -= 1
-      player.cash += amount
+      this.creditCash(player, amount)
       this.state.landingDescription = `${previousLevel === PROPERTY_HOTEL_LEVEL ? 'Hotel vendido; três casas permaneceram' : `Construção vendida (nível ${property.houses})`} em ${boardSpaces[propertyId].name}. Você recebeu ${amount.toLocaleString('pt-BR')}.`
     },
     returnPropertyToBank: (client: Client, payload: { propertyId?: unknown }) => {
@@ -389,7 +441,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       const player = this.state.players.get(client.sessionId)
       const property = this.state.properties.get(String(propertyId))
       const holdings = this.getHoldings()
-      if (!player || player.cash >= this.state.debtAmount) {
+      if (!player || this.canSpend(player, this.state.debtAmount)) {
         client.send('room:error', { message: 'Seu saldo já cobre a dívida; não é possível devolver imóveis agora.' })
         return
       }
@@ -403,18 +455,18 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       property.houses = 0
       property.blackoutTurns = 0
       property.protectionTurns = 0
-      player.cash += amount
+      this.creditCash(player, amount)
       this.state.landingDescription = `${boardSpaces[propertyId].name} devolvida ao banco. Você recebeu ${amount.toLocaleString('pt-BR')}; o imóvel voltou a ficar livre.`
     },
     payDebt: (client: Client) => {
       if (this.state.status !== 'playing' || this.state.turnPhase !== 'debt' || client.sessionId !== this.state.activePlayerSessionId) return
       const debtor = this.state.players.get(client.sessionId)
-      if (!debtor || debtor.cash < this.state.debtAmount) return
+      if (!debtor || !this.canSpend(debtor, this.state.debtAmount)) return
       const amount = this.state.debtAmount
       const creditorSessionId = this.state.debtCreditorSessionId
       const creditor = this.state.players.get(creditorSessionId)
-      debtor.cash -= amount
-      if (creditor && !creditor.isBankrupt) creditor.cash += amount
+      this.spendCash(debtor, amount)
+      if (creditor && !creditor.isBankrupt) this.creditCash(creditor, amount)
       const reason = this.state.debtReason
       this.clearDebt()
       this.state.turnPhase = 'resolve'
@@ -428,13 +480,13 @@ export class GameRoom extends Room<{ state: LobbyState }> {
     declareBankruptcy: (client: Client) => {
       if (this.state.status !== 'playing' || this.state.turnPhase !== 'debt' || client.sessionId !== this.state.activePlayerSessionId) return
       const debtor = this.state.players.get(client.sessionId)
-      if (!debtor || debtor.cash >= this.state.debtAmount || hasLiquidatableAssets(client.sessionId, this.getHoldings())) {
+      if (!debtor || this.canSpend(debtor, this.state.debtAmount) || hasLiquidatableAssets(client.sessionId, this.getHoldings())) {
         client.send('room:error', { message: 'Quite a dívida ou liquide todos os bens possíveis antes de declarar falência.' })
         return
       }
       const creditorId = this.state.debtCreditorSessionId
       const creditor = this.state.players.get(creditorId)
-      if (creditor && !creditor.isBankrupt) creditor.cash += debtor.cash
+      if (creditor && !creditor.isBankrupt) this.creditCash(creditor, debtor.cash)
       for (const property of this.state.properties.values()) {
         if (property.ownerSessionId !== client.sessionId) continue
         if (creditor && !creditor.isBankrupt) {
@@ -505,11 +557,11 @@ export class GameRoom extends Room<{ state: LobbyState }> {
         client.send('room:error', { message: 'Só é possível pagar para sair na sua vez, enquanto estiver preso.' })
         return
       }
-      if (player.cash < 200_000) {
+      if (!this.canSpend(player, 200_000)) {
         client.send('room:error', { message: 'Você precisa ter R$ 200.000 para pagar e sair da prisão.' })
         return
       }
-      player.cash -= 200_000
+      this.spendCash(player, 200_000)
       player.isJailed = false
       player.jailTurns = 0
       this.state.turnPhase = 'roll'
@@ -598,15 +650,15 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       const cashFromSender = this.state.tradeOfferCashOffered
       const cashFromRecipient = this.state.tradeOfferCashRequested
       if (!sender || !recipient || sender.isBankrupt || recipient.isBankrupt
-        || sender.cash < cashFromSender || recipient.cash < cashFromRecipient
-        || sender.cash - cashFromSender + cashFromRecipient > MAX_SCHEMA_CASH
-        || recipient.cash - cashFromRecipient + cashFromSender > MAX_SCHEMA_CASH
+        || !this.canSpend(sender, cashFromSender) || !this.canSpend(recipient, cashFromRecipient)
+        || this.cashAfterTransfer(sender, cashFromSender, cashFromRecipient) > MAX_SCHEMA_CASH
+        || this.cashAfterTransfer(recipient, cashFromRecipient, cashFromSender) > MAX_SCHEMA_CASH
         || !validTitles(offeredIds, senderSessionId) || !validTitles(requestedIds, recipientSessionId)) {
         client.send('room:error', { message: 'A oferta mudou e não pode mais ser concluída. Confira saldos e imóveis.' })
         return
       }
-      sender.cash = sender.cash - cashFromSender + cashFromRecipient
-      recipient.cash = recipient.cash - cashFromRecipient + cashFromSender
+      sender.cash = this.cashAfterTransfer(sender, cashFromSender, cashFromRecipient)
+      recipient.cash = this.cashAfterTransfer(recipient, cashFromRecipient, cashFromSender)
       for (const id of offeredIds) this.state.properties.get(String(id))!.ownerSessionId = recipientSessionId
       for (const id of requestedIds) this.state.properties.get(String(id))!.ownerSessionId = senderSessionId
       this.state.landingDescription = `${recipient.name} aceitou a troca proposta por ${sender.name}.`
@@ -696,15 +748,15 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       }
       const isCurrentBidder = this.state.auctionHighestBidderSessionId === client.sessionId
       const additionalCash = isCurrentBidder ? amount - this.state.auctionHighestBid : amount
-      if (bidder.cash < additionalCash) {
+      if (!this.canSpend(bidder, additionalCash)) {
         client.send('room:error', { message: 'Seu saldo disponível não cobre esse lance.' })
         return
       }
       if (this.state.auctionHighestBid > 0 && !isCurrentBidder) {
         const previousBidder = this.state.players.get(this.state.auctionHighestBidderSessionId)
-        if (previousBidder) previousBidder.cash = Math.min(MAX_SCHEMA_CASH, previousBidder.cash + this.state.auctionHighestBid)
+        if (previousBidder && !previousBidder.devInfiniteCash) this.creditCash(previousBidder, this.state.auctionHighestBid)
       }
-      bidder.cash -= additionalCash
+      this.spendCash(bidder, additionalCash)
       this.state.auctionHighestBid = amount
       this.state.auctionHighestBidderSessionId = client.sessionId
     },
@@ -960,7 +1012,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
     const player = this.state.players.get(sessionId)
     if (!player || this.state.turnPhase !== 'debt' || sessionId !== this.state.activePlayerSessionId) return
     const client = { sessionId, send: () => undefined } as unknown as Client
-    if (player.cash >= this.state.debtAmount) {
+    if (this.canSpend(player, this.state.debtAmount)) {
       this.messages.payDebt(client)
       return
     }
@@ -1069,7 +1121,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
           completesGroup,
           startingBid: this.state.auctionStartingBid,
           highestBid: this.state.auctionHighestBid,
-          cash: player.cash,
+          cash: this.availableCash(player),
         }) : null
         if (amount !== null) {
           this.messages.auctionBid(fakeClient(sessionId), { auctionId: this.state.auctionId, amount })
@@ -1082,6 +1134,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
     const player = this.state.players.get(sessionId)
     if (!player || player.isBankrupt || (!player.isBot && !player.isBotControlled)) return
     const client = fakeClient(sessionId)
+    const botCash = this.availableCash(player)
 
     if (this.state.turnPhase === 'card-target') {
       this.autoResolveCardTarget(client, sessionId)
@@ -1091,10 +1144,10 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       const space = boardSpaces[this.state.pendingPropertyId]
       const groupSpaces = space?.kind === 'property' ? boardSpaces.filter((candidate) => candidate.kind === 'property' && candidate.color === space.color) : []
       const completesGroup = groupSpaces.length > 0 && groupSpaces.every((candidate) => candidate.id === this.state.pendingPropertyId || this.state.properties.get(String(candidate.id))?.ownerSessionId === sessionId)
-      if (space?.kind === 'property' && shouldBotBuyProperty(space.price ?? 0, player.cash, completesGroup, this.state.mode as GameMode)) {
+      if (space?.kind === 'property' && shouldBotBuyProperty(space.price ?? 0, botCash, completesGroup, this.state.mode as GameMode)) {
         const reserve = completesGroup ? 50_000 : 150_000
         const houses = space.buildable
-          ? [PROPERTY_BUILD_LEVELS, PROPERTY_BUILD_LEVELS - 1, PROPERTY_BUILD_LEVELS - 2, 0].find((count) => player.cash - (space.price ?? 0) - count * constructionCost(space.id) >= reserve) ?? 0
+          ? [PROPERTY_BUILD_LEVELS, PROPERTY_BUILD_LEVELS - 1, PROPERTY_BUILD_LEVELS - 2, 0].find((count) => botCash - (space.price ?? 0) - count * constructionCost(space.id) >= reserve) ?? 0
           : 0
         this.messages.buy(client, { houses })
       } else this.messages.declinePurchase(client)
@@ -1105,7 +1158,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
     } else if (this.state.turnPhase === 'world-tour') {
       this.messages.chooseWorldTour(client, { spaceId: this.getWorldTourDefaultDestination(sessionId) })
     } else if (this.state.turnPhase === 'debt') {
-      if (player.cash >= this.state.debtAmount) {
+      if (this.canSpend(player, this.state.debtAmount)) {
         this.messages.payDebt(client)
         return
       }
@@ -1124,12 +1177,12 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       const space = boardSpaces[propertyId]
       const holding = holdings.get(propertyId)
       if (space?.kind === 'property' && holding?.ownerSessionId === sessionId && player.position === propertyId) {
-          if (holding.houses === PROPERTY_BUILD_LEVELS && canBuildHotel(propertyId, sessionId, holdings, player.cash - 150_000)) {
+          if (holding.houses === PROPERTY_BUILD_LEVELS && canBuildHotel(propertyId, sessionId, holdings, botCash - 150_000)) {
             this.messages.build(client, { propertyId, hotel: true })
             return
           }
           const targetHouses = [PROPERTY_BUILD_LEVELS, PROPERTY_BUILD_LEVELS - 1, PROPERTY_BUILD_LEVELS - 2]
-            .find((target) => target > holding.houses && canBuildProperty(propertyId, sessionId, holdings, player.cash - 150_000, target))
+            .find((target) => target > holding.houses && canBuildProperty(propertyId, sessionId, holdings, botCash - 150_000, target))
           if (targetHouses !== undefined) {
             this.messages.build(client, { propertyId, targetHouses })
             return
@@ -1231,7 +1284,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
     this.stopAuctionClock()
     if (refundHighestBid && this.state.auctionHighestBid > 0) {
       const bidder = this.state.players.get(this.state.auctionHighestBidderSessionId)
-      if (bidder) bidder.cash = Math.min(MAX_SCHEMA_CASH, bidder.cash + this.state.auctionHighestBid)
+      if (bidder && !bidder.devInfiniteCash) this.creditCash(bidder, this.state.auctionHighestBid)
     }
     this.state.auctionId = 0
     this.state.auctionPropertyId = 255
@@ -1253,7 +1306,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
     if (bid > 0 && seller && bidder && !seller.isBankrupt && !bidder.isBankrupt
       && property?.ownerSessionId === sellerSessionId && seller.cash + bid <= MAX_SCHEMA_CASH) {
       property.ownerSessionId = bidderSessionId
-      seller.cash += bid
+      this.creditCash(seller, bid)
       this.clearAuction(false)
       this.state.landingDescription = `${bidder.name} venceu o leilão de ${boardSpaces[propertyId].name} por ${bid.toLocaleString('pt-BR')}.`
       this.checkMonopolyVictory(bidderSessionId)
@@ -1329,9 +1382,9 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       const payment = this.pendingCardPayments.shift()!
       const debtor = this.state.players.get(payment.sessionId)
       if (!debtor || debtor.isBankrupt) continue
-      if (debtor.cash >= payment.amount) {
-        debtor.cash -= payment.amount
-        actor.cash += payment.amount
+      if (this.canSpend(debtor, payment.amount)) {
+        this.spendCash(debtor, payment.amount)
+        this.creditCash(actor, payment.amount)
         continue
       }
       this.state.activePlayerSessionId = payment.sessionId
@@ -1421,7 +1474,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       this.startCardTeleport(sessionId, player, venueId, `Carta Cidade-sede: chegada a ${boardSpaces[venueId].name}.`)
     } else if (card.effect.kind === 'start') {
       player.position = 0
-      player.cash += START_BONUS
+      this.creditCash(player, START_BONUS)
       this.state.turnPhase = 'resolve'
       this.state.landingDescription = `${card.description} Você recebeu R$ ${START_BONUS.toLocaleString('pt-BR')}.`
     }
@@ -1445,11 +1498,31 @@ export class GameRoom extends Room<{ state: LobbyState }> {
     })
   }
 
+  private availableCash(player: LobbyPlayerState) {
+    return player.devInfiniteCash ? MAX_SCHEMA_CASH : player.cash
+  }
+
+  private canSpend(player: LobbyPlayerState, amount: number) {
+    return player.devInfiniteCash || player.cash >= amount
+  }
+
+  private spendCash(player: LobbyPlayerState, amount: number) {
+    if (!player.devInfiniteCash) player.cash -= amount
+  }
+
+  private cashAfterTransfer(player: LobbyPlayerState, amountPaid: number, amountReceived: number) {
+    return player.cash - (player.devInfiniteCash ? 0 : amountPaid) + amountReceived
+  }
+
+  private creditCash(player: LobbyPlayerState, amount: number) {
+    player.cash = Math.min(MAX_SCHEMA_CASH, player.cash + amount)
+  }
+
   private collectPayment(debtorSessionId: string, debtor: LobbyPlayerState, amount: number, creditorSessionId: string, reason: string) {
-    if (amount <= debtor.cash) {
-      debtor.cash -= amount
+    if (this.canSpend(debtor, amount)) {
+      this.spendCash(debtor, amount)
       const creditor = this.state.players.get(creditorSessionId)
-      if (creditor && !creditor.isBankrupt) creditor.cash += amount
+      if (creditor && !creditor.isBankrupt) this.creditCash(creditor, amount)
       this.state.landingDescription += ` ${reason}: ${amount.toLocaleString('pt-BR')} pagos${creditor ? ` a ${creditor.name}` : ' ao banco'}.`
       return
     }
@@ -1466,7 +1539,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
     const previousPosition = player.position
     player.position = movePosition(player.position, [spaces, 0])
     if (player.position < previousPosition) {
-      player.cash += START_BONUS
+      this.creditCash(player, START_BONUS)
     }
   }
 
@@ -1575,7 +1648,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
         this.state.landingDescription += ' Escolha uma propriedade sua para sediar o evento.'
       }
     } else if (space.kind === 'world-tour') {
-      player.cash += START_BONUS
+      this.creditCash(player, START_BONUS)
       this.state.turnPhase = 'world-tour'
       this.state.landingDescription = `${describeLanding(space.id)} Você recebeu R$ ${START_BONUS.toLocaleString('pt-BR')}. Escolha sua próxima casa.`
     } else if (space.kind === 'event' && drawEvent) {

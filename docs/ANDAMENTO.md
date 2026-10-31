@@ -1,3 +1,13 @@
+## Ferramentas DEV para testes de partida — concluído (2026-10-31)
+
+- O pedido foi adicionar um teleporte DEV para escolher diretamente qualquer casa, além de definir o saldo de qualquer participante e ativar dinheiro infinito.
+- A anfitriã, em uma sala com Modo DEV ativo, pode escolher entre as 40 casas. O peão teleporta sem percorrer casas nem receber bônus de passagem pela Partida; a chegada chama o resolvedor normal para compra, aluguel, imposto, carta ou efeito especial.
+- O saldo pode ser ajustado até o limite numérico do jogo. O dinheiro infinito evita descontos nos gastos e pagamentos do participante escolhido; as receitas pagas a outros participantes continuam sendo creditadas.
+- `npm run verify`: 237 testes em 46 arquivos e builds de frontend/servidor passaram. Graphify foi atualizado.
+- A revisão manual numa sala com bot confirmou teleporte para Canaã dos Carajás, abertura da compra regular, definição visual do saldo em R$ 1.230.000 e ativação do dinheiro infinito. Testes cobrem também construção e pagamento de aluguel sem desconto do saldo infinito.
+- Nota de validação: [Ferramentas DEV de teleporte e saldo](VALIDACAO.md#2026-10-31--ferramentas-dev-de-teleporte-e-saldo).
+- Próximo passo concreto da reforma completa: continuar a revisão manual das cartas restantes e das condições de vitória que ainda não foram vistas.
+
 ## Playtest da Linha 0 — progresso (2026-10-31)
 
 - Em partida local normal, com Modo DEV apenas para direcionar os dados, adquiri Porto Velho, Parauapebas, Rio Verde, AgroBrasil, Manaus e Canaã dos Carajás. São seis dos sete títulos exigidos na Linha 0; Bot 1 tem Belém com três casas, sem hotel.

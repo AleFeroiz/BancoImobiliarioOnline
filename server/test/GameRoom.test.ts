@@ -220,6 +220,63 @@ describe('sala privada', () => {
     }
   })
 
+  it('teleporta para qualquer casa e resolve a aterrissagem; ferramentas DEV ajustam saldo e dinheiro infinito', async () => {
+    const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
+    const host = await colyseus.connectTo(room, { name: 'Caio' })
+    const guest = await colyseus.connectTo(room, { name: 'Duda' })
+    host.send('setDevToolsEnabled', { enabled: true })
+    await waitFor(() => room.state.devToolsEnabled)
+    const started = new Promise<void>((resolve) => host.onMessage('game:started', () => resolve()))
+    host.send('start')
+    await started
+
+    const destination = boardSpaces.find((space) => space.kind === 'property' && space.buildable)!
+    const unauthorized = new Promise<{ message: string }>((resolve) => guest.onMessage('room:error', resolve))
+    guest.send('devTeleport', { spaceId: destination.id })
+    await expect(unauthorized).resolves.toMatchObject({ message: 'O teleporte DEV está desativado ou disponível apenas para a pessoa anfitriã.' })
+    expect(room.state.players.get(host.sessionId)?.position).toBe(0)
+    const invalidDestination = new Promise<{ message: string }>((resolve) => host.onMessage('room:error', resolve))
+    host.send('devTeleport', { spaceId: boardSpaces.length })
+    await expect(invalidDestination).resolves.toMatchObject({ message: 'Escolha uma casa válida do tabuleiro.' })
+    const unauthorizedCash = new Promise<{ message: string }>((resolve) => guest.onMessage('room:error', resolve))
+    guest.send('devSetCash', { sessionId: guest.sessionId, cash: 25_000, infinite: true })
+    await expect(unauthorizedCash).resolves.toMatchObject({ message: 'O ajuste de dinheiro DEV está desativado ou disponível apenas para a anfitriã durante a partida.' })
+
+    host.send('devTeleport', { spaceId: destination.id })
+    await waitFor(() => room.state.turnPhase === 'purchase', 5000)
+    expect(room.state.players.get(host.sessionId)?.position).toBe(destination.id)
+    expect(room.state.pendingPropertyId).toBe(destination.id)
+    host.send('buy')
+    await waitFor(() => room.state.turnPhase === 'resolve')
+    expect(room.state.properties.get(String(destination.id))?.ownerSessionId).toBe(host.sessionId)
+
+    host.send('devSetCash', { sessionId: host.sessionId, cash: 25_000, infinite: false })
+    await waitFor(() => room.state.players.get(host.sessionId)?.cash === 25_000)
+    expect(room.state.players.get(host.sessionId)?.devInfiniteCash).toBe(false)
+    const invalidCash = new Promise<{ message: string }>((resolve) => host.onMessage('room:error', resolve))
+    host.send('devSetCash', { sessionId: host.sessionId, cash: -1, infinite: true })
+    await expect(invalidCash).resolves.toMatchObject({ message: 'Escolha um participante ativo e um saldo inteiro válido.' })
+    expect(room.state.players.get(host.sessionId)?.devInfiniteCash).toBe(false)
+
+    host.send('devSetCash', { sessionId: host.sessionId, cash: 25_000, infinite: true })
+    await waitFor(() => room.state.players.get(host.sessionId)?.devInfiniteCash === true)
+    const holding = room.state.properties.get(String(destination.id))!
+    room.state.pendingPropertyId = destination.id
+    host.send('build', { propertyId: destination.id, targetHouses: 1 })
+    await waitFor(() => holding.houses === 1)
+    expect(room.state.players.get(host.sessionId)?.cash).toBe(25_000)
+    holding.ownerSessionId = guest.sessionId
+    room.state.turnPhase = 'roll'
+    host.send('devTeleport', { spaceId: destination.id })
+    await waitFor(() => room.state.turnPhase === 'buyback', 5000)
+    expect(room.state.players.get(host.sessionId)?.cash).toBe(25_000)
+    host.send('buyback', { accept: false })
+    await waitFor(() => room.state.turnPhase === 'resolve')
+    expect(room.state.players.get(host.sessionId)?.cash).toBe(25_000)
+    const rent = calculateRent(destination.id, new Map([[destination.id, guest.sessionId]]), holding.houses)
+    expect(room.state.players.get(guest.sessionId)?.cash).toBe(STARTING_CASH + rent)
+  })
+
   it('sincroniza a reconexão e bloqueia o início enquanto alguém está offline', async () => {
     const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
     const host = await colyseus.connectTo(room, { name: 'Lia' })

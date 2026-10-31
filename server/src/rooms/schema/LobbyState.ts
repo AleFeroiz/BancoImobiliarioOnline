@@ -12,6 +12,7 @@ export const LobbyPlayerState = schema({
   color: t.string().default('#ce7558'),
   position: t.uint8().default(0),
   cash: t.int32().default(0),
+  devInfiniteCash: t.boolean().default(false),
   isJailed: t.boolean().default(false),
   jailTurns: t.uint8().default(0),
   isBankrupt: t.boolean().default(false),
