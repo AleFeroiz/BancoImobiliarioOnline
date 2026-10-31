@@ -9,7 +9,7 @@
 - Na sala descartável RZMAQ, Cidade-sede foi descartada sem mover quando não havia sede ativa. Sede da Copa permitiu selecionar Joinville e o inspetor mostrou aluguel de R$ 135.000 (base R$ 45.000, triplicada).
 - Na sala descartável P28D9, Proteção iluminou Fortaleza como alvo elegível e confirmou imunidade a cartas por três turnos do dono. Ladrão permitiu selecionar Bot 1 e transferiu R$ 200.000 após a liquidação da dívida. Troca-troca confirmou que BANTEC QA Restante e Bot 1 trocaram de lugar sem resolver as casas de chegada.
 - Com Generoso, Aniversário, Apagão, Terremoto, Prisão, Volta ao Brasil, Sede da Copa, Troca-troca, Cidade-sede, Ladrão, Proteção e Vá para o início revisados, as 12 cartas estão confirmadas visualmente. Volta ao Brasil creditou R$ 200.000 ao chegar; Vá para o início também teve crédito de R$ 200.000 registrado em validação anterior.
-- A sala temporária foi usada apenas para teste e encerrada; as alterações locais de `special-corners.blend` e `.blend1` foram preservadas e ficaram fora do escopo. Permanecem playtests humanos de equilíbrio para 15, 30 e 60 minutos e a decisão de hospedagem, que depende da preferência do usuário entre latência, simplicidade e custo.
+- A sala temporária foi usada apenas para teste e encerrada; as alterações locais de `special-corners.blend` e `.blend1` foram preservadas e ficaram fora do escopo. O usuário escolheu Render por simplicidade; falta revisar a configuração de deploy no painel/Actions. O serviço Free pode dormir e serve para teste, mas não para produção; não foi autorizado upgrade pago. Permanecem playtests humanos de equilíbrio para 15, 30 e 60 minutos.
 
 # Seleção de casas pelo tabuleiro — correção visual concluída (2026-10-31)
 
