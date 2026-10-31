@@ -3,8 +3,8 @@
 - O usuário pediu reduzir a altura dos dados sem deixá-los atravessar a FATEC. A posição-base caiu de Y=4,2 para Y=2,45 e o indicador do total foi reposicionado de Y=5,2 para Y=3,55.
 - A torre do GLB mede cerca de Y=1,81 na cena após a escala; os dados ficam com aproximadamente 0,43 unidade de folga entre o topo da torre e a base do dado quando em repouso. Durante a animação, o movimento é para cima.
 - O teste de apresentação foi atualizado e passou (3 testes). No navegador local, conferi os dados lado a lado durante o movimento: aparecem mais perto do modelo e sem atravessá-lo. `npm run graphify -- update .` concluiu.
-- `npm run verify` passou com 240 testes em 46 arquivos e builds do frontend e servidor; a primeira tentativa falhou nos testes Colyseus por bloqueio de loopback, e a repetição autorizada passou. A publicação desta alteração ainda está pendente nesta etapa.
-- Próximo passo da reforma completa: terminar a revisão visual das cartas autorais, fazer playtests humanos de equilíbrio/ritmo e concluir a decisão de hospedagem.
+- `npm run verify` passou com 240 testes em 46 arquivos e builds do frontend e servidor; a primeira tentativa falhou nos testes Colyseus por bloqueio de loopback, e a repetição autorizada passou. A alteração foi publicada em `origin/main` no commit `c64df13a`.
+- Próximo passo da reforma completa: concluir a revisão visual das cartas autorais (incluindo confirmar o efeito de Apagão em uma cobrança posterior), fazer playtests humanos de equilíbrio/ritmo e concluir a decisão de hospedagem.
 
 ## Recompra após aluguel — concluída (2026-10-31)
 
@@ -24,6 +24,12 @@
 - Em uma sala local de teste, completei Norte e Centro-Oeste com o teleporte DEV e observei o encerramento imediato por Monopólio Duplo Regional. O painel mostrou vencedor, patrimônio, saldo e classificação; patrimônio final do anfitrião: R$ 3.875.000.
 - Em outra sala, comprei os sete títulos do lado 0 (seis cidades e AgroBrasil). A compra de Rio Verde encerrou imediatamente a partida por Monopólio em Linha; o painel mostrou vencedor, patrimônio, saldo e classificação. Patrimônio final: R$ 2.550.000.
 - As duas capturas confirmam que a interface final não fica presa em compras, avisos ou controles DEV. O painel final após insolvência também foi visto; a causa por aluguel é inferida pelo único imóvel possuído, três casas em São Paulo, contra bot sem caixa ou bens. Permanece a revisão visual das cartas.
+
+## Seleção e efeito de cartas — revisão manual parcial (2026-10-31)
+
+- Em sala local com Bot 1, confirmei Ladrão: após selecionar o alvo, Codex Cartas recebeu R$ 200.000 (de R$ 2.250.000 para R$ 2.450.000) e Bot 1 pagou o mesmo valor (de R$ 435.000 para R$ 235.000).
+- Também conferi Apagão: o tabuleiro apagou as casas inelegíveis e iluminou propriedades válidas de Bot 1; tocar em Belém (com três casas) foi aceito como alvo. Ainda falta confirmar o bloqueio de aluguel numa visita subsequente e a duração de três turnos.
+- A revisão continua parcial: essa interação confirma a seleção pelo tabuleiro, mas não substitui a verificação do efeito durante as próximas cobranças.
 
 ## Ferramentas DEV para testes de partida — concluído (2026-10-31)
 

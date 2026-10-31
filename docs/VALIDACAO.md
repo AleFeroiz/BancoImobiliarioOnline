@@ -45,6 +45,11 @@
 - Graphify update não executou porque a CLI `graphify` não está instalada neste ambiente.
 # Validação visual e de navegador
 
+## 2026-10-31 — Cartas Ladrão e Apagão
+
+- Em uma partida local, a seleção do Ladrão mostrou o alvo Bot 1; após confirmar, Codex Cartas recebeu R$ 200.000 (R$ 2.250.000 → R$ 2.450.000) e Bot 1 perdeu R$ 200.000 (R$ 435.000 → R$ 235.000).
+- Para Apagão, as casas inválidas ficaram apagadas e as propriedades válidas de Bot 1 iluminadas. Selecionei Belém pelo piso e o jogo aceitou a escolha. A partida ainda não confirmou uma cobrança posterior sem aluguel nem a expiração após três turnos, então esse efeito segue pendente de revisão visual.
+
 ## 2026-10-31 — Dados mais baixos acima da FATEC
 
 - Reduzi a posição-base dos dados de Y=4,2 para Y=2,45 e o indicador do total de Y=5,2 para Y=3,55. A altura máxima da torre na cena, após a escala do GLB, é aproximadamente Y=1,81; a base dos dados em repouso mantém cerca de 0,43 unidade de distância e a animação salta para cima.
