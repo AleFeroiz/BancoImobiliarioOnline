@@ -1,7 +1,7 @@
 ## Dados ainda mais baixos durante a rolagem — concluído (2026-10-31)
 
-- A pedido do usuário, a posição-base dos dados foi reduzida de Y=2,3 para Y=2,23, o salto de 0,16 para 0,10 e o indicador do total foi reposicionado para Y=2,92. O teste usa o raio geométrico da caixa do dado girando e mantém pelo menos 0,03 unidade acima do topo da torre da FATEC (Y≈1,81).
-- Em sala local, forcei uma rolagem e conferi os dados baixos sobre os prédios centrais, sem interseção visível com a Fatec. `npm run verify` passou com 240 testes em 46 arquivos; os testes Colyseus precisaram de acesso de loopback aprovado. Registro visual em [VALIDACAO.md](VALIDACAO.md#2026-10-31--redução-adicional-da-altura-dos-dados).
+- A pedido do usuário, a posição-base foi reduzida de Y=2,23 para Y=2,18, a escala dos dados passou a 0,9 e o indicador do total foi reposicionado para Y=2,82. O salto continua em 0,10. O teste usa o raio geométrico da caixa girando já escalado e mantém pelo menos 0,02 unidade acima do topo da torre da FATEC (Y≈1,81); a folga calculada é aproximadamente 0,027.
+- Em sala local, iniciei uma rolagem e conferi os dados menores e mais baixos sobre os prédios centrais, sem interseção visível com a Fatec. O teste específico passou com 3 casos; `npm run verify` passou com 240 testes em 46 arquivos e builds de frontend e servidor. Registro visual em [VALIDACAO.md](VALIDACAO.md#2026-10-31--redução-adicional-da-altura-dos-dados).
 - Próximo passo da reforma completa: concluir a revisão visual das cartas autorais (incluindo confirmar o efeito de Apagão em uma cobrança posterior), fazer playtests humanos de equilíbrio/ritmo e concluir a decisão de hospedagem.
 
 ## Recompra após aluguel — concluída (2026-10-31)
@@ -27,7 +27,9 @@
 
 - Em sala local com Bot 1, confirmei Ladrão: após selecionar o alvo, Codex Cartas recebeu R$ 200.000 (de R$ 2.250.000 para R$ 2.450.000) e Bot 1 pagou o mesmo valor (de R$ 435.000 para R$ 235.000).
 - Também revisei o início do Apagão: o tabuleiro apagou as casas inelegíveis e iluminou propriedades válidas de Bot 1. A tentativa de clicar em Belém ocorreu no fim da contagem e abriu o inspetor; portanto, não confirmou o envio do alvo. Uma chegada posterior cobrou o aluguel de R$ 245.000, mas como a carta expirou sem a seleção confirmada, isso não prova falha do efeito.
-- A validação manual do Apagão continua pendente: repetir a seleção antes do prazo e observar uma cobrança bloqueada, depois confirmar a expiração em três turnos do dono.
+- Nesta retomada, confirmei Ladrão no navegador: BANTEC QA recebeu R$ 200.000 (R$ 1.675.000 → R$ 1.875.000) e Bot 1 pagou R$ 200.000 (R$ 6.562.500 → R$ 6.362.500). Também selecionei Cuiabá como destino da carta Volta ao Brasil, que preservou a resolução normal de chegada sem bônus por passar pela Partida.
+- Repeti a seleção do Apagão em Manaus. O tabuleiro iluminou a cidade de Bot 1 e apagou as inválidas, mas as tentativas venceram o prazo antes de a seleção ser registrada; não há confirmação visual de suspensão de aluguel. Os testes de integração cobrem a suspensão durante três turnos do dono e a retomada após expirar.
+- Próxima validação: concluir a seleção de Apagão dentro do prazo e observar que Manaus não cobra numa chegada, antes da expiração.
 
 ## Ferramentas DEV para testes de partida — concluído (2026-10-31)
 

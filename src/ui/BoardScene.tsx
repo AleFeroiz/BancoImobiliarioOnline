@@ -12,7 +12,7 @@ import { getBoardTileTheme } from './boardTileTheme'
 import { fitSpaceLabel, shouldRenderSpaceLabel } from './spaceLabel'
 import { getPawnStepPath } from './pawnPath'
 import { getPropertyVisualChange } from './gameFeedback'
-import { DICE_PRESENTATION_POSITIONS, DICE_RESULT_BADGE_POSITION, DICE_ROLL_BOUNCE_HEIGHT, getDiceRollRotation } from './dicePresentation'
+import { DICE_PRESENTATION_POSITIONS, DICE_RESULT_BADGE_POSITION, DICE_ROLL_BOUNCE_HEIGHT, DICE_VISUAL_SCALE, getDiceRollRotation } from './dicePresentation'
 import { getRouletteFloorSectors } from './rouletteFloor'
 import { shouldStartCameraDrag } from './cameraDrag'
 import { BUILDING_ANIMATION_DURATION_MS, DICE_ANIMATION_DURATION_MS, LANDING_PULSE_DURATION_MS, PAWN_STEP_ANIMATION_DURATION_MS, PAWN_TELEPORT_ANIMATION_DURATION_MS, PROPERTY_HOTEL_LEVEL, getAnimationDuration, type AnimationSpeed } from '../../shared/game'
@@ -404,7 +404,7 @@ function AnimatedDie({ position, rotation, sequence, value, reducedMotion, visib
   })
 
   return (
-    <group ref={group} position={position} rotation={rotation} visible={visible}>
+    <group ref={group} position={position} rotation={rotation} scale={DICE_VISUAL_SCALE} visible={visible}>
       <mesh raycast={skipRaycast}><boxGeometry args={[0.45, 0.42, 0.45]} /><meshBasicMaterial color="#fffaf0" /></mesh>
       {(dicePips[value] ?? dicePips[1]!).map(([x, z], index) => <mesh key={index} position={[x, 0.212, z]} rotation={[-Math.PI / 2, 0, 0]} raycast={skipRaycast}><circleGeometry args={[0.035, 10]} /><meshBasicMaterial color="#c76550" /></mesh>)}
     </group>

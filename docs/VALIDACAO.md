@@ -45,11 +45,17 @@
 - Graphify update não executou porque a CLI `graphify` não está instalada neste ambiente.
 # Validação visual e de navegador
 
+## 2026-10-31 — Cartas Ladrão, Volta ao Brasil e Apagão
+
+- Em uma sala local de 30 minutos com Modo DEV, confirmei Ladrão: saldo de BANTEC QA subiu de R$ 1.675.000 para R$ 1.875.000; saldo de Bot 1 caiu de R$ 6.562.500 para R$ 6.362.500.
+- A carta Volta ao Brasil destacou destinos válidos no tabuleiro; escolhi Cuiabá. O servidor informou chegada sem bônus por passagem pela Partida e abriu a construção normal do imóvel próprio.
+- Apagão destacou Manaus, de Bot 1, e apagou as casas inválidas. A interação expirou antes de registrar o clique do alvo, portanto não confirma a suspensão de aluguel. Os testes de integração cobrem esse efeito e sua duração; a confirmação visual permanece pendente.
+
 ## 2026-10-31 — Redução adicional da altura dos dados
 
-- Em sala local BANTEC com Modo DEV, iniciei uma rolagem real e capturei a cena no centro da FATEC. Com posição-base Y=2,23 e salto de 0,10, os dados ficaram mais baixos e não apresentaram interseção visual com os prédios ou a torre.
-- O teste `src/ui/dicePresentation.test.ts` usa o raio geométrico do dado (0,381 unidade) e valida uma folga mínima de 0,03 acima do topo da torre (Y≈1,81), inclusive sob rotação. O indicador do resultado foi reposicionado para Y=2,92.
-- `npm run verify`: 240 testes em 46 arquivos passaram e os builds de frontend e servidor foram executados. Os testes Colyseus passaram após permitir loopback local; a primeira tentativa no sandbox falhou com `fetch failed`.
+- Em sala local BANTEC com Modo DEV, iniciei uma rolagem real e capturei a cena no centro da FATEC. Com posição-base Y=2,18, escala 0,9 e salto de 0,10, os dados ficaram mais baixos e não apresentaram interseção visual com os prédios ou a torre.
+- O teste `src/ui/dicePresentation.test.ts` usa o raio geométrico do dado (0,381 unidade) multiplicado pela escala visual e valida uma folga mínima de 0,02 acima do topo da torre (Y≈1,81), inclusive sob rotação. A folga calculada é aproximadamente 0,027; o indicador do resultado foi reposicionado para Y=2,82.
+- O teste específico passou com 3 casos. `npm run verify` passou com 240 testes em 46 arquivos e builds de frontend e servidor; a primeira execução isolada do teste bateu no erro conhecido de `EPERM` no temporário do sandbox, e a repetição usando `.tmp` passou.
 
 ## 2026-10-31 — Redução anterior da altura dos dados
 

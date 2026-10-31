@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { DICE_PRESENTATION_POSITIONS, DICE_RESULT_BADGE_POSITION, DICE_ROLL_BOUNCE_HEIGHT, getDiceRollRotation, shouldShowRolledDice } from './dicePresentation'
+import { DICE_PRESENTATION_POSITIONS, DICE_RESULT_BADGE_POSITION, DICE_ROLL_BOUNCE_HEIGHT, DICE_VISUAL_SCALE, getDiceRollRotation, shouldShowRolledDice } from './dicePresentation'
 
 const FATEC_TOWER_TOP_Y = 1.81
-const DICE_ROTATION_BOUNDING_RADIUS = Math.hypot(0.225, 0.21, 0.225)
+const DICE_ROTATION_BOUNDING_RADIUS = Math.hypot(0.225, 0.21, 0.225) * DICE_VISUAL_SCALE
 
 describe('apresentação minimalista dos dados', () => {
   it('mantém dados na rolagem e no movimento que foi iniciado por ela', () => {
@@ -21,8 +21,8 @@ describe('apresentação minimalista dos dados', () => {
 
   it('mantém os dados baixos sobre a FATEC durante a rolagem, sem atravessar a torre', () => {
     expect(DICE_PRESENTATION_POSITIONS).toHaveLength(2)
-    expect(DICE_PRESENTATION_POSITIONS.every((position) => position[1] >= 2.22 && position[1] <= 2.24)).toBe(true)
-    expect(DICE_PRESENTATION_POSITIONS.every((position) => position[1] - DICE_ROTATION_BOUNDING_RADIUS - FATEC_TOWER_TOP_Y >= 0.03)).toBe(true)
+    expect(DICE_PRESENTATION_POSITIONS.every((position) => position[1] >= 2.17 && position[1] <= 2.19)).toBe(true)
+    expect(DICE_PRESENTATION_POSITIONS.every((position) => position[1] - DICE_ROTATION_BOUNDING_RADIUS - FATEC_TOWER_TOP_Y >= 0.02)).toBe(true)
     expect(DICE_ROLL_BOUNCE_HEIGHT).toBeLessThan(0.12)
     expect(DICE_PRESENTATION_POSITIONS.every((position) => position[1] + DICE_ROLL_BOUNCE_HEIGHT + DICE_ROTATION_BOUNDING_RADIUS < 2.9)).toBe(true)
     expect(DICE_PRESENTATION_POSITIONS[0]?.[0]).toBeLessThan(0)
