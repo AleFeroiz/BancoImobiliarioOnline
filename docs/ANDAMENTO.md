@@ -3,8 +3,8 @@
 - Conferi as regras aprovadas contra `server/test/GameRoom.test.ts`: os efeitos das 12 cartas, pagamentos de Aniversário e Ladrão com dívida, Terremoto, Apagão, Proteção, movimentos, troca de posição, Cidade-sede sem sede e início têm cobertura de integração autoritativa.
 - A exceção de hotel para Apagão e Terremoto não tinha regressão específica. Adicionei um teste que tenta os dois efeitos num imóvel com hotel e confirma rejeição sem alterar posse, hotel ou aluguel suspenso; passou.
 - `npm run verify`: 234 testes em 46 arquivos passaram; builds do frontend e servidor passaram. Graphify foi atualizado. Permanece o aviso conhecido do chunk 3D acima de 500 KB.
-- Ainda falta percorrer as cartas restantes e liquidar uma dívida numa partida pelo navegador. A vitória pelas quatro companhias e o painel final foram vistos numa partida real; os detalhes estão na seção atual de validação.
-- Próximo passo concreto: liquidar uma dívida pelo tabuleiro e concluir a revisão visual das cartas restantes.
+- No navegador, uma partida de dois participantes confirmou a carta Aniversário (+R$ 50.000 recebido do outro participante) e a dívida de aluguel de R$ 210.000 em Maceió. A seleção pelo tabuleiro vendeu um nível de construção em Joinville e outro em Belém; a dívida foi paga e os títulos continuaram com o anfitrião.
+- Próximo passo concreto: percorrer visualmente as cartas restantes e validar Monopólio em Linha, Monopólio Duplo Regional, fim por tempo e falência.
 
 ## Rota regional na home BANTEC — concluído (2026-10-31)
 
@@ -13,7 +13,7 @@
 - Revisão visual no navegador local em 964×883, 390×844 e 320×568: no menor viewport encontrei uma barra horizontal causada pelo `min-width: 320px` do `body`, que ultrapassava a área útil quando a barra vertical estava presente. Removi o piso fixo; a nova captura em 320×568 não mostra rolagem horizontal. Em 390×844, a rota continua em uma linha e a rolagem revela o formulário completo.
 - `npm run graphify -- update .` concluiu. `npm run verify` passou com 233 testes em 46 arquivos; builds do frontend e servidor passaram. O chunk de cena 3D permanece acima de 500 KB.
 - O Vite iniciou normalmente. Colyseus retornou `EADDRINUSE` em 2567 sem listener identificável em `Get-NetTCPConnection` ou `netstat`, então não interrompi processo desconhecido; não foi necessária sala para validar a home.
-- Próximo passo concreto da reforma completa: reproduzir uma dívida real e percorrer por jogo as cartas e as condições de vitória ainda não vistas.
+- Próximo passo concreto da reforma completa: percorrer por jogo as cartas e as condições de vitória ainda não vistas; a dívida real já foi liquidada pela interface.
 
 ## Cartões coloridos, avisos identificados e visibilidade das peças — concluído (2026-10-30)
 

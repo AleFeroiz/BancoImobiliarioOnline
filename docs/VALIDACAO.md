@@ -22,6 +22,14 @@
 - A sala confirmou a conexão, o turno do anfitrião, o modo DEV, a rolagem forçada e a compra. Em seguida, num playtest separado de dois participantes, o anfitrião comprou as quatro companhias e venceu. O painel final mostrou nome, vitória, patrimônio, saldo e classificação sobre o tabuleiro; revisão visual aprovada. Patrimônio final: R$ 2.400.000 para o anfitrião e R$ 1.550.000 para o bot.
 - O estado terminal foi alcançado pela regra de vitória por quatro companhias, não pelo relógio ou falência. Esses outros caminhos, além de dívida e cartas restantes, seguem pendentes para revisão manual.
 
+## 2026-10-31 — Seleção no tabuleiro e liquidação de dívida
+
+- Em uma sala DEV com anfitrião e Bot 1, o anfitrião chegou a Rio Verde e pagou R$ 157.500 de aluguel, ficando com R$ 92.500. Depois, chegou a Maceió, de propriedade do bot com três casas, e abriu dívida de R$ 210.000.
+- A tela indicou a dívida, o credor e instruiu a escolher um imóvel iluminado no tabuleiro. Selecionei Joinville e Belém pelo piso; cada seleção vendeu um nível de construção e mostrou o reembolso (R$ 112.500 e R$ 87.500). Com saldo de R$ 292.500, o botão de pagamento foi habilitado.
+- Paguei os R$ 210.000 ao bot. O anfitrião terminou com R$ 82.500; Belém e Joinville permaneceram seus, com os níveis vendidos removidos. A captura confirmou as casas válidas destacadas durante a escolha.
+- A mesma partida confirmou visualmente a carta Aniversário: o anfitrião recebeu R$ 50.000 do bot, refletido nos saldos dos dois jogadores.
+- Monopólio em Linha, Monopólio Duplo Regional, encerramento por tempo/falência e as cartas restantes continuam pendentes de playtest manual.
+
 ## 2026-10-31 — Auditoria de cartas e dívida
 
 - Conferi a cobertura de `server/test/GameRoom.test.ts` contra as doze cartas vigentes: os efeitos, escolhas de alvo, movimento e efeitos financeiros têm testes de integração; também estão cobertos dívida de Ladrão, falência e resolução do tempo.
