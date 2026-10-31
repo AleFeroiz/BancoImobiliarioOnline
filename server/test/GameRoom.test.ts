@@ -6,7 +6,7 @@ import type { LobbyState } from '../src/rooms/schema/LobbyState.js'
 import { PropertyState } from '../src/rooms/schema/LobbyState.js'
 import { boardSpaces, getLineTitleIds } from '../../shared/board.js'
 import { EVENT_CARDS, type EventCard } from '../../shared/cards.js'
-import { START_BONUS, STARTING_CASH, bankReturnValue, buildingSaleValue, calculateRent, constructionCost, forcedBuybackCost } from '../../shared/game.js'
+import { PROPERTY_HOTEL_LEVEL, START_BONUS, STARTING_CASH, bankReturnValue, buildingSaleValue, calculateRent, constructionCost, forcedBuybackCost } from '../../shared/game.js'
 
 async function waitFor(condition: () => boolean, timeout = 2500) {
   const start = Date.now()
@@ -1386,6 +1386,31 @@ describe('sala privada', () => {
     expect(room.state.turnPhase).toBe('resolve')
     expect(room.state.landingDescription.toLowerCase()).toContain('terremoto')
     expect(room.state.players.get(guest.sessionId)?.cash).toBe(STARTING_CASH)
+  })
+
+  it('rejeita Apagão e Terremoto contra propriedades com hotel', async () => {
+    const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
+    const host = await colyseus.connectTo(room, { name: 'Ana' })
+    const guest = await colyseus.connectTo(room, { name: 'Bia' })
+    host.send('start')
+    await waitFor(() => room.state.status === 'playing')
+
+    const propertySpace = boardSpaces.find((space) => space.buildable)!
+    const property = new PropertyState()
+    property.ownerSessionId = guest.sessionId
+    property.houses = PROPERTY_HOTEL_LEVEL
+    room.state.properties.set(String(propertySpace.id), property)
+
+    for (const cardId of ['blackout', 'earthquake']) {
+      room.state.activePlayerSessionId = host.sessionId
+      room.state.turnPhase = 'card-target'
+      room.state.activeCardId = cardId
+      const blocked = new Promise<{ message: string }>((resolve) => host.onMessage('room:error', resolve))
+      host.send('resolveCardTarget', { propertyId: propertySpace.id, targetSessionId: guest.sessionId })
+
+      await expect(blocked).resolves.toMatchObject({ message: expect.stringContaining('sem hotel') })
+      expect(property).toMatchObject({ ownerSessionId: guest.sessionId, houses: PROPERTY_HOTEL_LEVEL, blackoutTurns: 0 })
+    }
   })
 
   it('paga Aniversário a cada pessoa e processa Ladrão com dívida ao alvo', async () => {

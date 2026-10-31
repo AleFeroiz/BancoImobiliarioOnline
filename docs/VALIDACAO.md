@@ -14,6 +14,12 @@
 - Graphify update não executou porque a CLI `graphify` não está instalada neste ambiente.
 # Validação visual e de navegador
 
+## 2026-10-31 — Auditoria de cartas e dívida
+
+- Conferi a cobertura de `server/test/GameRoom.test.ts` contra as doze cartas vigentes: os efeitos, escolhas de alvo, movimento e efeitos financeiros têm testes de integração; também estão cobertos dívida de Ladrão, falência e resolução do tempo.
+- Acrescentei teste de regressão para os hotéis não poderem receber Apagão nem Terremoto. Ambos são rejeitados pelo servidor sem alterar propriedade ou construção.
+- `npm run verify`: 234 testes em 46 arquivos passaram; builds frontend e servidor passaram. `npm run graphify -- update .` passou. Resta a validação manual da interface numa partida real.
+
 ## 2026-10-31 — Rota regional na home BANTEC
 
 - A home agora exibe o percurso visual Norte → Centro-Oeste → Nordeste → Sul → Sudeste com as cinco cores usadas no tabuleiro, além de informar 24 cidades, 40 casas e quatro companhias. Removi o marcador “01/03”, que sugeria telas inexistentes.

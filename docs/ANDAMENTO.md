@@ -1,3 +1,11 @@
+## Auditoria de cartas e dívida — progresso (2026-10-31)
+
+- Conferi as regras aprovadas contra `server/test/GameRoom.test.ts`: os efeitos das 12 cartas, pagamentos de Aniversário e Ladrão com dívida, Terremoto, Apagão, Proteção, movimentos, troca de posição, Cidade-sede sem sede e início têm cobertura de integração autoritativa.
+- A exceção de hotel para Apagão e Terremoto não tinha regressão específica. Adicionei um teste que tenta os dois efeitos num imóvel com hotel e confirma rejeição sem alterar posse, hotel ou aluguel suspenso; passou.
+- `npm run verify`: 234 testes em 46 arquivos passaram; builds do frontend e servidor passaram. Graphify foi atualizado. Permanece o aviso conhecido do chunk 3D acima de 500 KB.
+- Ainda falta percorrer as cartas e liquidar uma dívida numa partida pelo navegador, assim como revisar a tela final numa vitória real. O servidor local padrão não iniciou porque a porta 2567 retornou `EADDRINUSE` sem processo identificável; não encerrei processo desconhecido.
+- Próximo passo concreto: conseguir uma partida local pelo fluxo de playtest sem interromper o processo desconhecido e validar dívida, cartas e painel de resultado pela interface.
+
 ## Rota regional na home BANTEC — concluído (2026-10-31)
 
 - A home agora exibe o percurso Norte → Centro-Oeste → Nordeste → Sul → Sudeste, com as cinco cores de região e a composição de 24 cidades/40 casas/quatro companhias. O indicador “01/03” foi substituído por informações reais do tabuleiro.
