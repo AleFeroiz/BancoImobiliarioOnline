@@ -34,6 +34,14 @@
 - Próximo passo concreto: conferir a leitura dos cartões em diferentes resoluções após os próximos playtests humanos.
 # Andamento do projeto
 
+## Playtest de compras e aluguel — progresso (2026-10-31)
+
+- Numa sala local de 30 minutos com modo DEV, saldo inicial de R$ 2.000.000 e um bot, comprei Belém por R$ 350.000. A prévia exibiu aluguel de R$ 35.000; o bot caiu nela e pagou esse valor.
+- O anfitrião recebeu R$ 200.000 ao passar pela Partida e comprou Manaus por R$ 650.000; o saldo exibido ficou em R$ 1.200.000. O bot comprou Aviação Brasil por R$ 500.000 e Recife com uma casa por R$ 712.500. Depois de parar em Rio Verde, o saldo do bot apareceu como R$ 1.437.500; a posse não foi inspecionada.
+- A sessão confirmou o fluxo de compra, a escada de preços/aluguel e o bônus de Partida. Ela não chegou a uma condição de vitória. A rota da Linha 0 não foi concluída nesta sessão.
+- Próximo passo concreto: iniciar uma nova sala e terminar uma vitória pela interface; depois observar Monopólio Duplo Regional e falência. As cartas restantes também continuam pendentes de revisão visual.
+- Nota de continuidade: [Reforma BANTEC](trabalho/reforma-bantec.md).
+
 ## Precisão dos aluguéis BANTEC — progresso (2026-10-31)
 
 - O playtest de compra de Belém expôs um erro: três casas mostravam R$ 244.999, embora 70% de R$ 350.000 sejam R$ 245.000. A causa era `Math.floor` aplicado ao resultado de ponto flutuante.

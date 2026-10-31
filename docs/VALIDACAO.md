@@ -14,6 +14,13 @@
 - Graphify update não executou porque a CLI `graphify` não está instalada neste ambiente.
 # Validação visual e de navegador
 
+## 2026-10-31 — Compras e aluguel em sala BANTEC
+
+- Em sala local de 30 minutos com um bot e modo DEV para direcionar dados, o anfitrião começou com R$ 2.000.000, comprou Belém por R$ 350.000 e viu aluguel de R$ 35.000 na prévia. O bot caiu em Belém e pagou esse aluguel.
+- O anfitrião recebeu R$ 200.000 ao passar pela Partida e comprou Manaus por R$ 650.000; a carteira mostrou saldo de R$ 1.200.000. O bot comprou Aviação Brasil por R$ 500.000 e Recife com uma casa por R$ 712.500. Após parar em Rio Verde, seu saldo foi exibido como R$ 1.437.500; não inspecionei a posse.
+- O playtest confirma compra, prévia de aluguel, pagamento ao proprietário e bônus da Partida. A partida não chegou à vitória por Monopólio em Linha. O resultado final e a recompra forçada ficam pendentes de nova sessão.
+- As portas padrão 5173/2567 retornaram `EADDRINUSE` sem listener identificável. A revisão ocorreu em sessão temporária nas portas 5181/2568, encerrada ao fim do teste.
+
 ## 2026-10-31 — Precisão do aluguel na compra
 
 - Em uma sala BANTEC com modo DEV, forcei a chegada em Belém e observei o pacote de compra: terreno R$ 350.000, uma casa R$ 525.000, duas casas R$ 700.000 e três casas R$ 875.000. O aluguel para três casas apareceu como R$ 244.999, expondo perda de R$ 1 pelo piso da multiplicação decimal.

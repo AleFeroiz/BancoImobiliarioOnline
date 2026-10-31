@@ -32,6 +32,13 @@ Atualizar o jogo para um tabuleiro inspirado nas economias das cinco regiões br
 5. **Página inicial:** identidade BANTEC, criação/entrada por sala, escolha de duração e visual brasileiro implementados. Revisão móvel e desktop feita após correção do cabeçalho de marca.
 6. **Validação e publicação:** home, lobby, tabuleiro, compra, carteira, dívida e vitória pelas quatro companhias foram revisados no navegador; a posição dos dados acima da FATEC também foi confirmada. O encerramento por tempo também foi visto no navegador e exibiu o painel final. O playtest de Linha 0 adquiriu seis dos sete títulos e confirmou a seleção válida para a sede da Copa; falta a recompra de Belém (R$ 1.312.500 com três casas) e a vitória na interface. Ainda falta também a falência pela interface, a vitória por duas regiões e a revisão visual das cartas restantes.
 
+## Playtest de compras e aluguel — 2026-10-31
+
+- Em uma nova sala local de 30 minutos, o anfitrião começou com R$ 2.000.000, comprou Belém por R$ 350.000 e viu aluguel de R$ 35.000. O bot caiu no imóvel e pagou esse valor.
+- O anfitrião recebeu R$ 200.000 ao passar pela Partida e comprou Manaus por R$ 650.000, terminando o trecho com R$ 1.200.000. O bot comprou Aviação Brasil e Recife com uma casa; após parar em Rio Verde, seu saldo foi exibido como R$ 1.437.500, mas a posse do título não foi inspecionada.
+- A sessão confirmou compra pela interface, prévia de aluguel, pagamento e bônus da Partida; não chegou a uma vitória.
+- Próxima tentativa: começar uma sala nova e concluir uma condição de vitória pela interface. Monopólio Duplo Regional, falência e cartas restantes continuam pendentes de revisão visual.
+
 ## Estado atual — 2026-10-31
 
 - Implementado em código: dados regionais do tabuleiro e cores, preços e fórmula de aluguel das cidades, taxas por quantidade de títulos, vitórias imediatas, seleção do tempo no lobby, escolha de cor, bônus de Volta ao Brasil e recompra forçada por 1,5×. A devolução de um título durante dívida já o libera para o banco.
