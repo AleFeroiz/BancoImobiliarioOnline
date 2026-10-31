@@ -1,11 +1,11 @@
 # Playtest manual das 12 cartas BANTEC — concluído (2026-10-31)
 
-## Hospedagem Render — publicação solicitada pelo CI (2026-10-31)
+## Hospedagem — Vercel publicada; Render acionado pelo CI (2026-10-31)
 
-- A escolha do usuário foi Render por simplicidade. No workflow de `4c85f48`, a verificação passou, o segredo `RENDER_DEPLOY_HOOK_URL` estava presente (mascarado) e o Render aceitou o pedido de deploy.
-- Aceitação do pedido não comprova publicação concluída. Não foi possível entrar no painel Render nesta sessão; ainda falta conferir a saúde/versão publicada e se `Auto-Deploy` está desligado para evitar deploy duplicado.
+- A escolha do usuário foi Render por simplicidade para o servidor multiplayer; o frontend permanece na Vercel. No workflow do push mais recente, `npm run verify` passou e o segredo `RENDER_DEPLOY_HOOK_URL` estava presente (mascarado); o Render aceitou o pedido de deploy.
+- O status de commit da Vercel confirmou “Deployment has completed”. Para Render, a resposta do hook só confirma o pedido, não a publicação concluída. Não foi possível entrar no painel Render nesta sessão; ainda falta conferir saúde/versão publicada e se `Auto-Deploy` está desligado.
 - O segredo não foi exibido nem registrado. O deploy solicitado não envolveu upgrade pago.
-- Próximo passo concreto: confirmar no painel Render o resultado do deploy de `4c85f48` e a configuração de `Auto-Deploy`; manter pendentes os playtests humanos de equilíbrio para 15, 30 e 60 minutos.
+- Próximo passo concreto: confirmar no painel Render o resultado do deploy e a configuração de `Auto-Deploy`; manter pendentes os playtests humanos de equilíbrio para 15, 30 e 60 minutos.
 
 # Dados ainda mais baixos durante a rolagem — ajuste implementado (2026-10-31)
 

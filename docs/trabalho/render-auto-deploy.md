@@ -9,7 +9,8 @@
 
 ## Estado atualizado — 2026-10-31
 
-- No workflow CI do commit `4c85f48`, `npm run verify` terminou com sucesso e a etapa `Trigger Render deploy` foi executada. O log confirmou “Render accepted the deployment request.” O valor do segredo apareceu mascarado; isso confirma que `RENDER_DEPLOY_HOOK_URL` está configurado sem revelar o conteúdo.
+- Em workflows CI recentes, `npm run verify` terminou com sucesso e a etapa `Trigger Render deploy` foi executada. Os logs confirmaram “Render accepted the deployment request.” O valor do segredo apareceu mascarado; isso confirma que `RENDER_DEPLOY_HOOK_URL` está configurado sem revelar o conteúdo.
+- O status de Vercel reportou “Deployment has completed” no último commit consultado; isso confirma o frontend publicado, não o estado do serviço Render.
 - A resposta confirma que o pedido foi aceito, mas não confirma que o serviço terminou de publicar nem que a versão nova está no ar. Esta sessão não estava autenticada no painel Render e não conseguiu confirmar o estado final do deploy.
 - Não é necessária a configuração inicial do segredo descrita nas notas antigas. Ainda falta confirmar no painel a configuração de `Auto-Deploy` e verificar que o deploy aceito terminou. Não dispare outro deploy só para repetir essa checagem.
 
@@ -38,4 +39,4 @@ O workflow `.github/workflows/ci.yml` agora pode disparar o Deploy Hook depois q
 - Railway: o plano Hobby é um compromisso mínimo de US$ 5/mês aplicado ao uso, com excedente cobrado; as regiões atualmente listadas são Califórnia, Virgínia, Amsterdã e Singapura.
 - Decisão do usuário em 2026-10-31: continuar no Render por simplicidade, aproveitando o serviço já vinculado. Não fazer upgrade pago sem confirmar o custo. O Free serve para testes e partidas privadas, mas pode hibernar após 15 minutos sem tráfego e levar cerca de um minuto para despertar; o fornecedor não o recomenda para produção.
 - Fontes oficiais: [Fly regions](https://fly.io/docs/reference/regions/), [Fly pricing](https://fly.io/docs/about/pricing/), [Render pricing](https://render.com/pricing), [Render Free](https://render.com/docs/free), [Render regions](https://render.com/docs/regions), [Railway billing](https://docs.railway.com/pricing/understanding-your-bill), [Railway regions](https://docs.railway.com/deployments/regions).
-- Nota operacional: esta sessão não estava autenticada no painel Render. O GitHub confirmou que o hook aceitou um pedido de deploy para `4c85f48`, mas o estado final precisa ser confirmado no painel. O segredo permanece no GitHub Actions Secrets e não deve ser compartilhado em chat.
+- Nota operacional: esta sessão não estava autenticada no painel Render. O GitHub confirmou que o hook aceitou pedidos de deploy em pushes recentes, mas o estado final precisa ser confirmado no painel. O segredo permanece no GitHub Actions Secrets e não deve ser compartilhado em chat.
