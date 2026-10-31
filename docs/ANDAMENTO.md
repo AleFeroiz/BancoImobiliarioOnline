@@ -1,3 +1,9 @@
+# Altura dos dados — novo ajuste solicitado (2026-10-31)
+
+- Baixei os dados de Y=1,12 para Y=1,10, reduzi a escala de 0,68 para 0,63 e aproximei o indicador do resultado de Y=1,62 para Y=1,57. A caixa em qualquer rotação mantém aproximadamente 0,015 unidade de folga sobre os telhados da FATEC.
+- O teste geométrico passou; `npm run verify` passou com 247 testes em 46 arquivos e builds do frontend/servidor. `npm run graphify -- update .` atualizou o grafo para 943 nós e 1.752 arestas. A inspeção visual da rolagem ficou pendente porque a sala local aberta estava no turno de outra pessoa e não permitiu forçar a rolagem pelo DEV.
+- Próximo passo da reforma completa: concluir a revisão visual das cartas autorais, fazer playtests humanos de equilíbrio/ritmo e obter a escolha de hospedagem do usuário.
+
 # Altura dos dados durante a rolagem — concluído (2026-10-31)
 
 - Reduzi a posição-base dos dados de Y=1,18 para Y=1,12 e a escala de 0,82 para 0,68; o salto permanece em 0,065 e o indicador do resultado foi ajustado para Y=1,62.

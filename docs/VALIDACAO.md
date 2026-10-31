@@ -62,6 +62,11 @@
 - A carta Volta ao Brasil destacou destinos válidos no tabuleiro; escolhi Cuiabá. O servidor informou chegada sem bônus por passagem pela Partida e abriu a construção normal do imóvel próprio.
 - Apagão destacou Manaus, de Bot 1, e apagou as casas inválidas. A interação expirou antes de registrar o clique do alvo, portanto não confirma a suspensão de aluguel. Os testes de integração cobrem esse efeito e sua duração; a confirmação visual permanece pendente.
 
+# 2026-10-31 — Dados mais baixos sobre a FATEC
+
+- Posição-base reduzida para Y=1,10, escala para 0,63 e indicador para Y=1,57. O teste geométrico calcula o envelope do dado girando e confirma margem mínima de 0,01 sobre os telhados, sem interseção com a torre.
+- `src/ui/dicePresentation.test.ts` passou (3 testes). `npm run verify` passou com 247 testes em 46 arquivos e builds frontend/servidor. `npm run graphify -- update .` atualizou o grafo para 943 nós e 1.752 arestas. A rolagem não foi revista visualmente: a sala local já aberta estava no turno de outra pessoa e o controle DEV não permitiu iniciar uma rolagem do anfitrião.
+
 ## 2026-10-31 — Redução adicional da altura dos dados
 
 - Em sala local BANTEC com Modo DEV, iniciei uma rolagem real e capturei a cena no centro da FATEC. Com posição-base Y=2,18, escala 0,9 e salto de 0,10, os dados ficaram mais baixos e não apresentaram interseção visual com os prédios ou a torre.

@@ -23,7 +23,7 @@ describe('apresentação minimalista dos dados', () => {
 
   it('mantém os dados mais baixos sobre os prédios da FATEC e fora do volume da torre durante o giro', () => {
     expect(DICE_PRESENTATION_POSITIONS).toHaveLength(2)
-    expect(DICE_PRESENTATION_POSITIONS.every((position) => position[1] >= 1.11 && position[1] <= 1.13)).toBe(true)
+    expect(DICE_PRESENTATION_POSITIONS.every((position) => position[1] >= 1.09 && position[1] <= 1.11)).toBe(true)
     expect(DICE_PRESENTATION_POSITIONS.every((position) => position[1] - DICE_ROTATION_BOUNDING_RADIUS - FATEC_MAIN_ROOF_TOP_Y >= 0.01)).toBe(true)
     expect(DICE_PRESENTATION_POSITIONS.every((position) => {
       const horizontalDistance = Math.hypot(position[0] - FATEC_TOWER_CENTER[0], position[2] - FATEC_TOWER_CENTER[1])

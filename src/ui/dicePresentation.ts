@@ -3,13 +3,13 @@ export type DiceRotation = [number, number, number]
 export type DicePosition = [number, number, number]
 
 export const DICE_ROLL_BOUNCE_HEIGHT = 0.065
-export const DICE_VISUAL_SCALE = 0.68
+export const DICE_VISUAL_SCALE = 0.63
 
 export const DICE_PRESENTATION_POSITIONS: DicePosition[] = [
-  [-0.75, 1.12, 0.1],
-  [0.75, 1.12, -0.1],
+  [-0.75, 1.1, 0.1],
+  [0.75, 1.1, -0.1],
 ]
-export const DICE_RESULT_BADGE_POSITION: DicePosition = [0, 1.62, 0]
+export const DICE_RESULT_BADGE_POSITION: DicePosition = [0, 1.57, 0]
 
 export function shouldShowRolledDice(phase: DicePresentationPhase, belongsToPawnMovement: boolean) {
   return phase === 'rolling' || (phase === 'moving' && belongsToPawnMovement)
