@@ -23,3 +23,12 @@ O workflow `.github/workflows/ci.yml` agora pode disparar o Deploy Hook depois q
 - Não grave o Deploy Hook em arquivos, logs, commits ou mensagens.
 - Se o hook for exposto, regenere-o no Render e atualize o segredo no GitHub.
 - Até o segredo ser adicionado e o gatilho nativo ser desligado, a automação alternativa ainda não pode acionar o serviço.
+
+## Comparação de hospedagem — 2026-10-31
+
+- Render: plano Starter de 512 MB custa US$ 7/mês. O Free pode dormir depois de 15 minutos sem tráfego de entrada, inclusive mensagens WebSocket, e o despertar leva cerca de um minuto; a documentação do fornecedor diz para não usar Free em produção. Render lista Oregon, Ohio, Virginia, Frankfurt e Singapura, sem região no Brasil.
+- Fly.io: `gru` hospeda máquinas em São Paulo. A tabela pública usa preços de Ashburn como base e avisa que variam por região; a máquina `shared-cpu-1x` de 512 MB custa US$ 3,69/mês em Ashburn, não como cotação de `gru`. A saída para a Internet na América do Sul custa US$ 0,04/GB; sem taxa de plataforma, sem camada gratuita permanente.
+- Railway: o plano Hobby é um compromisso mínimo de US$ 5/mês aplicado ao uso, com excedente cobrado; as regiões atualmente listadas são Califórnia, Virgínia, Amsterdã e Singapura.
+- Proposta pendente: escolher Fly se menor latência brasileira compensar a configuração e o preço regional variável; continuar no Render Starter se simplicidade e o serviço já ligado ao projeto forem prioridade. Não fazer upgrade ou migração sem escolha de provedor e custo aceito.
+- Fontes oficiais: [Fly regions](https://fly.io/docs/reference/regions/), [Fly pricing](https://fly.io/docs/about/pricing/), [Render pricing](https://render.com/pricing), [Render Free](https://render.com/docs/free), [Render regions](https://render.com/docs/regions), [Railway billing](https://docs.railway.com/pricing/understanding-your-bill), [Railway regions](https://docs.railway.com/deployments/regions).
+- Nota: os dados de serviço do Render descritos na seção “Fatos verificados” vieram da conferência de 2026-10-31 e ainda precisam ser revistos no painel antes de publicar a aplicação.

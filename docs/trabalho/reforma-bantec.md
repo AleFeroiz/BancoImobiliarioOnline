@@ -22,6 +22,7 @@ Atualizar o jogo para um tabuleiro inspirado nas economias das cinco regiões br
 - Saldo inicial de R$ 2.000.000 foi aprovado pelo usuário como base atual do jogo; trata-se de um parâmetro que pode mudar após playtests de balanceamento.
 - Proteção contra qualquer efeito de carta, inclusive Generoso, e descarte sem movimento da Cidade-sede quando não existe sede de Copa foram confirmados pelo usuário. Os quatro nomes atuais de companhias também foram mantidos a pedido do usuário.
 - A identidade BANTEC, página inicial e tabuleiro da partida foram revisados em viewport móvel e desktop. Em 2026-10-31, a dívida foi liquidada pela interface, as quatro companhias e as duas vitórias por monopólio exibiram o painel final, e o fim por tempo foi visto. Também foi visto o painel após insolvência; a causa por aluguel é inferida do estado final. A recompra forçada foi confirmada pela interface, sem aceite do dono e com transferência do pagamento. Ainda falta percorrer visualmente as cartas restantes.
+- A hospedagem foi comparada em fontes oficiais em 2026-10-31, sem aprovar um provedor: Fly.io oferece São Paulo (`gru`) e faturamento por recurso; Render é mais simples por já ter um serviço do projeto, mas não tem região brasileira e seu Free não serve para produção; Railway também não lista região brasileira. Proposta e fontes estão em `docs/DECISOES.md`. Falta confirmar com o usuário prioridade de latência versus simplicidade/custo e validar a conta atual antes de qualquer migração ou upgrade.
 
 ## Linha de implementação
 
