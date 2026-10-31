@@ -48,7 +48,7 @@
 ## 2026-10-31 — Cartas Ladrão e Apagão
 
 - Em uma partida local, a seleção do Ladrão mostrou o alvo Bot 1; após confirmar, Codex Cartas recebeu R$ 200.000 (R$ 2.250.000 → R$ 2.450.000) e Bot 1 perdeu R$ 200.000 (R$ 435.000 → R$ 235.000).
-- Para Apagão, as casas inválidas ficaram apagadas e as propriedades válidas de Bot 1 iluminadas. Selecionei Belém pelo piso e o jogo aceitou a escolha. A partida ainda não confirmou uma cobrança posterior sem aluguel nem a expiração após três turnos, então esse efeito segue pendente de revisão visual.
+- Para Apagão, as casas inválidas ficaram apagadas e as propriedades válidas de Bot 1 iluminadas. A tentativa de clicar em Belém ocorreu no fim da contagem e abriu o inspetor; não confirmou o alvo. Uma chegada posterior cobrou R$ 245.000, mas a carta havia expirado sem a seleção confirmada, então isso não é evidência de falha do efeito. A seleção dentro do prazo, o bloqueio do aluguel e a expiração após três turnos continuam pendentes de revisão visual.
 
 ## 2026-10-31 — Dados mais baixos acima da FATEC
 

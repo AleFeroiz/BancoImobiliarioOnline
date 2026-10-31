@@ -28,8 +28,8 @@
 ## Seleção e efeito de cartas — revisão manual parcial (2026-10-31)
 
 - Em sala local com Bot 1, confirmei Ladrão: após selecionar o alvo, Codex Cartas recebeu R$ 200.000 (de R$ 2.250.000 para R$ 2.450.000) e Bot 1 pagou o mesmo valor (de R$ 435.000 para R$ 235.000).
-- Também conferi Apagão: o tabuleiro apagou as casas inelegíveis e iluminou propriedades válidas de Bot 1; tocar em Belém (com três casas) foi aceito como alvo. Ainda falta confirmar o bloqueio de aluguel numa visita subsequente e a duração de três turnos.
-- A revisão continua parcial: essa interação confirma a seleção pelo tabuleiro, mas não substitui a verificação do efeito durante as próximas cobranças.
+- Também revisei o início do Apagão: o tabuleiro apagou as casas inelegíveis e iluminou propriedades válidas de Bot 1. A tentativa de clicar em Belém ocorreu no fim da contagem e abriu o inspetor; portanto, não confirmou o envio do alvo. Uma chegada posterior cobrou o aluguel de R$ 245.000, mas como a carta expirou sem a seleção confirmada, isso não prova falha do efeito.
+- A validação manual do Apagão continua pendente: repetir a seleção antes do prazo e observar uma cobrança bloqueada, depois confirmar a expiração em três turnos do dono.
 
 ## Ferramentas DEV para testes de partida — concluído (2026-10-31)
 
