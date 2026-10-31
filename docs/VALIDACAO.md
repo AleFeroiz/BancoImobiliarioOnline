@@ -725,12 +725,12 @@
 - Terremoto aceitou Manaus sem hotel e confirmou que o imóvel foi destruído e voltou ao banco. Essas observações confirmam Generoso, Aniversário, Apagão e Terremoto na interface.
 - Permanecem a revisão visual das demais cartas, playtests humanos de equilíbrio para 15/30/60 minutos e decisão de hospedagem; esta sala não substitui os playtests humanos.
 
-## 2026-10-31 — Sede da Copa e Cidade-sede no navegador
+## 2026-10-31 — Conclusão da revisão manual das 12 cartas
 
-- Na sala local descartável RZMAQ, Cidade-sede informou que não havia sede ativa e não moveu o participante.
-- Com Joinville como propriedade do anfitrião, Sede da Copa mostrou a seleção de imóveis elegíveis; ao escolher Joinville, o inspetor exibiu aluguel de R$ 135.000, três vezes o aluguel-base de R$ 45.000.
-- Troca-troca abriu a seleção entre os dois participantes, mas o prazo do turno expirou antes da confirmação da troca. Proteção também chegou à fase de escolha do imóvel, mas o prazo expirou antes de confirmar o alvo. Não considero esses dois efeitos confirmados visualmente.
-- Sala descartável fechada ao fim da revisão. Próximo passo: repetir Proteção com tempo suficiente e confirmar a troca de posições; depois percorrer as cartas restantes. Playtests humanos de equilíbrio (15/30/60 min) e decisão de hospedagem continuam pendentes.
+- Em RZMAQ, Cidade-sede foi descartada sem movimento porque não havia sede ativa. Sede da Copa permitiu escolher Joinville; o inspetor mostrou R$ 135.000 de aluguel, três vezes o valor-base de R$ 45.000.
+- Em P28D9, Proteção iluminou Fortaleza como alvo elegível e confirmou imunidade a cartas pelos próximos três turnos do dono. Ladrão exibiu a escolha de Bot 1; após a seleção, o servidor abriu a liquidação da dívida e registrou o pagamento de R$ 200.000 ao anfitrião. Troca-troca confirmou: “BANTEC QA Restante e Bot 1 trocaram de lugar sem resolver as casas de chegada.”
+- Com as evidências anteriores de Generoso, Aniversário, Apagão, Terremoto, Prisão, Volta ao Brasil e Vá para o início, todas as 12 cartas autorais estão confirmadas visualmente. Volta ao Brasil e Vá para o início creditam R$ 200.000 conforme os registros de validação anteriores.
+- Sala descartável fechada depois da revisão. Ainda faltam playtests humanos de equilíbrio e ritmo nas durações de 15/30/60 minutos e a decisão de hospedagem; essas etapas não foram substituídas por partidas com bot.
 
 ## 2026-10-31 — Causa exibida no resultado final
 
