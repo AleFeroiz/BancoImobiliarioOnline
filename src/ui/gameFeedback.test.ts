@@ -34,26 +34,21 @@ describe('feedback da partida', () => {
     expect([0, 1, 2, 3].map(getCashToastPlacement)).toEqual(['below', 'below', 'above', 'above'])
   })
 
-  it('classifica construção, demolição, hipoteca e troca de dono para animações e sons', () => {
-    const ownerA = { ownerSessionId: 'a', houses: 0, isMortgaged: false }
+  it('classifica construção, demolição e troca de dono para animações e sons', () => {
+    const ownerA = { ownerSessionId: 'a', houses: 0 }
     expect(getPropertyVisualChange(undefined, ownerA)).toBe('placed')
     expect(getPropertyChangeSound(getPropertyVisualChange(undefined, ownerA)!)).toBe('purchase')
     expect(getPropertyVisualChange(ownerA, { ...ownerA, houses: 1 })).toBe('built')
     expect(getPropertyChangeSound(getPropertyVisualChange(ownerA, { ...ownerA, houses: 1 })!)).toBe('construction')
     expect(getPropertyVisualChange({ ...ownerA, houses: 1 }, ownerA)).toBe('demolished')
     expect(getPropertyChangeSound(getPropertyVisualChange({ ...ownerA, houses: 1 }, ownerA)!)).toBe('demolition')
-    expect(getPropertyVisualChange(ownerA, { ...ownerA, isMortgaged: true })).toBe('mortgaged')
-    expect(getPropertyChangeSound(getPropertyVisualChange(ownerA, { ...ownerA, isMortgaged: true })!)).toBe('mortgage')
-    expect(getPropertyVisualChange({ ...ownerA, isMortgaged: true }, ownerA)).toBe('redeemed')
     expect(getPropertyVisualChange(ownerA, { ...ownerA, ownerSessionId: 'b' })).toBe('ownership')
     expect(getPropertyChangeSound('ownership')).toBe('ownership')
   })
 
-  it('mapeia o texto sincronizado de venda, hipoteca e transferência aos efeitos adequados', () => {
+  it('mapeia o texto sincronizado de venda e transferência aos efeitos adequados', () => {
     expect(getGameSound('Construção vendida em Vila Nova.')).toBe('demolition')
     expect(getGameSound('Hotel devolvido a quatro casas.')).toBe('demolition')
-    expect(getGameSound('Rua das Flores hipotecada.')).toBe('mortgage')
-    expect(getGameSound('Hipoteca resgatada.')).toBe('redemption')
     expect(getGameSound('Ana aceitou a troca proposta por Bia.')).toBe('ownership')
   })
 })

@@ -14,6 +14,39 @@
 - Graphify update não executou porque a CLI `graphify` não está instalada neste ambiente.
 # Validação visual e de navegador
 
+## 2026-10-31 — Duplas, modo noturno e dados sobre a FATEC
+
+- `npm run graphify -- update .` atualizou o grafo local após as alterações de código.
+- `npm run verify`: 221 testes em 44 arquivos passaram; builds de frontend e servidor passaram. O chunk 3D conhecido (956,45 KB; 259,83 KB gzip) continua acima do aviso de 500 KB.
+- No navegador interno, confirmei que o fundo externo da partida fica escuro e o tabuleiro mantém suas cores. A preferência do tema apareceu ativada nas opções da partida.
+- Um teste de regressão garante que os dois dados ficam acima da FATEC e que o indicador do resultado fica mais alto. A captura da rolagem ficou pendente porque a porta 2567 retornou `EADDRINUSE` e não foi possível identificar o processo que a ocupa; nenhum processo foi interrompido.
+- `git diff --check` será repetido após esta atualização documental.
+
+## 2026-10-31 — Marca, carteira, construção e Proteção
+
+- A home foi revisada no navegador interno em viewport móvel e no Chrome headless isolado em 1440×1000. Cabeçalho e status agora dizem BANTEC / “MESA ONLINE”, sem a antiga marca Banco Imobiliário. O formulário de criar/entrar, escolha de duração e fundo do tabuleiro mantêm contraste no desktop e no celular.
+- Partida real com quatro lugares (anfitrião + três bots), duração de 15 minutos e saldo de R$ 2.000.000 por jogador. O anfitrião comprou Manaus com três casas por R$ 1.625.000; o resumo mostrou aluguel de R$ 455.000 por parada. A compra exibe os quatro níveis de preço/aluguel.
+- Captura da partida desktop em 1440×1000 confirmou os quatro cartões de jogador, ações compactas, contorno do tabuleiro, cores das regiões, rótulos e o modelo da FATEC no centro sem ocupar o perímetro. A revisão usou sessão headless isolada; a aba pessoal do Chrome permaneceu intacta.
+- No viewport móvel, carteira e inspetor exibiram Rio Verde com duas casas, aluguel de R$ 90.000 e preço de compra de R$ 225.000; o inspetor apresentou a escada de aluguel e bloqueou leilão enquanto o grupo tem construções. Ainda falta conferir a disposição da partida desktop e abrir o painel de liquidação numa dívida real.
+- Após a confirmação do usuário de que Proteção impede qualquer efeito de carta, inclusive Generoso, acrescentei ao teste Colyseus a rejeição de transferência protegida e confirmei que o imóvel continua com o dono. `server/test/GameRoom.test.ts`: 44 testes passaram.
+- `npm run graphify -- update .` atualizou o grafo local (863 nós, 1.602 relações). `npm run verify` passou com 215 testes em 43 arquivos, builds do frontend e servidor; o aviso conhecido do chunk `sceneMaterials` acima de 500 KB permanece.
+
+## 2026-10-31 — Carteira BANTEC e validação do Graphify local
+
+- Segui o `AGENTS.md` atualizado: a consulta e a atualização passaram por `npm run graphify -- ...`, usando `scripts/graphify.mjs` e `graphify-out/graph.json` deste repositório. O grafo local foi reextraído após as mudanças; a topologia não teve alterações adicionais.
+- No jogo local, a carteira abriu no viewport móvel e listou Rio Verde, duas casas, aluguel atual de R$ 90.000 e compra de R$ 225.000. O inspetor mostrou os níveis de aluguel e custo e bloqueou o leilão porque o grupo tem construções. A imagem também confirmou que a carteira permanece sobre o tabuleiro e cabe no viewport.
+- `npm run verify`: 215 testes em 43 arquivos passaram; builds frontend e servidor passaram. Vitest usou `.tmp` no repositório e os testes Colyseus rodaram com loopback local. `git diff --check` passou antes das últimas atualizações documentais.
+- Revisão desktop não realizada: ao conectar ao Chrome aberto, a ferramenta Computer Use encerrou a sessão por não conseguir identificar com confiança a URL atual. Não foi feita tentativa de assumir ou navegar a aba pessoal existente. Também falta percorrer uma dívida real para revisar venda de nível e devolução ao banco na interface.
+
+## 2026-10-31 — Reforma BANTEC em andamento
+
+- Graphify local foi executado por `npm run graphify -- query ...` antes da navegação pelo código, conforme o `AGENTS.md` atualizado.
+- `npm run build` e `npm run build:server` passaram após adicionar a fase de recompra. `shared/game.test.ts`: 13 testes passaram. A suíte Colyseus foi rodada com loopback permitido; a integração de recompra forçada passou, mas a suíte completa ainda teve 20 falhas em expectativas antigas do Express, saldo inicial e outras regras anteriores.
+- Playtest no navegador interno em viewport móvel: a tela inicial BANTEC exibiu seletor de 15/30/60 min e criação de sala. No lobby, duração e cores estavam disponíveis e a cor ocupada foi bloqueada. Iniciei uma partida com um bot, comprei a companhia AgroBrasil por R$ 500.000 e confirmei o saldo de R$ 1.500.000. O tabuleiro manteve a circulação dos peões no perímetro.
+- A primeira captura encontrou o GLB da FATEC preto. A causa era a falta de conversão para material sem iluminação numa cena que não usa luzes; o componente passou a clonar a cena e criar materiais unlit, como os demais GLBs. Após o ajuste, os três blocos e a torre ficaram visíveis no centro. O modelo não toca as casas jogáveis. A revisão desktop e móvel foi feita no navegador; o enquadramento móvel mostrou o centro com leitura adequada, e no desktop o edifício ficou compacto sobre o gramado.
+- Logs do navegador: sem erros; permaneceu um aviso do listener `game:started` dos testes/cliente Colyseus, sem falha de partida.
+- Ainda não foi feita a revisão final após a conclusão das 12 cartas e da tela de bens. O build deve ser repetido depois da correção de materiais e a suíte completa continua pendente.
+
 ## 2026-10-30 — Pop-ups posicionados, seletores DEV, Copa e aluguel 3D
 
 - `npm run verify`: 213 testes passaram; builds do frontend e servidor passaram. O chunk conhecido `sceneMaterials` ficou em 956,43 KB (259,81 KB gzip). `git diff --check` passou.

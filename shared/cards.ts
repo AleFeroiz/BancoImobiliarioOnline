@@ -1,24 +1,35 @@
+export type EventCardEffect =
+  | { kind: 'generous' }
+  | { kind: 'birthday'; amount: number }
+  | { kind: 'blackout' }
+  | { kind: 'earthquake' }
+  | { kind: 'thief'; amount: number }
+  | { kind: 'protection' }
+  | { kind: 'jail' }
+  | { kind: 'world-tour' }
+  | { kind: 'world-cup' }
+  | { kind: 'swap' }
+  | { kind: 'world-cup-city' }
+  | { kind: 'start' }
+
 export type EventCard = {
   id: string
   title: string
   description: string
-  effect:
-    | { kind: 'cash'; amount: number }
-    | { kind: 'move'; spaces: number }
-    | { kind: 'jail' }
+  effect: EventCardEffect
 }
 
 export const EVENT_CARDS: readonly EventCard[] = [
-  { id: 'public-dividend', title: 'Dividendo público', description: 'Você recebeu R$ 100.000 de participação nos lucros da cidade.', effect: { kind: 'cash', amount: 100_000 } },
-  { id: 'community-prize', title: 'Prêmio comunitário', description: 'Sua praça venceu o concurso de conservação. Receba R$ 150.000.', effect: { kind: 'cash', amount: 150_000 } },
-  { id: 'energy-refund', title: 'Reembolso de energia', description: 'A companhia corrigiu uma cobrança. Receba R$ 50.000.', effect: { kind: 'cash', amount: 50_000 } },
-  { id: 'traffic-fine', title: 'Multa de trânsito', description: 'Pague R$ 50.000 pela infração registrada no centro.', effect: { kind: 'cash', amount: -50_000 } },
-  { id: 'building-repair', title: 'Reparo emergencial', description: 'Um reparo inesperado custa R$ 100.000.', effect: { kind: 'cash', amount: -100_000 } },
-  { id: 'city-assessment', title: 'Contribuição urbana', description: 'A nova iluminação pública custa R$ 150.000.', effect: { kind: 'cash', amount: -150_000 } },
-  { id: 'shortcut', title: 'Atalho pela cidade', description: 'Avance três casas e resolva onde parar.', effect: { kind: 'move', spaces: 3 } },
-  { id: 'court-summons', title: 'Convocação judicial', description: 'Vá direto para a prisão e perca os próximos três turnos.', effect: { kind: 'jail' } },
+  { id: 'generous', title: 'Generoso', description: 'Escolha uma propriedade sua e dê a outro jogador.', effect: { kind: 'generous' } },
+  { id: 'birthday', title: 'Aniversário', description: 'Receba R$ 50.000 de cada outro jogador.', effect: { kind: 'birthday', amount: 50_000 } },
+  { id: 'blackout', title: 'Apagão', description: 'Escolha uma propriedade de outro jogador. Ela não cobrará aluguel pelos próximos três turnos do dono. Hotéis não podem ser escolhidos.', effect: { kind: 'blackout' } },
+  { id: 'earthquake', title: 'Terremoto', description: 'Escolha uma propriedade de outro jogador e destrua-a. Ela volta ao banco. Hotéis não podem ser escolhidos.', effect: { kind: 'earthquake' } },
+  { id: 'thief', title: 'Ladrão', description: 'Escolha um jogador e roube R$ 200.000 dele.', effect: { kind: 'thief', amount: 200_000 } },
+  { id: 'protection', title: 'Proteção', description: 'Escolha uma propriedade sua. Por três turnos do dono, cartas não podem afetá-la.', effect: { kind: 'protection' } },
+  { id: 'jail', title: 'Vá para a prisão', description: 'Vá para a prisão e resolva o canto normalmente.', effect: { kind: 'jail' } },
+  { id: 'world-tour', title: 'Volta ao Brasil', description: 'Vá para Volta ao Brasil, receba R$ 200.000 e escolha seu destino.', effect: { kind: 'world-tour' } },
+  { id: 'world-cup', title: 'Sede da Copa do Mundo', description: 'Vá para a sede da Copa do Mundo e resolva o canto normalmente.', effect: { kind: 'world-cup' } },
+  { id: 'swap', title: 'Troca-troca', description: 'Escolha dois jogadores. Eles trocam de lugar sem resolver as casas de chegada.', effect: { kind: 'swap' } },
+  { id: 'world-cup-city', title: 'Cidade-sede', description: 'Vá para a cidade que está sediando a Copa do Mundo e resolva a casa normalmente.', effect: { kind: 'world-cup-city' } },
+  { id: 'start', title: 'Vá para o início', description: 'Vá para a Partida e receba R$ 200.000.', effect: { kind: 'start' } },
 ]
-
-export function applyCardCashEffect(cash: number, amount: number) {
-  return Math.max(0, cash + amount)
-}

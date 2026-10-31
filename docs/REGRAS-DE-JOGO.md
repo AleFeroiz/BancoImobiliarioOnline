@@ -1,18 +1,72 @@
 # Regras do jogo
 
-## Referência Express
+## Referência histórica: Express
 
 A página oficial da Estrela para o [Banco Imobiliário Express](https://www.estrela.com.br/produto/banco-imobiliario-express-150394) confirma oito cartas de objetivo, Sorte ou Revés, casas, dados, ampulheta e partidas para 2–4 pessoas. A descrição diz que os objetivos ajudam a acumular dinheiro e que vence quem tiver mais dinheiro ao fim do tempo; ela não publica o texto do manual nem das cartas.
 
 Uma [ficha de distribuidor do produto 828100](https://www.brokercorporativo.com.br/farol/brokercorp/produto/banco-imobiliario-express-estrela/1570102/) anuncia aproximadamente 8 minutos e seis rodadas de 40 segundos. Essa duração é referência comercial, não transcrição do manual.
 
-Como referência de regras clássicas e jogo curto, o [manual oficial do Super Banco Imobiliário](https://estrela.vteximg.com.br/arquivos/Manual-Super-Banco-Imobili%C3%A1rio.pdf) descreve liquidação de bens no final e desempate nos dados. O jogo digital é uma variante própria, combinando mecânicas clássicas com o ritmo do Express.
+Como referência histórica de regras clássicas, o [manual oficial do Super Banco Imobiliário](https://estrela.vteximg.com.br/arquivos/Manual-Super-Banco-Imobili%C3%A1rio.pdf) descreve liquidação de bens no final e desempate nos dados. A versão BANTEC usa regras autorais descritas a seguir; o modo Express não faz mais parte do jogo.
 
-## Tabuleiro implementado
+## Tabuleiro regional aprovado — implementação em andamento
 
-- O percurso tem 40 casas: 24 ruas residenciais únicas em oito grupos de três, três estações e quatro cantos com ações próprias: Partida, Prisão, Copa do Mundo e Volta ao Mundo. As demais casas incluem Sorte ou Revés, taxas e descanso.
-- As ruas de cada grupo ocupam três casas consecutivas. Cada trecho entre cantos reúne dois grupos; espaços especiais ficam entre eles. Completar um grupo continua dobrando o aluguel base de suas ruas.
-- O objetivo Express de grupo usa o grupo residencial com menor custo total de compra. Construções podem ser compradas em qualquer terreno residencial próprio e não hipotecado, mesmo sem completar o grupo.
+Esta seção descreve as regras vigentes da reforma e prevalece sobre as regras anteriores abaixo. O código usa a composição regional, novos preços e aluguéis, impostos, condições de vitória, duração escolhida no lobby, Volta ao Brasil, recompra e baralho de 12 cartas. O modo Express, o estado de imóvel hipotecado e o aluguel por dado das antigas estações foram removidos. A suíte automática passou; ainda falta completar o playtest visual desktop e revisar liquidação de dívida em partida. Dois detalhes de alvo das cartas seguem como hipóteses provisórias em `DECISOES.md`.
+
+### Composição vigente do tabuleiro
+
+- O percurso tem 40 casas: 24 cidades, quatro companhias, quatro taxas, quatro Sorte ou Revés e quatro cantos (Partida, Prisão, Copa do Mundo e Volta ao Brasil). Não existem casas de descanso.
+- As cinco regiões são grupos de monopólio. A sequência é Norte, Centro-Oeste, Nordeste, Sul e Sudeste; São Paulo fecha a volta antes da Partida. Cada lado tem seis cidades e uma companhia. O Sul possui quatro cidades; cada outra região possui cinco.
+- Construções residenciais custam metade do preço da cidade por casa; hotel custa três vezes uma casa e substitui três casas.
+- Casas e hotéis ficam sobre o piso, alinhados à borda para preservar o corredor de movimento; o nome da cidade continua visível.
+- O modo noturno é uma preferência local persistida neste navegador: escurece a página inicial e a sala; durante a partida, altera apenas a cor do fundo externo, sem mudar as cores nem o brilho do tabuleiro.
+
+### Rolagem de dados
+
+- Quando os dois dados mostram o mesmo número, a pessoa avança normalmente, resolve a casa de destino e, ao concluir essa resolução, ganha outra rolagem no mesmo turno.
+- Na terceira dupla consecutiva do mesmo turno, a pessoa vai diretamente para a Prisão: não avança pelo resultado do terceiro lançamento e perde o restante do turno. Cumpre três turnos presa conforme a regra de Prisão abaixo.
+- A tentativa de duplas para sair da Prisão é uma regra própria; conseguir duplas nessa tentativa não concede uma rolagem extra.
+
+## Regras econômicas e de vitória vigentes
+
+As 24 cidades e preços estão definidos em [DECISOES.md](DECISOES.md). As regras a seguir são as aprovadas para a reforma.
+
+- **Monopólio Regional:** todas as cidades da mesma região pertencem a um grupo. Completar uma região dobra o aluguel. Completar duas regiões (Monopólio Duplo Regional) vence a partida imediatamente. As companhias não pertencem aos grupos regionais.
+- **Monopólio em Linha:** cada lado inclui seis cidades e uma companhia. É necessário possuir os sete títulos para completar a linha; taxas e casas Sorte ou Revés não contam. Completar a linha vence a partida imediatamente; não há multiplicador de aluguel por linha.
+- **Vitória pelas companhias:** possuir as quatro companhias vence a partida imediatamente. As companhias contam para a linha e para o cálculo das taxas.
+- **Companhias:** AgroBrasil, Aviação Brasil, Energia Brasil e Mineração Brasil custam R$ 500.000 cada. O aluguel total recebido pelo dono escala conforme a quantidade: R$ 100.000 com uma, R$ 250.000 com duas, R$ 450.000 com três e R$ 750.000 com quatro. A quarta companhia também completa uma condição de vitória imediata.
+- **Aluguel das cidades:** sobre o preço P, os níveis são 10% (terreno), 20% (uma casa), 40% (duas), 70% (três) e 100% (hotel). Monopólio Regional multiplica o aluguel por 2; a Copa do Mundo aplica seu multiplicador de 3 ao aluguel calculado.
+- **Custos das construções:** cada casa custa metade do preço da cidade; o hotel custa três vezes o custo de uma casa e substitui as três casas.
+- **Taxas:** cada uma cobra, por imóvel que a pessoa possui, R$ 10.000, R$ 15.000, R$ 20.000 ou R$ 25.000, conforme o espaço. Cidades e companhias contam. Imóveis vendidos ou que retornaram ao banco não contam; construções não são imóveis adicionais.
+- **Devolução ao banco:** durante uma dívida, receber 50% do preço significa entregar a cidade ou companhia ao banco e perder o título. O imóvel volta a ficar livre; não há propriedade hipotecada nem resgate.
+- **Recompra forçada:** ao cair num imóvel de outra pessoa, a pessoa pode pagar ao dono 1,5× o investimento total daquele imóvel e tomar o título, sem pedir autorização. Imóveis com hotel não podem ser recomprados.
+- **Partida:** há uma modalidade. No lobby, a anfitriã escolhe 15 minutos, 30 minutos ou 1 hora. O Express e seu baralho de objetivos foram removidos.
+- **Dinheiro inicial:** R$ 2.000.000 por participante como valor inicial de playtest; o balanceamento pode ser revisto após partidas.
+- **Cores regionais nos pisos:** Norte turquesa `#00A6A6`; Nordeste rosa `#D45087`; Centro-Oeste dourado `#E6B84B`; Sudeste azul `#3B65CC`; Sul verde `#4A9D68`. Nomes e preços das cidades devem permanecer legíveis sobre os pisos.
+
+## Regras anteriores em retirada
+
+Os trechos abaixo descrevem o sistema pré-reforma e servem somente como histórico para a migração. Não usar suas referências a Express, estações, aluguel por dado, hipoteca resgatável ou Volta ao Mundo como regras vigentes.
+
+### Baralho Sorte ou Revés da reforma
+
+O baralho passa a ter 12 cartas autorais, sorteadas com reposição:
+
+1. **Generoso:** dê um imóvel seu (cidade ou companhia) a outro jogador à sua escolha.
+2. **Aniversário:** receba R$ 50.000 de cada outro jogador.
+3. **Apagão:** escolha um imóvel de outra pessoa; ele não cobra aluguel durante três turnos do dono. Imóveis com hotel não podem ser alvo.
+4. **Terremoto:** escolha um imóvel de outra pessoa e destrua-o. Imóveis com hotel não podem ser alvo.
+5. **Ladrão:** escolha um jogador e roube R$ 200.000 dele.
+6. **Proteção:** escolha um imóvel seu. Por três turnos, efeitos de cartas não podem afetá-lo.
+7. **Prisão:** vá para a Prisão e resolva o canto conforme a regra normal.
+8. **Volta ao Brasil:** vá para o canto Volta ao Brasil; receba o bônus de R$ 200.000 por chegar e resolva a ação do canto. O bônus é pago uma vez.
+9. **Sede da Copa:** vá para o canto Copa do Mundo e resolva sua ação normal.
+10. **Troca-troca:** escolha dois jogadores, podendo incluir você; eles trocam de posição no tabuleiro.
+11. **Cidade-sede:** vá para a cidade que estiver sediando a Copa do Mundo e resolva a casa de chegada normalmente.
+12. **Início:** vá para a Partida e receba R$ 200.000.
+
+Ao receber ou pagar dinheiro sem saldo suficiente, aplicam-se as regras gerais de dívida. Ficam confirmadas as interpretações de Terremoto (o imóvel volta ao banco livre, sem construções ou compensação), duração de Apagão/Proteção nos próximos três turnos do dono, proteção contra qualquer carta (inclusive Generoso), Troca-troca sem resolver as casas de chegada e descarte de Cidade-sede sem movimento quando não houver sede ativa.
+
+O percurso começa pela região com menor PIB total e segue **Norte → Centro-Oeste → Nordeste → Sul → Sudeste**, encerrando a volta com São Paulo antes da Partida. As cidades dentro de cada região vão da menor para a maior economia municipal. Em 2023, as participações regionais no PIB brasileiro foram 5,8%, 10,6%, 13,8%, 16,8% e 53,0%, respectivamente ([IBGE](https://agenciadenoticias.ibge.gov.br/media/com_mediaibge/arquivos/9c2b887d59dd6c63da1b39b00c6cacce.pdf)). PIB total mede produção econômica, não renda dos moradores; a seleção e os preços são uma escala de balanceamento, não uma conversão do PIB em dinheiro de partida.
 
 ## Clássico Rápido — 30 minutos
 

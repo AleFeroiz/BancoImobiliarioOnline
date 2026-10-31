@@ -7,6 +7,24 @@
 - Próximo passo concreto: conferir a leitura dos cartões em diferentes resoluções após os próximos playtests humanos.
 # Andamento do projeto
 
+## Reforma BANTEC — implementação em andamento (2026-10-31)
+
+- Decisões aprovadas e preços das 24 cidades, cinco regiões, cores de piso, monopólios, impostos diferenciados, recompra por 1,5×, saldo inicial de R$ 2 milhões para playtest e partidas de 15/30/60 minutos estão em `docs/DECISOES.md`, `docs/REGRAS-DE-JOGO.md` e `docs/PLANO.md`.
+- Implementados: composição regional de 40 casas, fórmula de aluguel escalonada, vitórias por Monopólio em Linha/Duplo Regional/quatro companhias, duração e cor escolhidas no lobby, bônus da Volta ao Brasil, recompra forçada sem consentimento do dono, remoção do Express, modelo central da FATEC Itapetininga com três blocos e torre, e nova rolagem por duplas com Prisão na terceira dupla seguida.
+- A preferência local de modo noturno está implementada na home, sala e jogo: a home fica escura por inteiro, enquanto na partida apenas o fundo externo ao tabuleiro muda de cor. O ajuste persiste neste navegador.
+- O baralho autoral de 12 cartas já está no código e no servidor, incluindo alvos escolhidos pelos jogadores e pagamentos com tratamento de dívida. Durante dívida, devolver uma propriedade ao banco rende metade do preço, libera o título e apaga suas construções; não existe estado hipotecado, resgate ou aluguel por dado nas antigas estações.
+- O usuário aprovou os quatro setores/nomes e os preços/alugueis das companhias descritos em `DECISOES.md`; Proteção vale contra todos os efeitos de carta, inclusive Generoso, e Cidade-sede sem sede ativa é descartada sem movimento. Home e partida foram revistas em celular e desktop. Falta percorrer as ações de venda/devolução num estado real de dívida e concluir o playtest das cartas/vitórias.
+- O Graphify local deve ser usado exclusivamente por `npm run graphify -- <comando>`; consultas precedem navegação no código e `npm run graphify -- update .` atualiza o grafo após mudanças.
+- Os dados agora rolam acima da FATEC no centro do tabuleiro; um teste de regressão garante que ambos ficam acima do edifício e que o indicador do resultado fica mais alto. A revisão do navegador confirmou o fundo externo escuro sem escurecer o tabuleiro. A captura visual da rolagem sobre o modelo ficou pendente porque a porta Colyseus 2567 pertence a um processo não identificado e não foi interrompido.
+- `npm run graphify -- update .` atualizou o grafo local. `npm run verify` passou com 221 testes em 44 arquivos e builds de frontend e servidor; permanece o aviso conhecido de chunk 3D acima de 500 KB.
+- Próximo passo concreto: revisar os dados rolando sobre a FATEC com um servidor Colyseus identificável, percorrer uma dívida real e completar os playtests das cartas e vitórias; depois publicar a reforma em `main`.
+
+## Orientação das construções, movimento repetido e revisão — em andamento (2026-10-30)
+
+- Escopo: alinhar casas/hotéis à orientação dos textos em cada lado; investigar jogadas consecutivas com o mesmo destino; revisar riscos do código com evidências e propostas de correção.
+- Estado inicial: branch `main`; preservar alterações locais em `assets/blender/special-corners.blend` e `assets/blender/special-corners.blend1`. Graphify CLI indisponível; consultar alternativa conectada antes de navegar pelo código.
+- Plano: reproduzir os defeitos, acrescentar regressões, corrigir a apresentação sem mudar regras, executar suíte/build e playtest local, registrar a revisão e publicar somente este escopo.
+
 > Retrato de trabalho para retomar o projeto entre sessões. Para requisitos e decisões, consulte os documentos de origem indicados em `AGENTS.md`.
 
 ## HUD de turno, atalhos e leitura do aluguel — implementação concluída (2026-10-30)
@@ -303,3 +321,10 @@
 ## Registro inicial da memória de trabalho
 
 - **2026-10-28 — Integração AleDevMemory:** documentação existente mantida como fonte de verdade; este arquivo passa a ser o índice conciso de andamento; `AGENTS.md` define como manter e sincronizar contexto durável. Após instalar dependências com `npm ci --no-audit --no-fund`, `npm run verify` passou: 17 arquivos e 103 testes, build web e build do servidor. A execução precisou apontar `TEMP`/`TMP` para dentro do workspace e permitir acesso de rede local aos testes Colyseus; o build emitiu apenas o aviso já esperado de chunk acima de 500 kB. `git diff --check` passou. Próximo passo: atualizar este arquivo em futuras frentes substanciais e criar notas específicas apenas quando ajudarem a retomada.
+## Graphify local — CLI e consulta por checkout (2026-10-31)
+
+- Pedido: tornar o Graphify utilizável neste projeto e evitar que consultas usem outro repositório.
+- Estado inicial verificado: `graphify-out/graph.json` e `GRAPH_REPORT.md` são versionados, mas o grafo estava no commit `ea4568e`, atrás do `HEAD`; o executável global não estava disponível no PATH. O Graphify MCP consultável nesta sessão apontava para outro projeto.
+- Implementação: CLI oficial `graphifyy==0.9.97` instalada localmente sob `.tools/graphify/` (ignorada pelo Git); adicionado o wrapper `npm run graphify -- ...`, que fixa o diretório raiz deste checkout; instruções em `AGENTS.md` agora exigem o wrapper e conferência de caminhos/atualidade.
+- Validação: `npm run graphify -- query ...` respondeu sobre regras, aluguel e módulos deste jogo, inclusive chamado com `npm --prefix` a partir de fora da pasta do projeto; `npm run graphify -- update .` concluiu com 868 nós, 1.624 relações e 70 comunidades. Com loopback permitido, `npm run verify` ainda encontrou 11 testes falhando na árvore de trabalho em andamento; `npm run build` passou e `npm run build:server` apontou imports de `EXPRESS_PHASE_SECONDS` e `EXPRESS_ROUNDS` sem export correspondente em `shared/game.ts`.
+- Próximo passo: revisar/publicar apenas esta configuração depois de a suíte e o build do servidor passarem; preservar o trabalho local preexistente.

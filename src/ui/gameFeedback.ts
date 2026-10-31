@@ -1,8 +1,8 @@
 import { boardSpaces } from '../game/board'
 
-export type GameSound = 'none' | 'dice' | 'pawn-step' | 'purchase' | 'money-in' | 'money-out' | 'auction' | 'milestone' | 'construction' | 'demolition' | 'ownership' | 'mortgage' | 'redemption' | 'airplane-pass' | 'police-siren' | 'crowd-cheer'
-export type PropertyVisualState = { ownerSessionId: string; houses: number; isMortgaged?: boolean }
-export type PropertyVisualChange = 'placed' | 'built' | 'demolished' | 'ownership' | 'released' | 'mortgaged' | 'redeemed'
+export type GameSound = 'none' | 'dice' | 'pawn-step' | 'purchase' | 'money-in' | 'money-out' | 'auction' | 'milestone' | 'construction' | 'demolition' | 'ownership' | 'airplane-pass' | 'police-siren' | 'crowd-cheer'
+export type PropertyVisualState = { ownerSessionId: string; houses: number }
+export type PropertyVisualChange = 'placed' | 'built' | 'demolished' | 'ownership' | 'released'
 
 export function getPropertyVisualChange(previous: PropertyVisualState | undefined, next: PropertyVisualState): PropertyVisualChange | null {
   if (!previous) return next.ownerSessionId ? 'placed' : null
@@ -11,7 +11,6 @@ export function getPropertyVisualChange(previous: PropertyVisualState | undefine
     return next.ownerSessionId ? 'ownership' : previous.ownerSessionId ? 'released' : null
   }
   if (previous.houses !== next.houses) return next.houses > previous.houses ? 'built' : 'demolished'
-  if (Boolean(previous.isMortgaged) !== Boolean(next.isMortgaged)) return next.isMortgaged ? 'mortgaged' : 'redeemed'
   return null
 }
 
@@ -22,8 +21,6 @@ export function getPropertyChangeSound(change: PropertyVisualChange): GameSound 
     case 'demolished': return 'demolition'
     case 'ownership':
     case 'released': return 'ownership'
-    case 'mortgaged': return 'mortgage'
-    case 'redeemed': return 'redemption'
   }
 }
 
@@ -32,8 +29,6 @@ export function getGameSound(description: string): GameSound {
   if (text.includes('jogue o dado para definir o aluguel')) return 'none'
   if (text.includes('construção vendida') || text.includes('hotel devolvido')) return 'demolition'
   if (text.includes('construída') || text.includes('construido')) return 'construction'
-  if (text.includes('hipotecada')) return 'mortgage'
-  if (text.includes('resgatada')) return 'redemption'
   if (text.includes('transferidos') || text.includes('transferida') || text.includes('aceitou a troca')) return 'ownership'
   if (text.includes('leilão') || text.includes('leilao') || text.includes('lance')) return 'auction'
   if (text.includes('comprad') || text.includes('propriedade') && text.includes('compr')) return 'purchase'

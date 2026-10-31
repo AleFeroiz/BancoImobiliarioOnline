@@ -88,9 +88,11 @@ This project has a knowledge graph at graphify-out/ with god nodes, community st
 When the user types `/graphify`, use the installed graphify skill or instructions before doing anything else.
 
 Rules:
-- When graphify-out/graph.json exists, run `graphify query "<question>"` before your first grep, search or source-file read for a codebase question, and put this rule in every subagent prompt that explores code. Read raw files only for lines the graph or an earlier read already located. Use `graphify path "<A>" "<B>"` for relationships and `graphify explain "<concept>"` for focused concepts. These return a scoped subgraph, usually much smaller than GRAPH_REPORT.md or raw grep output.
+- Use the repository wrapper `npm run graphify -- <command> ...` for every Graphify operation. It runs the project-local CLI from the repository root even if the shell starts elsewhere; do not call a globally resolved `graphify` or the Graphify MCP for this repository, because either can target another checkout or workspace.
+- If the local CLI is missing, install the pinned version with `npm run graphify -- install`. This uses `uv` and installs Graphify under the ignored `.tools/graphify/` directory. Install `uv` first if it is unavailable.
+- Before the first grep, search, or source-file read for a codebase question, run `npm run graphify -- query "<question>"`. Confirm that returned paths belong to this checkout. Read raw files only for lines the graph or an earlier read has located. Use `npm run graphify -- path "<A>" "<B>"` for relationships and `npm run graphify -- explain "<concept>"` for focused concepts.
 - Dirty graphify-out/ files are expected after hooks or incremental updates; dirty graph files are not a reason to skip graphify. Only skip graphify if the task is about stale or incorrect graph output, or the user explicitly says not to use it.
 - If graphify-out/wiki/index.md exists, use it for broad navigation instead of raw source browsing.
 - Read graphify-out/GRAPH_REPORT.md only for broad architecture review or when query/path/explain do not surface enough context.
-- After modifying code, run `graphify update .` to keep the graph current (AST-only, no API cost).
+- If the report's `Built from commit` differs from `git rev-parse HEAD`, or code changed since the last graph build, run `npm run graphify -- update .` before relying on the graph. After modifying code, run the same update command to keep the tracked graph current; it performs AST extraction without an API key.
 - A committed graphify-out/graph.json is rewritten whole on every build, so a large diff to it in a pull request is expected. Do not flag it as churn or suggest skipping the graph rebuild or its hooks.

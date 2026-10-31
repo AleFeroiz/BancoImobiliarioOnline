@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { boardSpaces } from './board.js'
-import { ANIMATION_SPEEDS, DEFAULT_ANIMATION_SPEED, DICE_ANIMATION_DURATION_MS, PAWN_STEP_ANIMATION_DURATION_MS, TURN_DECISION_SECONDS, areDiceDoubles, calculateNetWorth, calculateStationRent, getAnimationDuration, isAnimationSpeed, liquidatablePropertyIds } from './game.js'
+import { ANIMATION_SPEEDS, DEFAULT_ANIMATION_SPEED, DICE_ANIMATION_DURATION_MS, PAWN_STEP_ANIMATION_DURATION_MS, TURN_DECISION_SECONDS, areDiceDoubles, calculateCompanyRent, calculateNetWorth, forcedBuybackCost, getAnimationDuration, hasWinningMonopoly, isAnimationSpeed, liquidatablePropertyIds } from './game.js'
 
 describe('tentativas para sair da prisão', () => {
   it('reconhece dois dados iguais como duplas', () => {
@@ -27,11 +27,26 @@ describe('velocidade da apresentação', () => {
   })
 })
 
-describe('aluguel das estações', () => {
-  it('multiplica a rolagem única por R$ 50.000 e só aceita resultados de 1 a 6', () => {
-    expect([1, 2, 3, 4, 5, 6].map(calculateStationRent)).toEqual([50_000, 100_000, 150_000, 200_000, 250_000, 300_000])
-    expect(() => calculateStationRent(0)).toThrow(RangeError)
-    expect(() => calculateStationRent(7)).toThrow(RangeError)
+describe('vitórias e companhias do tabuleiro regional', () => {
+  it('vence ao completar seis casas e uma companhia em qualquer lado', () => {
+    const ownership = new Map([1, 3, 4, 5, 7, 8, 9].map((spaceId) => [spaceId, 'ana']))
+    expect(hasWinningMonopoly(ownership, 'ana')).toBe(true)
+    expect(hasWinningMonopoly(ownership, 'bia')).toBe(false)
+  })
+
+  it('vence ao completar duas regiões e escala o aluguel de companhia', () => {
+    const regionalTitles = boardSpaces.filter((space) => space.buildable && (space.region === 'north' || space.region === 'center-west'))
+    const ownership = new Map(regionalTitles.map((space) => [space.id, 'ana']))
+    const companyTitles = boardSpaces.filter((space) => space.company).slice(0, 3)
+    companyTitles.forEach((space) => ownership.set(space.id, 'ana'))
+    expect(hasWinningMonopoly(ownership, 'ana')).toBe(true)
+    expect(calculateCompanyRent(ownership, 'ana')).toBe(450_000)
+  })
+
+  it('vence ao possuir as quatro companhias', () => {
+    const ownership = new Map(boardSpaces.filter((space) => space.company).map((space) => [space.id, 'ana']))
+    expect(hasWinningMonopoly(ownership, 'ana')).toBe(true)
+    expect(calculateCompanyRent(ownership, 'ana')).toBe(750_000)
   })
 })
 
@@ -41,14 +56,27 @@ describe('tempo para decisões', () => {
   })
 })
 
+describe('recompra forçada', () => {
+  it('cobra 1,5× o preço do imóvel e das construções, mas não permite tomar hotel', () => {
+    const city = boardSpaces.find((space) => space.buildable)
+    const company = boardSpaces.find((space) => space.company)
+    if (!city || !company) throw new Error('Tabuleiro sem cidade ou companhia.')
+    expect(forcedBuybackCost(city.id)).toBe(Math.floor((city.price ?? 0) * 1.5))
+    expect(forcedBuybackCost(city.id, 2)).toBe(Math.floor(((city.price ?? 0) + 2 * (city.price ?? 0) * 0.5) * 1.5))
+    expect(forcedBuybackCost(company.id)).toBe(Math.floor((company.price ?? 0) * 1.5))
+    expect(forcedBuybackCost(city.id, 4)).toBe(0)
+    expect(forcedBuybackCost(0)).toBe(0)
+  })
+})
+
 describe('patrimônio final', () => {
-  it('soma apenas os imóveis da pessoa, desconta hipoteca e inclui valor de liquidação das construções', () => {
+  it('soma apenas os imóveis da pessoa e inclui o valor de venda das construções', () => {
     const holdings = new Map([
-      [1, { ownerSessionId: 'ana', houses: 2, isMortgaged: true }],
-      [3, { ownerSessionId: 'bia', houses: 0, isMortgaged: false }],
+      [1, { ownerSessionId: 'ana', houses: 2 }],
+      [3, { ownerSessionId: 'bia', houses: 0 }],
     ])
 
-    expect(calculateNetWorth('ana', 500_000, holdings)).toBe(560_000)
+    expect(calculateNetWorth('ana', 500_000, holdings)).toBe(800_000)
     expect(calculateNetWorth('bia', 500_000, holdings)).toBe(500_000 + (boardSpaces[3]?.price ?? 0))
   })
 
@@ -56,8 +84,8 @@ describe('patrimônio final', () => {
     const nonProperty = boardSpaces.find((space) => space.kind !== 'property')
     if (!nonProperty) throw new Error('Tabuleiro sem casas especiais para o teste.')
     const holdings = new Map([
-      [nonProperty.id, { ownerSessionId: 'ana', houses: 4, isMortgaged: false }],
-      [999, { ownerSessionId: 'ana', houses: 2, isMortgaged: false }],
+      [nonProperty.id, { ownerSessionId: 'ana', houses: 4 }],
+      [999, { ownerSessionId: 'ana', houses: 2 }],
     ])
 
     expect(calculateNetWorth('ana', -10, holdings)).toBe(0)
@@ -65,30 +93,28 @@ describe('patrimônio final', () => {
 })
 
 describe('bens que podem ser liquidados', () => {
-  it('lista apenas construções que podem ser vendidas e títulos próprios hipotecáveis', () => {
+  it('lista construções vendáveis e todos os títulos próprios sem construções no grupo', () => {
     const color = boardSpaces.find((space) => space.kind === 'property' && space.buildable)?.color
     const group = boardSpaces.filter((space) => space.kind === 'property' && space.buildable && space.color === color)
     const buildingProperty = group[0]
-    const station = boardSpaces.find((space) => space.kind === 'property' && !space.buildable)
+    const company = boardSpaces.find((space) => space.company)
     const opponentProperty = boardSpaces.find((space) => space.kind === 'property' && space.buildable && space.color !== color)
-    if (!buildingProperty || !station || !opponentProperty) throw new Error('Tabuleiro sem propriedades para o teste.')
+    if (!buildingProperty || !company || !opponentProperty) throw new Error('Tabuleiro sem propriedades para o teste.')
 
     const holdings = new Map([
       ...group.map((space, index) => [space.id, { ownerSessionId: 'ana', houses: index === 0 ? 1 : 0 }] as const),
-      [station.id, { ownerSessionId: 'ana', houses: 0 }],
+      [company.id, { ownerSessionId: 'ana', houses: 0 }],
       [opponentProperty.id, { ownerSessionId: 'bia', houses: 0 }],
     ])
 
-    expect(liquidatablePropertyIds('ana', holdings)).toEqual([buildingProperty.id, station.id].sort((a, b) => a - b))
+    expect(liquidatablePropertyIds('ana', holdings)).toEqual([buildingProperty.id, company.id].sort((a, b) => a - b))
   })
 
-  it('não inclui casas hipotecadas, sem construção vendável ou de outro jogador', () => {
-    const mortgageable = boardSpaces.find((space) => space.kind === 'property' && space.buildable)
-    const station = boardSpaces.find((space) => space.kind === 'property' && !space.buildable)
-    if (!mortgageable || !station) throw new Error('Tabuleiro sem propriedades para o teste.')
+  it('não inclui títulos de outro jogador', () => {
+    const property = boardSpaces.find((space) => space.kind === 'property' && space.buildable)
+    if (!property) throw new Error('Tabuleiro sem propriedades para o teste.')
     const holdings = new Map([
-      [mortgageable.id, { ownerSessionId: 'ana', houses: 0, isMortgaged: true }],
-      [station.id, { ownerSessionId: 'bia', houses: 0 }],
+      [property.id, { ownerSessionId: 'bia', houses: 0 }],
     ])
 
     expect(liquidatablePropertyIds('ana', holdings)).toEqual([])

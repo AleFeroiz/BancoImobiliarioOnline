@@ -9,6 +9,7 @@ export const LobbyPlayerState = schema({
   isBot: t.boolean().default(false),
   isBotControlled: t.boolean().default(false),
   characterType: t.string().default('pawn'),
+  color: t.string().default('#ce7558'),
   position: t.uint8().default(0),
   cash: t.int32().default(0),
   isJailed: t.boolean().default(false),
@@ -24,7 +25,8 @@ export type LobbyPlayerState = SchemaType<typeof LobbyPlayerState>
 export const PropertyState = schema({
   ownerSessionId: t.string().default(''),
   houses: t.uint8().default(0),
-  isMortgaged: t.boolean().default(false),
+  blackoutTurns: t.uint8().default(0),
+  protectionTurns: t.uint8().default(0),
 })
 
 export type PropertyState = SchemaType<typeof PropertyState>
@@ -34,6 +36,7 @@ export const LobbyState = schema({
   properties: t.map(PropertyState),
   roomCode: t.string().default(''),
   mode: t.string().default('classic'),
+  matchDuration: t.uint16().default(1800),
   animationSpeed: t.float32().default(DEFAULT_ANIMATION_SPEED),
   devToolsEnabled: t.boolean().default(false),
   presentationSpeed: t.float32().default(DEFAULT_ANIMATION_SPEED),
@@ -44,8 +47,6 @@ export const LobbyState = schema({
   turnSeconds: t.uint8().default(0),
   matchSeconds: t.uint16().default(0),
   matchEnding: t.boolean().default(false),
-  expressRound: t.uint8().default(0),
-  phaseSeconds: t.uint8().default(0),
   diceOne: t.uint8().default(0),
   diceTwo: t.uint8().default(0),
   diceSequence: t.uint32().default(0),
@@ -53,6 +54,7 @@ export const LobbyState = schema({
   landingDescription: t.string().default(''),
   activeCardTitle: t.string().default(''),
   activeCardDescription: t.string().default(''),
+  activeCardId: t.string().default(''),
   pendingPropertyId: t.uint8().default(255),
   worldCupSpaceId: t.uint8().default(255),
   debtAmount: t.int32().default(0),

@@ -1,4 +1,6 @@
-export type GameMode = 'classic' | 'express'
+import type { PlayerColor } from './playerColors.js'
+
+export type GameMode = 'classic'
 export type LobbyStatus = 'waiting' | 'playing' | 'ended'
 export type CharacterType = 'pawn' | 'car' | 'motorcycle' | 'airplane'
 
@@ -17,12 +19,13 @@ export type LobbyPlayer = {
   isBot?: boolean
   isBotControlled?: boolean
   characterType: CharacterType
+  color?: PlayerColor
   position: number
   isBankrupt?: boolean
 }
 
 export function isGameMode(value: unknown): value is GameMode {
-  return value === 'classic' || value === 'express'
+  return value === 'classic'
 }
 
 export function isCharacterType(value: unknown): value is CharacterType {

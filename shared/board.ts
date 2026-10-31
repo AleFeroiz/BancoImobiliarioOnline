@@ -1,4 +1,5 @@
-export type SpaceKind = 'start' | 'property' | 'event' | 'tax' | 'rest' | 'prison' | 'world-cup' | 'world-tour'
+export type RegionId = 'north' | 'center-west' | 'northeast' | 'south' | 'southeast'
+export type SpaceKind = 'start' | 'property' | 'event' | 'tax' | 'prison' | 'world-cup' | 'world-tour'
 
 export type BoardSpace = {
   id: number
@@ -7,55 +8,85 @@ export type BoardSpace = {
   color: string
   price?: number
   buildable?: boolean
+  region?: RegionId
+  company?: boolean
+  taxAmount?: number
 }
 
-const colorGroups = ['#d66b55', '#e0ad51', '#6da998', '#8295ca', '#c8789a', '#6f9c73', '#53a6bd', '#a979b2']
-const properties: Array<[string, number]> = [
-  ['Vila do Sol', 60000], ['Jardim das Flores', 80000], ['Praça Central', 110000],
-  ['Rua das Palmeiras', 120000], ['Alameda Azul', 140000], ['Porto Dourado', 160000],
-  ['Lago Sereno', 180000], ['Colina Verde', 200000], ['Centro Antigo', 220000],
-  ['Avenida Imperial', 260000], ['Jardins do Norte', 280000], ['Parque das Águas', 300000],
-  ['Costa Branca', 330000], ['Mirante Alto', 360000], ['Boulevard Real', 400000],
-  ['Ilha das Palmeiras', 430000], ['Vale das Nuvens', 460000], ['Distrito Solar', 500000],
-  ['Alameda Real', 540000], ['Morro do Farol', 580000], ['Jardim Imperial', 620000],
-  ['Porto das Estrelas', 660000], ['Avenida do Horizonte', 720000], ['Parque Imperial', 780000],
+export const REGION_DETAILS: Record<RegionId, { name: string; color: string }> = {
+  north: { name: 'Norte', color: '#00A6A6' },
+  'center-west': { name: 'Centro-Oeste', color: '#E6B84B' },
+  northeast: { name: 'Nordeste', color: '#D45087' },
+  south: { name: 'Sul', color: '#4A9D68' },
+  southeast: { name: 'Sudeste', color: '#3B65CC' },
+}
+
+type City = { name: string; price: number; region: RegionId }
+const cities: City[] = [
+  { name: 'Canaã dos Carajás', price: 200_000, region: 'north' },
+  { name: 'Porto Velho', price: 250_000, region: 'north' },
+  { name: 'Parauapebas', price: 275_000, region: 'north' },
+  { name: 'Belém', price: 350_000, region: 'north' },
+  { name: 'Manaus', price: 650_000, region: 'north' },
+  { name: 'Rio Verde', price: 225_000, region: 'center-west' },
+  { name: 'Cuiabá', price: 325_000, region: 'center-west' },
+  { name: 'Campo Grande', price: 375_000, region: 'center-west' },
+  { name: 'Goiânia', price: 500_000, region: 'center-west' },
+  { name: 'Brasília', price: 725_000, region: 'center-west' },
+  { name: 'Maceió', price: 300_000, region: 'northeast' },
+  { name: 'São Luís', price: 400_000, region: 'northeast' },
+  { name: 'Recife', price: 475_000, region: 'northeast' },
+  { name: 'Salvador', price: 525_000, region: 'northeast' },
+  { name: 'Fortaleza', price: 550_000, region: 'northeast' },
+  { name: 'Itajaí', price: 425_000, region: 'south' },
+  { name: 'Joinville', price: 450_000, region: 'south' },
+  { name: 'Porto Alegre', price: 575_000, region: 'south' },
+  { name: 'Curitiba', price: 625_000, region: 'south' },
+  { name: 'Osasco', price: 600_000, region: 'southeast' },
+  { name: 'Belo Horizonte', price: 675_000, region: 'southeast' },
+  { name: 'Maricá', price: 700_000, region: 'southeast' },
+  { name: 'Rio de Janeiro', price: 800_000, region: 'southeast' },
+  { name: 'São Paulo', price: 950_000, region: 'southeast' },
 ]
 
-const specialSpaces: Record<number, Omit<BoardSpace, 'id'>> = {
+const companySpaces: Record<number, string> = {
+  4: 'AgroBrasil',
+  14: 'Aviação Brasil',
+  24: 'Energia Brasil',
+  34: 'Mineração Brasil',
+}
+const taxSpaces: Record<number, { name: string; amount: number }> = {
+  2: { name: 'Imposto de Renda', amount: 10_000 },
+  12: { name: 'Taxa de Desenvolvimento', amount: 15_000 },
+  22: { name: 'Imposto sobre Patrimônio', amount: 20_000 },
+  32: { name: 'Contribuição Nacional', amount: 25_000 },
+}
+const eventSpaces = new Set([6, 16, 26, 36])
+const cityIds = [1, 3, 5, 7, 8, 9, 11, 13, 15, 17, 18, 19, 21, 23, 25, 27, 28, 29, 31, 33, 35, 37, 38, 39]
+const corners: Record<number, Omit<BoardSpace, 'id'>> = {
   0: { name: 'Partida', kind: 'start', color: '#edbf61' },
-  4: { name: 'Taxa urbana', kind: 'tax', color: '#c56f59' },
-  8: { name: 'Sorte ou Revés', kind: 'event', color: '#e4a447' },
-  9: { name: 'Praça', kind: 'rest', color: '#81a998' },
   10: { name: 'Prisão', kind: 'prison', color: '#8e9caa' },
-  14: { name: 'Sorte ou Revés', kind: 'event', color: '#e4a447' },
-  18: { name: 'Taxa de serviço', kind: 'tax', color: '#c56f59' },
-  19: { name: 'Estação Central', kind: 'property', color: '#6c91ad', price: 180000 },
   20: { name: 'Copa do Mundo', kind: 'world-cup', color: '#62a995' },
-  24: { name: 'Sorte ou Revés', kind: 'event', color: '#e4a447' },
-  28: { name: 'Taxa de luxo', kind: 'tax', color: '#c56f59' },
-  29: { name: 'Aeroporto', kind: 'property', color: '#6c91ad', price: 240000 },
-  30: { name: 'Volta ao Mundo', kind: 'world-tour', color: '#579bb3' },
-  34: { name: 'Sorte ou Revés', kind: 'event', color: '#e4a447' },
-  38: { name: 'Imposto especial', kind: 'tax', color: '#c56f59' },
-  39: { name: 'Estação do Porto', kind: 'property', color: '#6c91ad', price: 280000 },
+  30: { name: 'Volta ao Brasil', kind: 'world-tour', color: '#579bb3' },
 }
 
-let residentialIndex = 0
-
+let cityIndex = 0
 export const boardSpaces: BoardSpace[] = Array.from({ length: 40 }, (_, id) => {
-  const special = specialSpaces[id]
-  if (special) return { id, ...special }
-  const property = properties[residentialIndex]
-  const color = colorGroups[Math.floor(residentialIndex / 3)]
-  if (!property || !color) throw new Error(`Configuração incompleta da casa residencial ${id}.`)
-  residentialIndex += 1
-  const [name, price] = property
-  return {
-    id,
-    name,
-    kind: 'property',
-    color,
-    price,
-    buildable: true,
-  }
+  if (corners[id]) return { id, ...corners[id] }
+  if (companySpaces[id]) return { id, name: companySpaces[id], kind: 'property', color: '#6c91ad', price: 500_000, company: true }
+  if (taxSpaces[id]) return { id, name: taxSpaces[id].name, kind: 'tax', color: '#c56f59', taxAmount: taxSpaces[id].amount }
+  if (eventSpaces.has(id)) return { id, name: 'Sorte ou Revés', kind: 'event', color: '#e4a447' }
+  if (!cityIds.includes(id)) throw new Error(`Casa ${id} não foi configurada.`)
+  const city = cities[cityIndex++]
+  if (!city) throw new Error(`Cidade ausente para a casa ${id}.`)
+  return { id, name: city.name, kind: 'property', color: REGION_DETAILS[city.region].color, price: city.price, buildable: true, region: city.region }
 })
+
+export const companyIds = Object.keys(companySpaces).map(Number)
+export const taxIds = Object.keys(taxSpaces).map(Number)
+
+export function getLineTitleIds(sideIndex: number) {
+  if (!Number.isInteger(sideIndex) || sideIndex < 0 || sideIndex > 3) return []
+  const start = sideIndex * 10
+  return boardSpaces.filter((space) => space.id > start && space.id < start + 10 && (space.buildable || space.company)).map((space) => space.id)
+}

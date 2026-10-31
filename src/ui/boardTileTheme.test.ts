@@ -12,14 +12,13 @@ describe('cores dos pisos do tabuleiro', () => {
     }
   })
 
-  it('separa estações, sorte ou revés, taxas e descanso dos imóveis residenciais', () => {
+  it('separa companhias, sorte ou revés e taxas dos imóveis regionais', () => {
     const byName = (name: string) => boardSpaces.find((space) => space.name === name)!
-    const residential = getBoardTileTheme(byName('Vila do Sol'), false).floor
+    const residential = getBoardTileTheme(byName('Canaã dos Carajás'), false).floor
 
-    expect(getBoardTileTheme(byName('Estação Central'), false).floor).not.toBe(residential)
+    expect(getBoardTileTheme(byName('AgroBrasil'), false).floor).not.toBe(residential)
     expect(getBoardTileTheme(byName('Sorte ou Revés'), false).floor).not.toBe(residential)
-    expect(getBoardTileTheme(byName('Taxa urbana'), false).floor).not.toBe(residential)
-    expect(getBoardTileTheme(byName('Praça'), false).floor).not.toBe(residential)
+    expect(getBoardTileTheme(byName('Imposto de Renda'), false).floor).not.toBe(residential)
   })
 
   it('destaca todas as casas Sorte ou Revés com o piso dourado da roleta', () => {

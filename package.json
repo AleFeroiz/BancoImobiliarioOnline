@@ -12,6 +12,7 @@
     "dev:server": "tsx watch server/src/index.ts",
     "build": "tsc -b && vite build",
     "build:server": "tsc -p tsconfig.server.json",
+    "graphify": "node scripts/graphify.mjs",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",

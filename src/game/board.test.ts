@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { boardSpaces, positionOnBoard } from './board'
-import { JAIL_TURNS, STARTING_CASH, buildingSaleValue, calculateRent, canBuildHotel, canBuildProperty, canMortgageProperty, canRedeemMortgage, canSellBuilding, constructionCost, describeLanding, hasLiquidatableAssets, hotelConstructionCost, mortgageRedemptionCost, mortgageValue, movePosition, taxForSpace } from '../../shared/game'
-import { EVENT_CARDS, applyCardCashEffect } from '../../shared/cards'
+import { getLineTitleIds } from '../../shared/board'
+import { JAIL_TURNS, STARTING_CASH, bankReturnValue, buildingSaleValue, calculateRent, canBuildHotel, canBuildProperty, canReturnPropertyToBank, canSellBuilding, constructionCost, describeLanding, hasLiquidatableAssets, hotelConstructionCost, movePosition, taxForSpace } from '../../shared/game'
+import { EVENT_CARDS } from '../../shared/cards'
 
 describe('tabuleiro', () => {
   it('tem 40 casas com identificadores únicos e em ordem', () => {
@@ -21,39 +22,32 @@ describe('tabuleiro', () => {
     expect(boardSpaces[0]).toMatchObject({ name: 'Partida', kind: 'start' })
     expect(boardSpaces[10]).toMatchObject({ name: 'Prisão', kind: 'prison' })
     expect(boardSpaces[20]).toMatchObject({ name: 'Copa do Mundo', kind: 'world-cup' })
-    expect(boardSpaces[30]).toMatchObject({ name: 'Volta ao Mundo', kind: 'world-tour' })
+    expect(boardSpaces[30]).toMatchObject({ name: 'Volta ao Brasil', kind: 'world-tour' })
 
     const properties = boardSpaces.filter(({ kind }) => kind === 'property')
-    expect(properties.length).toBeGreaterThan(0)
+    expect(properties).toHaveLength(28)
     expect(properties.every(({ price }) => typeof price === 'number' && price > 0)).toBe(true)
+    expect(boardSpaces.some((space) => space.name === 'Praça')).toBe(false)
   })
 
-  it('mantém 24 ruas únicas em oito grupos residenciais de três', () => {
+  it('mantém 24 cidades únicas em cinco monopólios regionais', () => {
     const residential = boardSpaces.filter((space) => space.kind === 'property' && space.buildable)
     const groups = new Map<string, number[]>()
     for (const space of residential) {
-      const group = groups.get(space.color) ?? []
+      const group = groups.get(space.region ?? '') ?? []
       group.push(space.id)
-      groups.set(space.color, group)
+      groups.set(space.region ?? '', group)
     }
 
     expect(residential).toHaveLength(24)
     expect(new Set(residential.map((space) => space.name)).size).toBe(24)
-    expect(groups.size).toBe(8)
-    expect(Array.from(groups.values()).map((group) => group.length)).toEqual(Array(8).fill(3))
-    const groupsPerSide = new Map<number, number>()
-    for (const group of groups.values()) {
-      expect(group[1]).toBe(group[0]! + 1)
-      expect(group[2]).toBe(group[0]! + 2)
-      const side = Math.floor(group[0]! / 10)
-      expect(side).toBe(Math.floor(group[2]! / 10))
-      groupsPerSide.set(side, (groupsPerSide.get(side) ?? 0) + 1)
-    }
-    expect(Array.from(groupsPerSide.values())).toEqual([2, 2, 2, 2])
+    expect(Array.from(groups.values()).map((group) => group.length)).toEqual([5, 5, 5, 4, 5])
+    expect(new Set(residential.map((space) => space.color)).size).toBe(5)
+    expect([0, 1, 2, 3].map((side) => getLineTitleIds(side).length)).toEqual([7, 7, 7, 7])
   })
 
   it('distribui uma casa Sorte ou Revés em cada lado do tabuleiro', () => {
-    expect(boardSpaces.filter((space) => space.kind === 'event').map((space) => space.id)).toEqual([8, 14, 24, 34])
+    expect(boardSpaces.filter((space) => space.kind === 'event').map((space) => space.id)).toEqual([6, 16, 26, 36])
   })
 
   it('move pelo resultado dos dados e volta ao início ao completar uma volta', () => {
@@ -62,7 +56,7 @@ describe('tabuleiro', () => {
   })
 
   it('descreve a casa alcançada sem aplicar efeitos econômicos ainda não definidos', () => {
-    expect(describeLanding(19)).toContain('Estação Central')
+    expect(describeLanding(19)).toContain('São Luís')
     expect(describeLanding(19)).toContain('Você parou em uma propriedade')
     expect(() => describeLanding(40)).toThrow(RangeError)
   })
@@ -71,13 +65,16 @@ describe('tabuleiro', () => {
     const property = boardSpaces.find((space) => space.kind === 'property')!
     const group = boardSpaces.filter((space) => space.kind === 'property' && space.color === property.color)
     const owner = new Map(group.map((space) => [space.id, 'jogador-1']))
-    const base = Math.max(10_000, Math.floor((property.price ?? 0) * 0.1))
+    const base = Math.floor((property.price ?? 0) * 0.1)
 
-    expect(STARTING_CASH).toBe(1_500_000)
+    expect(STARTING_CASH).toBe(2_000_000)
     expect(calculateRent(property.id, new Map([[property.id, 'jogador-1']]))).toBe(base)
     expect(calculateRent(property.id, owner)).toBe(base * 2)
-    expect(calculateRent(property.id, owner, 2)).toBe(base * 2 + Math.floor((property.price ?? 0) * 0.1) * 2)
-    expect(calculateRent(property.id, owner, 2, false, property.id)).toBe((base * 2 + Math.floor((property.price ?? 0) * 0.1) * 2) * 3)
+    expect(calculateRent(property.id, owner, 1)).toBe(Math.floor((property.price ?? 0) * 0.2) * 2)
+    expect(calculateRent(property.id, owner, 2)).toBe(Math.floor((property.price ?? 0) * 0.4) * 2)
+    expect(calculateRent(property.id, owner, 3)).toBe(Math.floor((property.price ?? 0) * 0.7) * 2)
+    expect(calculateRent(property.id, owner, 4)).toBe(Math.floor((property.price ?? 0) * 1) * 2)
+    expect(calculateRent(property.id, owner, 2, property.id)).toBe(Math.floor((property.price ?? 0) * 0.4) * 6)
   })
 
   it('permite até três casas sem grupo completo e exige visita posterior para o hotel', () => {
@@ -103,59 +100,51 @@ describe('tabuleiro', () => {
     holdings.get(first.id)!.houses = 4
     expect(canBuildHotel(first.id, 'p1', holdings, 1_000_000)).toBe(false)
 
-    expect(constructionCost(19)).toBe(0)
-    expect(canBuildProperty(19, 'p1', new Map([[19, { ownerSessionId: 'p1', houses: 0 }]]), 1_000_000)).toBe(false)
+    const company = boardSpaces.find((space) => space.company)!
+    expect(constructionCost(company.id)).toBe(0)
+    expect(canBuildProperty(company.id, 'p1', new Map([[company.id, { ownerSessionId: 'p1', houses: 0 }]]), 1_000_000)).toBe(false)
   })
 
-  it('usa taxas fixas nas quatro casas de taxa', () => {
-    expect([4, 18, 28, 38].map(taxForSpace)).toEqual([50_000, 75_000, 100_000, 125_000])
+  it('cobra taxas diferentes por imóvel em cada uma das quatro casas', () => {
+    expect([2, 12, 22, 32].map((spaceId) => taxForSpace(spaceId, 1))).toEqual([10_000, 15_000, 20_000, 25_000])
+    expect(taxForSpace(22, 4)).toBe(80_000)
     expect(taxForSpace(0)).toBe(0)
   })
 
-  it('mantém oito cartas autorais e limita cobranças ao saldo disponível', () => {
-    expect(EVENT_CARDS).toHaveLength(8)
-    expect(new Set(EVENT_CARDS.map((card) => card.id)).size).toBe(8)
-    expect(EVENT_CARDS.filter((card) => card.effect.kind === 'cash' && card.effect.amount > 0)).toHaveLength(3)
-    expect(EVENT_CARDS.filter((card) => card.effect.kind === 'cash' && card.effect.amount < 0)).toHaveLength(3)
-    expect(EVENT_CARDS.filter((card) => card.effect.kind === 'move')).toHaveLength(1)
-    expect(EVENT_CARDS.filter((card) => card.effect.kind === 'jail')).toHaveLength(1)
-    expect(applyCardCashEffect(120_000, -150_000)).toBe(0)
-    expect(applyCardCashEffect(120_000, 50_000)).toBe(170_000)
+  it('contém as doze cartas autorais aprovadas', () => {
+    expect(EVENT_CARDS.map((card) => card.id)).toEqual([
+      'generous', 'birthday', 'blackout', 'earthquake', 'thief', 'protection',
+      'jail', 'world-tour', 'world-cup', 'swap', 'world-cup-city', 'start',
+    ])
+    expect(new Set(EVENT_CARDS.map((card) => card.id)).size).toBe(12)
   })
 
   it('define prisão por três turnos completos sem fiança', () => {
     expect(JAIL_TURNS).toBe(3)
   })
 
-  it('calcula hipoteca e resgate, bloqueia aluguel e exige vender construções do grupo', () => {
+  it('calcula a devolução ao banco e exige vender construções do grupo antes de devolver', () => {
     const first = boardSpaces.find((space) => space.kind === 'property' && space.buildable)!
     const group = boardSpaces.filter((space) => space.kind === 'property' && space.buildable && space.color === first.color)
-    const holdings = new Map(group.map((space) => [space.id, { ownerSessionId: 'p1', houses: 0, isMortgaged: false }]))
+    const holdings = new Map(group.map((space) => [space.id, { ownerSessionId: 'p1', houses: 0 }]))
     const principal = Math.floor((first.price ?? 0) * 0.5)
 
-    expect(mortgageValue(first.id)).toBe(principal)
-    expect(mortgageRedemptionCost(first.id)).toBe(Math.ceil(principal * 1.1))
-    const propertyAt220k = boardSpaces.find((space) => space.kind === 'property' && space.price === 220_000)!
-    expect(mortgageValue(propertyAt220k.id)).toBe(110_000)
-    expect(mortgageRedemptionCost(propertyAt220k.id)).toBe(121_000)
-    expect(canMortgageProperty(first.id, 'p1', holdings)).toBe(true)
-    expect(canMortgageProperty(first.id, 'p2', holdings)).toBe(false)
-    expect(canRedeemMortgage(first.id, 'p1', holdings, mortgageRedemptionCost(first.id) - 1)).toBe(false)
-    expect(calculateRent(first.id, new Map([[first.id, 'p1']]), 0, true)).toBe(0)
+    expect(bankReturnValue(first.id)).toBe(principal)
+    const propertyAt250k = boardSpaces.find((space) => space.kind === 'property' && space.price === 250_000)!
+    expect(bankReturnValue(propertyAt250k.id)).toBe(125_000)
+    expect(canReturnPropertyToBank(first.id, 'p1', holdings)).toBe(true)
+    expect(canReturnPropertyToBank(first.id, 'p2', holdings)).toBe(false)
 
     holdings.get(group[1].id)!.houses = 1
-    expect(canMortgageProperty(first.id, 'p1', holdings)).toBe(false)
+    expect(canReturnPropertyToBank(first.id, 'p1', holdings)).toBe(false)
     holdings.get(group[1].id)!.houses = 0
-    holdings.get(first.id)!.isMortgaged = true
-    expect(canMortgageProperty(first.id, 'p1', holdings)).toBe(false)
-    expect(canRedeemMortgage(first.id, 'p1', holdings, mortgageRedemptionCost(first.id))).toBe(true)
-    expect(canBuildProperty(first.id, 'p1', holdings, 1_000_000)).toBe(false)
+    expect(canBuildProperty(first.id, 'p1', holdings, 1_000_000)).toBe(true)
   })
 
   it('permite vender construções pela metade do custo e identifica bens liquidáveis', () => {
     const first = boardSpaces.find((space) => space.kind === 'property' && space.buildable)!
     const group = boardSpaces.filter((space) => space.kind === 'property' && space.buildable && space.color === first.color)
-    const holdings = new Map(group.map((space) => [space.id, { ownerSessionId: 'p1', houses: 0, isMortgaged: false }]))
+    const holdings = new Map(group.map((space) => [space.id, { ownerSessionId: 'p1', houses: 0 }]))
 
     expect(buildingSaleValue(first.id)).toBe(Math.floor(constructionCost(first.id) / 2))
     expect(canSellBuilding(first.id, 'p1', holdings)).toBe(false)
@@ -167,10 +156,7 @@ describe('tabuleiro', () => {
     expect(canSellBuilding(group[1].id, 'p1', holdings)).toBe(true)
     expect(canSellBuilding(group[1].id, 'p2', holdings)).toBe(false)
 
-    for (const property of group) {
-      holdings.get(property.id)!.houses = 0
-      holdings.get(property.id)!.isMortgaged = true
-    }
-    expect(hasLiquidatableAssets('p1', holdings)).toBe(false)
+    for (const property of group) holdings.get(property.id)!.houses = 0
+    expect(hasLiquidatableAssets('p1', holdings)).toBe(true)
   })
 })

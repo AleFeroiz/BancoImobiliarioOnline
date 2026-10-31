@@ -12,7 +12,7 @@ import { getBoardTileTheme } from './boardTileTheme'
 import { fitSpaceLabel, shouldRenderSpaceLabel } from './spaceLabel'
 import { getPawnStepPath } from './pawnPath'
 import { getPropertyVisualChange } from './gameFeedback'
-import { getDiceRollRotation } from './dicePresentation'
+import { DICE_PRESENTATION_POSITIONS, DICE_RESULT_BADGE_POSITION, getDiceRollRotation } from './dicePresentation'
 import { getRouletteFloorSectors } from './rouletteFloor'
 import { shouldStartCameraDrag } from './cameraDrag'
 import { BUILDING_ANIMATION_DURATION_MS, DICE_ANIMATION_DURATION_MS, LANDING_PULSE_DURATION_MS, PAWN_STEP_ANIMATION_DURATION_MS, PAWN_TELEPORT_ANIMATION_DURATION_MS, PROPERTY_HOTEL_LEVEL, getAnimationDuration, type AnimationSpeed } from '../../shared/game'
@@ -23,9 +23,10 @@ import { getBuildingInnerEdgeOffset, getBuildingRentLabelPosition, getCenteredMo
 import { getPropertyRentLabel } from './propertyRentLabel'
 import { playGameSound } from './gameAudio'
 import { getGraphicsDprRange, type GraphicsQuality } from './graphicsQuality'
+import { getGameBackgroundColor } from './nightMode'
 import { getPlayerEmoteSymbol, type PlayerEmote } from '../../shared/playerEmotes'
 
-type PropertyBuilding = { spaceId: number; ownerSessionId: string; houses: number; isMortgaged: boolean; ownerColor: string }
+type PropertyBuilding = { spaceId: number; ownerSessionId: string; houses: number; blackoutTurns?: number; protectionTurns?: number; ownerColor: string }
 type PlayerToken = { id: string; position: number; color: string; seatIndex: number; cash: number; characterType: 'pawn' | 'car' | 'motorcycle' | 'airplane'; activity?: string; emote?: { emote: PlayerEmote; sequence: number } }
 
 type CameraOrbitControls = {
@@ -516,39 +517,18 @@ function AnimatedBuilding({ spaceId, houses, ownerColor, ownerSessionId, reduced
   )
 }
 
-function AnimatedMortgageBadge({ position, mortgaged, reducedMotion, presentationSpeed }: { position: [number, number, number]; mortgaged: boolean; reducedMotion: boolean; presentationSpeed: AnimationSpeed }) {
-  const group = useRef<Group>(null)
-  const { invalidate } = useThree()
-  const elapsed = useRef(0)
-  const previous = useRef(mortgaged)
-  const active = useRef(false)
-  useEffect(() => {
-    if (previous.current !== mortgaged) {
-      elapsed.current = 0
-      active.current = !reducedMotion
-      if (group.current && !reducedMotion && mortgaged) group.current.scale.setScalar(0.2)
-      previous.current = mortgaged
-    }
-    if (reducedMotion) {
-      group.current?.scale.setScalar(mortgaged ? 1 : 0)
-      active.current = false
-    }
-  }, [mortgaged, reducedMotion])
-  useFrame((_, delta) => {
-    if (!group.current || reducedMotion || !active.current) return
-    invalidate()
-    const duration = getAnimationDuration(300, presentationSpeed) / 1000
-    elapsed.current = Math.min(duration, elapsed.current + delta)
-    const progress = elapsed.current / duration
-    group.current.scale.setScalar(mortgaged ? 0.2 + 0.8 * progress : 1 - progress)
-    group.current.position.y = position[1] + (mortgaged ? 0.08 : -0.08) * Math.sin(progress * Math.PI)
-    if (progress >= 1) {
-      group.current.scale.setScalar(mortgaged ? 1 : 0)
-      group.current.position.y = position[1]
-      active.current = false
-    }
-  })
-  return <group ref={group} position={position} scale={mortgaged ? 1 : 0}><mesh rotation={[-Math.PI / 2, 0, 0]}><circleGeometry args={[0.11, 8]} /><meshBasicMaterial color="#71858a" /></mesh></group>
+function FatecLandmark() {
+  const { scene } = useGLTF('/assets/fatec-itapetininga-buildings.glb')
+  const model = useMemo(() => {
+    const clone = scene.clone(true)
+    clone.traverse((object) => {
+      const mesh = object as Mesh
+      if (mesh.isMesh) mesh.raycast = skipRaycast
+    })
+    makeSceneMaterialsUnlit(clone)
+    return clone
+  }, [scene])
+  return <group position={[0, 0.045, 0]} scale={0.48} raycast={skipRaycast}><primitive object={model} /></group>
 }
 
 function Board({ players, propertyBuildings, worldCupSpaceId, highlightedSpaceIds, selectionMode, landingPulseSpaceId, landingPulseSequence, diceRollSequence, dice, diceVisible, diceResultVisible, presentationSpeed, reducedMotion, pawnMovementEnabled, pawnMoveMode, pawnStepSoundEnabled, onMovementComplete, onSelectSpace }: { players: PlayerToken[]; propertyBuildings: PropertyBuilding[]; worldCupSpaceId: number; highlightedSpaceIds: readonly number[]; selectionMode: boolean; landingPulseSpaceId: number; landingPulseSequence: number; dice: [number, number]; diceVisible: boolean; diceResultVisible: boolean; diceRollSequence: number; presentationSpeed: AnimationSpeed; reducedMotion: boolean; pawnMovementEnabled: boolean; pawnMoveMode: 'walk' | 'teleport'; pawnStepSoundEnabled: boolean; onMovementComplete: () => void; onSelectSpace: (spaceId: number) => void }) {
@@ -580,35 +560,13 @@ function Board({ players, propertyBuildings, worldCupSpaceId, highlightedSpaceId
         <boxGeometry args={[9.8, 0.04, 9.8]} />
         <meshBasicMaterial color="#789763" />
       </mesh>
-      <mesh position={[0, 0.045, 0]} raycast={skipRaycast}>
-        <cylinderGeometry args={[1.42, 1.42, 0.045, 48]} />
-        <meshBasicMaterial color="#c5d589" />
-      </mesh>
-      <mesh position={[0, 0.072, 0]} raycast={skipRaycast}>
-        <cylinderGeometry args={[1.22, 1.22, 0.025, 48]} />
-        <meshBasicMaterial color="#668851" />
-      </mesh>
-      <mesh position={[0, 0.035, 0]} rotation={[-Math.PI / 2, 0, 0]} raycast={skipRaycast}>
-        <ringGeometry args={[1.62, 1.7, 64]} />
-        <meshBasicMaterial color="#d4c391" />
-      </mesh>
-      <mesh position={[0, 0.087, 0]} rotation={[-Math.PI / 2, 0, 0]} raycast={skipRaycast}>
-        <ringGeometry args={[1.26, 1.34, 48]} />
-        <meshBasicMaterial color="#d0ad5c" transparent opacity={0.92} />
-      </mesh>
-      {[[-0.82, -0.76], [0.82, -0.76], [-0.82, 0.76], [0.82, 0.76]].map(([x, z], index) => (
-        <group key={`park-tree-${index}`} position={[x, 0.1, z]}>
-          <mesh position={[0, 0.1, 0]} raycast={skipRaycast}><cylinderGeometry args={[0.045, 0.06, 0.2, 6]} /><meshBasicMaterial color="#9b7751" /></mesh>
-          <mesh position={[0, 0.26, 0]} raycast={skipRaycast}><coneGeometry args={[0.18, 0.28, 7]} /><meshBasicMaterial color="#66885f" /></mesh>
-        </group>
-      ))}
+      <Suspense fallback={null}><FatecLandmark /></Suspense>
       {boardSpaces.map((space) => {
         const { x, z } = positionOnBoard(space.id)
         const corner = space.id % 10 === 0
         const size = corner ? 1.14 : 0.98
         const decoration = getBoardSpaceDecoration(space.id)
         const rotation = decoration.tileRotation
-        const property = propertyBuildings.find((building) => building.spaceId === space.id)
         const theme = getBoardTileTheme(space, corner)
         const selectable = highlightedSpaceIds.includes(space.id)
         return (
@@ -624,7 +582,6 @@ function Board({ players, propertyBuildings, worldCupSpaceId, highlightedSpaceId
             {space.kind === 'prison' && <group position={[size * 0.3, 0.11, size * 0.3]}><mesh position={[0, 0, 0]} raycast={skipRaycast}><boxGeometry args={[0.25, 0.025, 0.22]} /><meshBasicMaterial color="#536c7d" /></mesh>{[-1, 0, 1].map((offset) => <mesh key={offset} position={[offset * 0.085, 0.12, 0.105]} raycast={skipRaycast}><boxGeometry args={[0.025, 0.22, 0.025]} /><meshBasicMaterial color={theme.trim} /></mesh>)}{[-1, 1].map((offset) => <mesh key={`bar-${offset}`} position={[0, offset * 0.07, 0.105]} raycast={skipRaycast}><boxGeometry args={[0.2, 0.025, 0.025]} /><meshBasicMaterial color={theme.trim} /></mesh>)}</group>}
             {space.kind === 'world-cup' && <Suspense fallback={null}><CornerLandmark type="stadium" position={[0, 0.15, 0]} dimmed={selectionMode && !selectable} /></Suspense>}
             {space.kind === 'world-tour' && <Suspense fallback={null}><CornerLandmark type="airport" position={[0, 0.08, 0]} dimmed={selectionMode && !selectable} /></Suspense>}
-            {space.kind === 'rest' && <mesh position={[size * 0.31, 0.11, size * 0.3]} raycast={skipRaycast}><cylinderGeometry args={[0.07, 0.09, 0.035, 6]} /><meshBasicMaterial color={theme.trim} /></mesh>}
             {space.kind === 'start' && <mesh position={[size * 0.31, 0.13, size * 0.3]} rotation={[0, Math.PI / 4, 0]} raycast={skipRaycast}><boxGeometry args={[0.14, 0.045, 0.14]} /><meshBasicMaterial color={theme.trim} /></mesh>}
             {shouldRenderSpaceLabel(space.kind) && <SpaceLabel name={space.name} size={size} ink={theme.ink} outline={theme.outline} outwardRotation={decoration.labelRotation} />}
             {highlightedSpaceIds.includes(space.id) && (
@@ -640,7 +597,6 @@ function Board({ players, propertyBuildings, worldCupSpaceId, highlightedSpaceId
                 <meshBasicMaterial color="#d5a956" />
               </mesh>
             )}
-            {property && <AnimatedMortgageBadge position={[size * 0.3, 0.12, size * 0.2]} mortgaged={property.isMortgaged} reducedMotion={reducedMotion} presentationSpeed={presentationSpeed} />}
             </SelectionContrast>
           </group>
         )
@@ -651,9 +607,9 @@ function Board({ players, propertyBuildings, worldCupSpaceId, highlightedSpaceId
       </Suspense>
       {players.map((player) => <AnimatedPawn key={player.id} player={player} seatIndex={player.seatIndex} reducedMotion={reducedMotion} movementEnabled={pawnMovementEnabled} moveMode={pawnMoveMode} presentationSpeed={presentationSpeed} pawnStepSoundEnabled={pawnStepSoundEnabled} onMovementComplete={onMovementComplete} />)}
       {diceVisible && <>
-        <AnimatedDie position={[-0.34, 0.23, -0.23]} rotation={[0.12, 0.25, 0.25]} sequence={diceRollSequence} value={dice[0] || 1} reducedMotion={reducedMotion} visible={diceVisible} presentationSpeed={presentationSpeed} />
-        {dice[1] > 0 && <AnimatedDie position={[0.38, 0.23, 0.2]} rotation={[-0.18, 0.3, -0.2]} sequence={diceRollSequence} value={dice[1]} reducedMotion={reducedMotion} visible={diceVisible} presentationSpeed={presentationSpeed} />}
-        {diceResultVisible && <Html position={[0.02, 1.05, -0.02]} center distanceFactor={9} zIndexRange={[6, 6]}><div className="dice-result-badge" role="status" aria-live="polite"><small>{dice[1] > 0 ? 'TOTAL' : 'ESTAÇÃO'}</small><strong>{dice[1] > 0 ? dice[0] + dice[1] : dice[0]}</strong></div></Html>}
+        <AnimatedDie position={DICE_PRESENTATION_POSITIONS[0]!} rotation={[0.12, 0.25, 0.25]} sequence={diceRollSequence} value={dice[0] || 1} reducedMotion={reducedMotion} visible={diceVisible} presentationSpeed={presentationSpeed} />
+        {dice[1] > 0 && <AnimatedDie position={DICE_PRESENTATION_POSITIONS[1]!} rotation={[-0.18, 0.3, -0.2]} sequence={diceRollSequence} value={dice[1]} reducedMotion={reducedMotion} visible={diceVisible} presentationSpeed={presentationSpeed} />}
+        {diceResultVisible && <Html position={DICE_RESULT_BADGE_POSITION} center distanceFactor={9} zIndexRange={[6, 6]}><div className="dice-result-badge" role="status" aria-live="polite"><small>{dice[1] > 0 ? 'TOTAL' : 'ESTAÇÃO'}</small><strong>{dice[1] > 0 ? dice[0] + dice[1] : dice[0]}</strong></div></Html>}
       </>}
     </group>
   )
@@ -701,7 +657,7 @@ function CornerLandmark({ type, position, dimmed }: { type: 'stadium' | 'airport
   return <group position={position}><primitive object={model} scale={type === 'stadium' ? 0.64 : 0.36} /></group>
 }
 
-type BoardSceneProps = { players: PlayerToken[]; propertyBuildings: PropertyBuilding[]; worldCupSpaceId?: number; highlightedSpaceIds?: readonly number[]; selectionMode?: boolean; landingPulseSpaceId?: number; landingPulseSequence?: number; diceRollSequence?: number; dice?: [number, number]; diceVisible?: boolean; diceResultVisible?: boolean; presentationSpeed?: AnimationSpeed; reducedMotion?: boolean; pawnMovementEnabled?: boolean; pawnMoveMode?: 'walk' | 'teleport'; pawnStepSoundEnabled?: boolean; cameraEnabled?: boolean; graphicsQuality?: GraphicsQuality; fpsMeterEnabled?: boolean; fpsSamples?: { current: FrameRateAccumulator }; onMovementComplete: () => void; onSelectSpace: (spaceId: number) => void }
+type BoardSceneProps = { nightMode: boolean; players: PlayerToken[]; propertyBuildings: PropertyBuilding[]; worldCupSpaceId?: number; highlightedSpaceIds?: readonly number[]; selectionMode?: boolean; landingPulseSpaceId?: number; landingPulseSequence?: number; diceRollSequence?: number; dice?: [number, number]; diceVisible?: boolean; diceResultVisible?: boolean; presentationSpeed?: AnimationSpeed; reducedMotion?: boolean; pawnMovementEnabled?: boolean; pawnMoveMode?: 'walk' | 'teleport'; pawnStepSoundEnabled?: boolean; cameraEnabled?: boolean; graphicsQuality?: GraphicsQuality; fpsMeterEnabled?: boolean; fpsSamples?: { current: FrameRateAccumulator }; onMovementComplete: () => void; onSelectSpace: (spaceId: number) => void }
 
 function FrameRateProbe({ samples }: { samples: { current: FrameRateAccumulator } }) {
   useFrame(() => {
@@ -710,10 +666,10 @@ function FrameRateProbe({ samples }: { samples: { current: FrameRateAccumulator 
   return null
 }
 
-function BoardSceneCanvas({ players, propertyBuildings, worldCupSpaceId = 255, highlightedSpaceIds = [], selectionMode = false, landingPulseSpaceId = -1, landingPulseSequence = 0, diceRollSequence = 0, dice = [0, 0], diceVisible = false, diceResultVisible = false, presentationSpeed = 1, reducedMotion = false, pawnMovementEnabled = false, pawnMoveMode = 'walk', pawnStepSoundEnabled = false, cameraEnabled = true, graphicsQuality = 'high', fpsMeterEnabled = false, fpsSamples, onMovementComplete, onSelectSpace }: BoardSceneProps) {
+function BoardSceneCanvas({ nightMode, players, propertyBuildings, worldCupSpaceId = 255, highlightedSpaceIds = [], selectionMode = false, landingPulseSpaceId = -1, landingPulseSequence = 0, diceRollSequence = 0, dice = [0, 0], diceVisible = false, diceResultVisible = false, presentationSpeed = 1, reducedMotion = false, pawnMovementEnabled = false, pawnMoveMode = 'walk', pawnStepSoundEnabled = false, cameraEnabled = true, graphicsQuality = 'high', fpsMeterEnabled = false, fpsSamples, onMovementComplete, onSelectSpace }: BoardSceneProps) {
   return (
     <Canvas camera={{ position: [12.5, 15.5, 15.5], fov: 34 }} dpr={getGraphicsDprRange(graphicsQuality)} frameloop="demand" gl={{ antialias: false, powerPreference: 'high-performance', stencil: false }}>
-      <color attach="background" args={['#9bbcc1']} />
+      <color attach="background" args={[getGameBackgroundColor(nightMode)]} />
       <ResponsiveCamera tilt={16} horizontal={45} />
       <OrbitControls makeDefault enabled={cameraEnabled} enablePan={false} enableZoom enableRotate minPolarAngle={Math.PI / 12} maxPolarAngle={Math.PI / 2} rotateSpeed={0.72} zoomSpeed={0.75} enableDamping dampingFactor={0.1} />
       <CameraZoomBounds />
@@ -734,7 +690,7 @@ function samePlayers(first: PlayerToken[], second: PlayerToken[]) {
 function sameBuildings(first: PropertyBuilding[], second: PropertyBuilding[]) {
   return first.length === second.length && first.every((building, index) => {
     const other = second[index]
-    return Boolean(other && building.spaceId === other.spaceId && building.ownerSessionId === other.ownerSessionId && building.houses === other.houses && building.isMortgaged === other.isMortgaged && building.ownerColor === other.ownerColor)
+    return Boolean(other && building.spaceId === other.spaceId && building.ownerSessionId === other.ownerSessionId && building.houses === other.houses && building.blackoutTurns === other.blackoutTurns && building.protectionTurns === other.protectionTurns && building.ownerColor === other.ownerColor)
   })
 }
 
@@ -743,7 +699,8 @@ function sameNumbers(first: readonly number[], second: readonly number[]) {
 }
 
 function areScenePropsEqual(first: BoardSceneProps, second: BoardSceneProps) {
-  return samePlayers(first.players, second.players)
+  return first.nightMode === second.nightMode
+    && samePlayers(first.players, second.players)
     && sameBuildings(first.propertyBuildings, second.propertyBuildings)
     && first.worldCupSpaceId === second.worldCupSpaceId
     && sameNumbers(first.highlightedSpaceIds ?? [], second.highlightedSpaceIds ?? [])

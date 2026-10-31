@@ -37,8 +37,6 @@ const soundNotes: Record<GameSound, number[]> = {
   construction: [587, 784, 988],
   demolition: [392, 330, 262],
   ownership: [494, 659, 784],
-  mortgage: [392, 494],
-  redemption: [494, 659],
   'airplane-pass': [],
   'police-siren': [],
   'crowd-cheer': [],

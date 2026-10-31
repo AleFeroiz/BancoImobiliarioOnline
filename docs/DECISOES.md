@@ -2,6 +2,8 @@
 
 ## Confirmadas
 
+As linhas desta tabela que descrevem o sistema anterior continuam como histórico, mas as decisões de reforma na seção **Reforma do tabuleiro** substituem as regras sobre modo, saldo, grupos, aluguel, taxas, hipoteca, cartas, companhias e Volta ao Mundo. Consulte `docs/ANDAMENTO.md` para saber o que já chegou ao código.
+
 | Tema | Decisão |
 |---|---|
 | Produto | Jogo web casual de Banco Imobiliário para jogar com amigos. |
@@ -57,15 +59,60 @@
 | Repositório | `BancoImobiliarioOnline`, remoto privado no GitHub; `main` é a branch final e recebe commits e push diretos. Não criar branches de tarefa nem pull requests, salvo pedido explícito do usuário. |
 | Fluxo Game Studio | Usar o plugin Game Studio em todas as tarefas deste projeto, conforme `AGENTS.md`, incluindo habilidade de roteamento e a habilidade especializada pertinente. |
 
+## Reforma do tabuleiro aprovada — implementação parcial
+
+Esta direção foi aprovada pelo usuário. Dados de tabuleiro, economia, escolha de duração/cor, vitória e parte do fluxo de recompra já estão no código; ver itens pendentes em `docs/ANDAMENTO.md`.
+
+| Região | Cor do piso | Cidades e preço de compra |
+|---|---|---|
+| Norte | Turquesa `#00A6A6` | Canaã dos Carajás — R$ 200.000; Porto Velho — R$ 250.000; Parauapebas — R$ 275.000; Belém — R$ 350.000; Manaus — R$ 650.000. |
+| Nordeste | Rosa `#D45087` | Maceió — R$ 300.000; São Luís — R$ 400.000; Recife — R$ 475.000; Salvador — R$ 525.000; Fortaleza — R$ 550.000. |
+| Centro-Oeste | Dourado `#E6B84B` | Rio Verde — R$ 225.000; Cuiabá — R$ 325.000; Campo Grande — R$ 375.000; Goiânia — R$ 500.000; Brasília — R$ 725.000. |
+| Sul | Verde `#4A9D68` | Itajaí — R$ 425.000; Joinville — R$ 450.000; Porto Alegre — R$ 575.000; Curitiba — R$ 625.000. |
+| Sudeste | Azul `#3B65CC` | Osasco — R$ 600.000; Belo Horizonte — R$ 675.000; Maricá — R$ 700.000; Rio de Janeiro — R$ 800.000; São Paulo — R$ 950.000. |
+
+Os preços são uma escala de jogo baseada na ordem do PIB municipal de 2023, e não uma conversão direta do PIB em dinheiro do tabuleiro. A seleção usa os dados do [IBGE](https://www.ibge.gov.br/estatisticas/economicas/industria/9088-produto-interno-bruto-dos-municipios.html), compilados também por órgãos estaduais, como a [SEI Bahia](https://www.ba.gov.br/sei/sites/site-sei/files/2025-12/Apresentacao_PIB%20Municipal_2022_2023_22_12_2025.pdf). O piso residencial de cada cidade usa a cor de sua região; nomes e preços precisam continuar legíveis sobre os cinco tons.
+
+A volta começa pela região com menor PIB total e avança até a de maior PIB: **Norte → Centro-Oeste → Nordeste → Sul → Sudeste**. As cidades de cada região seguem do menor para o maior PIB municipal, com São Paulo como último imóvel antes de retornar à Partida. O [IBGE](https://agenciadenoticias.ibge.gov.br/media/com_mediaibge/arquivos/9c2b887d59dd6c63da1b39b00c6cacce.pdf) lista a participação no PIB brasileiro de 2023 nesta ordem crescente: Norte 5,8%, Centro-Oeste 10,6%, Nordeste 13,8%, Sul 16,8% e Sudeste 53,0%. Essa ordem representa o tamanho total das economias, não renda por pessoa.
+
+| Regra da reforma | Decisão |
+|---|---|
+| Monopólio Regional | A região é o grupo de monopólio; possuir todas as cidades da região dobra os aluguéis. O Sul tem quatro cidades; as demais regiões têm cinco. |
+| Monopólio Duplo Regional | Completar duas regiões vence a partida imediatamente; não é necessário completar uma terceira. |
+| Monopólio em Linha | Cada lado do tabuleiro contém seis cidades e uma companhia. Para completar a linha é necessário possuir as seis cidades e a companhia daquele lado; casas de taxa e Sorte ou Revés não contam. Completar a linha vence a partida imediatamente, sem multiplicador de aluguel adicional. |
+| Vitória pelas companhias | Possuir as quatro companhias vence a partida imediatamente. Companhias não pertencem às regiões, mas contam para a vitória em linha e para a contagem de imóveis nas taxas. |
+| Companhias | AgroBrasil, Aviação Brasil, Energia Brasil e Mineração Brasil; cada título custa R$ 500.000. O aluguel total do dono cresce com a quantidade de companhias: uma rende R$ 100.000, duas R$ 250.000, três R$ 450.000 e quatro R$ 750.000. Possuir todas encerra a partida imediatamente. |
+| Composição do percurso | Mantêm-se 40 casas: 24 cidades, quatro companhias, quatro taxas, quatro Sorte ou Revés e os quatro cantos especiais. São seis cidades por lado; o Sul tem uma cidade a menos que as demais regiões. |
+| Taxas por imóveis | As quatro taxas cobram R$ 10.000, R$ 15.000, R$ 20.000 e R$ 25.000 por imóvel pertencente ao jogador. Cidades e companhias contam; títulos já vendidos ou devolvidos ao banco não contam. Construções não são imóveis adicionais. |
+| Proteção de propriedade | Durante os próximos três turnos do dono, nenhum efeito de carta afeta o imóvel protegido, inclusive a transferência pela carta Generoso. |
+| Devolução ao banco durante dívida | Quando o saldo não cobre uma dívida, devolver uma cidade ou companhia ao banco paga 50% do preço de compra e libera o título para outra pessoa. Construções do grupo precisam ser vendidas antes. Não existe estado hipotecado nem resgate; o título devolvido deixa de pertencer à pessoa. |
+| Recompra forçada | Ao cair num imóvel de outra pessoa, o visitante pode comprá-lo à força por 1,5× o investimento total no imóvel, pagando diretamente ao dono. O dono não pode recusar. Imóveis com hotel são imunes à recompra. |
+| Duração e modos | A anfitriã escolhe 15 minutos, 30 minutos ou 1 hora no lobby. O modo Express foi removido; há uma modalidade de partida com duração escolhida. |
+| Dinheiro inicial da reforma | R$ 2.000.000 por participante como valor inicial de playtest. A Partida paga R$ 200.000 ao passar ou chegar nela; a chegada à Volta ao Brasil também concede esse valor. O saldo pode ser recalibrado após partidas. |
+| Cartas Sorte ou Revés da reforma | Baralho autoral de 12 efeitos implementado no servidor: transferência de propriedade, dinheiro, apagão, terremoto, roubo, proteção, Prisão, Volta ao Brasil, Copa, troca de posições, cidade-sede e Partida. Ver [REGRAS-DE-JOGO.md](REGRAS-DE-JOGO.md). |
+| Carta Cidade-sede sem sede ativa | Descarte a carta sem mover o peão nem resolver uma casa de chegada. |
+| Modo noturno | Preferência local persistida neste navegador. Escurece a página inicial e a sala; durante a partida, muda somente o fundo externo, sem escurecer nem recolorir o tabuleiro. |
+| Duplas nos dados | Duplas em uma rolagem normal resolvem o movimento e a casa; depois de concluir a resolução, a pessoa lança novamente. Na terceira dupla consecutiva no mesmo turno, vai direto para a Prisão sem avançar com o terceiro resultado. Duplas tentadas para sair da Prisão não concedem outra rolagem. |
+| Volta ao Brasil | O antigo canto Volta ao Mundo passa a se chamar Volta ao Brasil. Mantém a escolha de destino já definida e concede R$ 200.000 ao chegar ao canto, inclusive quando uma carta levar a pessoa até ele. |
+| Marca BANTEC | BANTEC é o nome global da nova identidade do jogo. A página inicial já recebeu uma primeira repaginação com esse nome; refinamentos ainda pertencem ao escopo visual. |
+| Modelo central | Modelar os prédios da FATEC Itapetininga como peça visual central, usando as duas fotos aéreas fornecidas apenas como referência de forma. O modelo foi criado e integrado em primeira versão. O escopo é somente os três blocos e a torre mostrados, sem reproduzir terreno, ruas, carros ou paisagismo; não ocupa uma casa nem altera regras. |
+| Apresentação dos dados na FATEC | Durante a rolagem, os dados ficam suspensos acima do edifício central da FATEC; o indicador do resultado fica mais alto. A posição precisa deixar o prédio legível e o perímetro do tabuleiro livre. |
+
+Os PIBs municipais usados para a ordenação são produção econômica total e não renda individual dos moradores; atividades como extração de petróleo podem elevar muito o PIB de um município.
+
+## Propostas abertas
+
+- Testar venda de nível/devolução ao banco durante uma dívida real; completar os playtests de cartas, vitórias e balanceamento.
+
 ## Detalhes de implementação que ainda serão calibrados
 
-- Balanço dos alvos e bônus das oito cartas de objetivo Express após playtests.
-- Balanço da economia do tabuleiro para sustentar partidas nos tempos definidos; as hipotecas começam em 50% do preço com resgate a 110% do valor recebido.
+- Balanceamento da economia do tabuleiro para sustentar partidas nos tempos definidos.
+- Setores e nomes definitivos das companhias; os quatro nomes hoje no código são rascunhos.
 - Estratégia e equilíbrio dos bots; no MVP, eles priorizam decisões econômicas simples e recusam ofertas de troca recebidas.
 - Opções visuais de avatares, cores e acessibilidade.
 - Escolha final do provedor Node para hospedar o servidor, depois de validar Colyseus com salas reais.
-- **Regra de negociação preservada:** uma oferta pendente por sala; títulos hipotecados podem ser trocados e permanecem hipotecados, sem cobrança automática ao transferir; construções de todo o grupo de cor precisam ser vendidas antes da troca de um título desse grupo.
-- **Proposta de cálculo final implementada para playtest:** patrimônio = dinheiro disponível + preço de compra dos imóveis - saldo de hipoteca (50% do preço) + valor de venda das construções (50% do custo por nível). Se jogadores também empatarem nos dados, o servidor escolhe um deles aleatoriamente. Rever após playtests.
+- **Regra de negociação preservada:** uma oferta pendente por sala; títulos são transferidos sem hipoteca, pois imóveis devolvidos ao banco deixam de pertencer ao jogador. Construções do grupo precisam ser vendidas antes da troca de um título desse grupo.
+- **Cálculo final para playtest:** patrimônio = dinheiro disponível + preço de compra dos títulos + valor de venda das construções (50% do custo por nível). Se jogadores também empatarem nos dados, o servidor escolhe um deles aleatoriamente. Rever após playtests.
 
 ## Base de regras Express
 

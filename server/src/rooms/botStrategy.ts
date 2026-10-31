@@ -2,14 +2,15 @@ import type { GameMode } from '../../../shared/lobby.js'
 import { AUCTION_MIN_BID_INCREMENT } from '../../../shared/game.js'
 
 export function shouldBotBuyProperty(price: number, cash: number, completesGroup: boolean, mode: GameMode) {
+  void mode
   if (cash < price) return false
-  const reserve = completesGroup ? 50_000 : mode === 'express' ? 75_000 : 150_000
+  const reserve = completesGroup ? 50_000 : 150_000
   return cash - price >= reserve
 }
 
 export function chooseBotAuctionBid({
   price,
-  mortgageValue,
+  bankReturnValue,
   isBuildable,
   completesGroup,
   startingBid,
@@ -17,7 +18,7 @@ export function chooseBotAuctionBid({
   cash,
 }: {
   price: number
-  mortgageValue: number
+  bankReturnValue: number
   isBuildable: boolean
   completesGroup: boolean
   startingBid: number
@@ -25,7 +26,7 @@ export function chooseBotAuctionBid({
   cash: number
 }) {
   const maxFactor = isBuildable && completesGroup ? 1.2 : isBuildable ? 0.75 : 0.8
-  const maxValue = Math.floor((price - mortgageValue) * maxFactor)
+  const maxValue = Math.floor((price - bankReturnValue) * maxFactor)
   const nextBid = highestBid > 0 ? highestBid + AUCTION_MIN_BID_INCREMENT : startingBid
   return nextBid <= maxValue && cash >= nextBid + 100_000 ? nextBid : null
 }
