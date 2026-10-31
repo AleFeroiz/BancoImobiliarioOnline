@@ -1,7 +1,7 @@
-## Dados ainda mais baixos durante a rolagem — concluído (2026-10-31)
+## Dados mais baixos durante a rolagem — concluído (2026-10-31)
 
-- A pedido do usuário, a posição-base foi reduzida de Y=2,23 para Y=2,18, a escala dos dados passou a 0,9 e o indicador do total foi reposicionado para Y=2,82. O salto continua em 0,10. O teste usa o raio geométrico da caixa girando já escalado e mantém pelo menos 0,02 unidade acima do topo da torre da FATEC (Y≈1,81); a folga calculada é aproximadamente 0,027.
-- Em sala local, iniciei uma rolagem e conferi os dados menores e mais baixos sobre os prédios centrais, sem interseção visível com a Fatec. O teste específico passou com 3 casos; `npm run verify` passou com 240 testes em 46 arquivos e builds de frontend e servidor. Registro visual em [VALIDACAO.md](VALIDACAO.md#2026-10-31--redução-adicional-da-altura-dos-dados).
+- Novo ajuste a pedido do usuário: posição-base Y=2,165, salto reduzido de 0,10 para 0,065 e indicador do total em Y=2,72. Mantida a escala 0,9. O teste usa o raio geométrico da caixa girando já escalado e exige pelo menos 0,01 unidade de folga sobre a torre da FATEC (Y≈1,81); a folga calculada é aproximadamente 0,012.
+- O teste geométrico específico passou com 3 casos. Em partida local, conferi os dados suspensos acima dos prédios centrais, sem interseção visível. `npm run verify` passou: 240 testes em 46 arquivos e builds de frontend e servidor.
 - Próximo passo da reforma completa: concluir a revisão visual das cartas autorais (incluindo confirmar o efeito de Apagão em uma cobrança posterior) e fazer playtests humanos de equilíbrio/ritmo. A hospedagem agora tem comparação e proposta registradas, mas a escolha do provedor e o limite de custo precisam do usuário.
 
 ## Recompra após aluguel — concluída (2026-10-31)

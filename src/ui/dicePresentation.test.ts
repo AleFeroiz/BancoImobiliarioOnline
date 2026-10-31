@@ -21,9 +21,9 @@ describe('apresentação minimalista dos dados', () => {
 
   it('mantém os dados baixos sobre a FATEC durante a rolagem, sem atravessar a torre', () => {
     expect(DICE_PRESENTATION_POSITIONS).toHaveLength(2)
-    expect(DICE_PRESENTATION_POSITIONS.every((position) => position[1] >= 2.17 && position[1] <= 2.19)).toBe(true)
-    expect(DICE_PRESENTATION_POSITIONS.every((position) => position[1] - DICE_ROTATION_BOUNDING_RADIUS - FATEC_TOWER_TOP_Y >= 0.02)).toBe(true)
-    expect(DICE_ROLL_BOUNCE_HEIGHT).toBeLessThan(0.12)
+    expect(DICE_PRESENTATION_POSITIONS.every((position) => position[1] >= 2.16 && position[1] <= 2.17)).toBe(true)
+    expect(DICE_PRESENTATION_POSITIONS.every((position) => position[1] - DICE_ROTATION_BOUNDING_RADIUS - FATEC_TOWER_TOP_Y >= 0.01)).toBe(true)
+    expect(DICE_ROLL_BOUNCE_HEIGHT).toBeLessThan(0.08)
     expect(DICE_PRESENTATION_POSITIONS.every((position) => position[1] + DICE_ROLL_BOUNCE_HEIGHT + DICE_ROTATION_BOUNDING_RADIUS < 2.9)).toBe(true)
     expect(DICE_PRESENTATION_POSITIONS[0]?.[0]).toBeLessThan(0)
     expect(DICE_PRESENTATION_POSITIONS[1]?.[0]).toBeGreaterThan(0)

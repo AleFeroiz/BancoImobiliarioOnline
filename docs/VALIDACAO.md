@@ -670,3 +670,8 @@
 - Bot 1 comprou Belém e depois construiu até três casas. A carteira confirmou que não há hotel. A recompra forçada calculada sobre R$ 875.000 de investimento custará R$ 1.312.500; a regra da Linha 0 ainda não foi concluída.
 - Na seleção da sede da Copa, a captura mostrou aro dourado nas propriedades válidas do anfitrião e os demais pisos apagados. A carta Generoso abriu o prompt de escolha no tabuleiro; não registrei a transferência porque a seleção não foi concluída antes de expirar.
 - Próxima validação: acumular recursos na mesma regra de jogo, recomprar Belém (sem hotel) e observar o encerramento pela Linha 0.
+
+## 2026-10-31 — Redução adicional da altura dos dados
+
+- A pedido do usuário, baixei a posição-base dos dados para Y=2,165, reduzi o salto animado para 0,065 e aproximei o indicador do total para Y=2,72.
+- O teste geométrico específico passou e exige 0,01 unidade de folga mínima sobre o topo da torre da FATEC, mesmo considerando a caixa girando; a folga calculada fica em aproximadamente 0,012. Na partida local, os dados ficaram visivelmente suspensos acima dos prédios centrais, sem interseção com o modelo. `npm run verify` passou com 240 testes em 46 arquivos e builds de frontend e servidor. O build mantém o aviso conhecido de chunk 3D acima de 500 kB.
