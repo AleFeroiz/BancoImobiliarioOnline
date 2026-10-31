@@ -771,12 +771,12 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       player.position = spaceId
       this.state.pawnMoveMode = 'teleport'
       this.state.turnPhase = 'moving'
-      this.state.landingDescription = `Volta ao Mundo: sua peça viajou para ${space.name}, sem bônus por passagem pela Partida.`
+      this.state.landingDescription = `Volta ao Brasil: sua peça viajou para ${space.name}, sem bônus por passagem pela Partida.`
       this.state.presentationSpeed = this.state.animationSpeed
       this.schedulePresentation(getAnimationDuration(PAWN_TELEPORT_ANIMATION_DURATION_MS, this.state.presentationSpeed), () => {
         if (this.state.turnPhase !== 'moving' || this.state.activePlayerSessionId !== client.sessionId || player.position !== spaceId) return
         this.state.pawnMoveMode = 'walk'
-        this.resolveSpace(client.sessionId, player, true, `Volta ao Mundo: chegada em ${space.name}, sem bônus por passagem pela Partida.`)
+        this.resolveSpace(client.sessionId, player, true, `Volta ao Brasil: chegada em ${space.name}, sem bônus por passagem pela Partida.`)
         this.finishExpiredPhaseIfReady()
       })
     },

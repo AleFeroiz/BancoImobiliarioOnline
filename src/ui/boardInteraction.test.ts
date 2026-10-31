@@ -10,7 +10,7 @@ describe('interação com casas do tabuleiro', () => {
     expect(getBoardSpaceInteraction('world-cup', true, 12, [2, 7, 12])).toEqual({ type: 'choose-world-cup', spaceId: 12 })
   })
 
-  it('seleciona diretamente um destino válido da Volta ao Mundo', () => {
+  it('seleciona diretamente um destino válido da Volta ao Brasil', () => {
     expect(getBoardSpaceInteraction('world-tour', true, 34, [3, 20, 34])).toEqual({ type: 'choose-world-tour', spaceId: 34 })
   })
 

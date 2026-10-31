@@ -1114,6 +1114,7 @@ describe('sala privada', () => {
     expect(visitor.position).toBe(0)
     expect(visitor.cash).toBe(STARTING_CASH - normalRent * 3)
     expect(room.state.landingDescription).toContain('sem bônus por passagem pela Partida')
+    expect(room.state.landingDescription).toContain('Volta ao Brasil')
   })
 
   it('não oferece sede da Copa quando a pessoa da vez não possui propriedades', async () => {

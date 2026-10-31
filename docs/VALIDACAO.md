@@ -550,3 +550,11 @@
 - Regressão automatizada focada: `src/ui/turnActivity.test.ts` cobre a prioridade diante de carta, animação e feedback pendentes.
 - `npm run verify`: 229 testes em 44 arquivos passaram; builds frontend e servidor passaram. Para os testes Colyseus, o loopback local foi liberado após `fetch failed` no sandbox. O aviso conhecido de chunk de cena 3D acima de 500 KB permanece. Graphify atualizado.
 - Limite: o estado final não foi alcançado manualmente na interface nesta sessão; testes de integração existentes verificam o encerramento autoritativo do servidor e a regressão exercita a decisão de visibilidade do cartão.
+
+## Nome Volta ao Brasil e cartas no navegador — 2026-10-31
+
+- Em partida local com DEV ativo, forcei uma dupla até Sorte ou Revés. O baralho apresentou Troca-troca; escolhi os dois participantes e o servidor confirmou a troca sem resolver as casas de chegada.
+- Outra carta levou a pessoa à Volta ao Brasil. O tabuleiro iluminou os destinos disponíveis; escolhi São Paulo e a partida abriu a compra por R$ 950.000, com saldo acrescido do bônus de R$ 200.000 por chegar ao canto. A seleção e a chegada funcionaram, mas a revelação ainda mostrava “VOLTA AO MUNDO”.
+- A carta Prisão foi testada em seguida: a ficha chegou ao canto, na vez posterior apareceram “Tentar duplas”, “Pagar R$ 200.000 e sair” e “Aguardar este turno preso”; aguardar consumiu o turno e passou a vez ao bot.
+- Corrigi o nome antigo no cartão de revelação, no aviso sincronizado do servidor e na descrição vigente do plano. Regressões unitárias e de servidor cobrem os nomes atualizados.
+- Ainda pendem a inspeção visual pós-correção da revelação Volta ao Brasil, as demais cartas, uma liquidação real de dívida e as condições de vitória pela interface.
