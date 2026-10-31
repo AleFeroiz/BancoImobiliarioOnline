@@ -1,17 +1,17 @@
 # Graph Report - BancoImobiliarioOnline  (2026-10-31)
 
 ## Corpus Check
-- 133 files · ~84,994 words
+- 133 files · ~85,222 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 13 file(s) not represented in the graph (top: .glb 5, .blend 3, (none) 2)
 
 ## Summary
-- 894 nodes · 1663 edges · 67 communities (60 shown, 7 thin omitted)
+- 894 nodes · 1664 edges · 68 communities (61 shown, 7 thin omitted)
 - Extraction: 99% EXTRACTED · 1% INFERRED · 0% AMBIGUOUS · INFERRED: 18 edges (avg confidence: 0.92)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `8281f2c9`
+- Built from commit: `7fd42c7a`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -77,6 +77,7 @@
 - roomClient.ts
 - main.tsx
 - @colyseus/tools@^0.18.11
+- fpsMeter.ts
 - HUD, cartas, dados e roleta
 - Zoom da câmera e destaque das fichas
 - revealCopy.ts
@@ -111,7 +112,7 @@
 ## Import Cycles
 - None detected.
 
-## Communities (67 total, 7 thin omitted)
+## Communities (68 total, 7 thin omitted)
 
 ### Community 0 - "lobby.ts"
 Cohesion: 0.21
@@ -214,8 +215,8 @@ Cohesion: 0.14
 Nodes (13): Aplicação e limites, Apresentação por momento, Capturas de referência por estado, Composição, Direção visual para o nosso jogo, Fontes consultadas, Inventário de telas consultadas, Leitura visual das capturas (+5 more)
 
 ### Community 26 - "CashHud.tsx"
-Cohesion: 0.09
-Nodes (35): react@^19.1.0, react, three, CashHudOverlay, CashHudCamera(), CashHudOverlay, CashHudOverlayScene(), CashHudScene() (+27 more)
+Cohesion: 0.13
+Nodes (25): react@^19.1.0, react, three, CashHudOverlay, CashHudCamera(), CashHudOverlay, CashHudOverlayScene(), CashHudScene() (+17 more)
 
 ### Community 27 - "Regras do BANTEC"
 Cohesion: 0.07
@@ -341,6 +342,10 @@ Nodes (5): Decisão de implementação, Fatos verificados, Pedido confirmado, Se
 Cohesion: 0.40
 Nodes (4): @colyseus/sdk@^0.18.8, @colyseus/sdk, resolveRoomServerUrl(), roomClient
 
+### Community 61 - "fpsMeter.ts"
+Cohesion: 0.24
+Nodes (10): createFrameRateAccumulator(), FPS_IDLE_AFTER_MS, FPS_SAMPLE_WINDOW_MS, FrameRateAccumulator, FrameRateDisplay, FrameRateReading, readFrameRate(), recordRenderedFrame() (+2 more)
+
 ### Community 62 - "HUD, cartas, dados e roleta"
 Cohesion: 0.50
 Nodes (3): Decisões confirmadas pelo pedido, HUD, cartas, dados e roleta, Implementação e validação
@@ -360,15 +365,15 @@ Nodes (10): Mode, modeDetails, MoneyStepper(), Screen, SyncedPlayer, TradeOfferV
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `Andamento do projeto` connect `Andamento do projeto` to `ANDAMENTO.md`, `Board`?**
-  _High betweenness centrality (0.179) - this node is a cross-community bridge._
+  _High betweenness centrality (0.189) - this node is a cross-community bridge._
 - **Should `package.json` be split into smaller, more focused modules?**
   _Cohesion score 0.125 - nodes in this community are weakly interconnected._
 - **Why does `AnimatedPawn()` connect `Board` to `AnimatedBuilding`, `BoardScene.tsx`, `getPawnStepPath`, `GameRoom`, `playerEmotes.ts`, `gameAudio.ts`, `Seletor de fichas de personagem`, `CashHud.tsx`?**
-  _High betweenness centrality (0.165) - this node is a cross-community bridge._
+  _High betweenness centrality (0.171) - this node is a cross-community bridge._
 - **Should `GameRoom.ts` be split into smaller, more focused modules?**
   _Cohesion score 0.05526675786593707 - nodes in this community are weakly interconnected._
 - **Why does `Validação visual e de navegador` connect `Validação visual e de navegador` to `VALIDACAO.md`, `Board`, `Andamento do projeto`?**
-  _High betweenness centrality (0.140) - this node is a cross-community bridge._
+  _High betweenness centrality (0.142) - this node is a cross-community bridge._
 - **Should `Validação visual e de navegador` be split into smaller, more focused modules?**
   _Cohesion score 0.029850746268656716 - nodes in this community are weakly interconnected._
 - **Should `graphify.mjs` be split into smaller, more focused modules?**

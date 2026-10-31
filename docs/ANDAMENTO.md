@@ -5,6 +5,7 @@
 - `npm run verify`: 234 testes em 46 arquivos passaram; builds do frontend e servidor passaram. Graphify foi atualizado. Permanece o aviso conhecido do chunk 3D acima de 500 KB.
 - No navegador, uma partida de dois participantes confirmou a carta Aniversário (+R$ 50.000 recebido do outro participante) e a dívida de aluguel de R$ 210.000 em Maceió. A seleção pelo tabuleiro vendeu um nível de construção em Joinville e outro em Belém; a dívida foi paga e os títulos continuaram com o anfitrião.
 - Próximo passo concreto: percorrer visualmente as cartas restantes e validar Monopólio em Linha, Monopólio Duplo Regional, fim por tempo e falência.
+- Nota de continuidade da frente: [Reforma BANTEC](trabalho/reforma-bantec.md).
 
 ## Rota regional na home BANTEC — concluído (2026-10-31)
 
@@ -30,7 +31,7 @@
 - A fórmula agora arredonda ao real mais próximo. O teste de regressão falhou antes da correção com R$ 244.999 e passou depois. No navegador, a compra de Belém mostrou R$ 245.000 em três casas e preço total de R$ 875.000.
 - `npm run graphify -- update .` concluiu. `npm run verify` passou: 235 testes em 46 arquivos, build do frontend e build do servidor. A primeira execução de testes falhou porque o sandbox bloqueou o loopback (`fetch failed`); a repetição com a permissão local do playtest passou. Continua o aviso conhecido do chunk 3D acima de 500 KB.
 - A árvore segue em `main`; as mudanças locais nos arquivos do Blender foram preservadas. O painel de compra confirmou R$ 245.000 para Belém com três casas. Em seguida, uma partida real venceu pelas quatro companhias e mostrou o resultado final sem ser coberto por avisos ou painéis.
-- Próximo passo concreto da reforma: liquidar uma dívida real pela interface, percorrer as cartas restantes e validar as vitórias por Monopólio em Linha e Monopólio Duplo Regional, além do encerramento por tempo e falência.
+- Próximo passo concreto da reforma: revisar visualmente as cartas restantes e observar encerramentos por tempo e falência pela interface. A dívida já foi liquidada numa partida real; as três vitórias imediatas têm cobertura de integração e a vitória pelas quatro companhias foi observada no navegador.
 
 ## Painel de encerramento da partida — concluído (2026-10-31)
 
@@ -39,7 +40,8 @@
 - Correção: resultado final passa a ter prioridade sobre cartas, animações e avisos pendentes; ao receber o estado encerrado, a interface limpa animações, avisos e painéis locais. Ajuda e configurações não podem cobrir o resultado final.
 - `npm run verify`: 231 testes em 45 arquivos e builds do frontend/servidor passaram; `npm run graphify -- update .` atualizou o grafo. O build mantém o aviso conhecido de chunk 3D acima de 500 KB.
 - A lógica que prioriza o painel final está coberta por regressão automatizada. Em 2026-10-31, uma partida real de dois participantes venceu ao obter AgroBrasil, Aviação Brasil, Energia Brasil e Mineração Brasil. O painel exibiu “PARTIDA ENCERRADA”, “VENCEDOR DA PARTIDA”, patrimônio de R$ 2.400.000, saldo de R$ 50.000 e a classificação completa; a captura visual confirmou o painel central legível sobre o tabuleiro.
-- Próximo passo concreto: revisar dívida e cartas restantes pela interface; vitórias em linha, duplo regional e fim por tempo/falência continuam pendentes de playtest manual.
+- Os testes de integração do servidor verificam vitória por Monopólio em Linha, Monopólio Duplo Regional e quatro companhias; a vitória por companhias também foi concluída no navegador. Falência e fim por tempo têm testes de integração, mas ainda faltam observar esses finais pela interface.
+- Próximo passo concreto: percorrer visualmente as cartas restantes e validar o painel final ao encerrar por tempo ou falência.
 
 ## Reforma BANTEC — implementação em andamento (2026-10-31)
 

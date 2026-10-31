@@ -20,7 +20,7 @@
 - O teste de regressão reproduziu R$ 244.999 antes da correção. Depois da troca para arredondamento ao real mais próximo, passou a retornar R$ 245.000; repeti o playtest no navegador e confirmei esse mesmo valor no painel de compra.
 - `npm run verify`: 235 testes em 46 arquivos passaram; builds do frontend e servidor passaram. Para os testes Colyseus, foi necessário repetir com loopback autorizado após o sandbox padrão retornar `fetch failed`. `npm run graphify -- update .` concluiu.
 - A sala confirmou a conexão, o turno do anfitrião, o modo DEV, a rolagem forçada e a compra. Em seguida, num playtest separado de dois participantes, o anfitrião comprou as quatro companhias e venceu. O painel final mostrou nome, vitória, patrimônio, saldo e classificação sobre o tabuleiro; revisão visual aprovada. Patrimônio final: R$ 2.400.000 para o anfitrião e R$ 1.550.000 para o bot.
-- O estado terminal foi alcançado pela regra de vitória por quatro companhias, não pelo relógio ou falência. Esses outros caminhos, além de dívida e cartas restantes, seguem pendentes para revisão manual.
+- O estado terminal foi alcançado pela regra de vitória por quatro companhias, não pelo relógio ou falência. A dívida foi validada pela interface em uma sessão posterior. Fim por tempo/falência e as cartas restantes seguem pendentes de revisão visual; testes de integração cobrem as três vitórias imediatas e as transições do servidor.
 
 ## 2026-10-31 — Seleção no tabuleiro e liquidação de dívida
 
@@ -34,7 +34,7 @@
 
 - Conferi a cobertura de `server/test/GameRoom.test.ts` contra as doze cartas vigentes: os efeitos, escolhas de alvo, movimento e efeitos financeiros têm testes de integração; também estão cobertos dívida de Ladrão, falência e resolução do tempo.
 - Acrescentei teste de regressão para os hotéis não poderem receber Apagão nem Terremoto. Ambos são rejeitados pelo servidor sem alterar propriedade ou construção.
-- `npm run verify`: 234 testes em 46 arquivos passaram; builds frontend e servidor passaram. `npm run graphify -- update .` passou. Resta a validação manual da interface numa partida real.
+- `npm run verify`: 234 testes em 46 arquivos passaram; builds frontend e servidor passaram. `npm run graphify -- update .` passou. A dívida foi depois validada visualmente numa partida real; detalhes constam na seção “Seleção no tabuleiro e liquidação de dívida”.
 
 ## 2026-10-31 — Rota regional na home BANTEC
 
@@ -48,7 +48,7 @@
 - `npm run verify`: 225 testes em 44 arquivos passaram; builds do frontend e servidor passaram. O build mantém o aviso conhecido de chunk de cena 3D com 956,45 KB (259,83 KB gzip). `git diff --check` passou.
 - Após o ajuste de altura de 6 para 4,2 unidades, a captura da partida mostra os dados lado a lado flutuando logo acima da FATEC Itapetininga, com o total acima deles; o modelo permanece visível e os dados não ficam isolados no alto da tela. O tabuleiro mantém as cores das regiões enquanto o fundo externo fica escuro.
 - Na home e no lobby, os seletores de duração foram revisados em modo noturno depois de ajustar seus fundos e bordas para manter contraste. A partida real também confirmou compra da companhia Aviação Brasil por R$ 500.000, saldo atualizado para R$ 1.500.000 e o imóvel disponível na carteira com preço e aluguel.
-- Testes de integração cobrem vitória imediata por Monopólio em Linha, Monopólio Duplo Regional e quatro companhias, três turnos de Apagão e liberação de imóvel após Terremoto. Liquidação real de dívida e navegação manual por todas as cartas/vitórias permanecem pendentes.
+- Testes de integração cobrem vitória imediata por Monopólio em Linha, Monopólio Duplo Regional e quatro companhias, três turnos de Apagão e liberação de imóvel após Terremoto. A liquidação real de dívida e a vitória pelas quatro companhias foram confirmadas no navegador; faltam revisão visual das cartas restantes e do fim por tempo/falência.
 
 ## 2026-10-31 — Atalhos da HUD na lateral direita
 
@@ -61,7 +61,7 @@
 - A home foi revisada no navegador interno em viewport móvel e no Chrome headless isolado em 1440×1000. Cabeçalho e status agora dizem BANTEC / “MESA ONLINE”, sem a antiga marca Banco Imobiliário. O formulário de criar/entrar, escolha de duração e fundo do tabuleiro mantêm contraste no desktop e no celular.
 - Partida real com quatro lugares (anfitrião + três bots), duração de 15 minutos e saldo de R$ 2.000.000 por jogador. O anfitrião comprou Manaus com três casas por R$ 1.625.000; o resumo mostrou aluguel de R$ 455.000 por parada. A compra exibe os quatro níveis de preço/aluguel.
 - Captura da partida desktop em 1440×1000 confirmou os quatro cartões de jogador, ações compactas, contorno do tabuleiro, cores das regiões, rótulos e o modelo da FATEC no centro sem ocupar o perímetro. A revisão usou sessão headless isolada; a aba pessoal do Chrome permaneceu intacta.
-- No viewport móvel, carteira e inspetor exibiram Rio Verde com duas casas, aluguel de R$ 90.000 e preço de compra de R$ 225.000; o inspetor apresentou a escada de aluguel e bloqueou leilão enquanto o grupo tem construções. Ainda falta conferir a disposição da partida desktop e abrir o painel de liquidação numa dívida real.
+- No viewport móvel, carteira e inspetor exibiram Rio Verde com duas casas, aluguel de R$ 90.000 e preço de compra de R$ 225.000; o inspetor apresentou a escada de aluguel e bloqueou leilão enquanto o grupo tem construções. Uma sessão desktop posterior revisou a partida e abriu a tela de liquidação de dívida; os detalhes estão na seção “Seleção no tabuleiro e liquidação de dívida”.
 - Após a confirmação do usuário de que Proteção impede qualquer efeito de carta, inclusive Generoso, acrescentei ao teste Colyseus a rejeição de transferência protegida e confirmei que o imóvel continua com o dono. `server/test/GameRoom.test.ts`: 44 testes passaram.
 - `npm run graphify -- update .` atualizou o grafo local (863 nós, 1.602 relações). `npm run verify` passou com 215 testes em 43 arquivos, builds do frontend e servidor; o aviso conhecido do chunk `sceneMaterials` acima de 500 KB permanece.
 
