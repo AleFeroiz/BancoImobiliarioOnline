@@ -1,3 +1,20 @@
+## 2026-10-31 — Vitórias por Monopólio Duplo Regional e em Linha
+
+- Em sala DEV local, comprei as cinco cidades do Norte e as cinco do Centro-Oeste. A compra de Brasília completou o segundo monopólio regional e abriu imediatamente “PARTIDA ENCERRADA”; o painel mostrou Codex QA como vencedor, patrimônio final de R$ 3.875.000, saldo R$ 0 e classificação.
+- Em outra sala, adquiri Canaã dos Carajás, Porto Velho, AgroBrasil, Parauapebas, Belém, Manaus e Rio Verde. A compra de Rio Verde completou os sete títulos do lado 0 e encerrou a partida por Monopólio em Linha. O painel mostrou Codex Linha como vencedor, patrimônio final de R$ 2.550.000, saldo R$ 100.000 e classificação.
+- Inspecionei capturas desktop dos dois painéis finais. A partida terminou sem aguardar o relógio; os controles de compra e DEV não ficaram sobre a tela final.
+
+## 2026-10-31 — Encerramento após dívida sem bens liquidáveis
+
+- Em sala DEV, o anfitrião possuía apenas São Paulo, com três casas e aluguel de R$ 665.000. Bot 1 estava sem saldo e sem imóveis liquidáveis; mantive esses valores antes dos turnos do bot. Após uma jogada do bot, a sala exibiu “PARTIDA ENCERRADA”, com o anfitrião vencedor e Bot 1 em R$ 0; ainda restavam 23:45 no relógio da partida.
+- A tela final não informa o motivo do encerramento. Como São Paulo era o único título possuído, não havia outro pagamento ou condição de monopólio que explicasse o fim; a falência por aluguel é a causa compatível com o estado observado. A captura confirma o painel final, embora o motivo continue sendo inferido pela sequência e pelo estado.
+
+## 2026-10-31 — Recompra forçada pela interface
+
+- Bot 1 comprou Manaus com três casas; o investimento total foi de R$ 1.625.000 e não havia hotel. Pelo teleporte DEV, levei o anfitrião diretamente à casa. A interface ofereceu “Recomprar por R$ 2.437.500” ou “Pagar aluguel”, sem solicitar aceite do proprietário.
+- Ao confirmar, o saldo do anfitrião caiu de R$ 2.545.000 para R$ 107.500 e o do bot subiu de R$ 377.500 para R$ 2.815.000. O aviso confirmou o pagamento direto ao antigo dono e a propriedade mudou para o anfitrião.
+- Capturei e inspecionei a tela com os saldos atualizados e a confirmação da transferência.
+
 ## 2026-10-31 — Ferramentas DEV de teleporte e saldo
 
 - O anfitrião ativou o Modo DEV no lobby, iniciou uma sala local com um bot e escolheu Canaã dos Carajás na lista de 40 casas. O peão apareceu diretamente na cidade e o painel normal de compra foi aberto; o saldo não recebeu bônus por casas puladas. Comprei o terreno por R$ 200.000.

@@ -37,7 +37,7 @@ A volta começa pela região de menor participação no PIB nacional e termina n
 
 ## Propostas abertas e validações necessárias
 
-- Fazer playtest manual de todas as cartas, da devolução de título e venda de construções durante dívida, das três condições de vitória instantânea e do encerramento por tempo/falência.
+- Fazer playtest manual visual das cartas ainda não revisadas. As três condições de vitória, o fim por tempo, uma tela final após insolvência, a recompra forçada e o teleporte DEV para qualquer casa já foram vistos; o motivo da insolvência por aluguel segue inferido porque o painel final não o identifica.
 - Validar equilíbrio e ritmo das partidas de 15, 30 e 60 minutos com pessoas; o saldo inicial e a economia continuam sujeitos a calibração depois desses jogos.
 - A home foi repaginada com o percurso visual das cinco regiões; a próxima revisão da página inicial deve preservar esse caminho, a leitura rápida e o acesso direto a criar/entrar em sala.
 - Validar hospedagem Colyseus e custos operacionais antes de escolher o provedor definitivo.

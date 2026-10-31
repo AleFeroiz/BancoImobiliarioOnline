@@ -1,3 +1,15 @@
+## Recompra forçada na interface — concluído (2026-10-31)
+
+- Bot 1 comprou Manaus e três casas por R$ 1.625.000, sem hotel. O anfitrião foi à propriedade pelo teleporte DEV; a tela ofereceu “Recomprar por R$ 2.437.500” ou “Pagar aluguel”, sem pedir aceite ao dono.
+- Confirmei a recompra: o saldo do anfitrião caiu de R$ 2.545.000 para R$ 107.500 e o do bot subiu de R$ 377.500 para R$ 2.815.000. O aviso confirmou o pagamento direto ao antigo proprietário, e a propriedade passou ao anfitrião.
+- Captura visual inspecionada. Próximo passo: revisar visualmente as cartas restantes; a causa da falência por aluguel ainda foi inferida pelo estado da partida, pois o painel final não a identifica.
+
+## Vitórias por monopólio na interface — concluído (2026-10-31)
+
+- Em uma sala local de teste, completei Norte e Centro-Oeste com o teleporte DEV e observei o encerramento imediato por Monopólio Duplo Regional. O painel mostrou vencedor, patrimônio, saldo e classificação; patrimônio final do anfitrião: R$ 3.875.000.
+- Em outra sala, comprei os sete títulos do lado 0 (seis cidades e AgroBrasil). A compra de Rio Verde encerrou imediatamente a partida por Monopólio em Linha; o painel mostrou vencedor, patrimônio, saldo e classificação. Patrimônio final: R$ 2.550.000.
+- As duas capturas confirmam que a interface final não fica presa em compras, avisos ou controles DEV. O painel final após insolvência também foi visto; a causa por aluguel é inferida pelo único imóvel possuído, três casas em São Paulo, contra bot sem caixa ou bens. Permanece a revisão visual das cartas.
+
 ## Ferramentas DEV para testes de partida — concluído (2026-10-31)
 
 - O pedido foi adicionar um teleporte DEV para escolher diretamente qualquer casa, além de definir o saldo de qualquer participante e ativar dinheiro infinito.
@@ -6,14 +18,14 @@
 - `npm run verify`: 237 testes em 46 arquivos e builds de frontend/servidor passaram. Graphify foi atualizado.
 - A revisão manual numa sala com bot confirmou teleporte para Canaã dos Carajás, abertura da compra regular, definição visual do saldo em R$ 1.230.000 e ativação do dinheiro infinito. Testes cobrem também construção e pagamento de aluguel sem desconto do saldo infinito.
 - Nota de validação: [Ferramentas DEV de teleporte e saldo](VALIDACAO.md#2026-10-31--ferramentas-dev-de-teleporte-e-saldo).
-- Próximo passo concreto da reforma completa: continuar a revisão manual das cartas restantes e das condições de vitória que ainda não foram vistas.
+- Próximo passo concreto da reforma completa: revisar visualmente as cartas restantes. A recompra forçada e o teleporte direto para qualquer uma das 40 casas já foram validados na interface.
 
-## Playtest da Linha 0 — progresso (2026-10-31)
+## Playtest da Linha 0 — concluído (2026-10-31)
 
-- Em partida local normal, com Modo DEV apenas para direcionar os dados, adquiri Porto Velho, Parauapebas, Rio Verde, AgroBrasil, Manaus e Canaã dos Carajás. São seis dos sete títulos exigidos na Linha 0; Bot 1 tem Belém com três casas, sem hotel.
-- O playtest confirmou o bônus de R$ 200.000 ao passar pela Partida e a taxa de R$ 125.000 para seis imóveis. A carteira confirmou os seis títulos do anfitrião; saldo atual no teste: R$ 375.000.
-- Na Copa do Mundo, a cena iluminou os imóveis próprios válidos e apagou os demais. A carta Generoso também abriu a seleção de imóvel no tabuleiro; o efeito não foi concluído nesta rodada.
-- Com três casas, a recompra forçada de Belém custa R$ 1.312.500 (1,5× R$ 875.000 de investimento); faltam R$ 937.500 ao anfitrião, ou cinco bônus de Partida, antes da recompra. Próximos passos: concluir essa vitória, depois validar Monopólio Duplo Regional e falência pela interface.
+- Em partida local com Modo DEV, adquiri os sete títulos do lado 0 (Canaã dos Carajás, Porto Velho, AgroBrasil, Parauapebas, Belém, Manaus e Rio Verde). O último título encerrou a partida por Monopólio em Linha.
+- O painel final mostrou vencedor, patrimônio de R$ 2.550.000, saldo de R$ 100.000 e classificação. A vitória também foi registrada no bloco “Vitórias por monopólio na interface”.
+- Em outra sala, confirmei a recompra forçada de Manaus com três casas por R$ 2.437.500 e o repasse direto ao antigo dono; ver [Recompra forçada na interface](#recompra-forçada-na-interface--concluído-2026-10-31).
+- Na Copa do Mundo, a cena iluminou os imóveis próprios válidos e apagou os demais. A carta Generoso abriu a seleção de imóvel no tabuleiro; o efeito ainda não foi concluído naquela sessão.
 - Nota de continuidade da frente: [Reforma BANTEC](trabalho/reforma-bantec.md).
 
 ## Auditoria de cartas e dívida — progresso (2026-10-31)
@@ -23,7 +35,7 @@
 - `npm run verify`: 234 testes em 46 arquivos passaram; builds do frontend e servidor passaram. Graphify foi atualizado. Permanece o aviso conhecido do chunk 3D acima de 500 KB.
 - No navegador, uma partida de dois participantes confirmou a carta Aniversário (+R$ 50.000 recebido do outro participante) e a dívida de aluguel de R$ 210.000 em Maceió. A seleção pelo tabuleiro vendeu um nível de construção em Joinville e outro em Belém; a dívida foi paga e os títulos continuaram com o anfitrião.
 - Playtest desta retomada: uma sala local encerrou quando o relógio chegou a zero; a interface exibiu “PARTIDA ENCERRADA”, vencedor, classificação, patrimônios/saldos e botão para voltar ao início, sem travar.
-- Próximo passo concreto: concluir o playtest de Monopólio em Linha, depois validar Monopólio Duplo Regional, as cartas restantes e o encerramento por falência.
+- Registro histórico: a dívida e o fim por tempo foram vistos na interface; as vitórias por Linha e Duplo Regional foram concluídas em 2026-10-31. A revisão visual das cartas restantes e da recompra forçada permanece aberta.
 - Nota de continuidade da frente: [Reforma BANTEC](trabalho/reforma-bantec.md).
 
 ## Rota regional na home BANTEC — concluído (2026-10-31)
@@ -33,7 +45,7 @@
 - Revisão visual no navegador local em 964×883, 390×844 e 320×568: no menor viewport encontrei uma barra horizontal causada pelo `min-width: 320px` do `body`, que ultrapassava a área útil quando a barra vertical estava presente. Removi o piso fixo; a nova captura em 320×568 não mostra rolagem horizontal. Em 390×844, a rota continua em uma linha e a rolagem revela o formulário completo.
 - `npm run graphify -- update .` concluiu. `npm run verify` passou com 233 testes em 46 arquivos; builds do frontend e servidor passaram. O chunk de cena 3D permanece acima de 500 KB.
 - O Vite iniciou normalmente. Colyseus retornou `EADDRINUSE` em 2567 sem listener identificável em `Get-NetTCPConnection` ou `netstat`, então não interrompi processo desconhecido; não foi necessária sala para validar a home.
-- Próximo passo concreto da reforma completa: percorrer por jogo as cartas e as condições de vitória ainda não vistas; a dívida real já foi liquidada pela interface.
+- Registro histórico: nessa data faltavam revisar as cartas e observar as vitórias por Linha/Duplo Regional e o fim por falência; as vitórias foram observadas em 2026-10-31 e o painel após insolvência apareceu nesta retomada.
 
 ## Cartões coloridos, avisos identificados e visibilidade das peças — concluído (2026-10-30)
 
