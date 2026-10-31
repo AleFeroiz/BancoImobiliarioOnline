@@ -67,6 +67,12 @@
 - Posição-base reduzida para Y=1,10, escala para 0,63 e indicador para Y=1,57. O teste geométrico calcula o envelope do dado girando e confirma margem mínima de 0,01 sobre os telhados, sem interseção com a torre.
 - `src/ui/dicePresentation.test.ts` passou (3 testes). `npm run verify` passou com 247 testes em 46 arquivos e builds frontend/servidor. `npm run graphify -- update .` atualizou o grafo para 943 nós e 1.752 arestas. A rolagem não foi revista visualmente: a sala local já aberta estava no turno de outra pessoa e o controle DEV não permitiu iniciar uma rolagem do anfitrião.
 
+## 2026-10-31 — Seleção de propriedade durante Apagão
+
+- Em uma sala com Bot 1, a revelação de Apagão foi fechada automaticamente pelo prazo. O tabuleiro mostrou casas válidas e inválidas com contraste, mas um segundo cartão central de turno ainda cobria parte das casas. A seleção expirou antes de confirmar o clique; não prova aplicação nem falha do efeito.
+- Em uma sala de teste nova, apliquei a correção também ao percurso de Volta ao Brasil: após fechar a carta, o cartão central sumiu, os destinos válidos ficaram iluminados e escolhi São Paulo diretamente pelo tabuleiro; a interface abriu a compra de São Paulo.
+- Os testes focados de turnActivity e boardInteraction passaram; `npm run verify` passou com 247 testes em 46 arquivos e builds web/servidor. Falta repetir a seleção de uma propriedade-alvo de carta como Apagão e confirmar a suspensão de aluguel numa visita posterior.
+
 ## 2026-10-31 — Redução adicional da altura dos dados
 
 - Em sala local BANTEC com Modo DEV, iniciei uma rolagem real e capturei a cena no centro da FATEC. Com posição-base Y=2,18, escala 0,9 e salto de 0,10, os dados ficaram mais baixos e não apresentaram interseção visual com os prédios ou a torre.

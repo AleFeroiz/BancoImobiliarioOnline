@@ -1,3 +1,9 @@
+# Seleção de casas pelo tabuleiro — correção visual em andamento (2026-10-31)
+
+- A revisão manual do Apagão mostrou que, depois de fechar a carta, ainda surgia um cartão central de turno sobre o tabuleiro, embora a cidade válida estivesse iluminada. A primeira correção ocultava o modal, mas não esse segundo cartão.
+- A implementação agora usa as opções válidas de `boardChoicePhase` para remover o cartão central durante seleções de propriedades, destinos, dívidas, trocas e carteira; o cartão de revelação continua até ser fechado ou expirar. Em uma sala real, fechei a revelação de Volta ao Brasil, vi as casas válidas iluminadas e inválidas apagadas sem o cartão central, e escolhi São Paulo no tabuleiro.
+- Testes focados passaram (14 testes); `npm run verify` passou com 247 testes em 46 arquivos e builds web/servidor; Graphify foi atualizado para 945 nós e 1.754 arestas. Falta concluir pelo menos uma escolha de propriedade de carta como Apagão e confirmar a suspensão de aluguel em uma visita posterior.
+
 # Altura dos dados — novo ajuste solicitado (2026-10-31)
 
 - Baixei os dados de Y=1,12 para Y=1,10, reduzi a escala de 0,68 para 0,63 e aproximei o indicador do resultado de Y=1,62 para Y=1,57. A caixa em qualquer rotação mantém aproximadamente 0,015 unidade de folga sobre os telhados da FATEC.

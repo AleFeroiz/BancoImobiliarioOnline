@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { getTurnActivityLabel, shouldShowTurnCard, shouldSuppressTurnCardForFeedback, shouldSuppressTurnCardForSpaceSelection } from './turnActivity.js'
+import { getTurnActivityLabel, isBoardSelectionGuidanceActive, shouldShowTurnCard, shouldSuppressTurnCardForFeedback, shouldSuppressTurnCardForSpaceSelection } from './turnActivity.js'
 
 describe('atividade do jogador da vez', () => {
   it('descreve cada fase para os outros participantes', () => {
@@ -37,5 +37,11 @@ describe('atividade do jogador da vez', () => {
   it('não deixa uma inspeção antiga esconder o painel de compra, mesmo sem saldo suficiente', () => {
     expect(shouldSuppressTurnCardForSpaceSelection(true, 'purchase', false, false, false)).toBe(false)
     expect(shouldSuppressTurnCardForSpaceSelection(true, 'resolve', false, false, false)).toBe(true)
+  })
+
+  it('libera o tabuleiro durante qualquer escolha válida e mantém a revelação da carta por cima', () => {
+    expect(isBoardSelectionGuidanceActive(true, false)).toBe(true)
+    expect(isBoardSelectionGuidanceActive(true, true)).toBe(false)
+    expect(isBoardSelectionGuidanceActive(false, false)).toBe(false)
   })
 })

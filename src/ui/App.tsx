@@ -19,7 +19,7 @@ import { stepDieValue } from './forcedDice'
 import { getPropertyRentLabel } from './propertyRentLabel'
 import { appendGameFeedback, personalizePlayerFeedback, type GameFeedbackItem } from './feedbackQueue'
 import { playGameSound, startGameMusic, stopGameMusic, unlockGameAudio } from './gameAudio'
-import { getTurnActivityLabel, shouldShowTurnCard, shouldSuppressTurnCardForFeedback, shouldSuppressTurnCardForSpaceSelection } from './turnActivity'
+import { getTurnActivityLabel, isBoardSelectionGuidanceActive, shouldShowTurnCard, shouldSuppressTurnCardForFeedback, shouldSuppressTurnCardForSpaceSelection } from './turnActivity'
 import { getBoardSpaceInteraction } from './boardInteraction'
 import { CashHudSymbols } from './CashHudSymbols'
 import { shouldShowRolledDice } from './dicePresentation'
@@ -321,7 +321,8 @@ function App() {
   const revealKey = revealKind ? `${turnNumber}:${activePlayerSessionId}:${revealKind}:${activeCardTitle}` : ''
   const showTransientReveal = Boolean(revealKind && revealKey !== dismissedRevealKey)
   const showDice = shouldShowRolledDice(turnPhase, diceForPawnMovement)
-  const modalVisible = !isPresentationAnimating && (showAuctionPanel || showPropertyPanel || showTransientReveal || (isMyTurn && (turnPhase === 'purchase' || turnPhase === 'buyback' || turnPhase === 'card-target' || ownPropertyLanding || turnPhase === 'debt' || turnPhase === 'ended')))
+  const boardSelectionGuidanceActive = isBoardSelectionGuidanceActive(Boolean(boardChoicePhase && boardChoiceSpaceIds.length > 0), showTransientReveal)
+  const modalVisible = !isPresentationAnimating && (showAuctionPanel || (!boardSelectionGuidanceActive && showPropertyPanel) || showTransientReveal || (!boardSelectionGuidanceActive && isMyTurn && (turnPhase === 'purchase' || turnPhase === 'buyback' || turnPhase === 'card-target' || ownPropertyLanding || turnPhase === 'debt' || turnPhase === 'ended')))
   const propertyBuildings = Array.from(roomProperties.entries()).map(([id, holding]) => ({
     spaceId: Number(id),
     ownerSessionId: holding.ownerSessionId,
@@ -1029,7 +1030,7 @@ function App() {
               </div>
               <span className="asset-note">Inicie leilões durante seu turno, fora de compras e dívidas. Os lances ficam reservados durante 20 segundos.</span>
             </aside>
-          ) : shouldSuppressTurnCardForFeedback(feedbackPending, turnPhase) || !showTurnCard || shouldSuppressTurnCardForSpaceSelection(Boolean(selectedSpace), turnPhase, ownPropertyLanding, showPropertyPanel && turnPhase !== 'debt', false) ? null : (
+          ) : boardSelectionGuidanceActive || shouldSuppressTurnCardForFeedback(feedbackPending, turnPhase) || !showTurnCard || shouldSuppressTurnCardForSpaceSelection(Boolean(selectedSpace), turnPhase, ownPropertyLanding, showPropertyPanel && turnPhase !== 'debt', false) ? null : (
             <div className={`turn-card${turnPhase === 'ended' ? ' final-result-card' : ''}${turnPhase === 'purchase' ? ' purchase-panel' : ''}${turnPhase === 'world-cup' || turnPhase === 'world-tour' ? ' corner-choice-panel' : ''}`}>
               <span className="turn-label">{turnPhase === 'ended' ? 'PARTIDA ENCERRADA' : turnPhase === 'debt' ? 'DÍVIDA EM ABERTO' : matchEnding ? 'TEMPO ESGOTADO · CONCLUA A JOGADA' : `TURNO ${turnNumber} · ${isMyTurn ? 'SUA VEZ' : `VEZ DE ${activePlayer?.name ?? '…'}`}`}{turnPhase !== 'ended' && turnSeconds > 0 && <b className="turn-countdown" aria-label={`${turnSeconds} segundos restantes`}>{turnSeconds}s</b>}</span>
               <h2>{turnPhase === 'ended' ? (roomPlayers.find((player) => player.sessionId === winnerSessionId)?.name ?? 'Partida encerrada') : presentationStage === 'dice' ? 'Rolando os dados…' : presentationStage === 'pawn' ? 'Peão em movimento…' : turnPhase === 'debt' ? 'Hora de liquidar bens' : activeCardTitle || (turnPhase === 'purchase' ? `Comprar ${pendingPurchaseSpace?.name ?? 'propriedade'}` : turnPhase === 'buyback' ? `Recomprar ${pendingPurchaseSpace?.name ?? 'propriedade'}` : activeSpace.name)}</h2>
