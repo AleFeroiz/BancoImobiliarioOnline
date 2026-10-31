@@ -29,7 +29,8 @@
 - Também revisei o início do Apagão: o tabuleiro apagou as casas inelegíveis e iluminou propriedades válidas de Bot 1. A tentativa de clicar em Belém ocorreu no fim da contagem e abriu o inspetor; portanto, não confirmou o envio do alvo. Uma chegada posterior cobrou o aluguel de R$ 245.000, mas como a carta expirou sem a seleção confirmada, isso não prova falha do efeito.
 - Nesta retomada, confirmei Ladrão no navegador: BANTEC QA recebeu R$ 200.000 (R$ 1.675.000 → R$ 1.875.000) e Bot 1 pagou R$ 200.000 (R$ 6.562.500 → R$ 6.362.500). Também selecionei Cuiabá como destino da carta Volta ao Brasil, que preservou a resolução normal de chegada sem bônus por passar pela Partida.
 - Repeti a seleção do Apagão em Manaus. O tabuleiro iluminou a cidade de Bot 1 e apagou as inválidas, mas as tentativas venceram o prazo antes de a seleção ser registrada; não há confirmação visual de suspensão de aluguel. Os testes de integração cobrem a suspensão durante três turnos do dono e a retomada após expirar.
-- Próxima validação: concluir a seleção de Apagão dentro do prazo e observar que Manaus não cobra numa chegada, antes da expiração.
+- Corrigi a janela de seleção: o aviso da carta tem até 15 segundos e, ao fechá-lo, o servidor inicia uma nova janela integral de 15 segundos. A expiração automática do aviso também inicia a seleção. Regressão de servidor cobre o reinício do prazo; no navegador, fechei Terremoto e confirmei os 15 segundos completos, com a mensagem de que não havia alvo elegível.
+- Próxima validação: selecionar Apagão sobre uma propriedade elegível de outra pessoa e comprovar numa chegada posterior que o aluguel não foi cobrado. Revisar visualmente as demais cartas autorais.
 
 ## Ferramentas DEV para testes de partida — concluído (2026-10-31)
 

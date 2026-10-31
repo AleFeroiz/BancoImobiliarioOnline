@@ -68,6 +68,7 @@ Proteção bloqueia qualquer efeito de carta, inclusive Generoso. Apagão e Prot
 - Propostas de troca de dinheiro e títulos podem ser enviadas pelo perfil de participante a qualquer momento. Há uma proposta ativa por sala; ela fica aberta até ser aceita, recusada, cancelada pelo remetente, ou encerrada por falência/fim de partida. O servidor valida títulos, construções e saldos ao enviar e aceitar.
 - A anfitriã pode ativar o modo DEV no lobby. Quando ativo, apenas ela pode forçar os dados durante a rolagem válida; o servidor verifica anfitriã, jogador ativo e valores.
 - A velocidade visual compartilhada é 0,5×, 1× ou 2×. O turno dá 20 segundos para rolar e até 15 segundos para cada decisão. Se alguém não agir, a compra é recusada, a Prisão aguarda, ações obrigatórias são concluídas e a dívida avança pela próxima liquidação disponível.
+- Quando uma carta exige escolha de alvo, o aviso da carta tem até 15 segundos para ser lido/fechado; depois de fechar, a pessoa da vez recebe uma janela completa de 15 segundos para escolher no tabuleiro. Se o aviso não for fechado, ele desaparece após 15 segundos e a janela de seleção começa automaticamente.
 
 ## Apresentação e acesso
 

@@ -6,7 +6,7 @@ import type { LobbyState } from '../src/rooms/schema/LobbyState.js'
 import { PropertyState } from '../src/rooms/schema/LobbyState.js'
 import { boardSpaces, getLineTitleIds } from '../../shared/board.js'
 import { EVENT_CARDS, type EventCard } from '../../shared/cards.js'
-import { PROPERTY_HOTEL_LEVEL, START_BONUS, STARTING_CASH, bankReturnValue, buildingSaleValue, calculateRent, constructionCost, forcedBuybackCost } from '../../shared/game.js'
+import { PROPERTY_HOTEL_LEVEL, START_BONUS, STARTING_CASH, TURN_DECISION_SECONDS, bankReturnValue, buildingSaleValue, calculateRent, constructionCost, forcedBuybackCost } from '../../shared/game.js'
 
 async function waitFor(condition: () => boolean, timeout = 2500) {
   const start = Date.now()
@@ -1387,6 +1387,74 @@ describe('sala privada', () => {
     expect(room.state.turnPhase).toBe('resolve')
     expect(room.state.pendingPropertyId).toBe(255)
     expect(room.state.properties.get(String(propertyId))?.ownerSessionId ?? '').toBe('')
+  })
+
+  it('concede 15 segundos completos para selecionar o alvo depois de fechar a carta', async () => {
+    const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
+    const host = await colyseus.connectTo(room, { name: 'Ana' })
+    await colyseus.connectTo(room, { name: 'Bia' })
+    host.send('start')
+    await waitFor(() => room.state.status === 'playing')
+
+    const player = room.state.players.get(host.sessionId)!
+    const targetSpace = boardSpaces.find((space) => space.kind === 'property' && space.buildable)!
+    const targetProperty = new PropertyState()
+    targetProperty.ownerSessionId = [...room.state.players.keys()].find((sessionId) => sessionId !== host.sessionId)!
+    room.state.properties.set(String(targetSpace.id), targetProperty)
+    player.position = boardSpaces.find((space) => space.kind === 'event')!.id
+
+    const serverGame = room as unknown as {
+      resolveSpace: (sessionId: string, target: typeof player, drawEvent?: boolean) => void
+      drawEventCard: () => EventCard
+      updateTurnClock: () => void
+      turnTimerKey: string
+      cardTargetRevealPending: boolean
+    }
+    serverGame.drawEventCard = () => EVENT_CARDS.find((card) => card.id === 'blackout')!
+    serverGame.resolveSpace(host.sessionId, player, true)
+    expect(room.state.turnPhase).toBe('card-target')
+    expect(serverGame.cardTargetRevealPending).toBe(true)
+
+    serverGame.updateTurnClock()
+    serverGame.updateTurnClock()
+    expect(room.state.turnSeconds).toBe(TURN_DECISION_SECONDS - 2)
+
+    host.send('dismissCardReveal')
+    await waitFor(() => !serverGame.cardTargetRevealPending && room.state.turnSeconds === TURN_DECISION_SECONDS)
+    serverGame.updateTurnClock()
+    expect(room.state.turnPhase).toBe('card-target')
+    expect(room.state.turnSeconds).toBe(TURN_DECISION_SECONDS - 1)
+
+    room.state.turnSeconds = 1
+    serverGame.updateTurnClock()
+    expect(room.state.turnPhase).toBe('resolve')
+    expect(room.state.landingDescription).toContain('carta foi descartada')
+  })
+
+  it('inicia a janela de seleção quando o aviso da carta expira sozinho', async () => {
+    const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
+    const host = await colyseus.connectTo(room, { name: 'Ana' })
+    await colyseus.connectTo(room, { name: 'Bia' })
+    host.send('start')
+    await waitFor(() => room.state.status === 'playing')
+
+    const serverGame = room as unknown as { updateTurnClock: () => void; turnTimerKey: string; cardTargetRevealPending: boolean }
+    room.state.turnPhase = 'card-target'
+    room.state.activePlayerSessionId = host.sessionId
+    room.state.turnSeconds = 2
+    serverGame.turnTimerKey = `${room.state.turnNumber}:${host.sessionId}:card-target`
+    serverGame.cardTargetRevealPending = true
+
+    serverGame.updateTurnClock()
+    expect(room.state.turnSeconds).toBe(1)
+    expect(serverGame.cardTargetRevealPending).toBe(true)
+
+    serverGame.updateTurnClock()
+    expect(serverGame.cardTargetRevealPending).toBe(false)
+    expect(room.state.turnSeconds).toBe(TURN_DECISION_SECONDS)
+    serverGame.updateTurnClock()
+    expect(room.state.turnPhase).toBe('card-target')
+    expect(room.state.turnSeconds).toBe(TURN_DECISION_SECONDS - 1)
   })
 
   it('abre a compra normal ao resolver um destino escolhido por carta', async () => {

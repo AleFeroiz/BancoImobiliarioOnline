@@ -45,6 +45,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
   private presentationTimers = new Set<ReturnType<typeof setTimeout>>()
   private pendingCardPayments: { sessionId: string; amount: number; reason: string }[] = []
   private pendingCardPaymentActorSessionId = ''
+  private cardTargetRevealPending = false
   private consecutiveDoubles = 0
   private lastRollWasDouble = false
 
@@ -798,6 +799,15 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       }
       else this.advanceTurn()
     },
+    dismissCardReveal: (client: Client) => {
+      if (this.state.status !== 'playing'
+        || this.state.turnPhase !== 'card-target'
+        || client.sessionId !== this.state.activePlayerSessionId
+        || !this.cardTargetRevealPending) return
+      this.cardTargetRevealPending = false
+      this.state.turnSeconds = TURN_DECISION_SECONDS
+      this.turnTimerKey = `${this.state.turnNumber}:${client.sessionId}:card-target`
+    },
     chooseWorldCup: (client: Client, payload: { propertyId?: unknown }) => {
       const propertyId = typeof payload?.propertyId === 'number' ? payload.propertyId : -1
       const space = boardSpaces[propertyId]
@@ -908,6 +918,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
         return
       }
       this.state.turnPhase = 'resolve'
+      this.cardTargetRevealPending = false
       this.state.turnSeconds = TURN_DECISION_SECONDS
       this.turnTimerKey = `${this.state.turnNumber}:${actorId}:resolve`
       this.finishExpiredPhaseIfReady()
@@ -983,6 +994,14 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       : ['purchase', 'buyback', 'resolve', 'jail', 'world-cup', 'world-tour', 'card-target', 'debt'].includes(phase) ? TURN_DECISION_SECONDS : 0
       return
     }
+    if (phase === 'card-target' && this.cardTargetRevealPending) {
+      if (this.state.turnSeconds > 1) this.state.turnSeconds -= 1
+      else {
+        this.cardTargetRevealPending = false
+        this.state.turnSeconds = TURN_DECISION_SECONDS
+      }
+      return
+    }
     if (this.state.turnSeconds === 0 || !['roll', 'purchase', 'buyback', 'resolve', 'jail', 'world-cup', 'world-tour', 'card-target', 'debt'].includes(phase)) return
     this.state.turnSeconds -= 1
     if (this.state.turnSeconds > 0) return
@@ -999,6 +1018,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
     else if (phase === 'world-cup') this.chooseDefaultWorldCup(client, sessionId)
     else if (phase === 'world-tour') this.messages.chooseWorldTour(client, { spaceId: this.getWorldTourDefaultDestination(sessionId) })
     else if (phase === 'card-target') {
+      this.cardTargetRevealPending = false
       this.state.turnPhase = 'resolve'
       this.state.turnSeconds = TURN_DECISION_SECONDS
       this.turnTimerKey = `${this.state.turnNumber}:${sessionId}:resolve`
@@ -1446,6 +1466,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
 
     if (['generous', 'blackout', 'earthquake', 'thief', 'protection', 'swap'].includes(card.effect.kind)) {
       this.state.turnPhase = 'card-target'
+      this.cardTargetRevealPending = !player.isBot && !player.isBotControlled && player.isConnected
       this.state.turnSeconds = TURN_DECISION_SECONDS
       this.turnTimerKey = `${this.state.turnNumber}:${sessionId}:card-target`
       return

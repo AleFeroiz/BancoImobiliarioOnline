@@ -675,3 +675,8 @@
 
 - A pedido do usuário, baixei a posição-base dos dados para Y=2,165, reduzi o salto animado para 0,065 e aproximei o indicador do total para Y=2,72.
 - O teste geométrico específico passou e exige 0,01 unidade de folga mínima sobre o topo da torre da FATEC, mesmo considerando a caixa girando; a folga calculada fica em aproximadamente 0,012. Na partida local, os dados ficaram visivelmente suspensos acima dos prédios centrais, sem interseção com o modelo. `npm run verify` passou com 240 testes em 46 arquivos e builds de frontend e servidor. O build mantém o aviso conhecido de chunk 3D acima de 500 kB.
+
+## 2026-10-31 — Prazo de seleção após revelar uma carta
+
+- Uma sessão local com Modo DEV mostrou a carta Terremoto. Fechei o aviso com 14 segundos restantes; a carta saiu da tela, o painel de escolha apareceu e o relógio voltou a 15 segundos. Como nenhum outro participante possuía imóvel, a interface informou corretamente que não havia alvo elegível.
+- A regressão do servidor confirmou a pausa da contagem durante a leitura, a reinicialização dos 15 segundos depois da dispensa e o descarte automático ao fim da seleção. Ainda falta repetir com um imóvel adversário elegível e verificar manualmente a suspensão do aluguel por Apagão.

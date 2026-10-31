@@ -357,9 +357,12 @@ function App() {
 
   useEffect(() => {
     if (!showTransientReveal || !revealKey) return
-    const timeout = window.setTimeout(() => setDismissedRevealKey(revealKey), 15_000)
+    const timeout = window.setTimeout(() => {
+      setDismissedRevealKey(revealKey)
+      if (revealKind === 'event' && isMyTurn && turnPhase === 'card-target') room?.send('dismissCardReveal')
+    }, 15_000)
     return () => window.clearTimeout(timeout)
-  }, [revealKey, showTransientReveal])
+  }, [isMyTurn, revealKey, revealKind, room, showTransientReveal, turnPhase])
 
   useEffect(() => {
     if (sceneReady || screen === 'game') {
@@ -821,6 +824,7 @@ function App() {
   function dismissTransientReveal() {
     if (!revealKey) return
     setDismissedRevealKey(revealKey)
+    if (revealKind === 'event' && isMyTurn && turnPhase === 'card-target') room?.send('dismissCardReveal')
     if (revealKind === 'event' && isMyTurn && turnPhase === 'resolve') room?.send('finishTurn')
   }
 
