@@ -4,6 +4,7 @@
 
 - A escolha do usuário foi Render por simplicidade para o servidor multiplayer; o frontend permanece na Vercel. O status Vercel do commit `4547e14` confirmou “Deployment has completed”. O CI passou, chamou o hook mascarado e o Render aceitou o pedido.
 - Na URL pública, criei uma sala temporária, adicionei Bot 1, iniciei a modalidade de 15 minutos e fiz uma rolagem: o jogo conectou, sincronizou saldos/relógio, resolveu 9 casas e mostrou a compra de Rio Verde com a escada de aluguel esperada. Saí da sala e fechei a aba; o console não retornou erros/avisos.
+- Na home pública atual, confirmei que as opções de 15 minutos, 30 minutos e 1 hora ficam selecionáveis, uma por vez. Isso valida o controle publicado; o ritmo e o equilíbrio de cada duração ainda precisam de partidas humanas.
 - Esse smoke test prova que frontend e servidor responderam juntos numa partida real, mas não associa a resposta do Render a um SHA específico. Ainda falta conferir no painel a versão do serviço e o estado de `Auto-Deploy`.
 - O segredo não foi exibido nem registrado. O deploy solicitado não envolveu upgrade pago.
 - Próximo passo concreto: fazer playtests humanos de equilíbrio para 15, 30 e 60 minutos e confirmar no painel Render a versão publicada e a configuração de `Auto-Deploy`.
