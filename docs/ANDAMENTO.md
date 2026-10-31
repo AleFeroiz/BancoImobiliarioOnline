@@ -1,5 +1,10 @@
 # Playtest manual do baralho BANTEC — em andamento (2026-10-31)
 
+# Dados ainda mais baixos durante a rolagem — ajuste implementado (2026-10-31)
+
+- A pedido do usuário, baixei a posição-base dos dados de Y=1,10 para Y=1,065 e reduzi a escala de 0,63 para 0,55. A animação mantém pelo menos 0,01 unidade de folga geométrica em qualquer rotação sobre os telhados da FATEC.
+- Na rolagem real da sala local F6BG5, os dados apareceram baixos junto aos prédios sem atravessar o volume da Fatec.
+
 - Em sala local FHNFW com Modo DEV e Bot 1, confirmei Generoso transferindo Manaus ao bot; Aniversário transferindo R$ 50.000 do bot ao anfitrião; Apagão destacando alvos válidos, aplicando-se a Manaus e zerando o aluguel na chegada seguinte (mensagem: 2 turnos restantes); Terremoto destruindo Manaus e devolvendo-a ao banco.
 - Isso conclui a validação manual de quatro cartas. Faltam as cartas restantes e os playtests humanos de equilíbrio para 15, 30 e 60 minutos. A escolha da hospedagem continua pendente de prioridade/custo do usuário.
 - A sala temporária foi criada apenas para teste; a tela DEV manteve o modo ativado só nessa partida. Alterações locais dos arquivos Blender `special-corners.blend` e `.blend1` permanecem preservadas e fora do escopo.

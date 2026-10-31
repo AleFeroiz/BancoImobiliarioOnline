@@ -56,6 +56,11 @@
 - Graphify update não executou porque a CLI `graphify` não está instalada neste ambiente.
 # Validação visual e de navegador
 
+## 2026-10-31 — Dados mais baixos sem entrar na FATEC
+
+- Novo ajuste: posição-base Y=1,065 e escala 0,55. O limite inferior do volume da caixa durante o giro preserva pelo menos 0,01 unidade sobre o telhado principal (Y=0,845); a posição horizontal continua fora da torre.
+- Em rolagem real na sala local F6BG5, os dados apareceram baixos junto aos prédios, sem atravessar o volume da FATEC.
+
 ## 2026-10-31 — Cartas Ladrão, Volta ao Brasil e Apagão
 
 - Em uma sala local de 30 minutos com Modo DEV, confirmei Ladrão: saldo de BANTEC QA subiu de R$ 1.675.000 para R$ 1.875.000; saldo de Bot 1 caiu de R$ 6.562.500 para R$ 6.362.500.

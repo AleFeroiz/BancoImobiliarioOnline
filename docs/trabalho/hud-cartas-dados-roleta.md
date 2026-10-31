@@ -1,5 +1,11 @@
 # HUD, cartas, dados e roleta
 
+## 2026-10-31 — Ajuste adicional de altura dos dados
+
+- Pedido: baixar um pouco mais os dados durante a rolagem, mantendo-os acima da FATEC.
+- Estado implementado: posição-base de Y=1,065 e escala 0,55; o teste geométrico continua exigindo folga de no mínimo 0,01 unidade sobre os telhados em todas as orientações.
+- Em rolagem real na sala local F6BG5, os dados ficaram baixos junto aos prédios sem atravessar a FATEC.
+
 ## Fatos verificados
 
 - Pedido de 2026-10-29: cobrir todo o piso das casas Sorte com a roleta; trocar o painel genérico de rolagem por um botão simples; deixar resultado e dados nivelados visíveis durante o movimento do peão e então ocultá-los; apresentar cartas temporárias que fecham ao clique ou em até 15 segundos; revisar controles/seletores excessivos; mover dinheiro 3D do tabuleiro para perto dos cartões dos participantes na HUD.
