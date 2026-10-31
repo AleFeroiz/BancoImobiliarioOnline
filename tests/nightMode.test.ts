@@ -44,4 +44,14 @@ describe('modo noturno BANTEC', () => {
     expect(styles).not.toContain('.screen-game[data-night-mode="true"] .scene-backdrop')
     expect(styles).not.toContain('.screen-game[data-night-mode="true"] canvas')
   })
+
+  it('mantém os quatro atalhos quadrados e alinhados à lateral em desktop e celular', () => {
+    const styles = readFileSync(new URL('../src/ui/styles.css', import.meta.url), 'utf8')
+
+    expect(styles).toMatch(/\.game-quick-actions\{--quick-action-size:56px;position:fixed;z-index:7;top:50%;right:16px/)
+    expect(styles).toContain('grid-template-rows:repeat(4,var(--quick-action-size))')
+    expect(styles).toContain('width:var(--quick-action-size);height:var(--quick-action-size)')
+    expect(styles).toMatch(/\.game-quick-actions\{--quick-action-size:48px;top:50%;right:8px/)
+    expect(styles).toContain('.game-quick-actions .emote-picker{top:50%;right:calc(100% + 8px)')
+  })
 })

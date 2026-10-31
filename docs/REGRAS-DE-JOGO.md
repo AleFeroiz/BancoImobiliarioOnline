@@ -20,6 +20,12 @@ Esta seção descreve as regras vigentes da reforma e prevalece sobre as regras 
 - Casas e hotéis ficam sobre o piso, alinhados à borda para preservar o corredor de movimento; o nome da cidade continua visível.
 - O modo noturno é uma preferência local persistida neste navegador: escurece a página inicial e a sala; durante a partida, altera apenas a cor do fundo externo, sem mudar as cores nem o brilho do tabuleiro.
 
+### Seleção de cidades e imóveis
+
+- Sempre que uma ação pedir para selecionar uma cidade ou imóvel, a escolha acontece diretamente no tabuleiro. As casas válidas ficam iluminadas e as demais ficam apagadas; clicar numa casa válida confirma ou alterna a seleção.
+- O padrão vale para Copa, Volta ao Brasil, cartas Generoso/Apagão/Terremoto/Proteção, venda de construções ou devolução de títulos durante uma dívida, títulos oferecidos ou pedidos em uma troca e abertura de opções de um imóvel pela carteira.
+- Quando a ação pedir um jogador como alvo, a seleção continua nos controles de jogadores; o padrão de luzes no tabuleiro é para seleção de casas.
+
 ### Rolagem de dados
 
 - Quando os dois dados mostram o mesmo número, a pessoa avança normalmente, resolve a casa de destino e, ao concluir essa resolução, ganha outra rolagem no mesmo turno.

@@ -16,10 +16,16 @@
 
 ## 2026-10-31 — Posição dos dados, tema noturno e partida BANTEC
 
-- `npm run verify`: 224 testes em 44 arquivos passaram; builds do frontend e servidor passaram. O build mantém o aviso conhecido de chunk de cena 3D com 956,45 KB (259,83 KB gzip). `git diff --check` passou.
+- `npm run verify`: 225 testes em 44 arquivos passaram; builds do frontend e servidor passaram. O build mantém o aviso conhecido de chunk de cena 3D com 956,45 KB (259,83 KB gzip). `git diff --check` passou.
 - Após o ajuste de altura de 6 para 4,2 unidades, a captura da partida mostra os dados lado a lado flutuando logo acima da FATEC Itapetininga, com o total acima deles; o modelo permanece visível e os dados não ficam isolados no alto da tela. O tabuleiro mantém as cores das regiões enquanto o fundo externo fica escuro.
 - Na home e no lobby, os seletores de duração foram revisados em modo noturno depois de ajustar seus fundos e bordas para manter contraste. A partida real também confirmou compra da companhia Aviação Brasil por R$ 500.000, saldo atualizado para R$ 1.500.000 e o imóvel disponível na carteira com preço e aluguel.
 - Testes de integração cobrem vitória imediata por Monopólio em Linha, Monopólio Duplo Regional e quatro companhias, três turnos de Apagão e liberação de imóvel após Terremoto. Liquidação real de dívida e navegação manual por todas as cartas/vitórias permanecem pendentes.
+
+## 2026-10-31 — Atalhos da HUD na lateral direita
+
+- Reorganizei Bens, Config, Emote e Regras numa coluna fixa à direita. Os quatro alvos são quadrados iguais (56 px no desktop; 48 px em telas estreitas), e o seletor de emotes abre para dentro da tela.
+- Revisei a composição em 1280×720 e 390×844: a coluna permanece alinhada à lateral em ambos os tamanhos, com os quatro rótulos e ícones visíveis. O seletor de emotes também abre à esquerda do botão sem sair da viewport.
+- A regressão CSS verifica posição, dimensões iguais e ajuste responsivo; `npm run verify` passou com 225 testes em 44 arquivos e builds de cliente/servidor.
 
 ## 2026-10-31 — Marca, carteira, construção e Proteção
 
@@ -531,3 +537,9 @@
 - `npm run verify`: 227 testes em 44 arquivos passaram; builds do frontend e servidor passaram. `git diff --check` passou. O aviso já conhecido de chunk 3D acima de 500 KB permanece.
 - Playtest visual indisponível: as portas 5173/2567 pareciam livres, mas o servidor Colyseus retornou `EADDRINUSE` na 2567. Encerrei a sessão recém-iniciada sem interromper processos desconhecidos.
 - `graphify update .` não executou porque a CLI `graphify` não está instalada; o índice MCP disponível pertence a outro repositório.
+
+## Seleção de propriedades pelo tabuleiro — 2026-10-31
+
+- Unifiquei a interação de seleção no tabuleiro para alvos de carta, propriedades liquidáveis durante dívida, títulos que entram em uma troca e inspeção de imóveis pela carteira. A cena existente ilumina as opções válidas, reduz o contraste das demais e só aceita cliques nas válidas; a seleção de jogadores continua nos controles de jogadores.
+- Em partida local com três participantes, comprei Parauapebas por R$ 275.000, abri Bens e ativei “Escolher imóvel no tabuleiro”. O screenshot confirmou Parauapebas iluminada com aro dourado, casas não selecionáveis apagadas e o tabuleiro clicável. Ao clicar na casa, abriu o inspetor de Parauapebas com preço, aluguel e níveis. Nenhum erro de interação foi observado.
+- `npm run graphify -- update .` atualizou o grafo para 882 nós e 1.640 relações. `git diff --check` passou. `npm run verify`: 228 testes em 44 arquivos passaram; builds frontend e servidor passaram. O chunk 3D mantém o aviso existente acima de 500 KB.
