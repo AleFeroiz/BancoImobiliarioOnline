@@ -1,3 +1,11 @@
+## Dados mais baixos durante a rolagem — concluído (2026-10-31)
+
+- O usuário pediu reduzir a altura dos dados sem deixá-los atravessar a FATEC. A posição-base caiu de Y=4,2 para Y=2,45 e o indicador do total foi reposicionado de Y=5,2 para Y=3,55.
+- A torre do GLB mede cerca de Y=1,81 na cena após a escala; os dados ficam com aproximadamente 0,43 unidade de folga entre o topo da torre e a base do dado quando em repouso. Durante a animação, o movimento é para cima.
+- O teste de apresentação foi atualizado e passou (3 testes). No navegador local, conferi os dados lado a lado durante o movimento: aparecem mais perto do modelo e sem atravessá-lo. `npm run graphify -- update .` concluiu.
+- `npm run verify` passou com 240 testes em 46 arquivos e builds do frontend e servidor; a primeira tentativa falhou nos testes Colyseus por bloqueio de loopback, e a repetição autorizada passou. A publicação desta alteração ainda está pendente nesta etapa.
+- Próximo passo da reforma completa: terminar a revisão visual das cartas autorais, fazer playtests humanos de equilíbrio/ritmo e concluir a decisão de hospedagem.
+
 ## Recompra após aluguel — concluída (2026-10-31)
 
 - Regra implementada conforme confirmação: aluguel normal primeiro; depois, se houver caixa suficiente para 1,5× do investimento e não for hotel, aparece a recompra. O preço integral vai ao antigo dono e a posse passa ao comprador. Se o aluguel exigir liquidação de dívida, a opção só aparece após pagar a dívida e se ainda houver saldo.

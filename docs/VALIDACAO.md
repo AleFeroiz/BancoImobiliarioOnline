@@ -45,6 +45,12 @@
 - Graphify update não executou porque a CLI `graphify` não está instalada neste ambiente.
 # Validação visual e de navegador
 
+## 2026-10-31 — Dados mais baixos acima da FATEC
+
+- Reduzi a posição-base dos dados de Y=4,2 para Y=2,45 e o indicador do total de Y=5,2 para Y=3,55. A altura máxima da torre na cena, após a escala do GLB, é aproximadamente Y=1,81; a base dos dados em repouso mantém cerca de 0,43 unidade de distância e a animação salta para cima.
+- Na partida local, revisei os dados lado a lado durante o movimento. Agora ficam visualmente próximos dos prédios da FATEC, e ambos permanecem acima da torre, sem sobreposição.
+- O teste `src/ui/dicePresentation.test.ts` passou com 3 casos. `npm run graphify -- update .` concluiu. `npm run verify` passou com 240 testes em 46 arquivos e builds do frontend e servidor após repetir com loopback local autorizado; a primeira tentativa falhou com `fetch failed` nos testes Colyseus por bloqueio de loopback.
+
 ## 2026-10-31 — Compras e aluguel em sala BANTEC
 
 - Em sala local de 30 minutos com um bot e modo DEV para direcionar dados, o anfitrião começou com R$ 2.000.000, comprou Belém por R$ 350.000 e viu aluguel de R$ 35.000 na prévia. O bot caiu em Belém e pagou esse aluguel.
