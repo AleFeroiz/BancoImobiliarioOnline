@@ -48,7 +48,12 @@
 ## 2026-10-31 — Redução adicional da altura dos dados
 
 - A rolagem agora usa posição-base Y=2,3 e salto vertical de 0,16 (antes 2,45 e 0,48). O total acompanha a mudança e fica em Y=3,05. A rotação dos dados ainda mantém margem sobre o topo da torre da FATEC (Y≈1,81).
-- Teste de regressão verifica o envelope vertical dos dados enquanto giram e saltam, para mantê-los visíveis sem atravessar a torre. A conferência visual desta revisão ficou pendente: a sala na aba local já tinha terminado e o ambiente bloqueou o acesso local ao Vite (`127.0.0.1:5173`).
+- Teste de regressão verifica o envelope vertical dos dados enquanto giram e saltam, para mantê-los visíveis sem atravessar a torre. Numa sala local nova de 15 minutos, com um bot e DEV, vi os dados durante o movimento do peão: ficaram suspensos sobre a FATEC, baixos e sem interseção visível com os prédios. Encerrei a sala temporária e deixei a aba na página inicial.
+
+## 2026-10-31 — Seleção de cartas Terremoto e Generoso
+
+- Em partida local com DEV, Terremoto abriu o modo de seleção no tabuleiro. As casas inválidas ficaram apagadas e uma propriedade elegível de Bot 1 ficou destacada. A tentativa de selecionar Manaus aconteceu com poucos segundos restantes; o alvo expirou e o clique posterior abriu o inspetor, sem aplicar o efeito.
+- Uma tentativa seguinte revelou Generoso e mostrou o prompt para escolher uma propriedade própria e depois o destinatário. O alvo também expirou antes da confirmação. Essas tentativas não validam os efeitos nem indicam falha da mecânica; seleção concluída, destruição/transferência e efeitos de Apagão seguem pendentes de revisão manual.
 
 ## 2026-10-31 — Cartas Ladrão e Apagão
 
