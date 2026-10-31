@@ -713,6 +713,13 @@
 - No navegador, a anfitriã armou Apagão e o sorteio abriu a tela de escolha. Com Bot 1 proprietário de Parauapebas, a propriedade elegível ficou iluminada com aro dourado e as demais casas ficaram apagadas. O clique no alvo não foi confirmado antes do prazo, então a conclusão visual do alvo e a suspensão de aluguel permanecem pendentes.
 - Não foi feita revisão visual das outras cartas. `npm run graphify -- update .` atualizou o grafo para 934 nós e 1.732 arestas. `npm run verify`: 243 testes em 46 arquivos passaram; builds do frontend e servidor passaram. `git diff --check` passou. O build mantém o aviso já conhecido de chunk de cena 3D acima de 500 kB.
 
+## 2026-10-31 — Revisão manual de cartas no BANTEC
+
+- Em sala FHNFW com anfitrião, Bot 1 e Modo DEV, comprei Manaus por R$ 650.000 e usei Generoso para transferi-la ao bot. Aniversário creditou R$ 50.000 ao anfitrião e debitou R$ 50.000 do Bot 1.
+- Apagão permitiu escolher Manaus do Bot 1 com o padrão de alvos válidos iluminados; o servidor informou suspensão do aluguel pelos próximos três turnos do dono. Ao teletransportar o anfitrião para Manaus antes do fim do efeito, a mensagem confirmou que o imóvel não cobrava aluguel e restavam dois turnos do dono; os saldos não mudaram nessa chegada.
+- Terremoto aceitou Manaus sem hotel e confirmou que o imóvel foi destruído e voltou ao banco. Essas observações confirmam Generoso, Aniversário, Apagão e Terremoto na interface.
+- Permanecem a revisão visual das demais cartas, playtests humanos de equilíbrio para 15/30/60 minutos e decisão de hospedagem; esta sala não substitui os playtests humanos.
+
 ## 2026-10-31 — Causa exibida no resultado final
 
 - O estado autoritativo agora sincroniza uma causa para tempo, falência, ausência de participantes solventes e cada vitória imediata. A tela final mostra um resumo correspondente; a condição de monopólio é identificada na origem do servidor.

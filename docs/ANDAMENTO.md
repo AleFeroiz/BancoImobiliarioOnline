@@ -1,8 +1,14 @@
-# Seleção de casas pelo tabuleiro — correção visual em andamento (2026-10-31)
+# Playtest manual do baralho BANTEC — em andamento (2026-10-31)
+
+- Em sala local FHNFW com Modo DEV e Bot 1, confirmei Generoso transferindo Manaus ao bot; Aniversário transferindo R$ 50.000 do bot ao anfitrião; Apagão destacando alvos válidos, aplicando-se a Manaus e zerando o aluguel na chegada seguinte (mensagem: 2 turnos restantes); Terremoto destruindo Manaus e devolvendo-a ao banco.
+- Isso conclui a validação manual de quatro cartas. Faltam as cartas restantes e os playtests humanos de equilíbrio para 15, 30 e 60 minutos. A escolha da hospedagem continua pendente de prioridade/custo do usuário.
+- A sala temporária foi criada apenas para teste; a tela DEV manteve o modo ativado só nessa partida. Alterações locais dos arquivos Blender `special-corners.blend` e `.blend1` permanecem preservadas e fora do escopo.
+
+# Seleção de casas pelo tabuleiro — correção visual concluída (2026-10-31)
 
 - A revisão manual do Apagão mostrou que, depois de fechar a carta, ainda surgia um cartão central de turno sobre o tabuleiro, embora a cidade válida estivesse iluminada. A primeira correção ocultava o modal, mas não esse segundo cartão.
 - A implementação agora usa as opções válidas de `boardChoicePhase` para remover o cartão central durante seleções de propriedades, destinos, dívidas, trocas e carteira; o cartão de revelação continua até ser fechado ou expirar. Em uma sala real, fechei a revelação de Volta ao Brasil, vi as casas válidas iluminadas e inválidas apagadas sem o cartão central, e escolhi São Paulo no tabuleiro.
-- Testes focados passaram (14 testes); `npm run verify` passou com 247 testes em 46 arquivos e builds web/servidor; Graphify foi atualizado para 945 nós e 1.754 arestas. Falta concluir pelo menos uma escolha de propriedade de carta como Apagão e confirmar a suspensão de aluguel em uma visita posterior.
+- Testes focados passaram (14 testes); `npm run verify` passou com 247 testes em 46 arquivos e builds web/servidor; Graphify foi atualizado para 945 nós e 1.754 arestas. A seleção de alvo do Apagão e a ausência de aluguel em uma chegada posterior foram confirmadas manualmente na retomada de 2026-10-31.
 
 # Altura dos dados — novo ajuste solicitado (2026-10-31)
 
