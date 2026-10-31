@@ -1,3 +1,8 @@
+## 2026-10-31 — Dados mais baixos sem atravessar a FATEC
+
+- Em uma partida local de teste com modo DEV, iniciei uma rolagem real após baixar a posição-base dos dados para Y=1,23 e afastá-los lateralmente da torre. A captura mostra os dois próximos aos telhados, sem atravessar as construções centrais.
+- A regressão geométrica verifica a caixa dos dados em qualquer orientação, folga mínima de 0,02 sobre os telhados e afastamento horizontal do volume da torre. O teste focalizado passou com 3 casos.
+
 ## 2026-10-31 — Recompra depois do aluguel
 
 - No jogo local, o teleporte DEV levou o anfitrião a Parauapebas, do Bot 1. A interface exibiu primeiro “Aluguel: R$ 192.500 pagos a Bot 1” e, na mesma resolução, ofereceu a recompra por R$ 1.031.250. “Continuar sem recomprar” aparece como opção de recusa, sem cobrar o aluguel novamente.

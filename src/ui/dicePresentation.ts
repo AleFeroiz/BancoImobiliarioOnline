@@ -6,10 +6,10 @@ export const DICE_ROLL_BOUNCE_HEIGHT = 0.065
 export const DICE_VISUAL_SCALE = 0.9
 
 export const DICE_PRESENTATION_POSITIONS: DicePosition[] = [
-  [-0.38, 2.165, 0.2],
-  [0.38, 2.165, -0.2],
+  [-0.75, 1.23, 0.1],
+  [0.75, 1.23, -0.1],
 ]
-export const DICE_RESULT_BADGE_POSITION: DicePosition = [0, 2.72, 0]
+export const DICE_RESULT_BADGE_POSITION: DicePosition = [0, 1.8, 0]
 
 export function shouldShowRolledDice(phase: DicePresentationPhase, belongsToPawnMovement: boolean) {
   return phase === 'rolling' || (phase === 'moving' && belongsToPawnMovement)

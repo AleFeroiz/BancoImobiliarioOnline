@@ -1,3 +1,9 @@
+## Altura dos dados na rolagem — concluído (2026-10-31)
+
+- A pedido do usuário, baixei os dados de Y=2,165 para Y=1,23 e aproximei o indicador do resultado para Y=1,8. Também os afastei lateralmente da torre da FATEC.
+- A regressão geométrica agora considera a caixa girando, o topo dos telhados e a posição/footprint da torre; valida folga mínima de 0,02 sobre o telhado e ausência de interseção lateral com a torre.
+- Próximo passo da reforma completa: concluir a revisão visual das cartas autorais (incluindo confirmar o efeito de Apagão em uma cobrança posterior) e fazer playtests humanos de equilíbrio/ritmo. A hospedagem agora tem comparação e proposta registradas, mas a escolha do provedor e o limite de custo precisam do usuário.
+
 ## Dados mais baixos durante a rolagem — concluído (2026-10-31)
 
 - Novo ajuste a pedido do usuário: posição-base Y=2,165, salto reduzido de 0,10 para 0,065 e indicador do total em Y=2,72. Mantida a escala 0,9. O teste usa o raio geométrico da caixa girando já escalado e exige pelo menos 0,01 unidade de folga sobre a torre da FATEC (Y≈1,81); a folga calculada é aproximadamente 0,012.
