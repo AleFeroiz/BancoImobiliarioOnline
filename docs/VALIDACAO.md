@@ -19,7 +19,8 @@
 - Em uma sala BANTEC com modo DEV, forcei a chegada em Belém e observei o pacote de compra: terreno R$ 350.000, uma casa R$ 525.000, duas casas R$ 700.000 e três casas R$ 875.000. O aluguel para três casas apareceu como R$ 244.999, expondo perda de R$ 1 pelo piso da multiplicação decimal.
 - O teste de regressão reproduziu R$ 244.999 antes da correção. Depois da troca para arredondamento ao real mais próximo, passou a retornar R$ 245.000; repeti o playtest no navegador e confirmei esse mesmo valor no painel de compra.
 - `npm run verify`: 235 testes em 46 arquivos passaram; builds do frontend e servidor passaram. Para os testes Colyseus, foi necessário repetir com loopback autorizado após o sandbox padrão retornar `fetch failed`. `npm run graphify -- update .` concluiu.
-- A sala confirmou a conexão, o turno do anfitrião, o modo DEV, a rolagem forçada e a compra. Não foi uma partida concluída; a validação visual do painel final permanece pendente.
+- A sala confirmou a conexão, o turno do anfitrião, o modo DEV, a rolagem forçada e a compra. Em seguida, num playtest separado de dois participantes, o anfitrião comprou as quatro companhias e venceu. O painel final mostrou nome, vitória, patrimônio, saldo e classificação sobre o tabuleiro; revisão visual aprovada. Patrimônio final: R$ 2.400.000 para o anfitrião e R$ 1.550.000 para o bot.
+- O estado terminal foi alcançado pela regra de vitória por quatro companhias, não pelo relógio ou falência. Esses outros caminhos, além de dívida e cartas restantes, seguem pendentes para revisão manual.
 
 ## 2026-10-31 — Auditoria de cartas e dívida
 

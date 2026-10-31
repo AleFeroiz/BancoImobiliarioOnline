@@ -3,8 +3,8 @@
 - Conferi as regras aprovadas contra `server/test/GameRoom.test.ts`: os efeitos das 12 cartas, pagamentos de Aniversário e Ladrão com dívida, Terremoto, Apagão, Proteção, movimentos, troca de posição, Cidade-sede sem sede e início têm cobertura de integração autoritativa.
 - A exceção de hotel para Apagão e Terremoto não tinha regressão específica. Adicionei um teste que tenta os dois efeitos num imóvel com hotel e confirma rejeição sem alterar posse, hotel ou aluguel suspenso; passou.
 - `npm run verify`: 234 testes em 46 arquivos passaram; builds do frontend e servidor passaram. Graphify foi atualizado. Permanece o aviso conhecido do chunk 3D acima de 500 KB.
-- Ainda falta percorrer as cartas e liquidar uma dívida numa partida pelo navegador, assim como revisar a tela final numa vitória real. O servidor local padrão não iniciou porque a porta 2567 retornou `EADDRINUSE` sem processo identificável; não encerrei processo desconhecido.
-- Próximo passo concreto: conseguir uma partida local pelo fluxo de playtest sem interromper o processo desconhecido e validar dívida, cartas e painel de resultado pela interface.
+- Ainda falta percorrer as cartas restantes e liquidar uma dívida numa partida pelo navegador. A vitória pelas quatro companhias e o painel final foram vistos numa partida real; os detalhes estão na seção atual de validação.
+- Próximo passo concreto: liquidar uma dívida pelo tabuleiro e concluir a revisão visual das cartas restantes.
 
 ## Rota regional na home BANTEC — concluído (2026-10-31)
 
@@ -13,7 +13,7 @@
 - Revisão visual no navegador local em 964×883, 390×844 e 320×568: no menor viewport encontrei uma barra horizontal causada pelo `min-width: 320px` do `body`, que ultrapassava a área útil quando a barra vertical estava presente. Removi o piso fixo; a nova captura em 320×568 não mostra rolagem horizontal. Em 390×844, a rota continua em uma linha e a rolagem revela o formulário completo.
 - `npm run graphify -- update .` concluiu. `npm run verify` passou com 233 testes em 46 arquivos; builds do frontend e servidor passaram. O chunk de cena 3D permanece acima de 500 KB.
 - O Vite iniciou normalmente. Colyseus retornou `EADDRINUSE` em 2567 sem listener identificável em `Get-NetTCPConnection` ou `netstat`, então não interrompi processo desconhecido; não foi necessária sala para validar a home.
-- Próximo passo concreto da reforma completa: reproduzir uma dívida real e percorrer por jogo cartas e vitórias ainda não vistas; confirmar visualmente o painel final em vitória real.
+- Próximo passo concreto da reforma completa: reproduzir uma dívida real e percorrer por jogo as cartas e as condições de vitória ainda não vistas.
 
 ## Cartões coloridos, avisos identificados e visibilidade das peças — concluído (2026-10-30)
 
@@ -29,8 +29,8 @@
 - O playtest de compra de Belém expôs um erro: três casas mostravam R$ 244.999, embora 70% de R$ 350.000 sejam R$ 245.000. A causa era `Math.floor` aplicado ao resultado de ponto flutuante.
 - A fórmula agora arredonda ao real mais próximo. O teste de regressão falhou antes da correção com R$ 244.999 e passou depois. No navegador, a compra de Belém mostrou R$ 245.000 em três casas e preço total de R$ 875.000.
 - `npm run graphify -- update .` concluiu. `npm run verify` passou: 235 testes em 46 arquivos, build do frontend e build do servidor. A primeira execução de testes falhou porque o sandbox bloqueou o loopback (`fetch failed`); a repetição com a permissão local do playtest passou. Continua o aviso conhecido do chunk 3D acima de 500 KB.
-- A árvore segue em `main`; as mudanças locais nos arquivos do Blender foram preservadas. O teste visual confirmou compra e escada de aluguel, mas não chegou ao estado final da partida.
-- Próximo passo concreto da reforma: continuar a auditoria de dívida, cartas e encerramento real pela interface; o painel final já tem correção e regressão automatizada, mas a captura de uma vitória real continua pendente.
+- A árvore segue em `main`; as mudanças locais nos arquivos do Blender foram preservadas. O painel de compra confirmou R$ 245.000 para Belém com três casas. Em seguida, uma partida real venceu pelas quatro companhias e mostrou o resultado final sem ser coberto por avisos ou painéis.
+- Próximo passo concreto da reforma: liquidar uma dívida real pela interface, percorrer as cartas restantes e validar as vitórias por Monopólio em Linha e Monopólio Duplo Regional, além do encerramento por tempo e falência.
 
 ## Painel de encerramento da partida — concluído (2026-10-31)
 
@@ -38,8 +38,8 @@
 - Causa confirmada no frontend: o cartão final herdava condições transitórias de carta ativa e de fila de avisos; a etapa visual de dados/peão também podia manter texto de espera no resultado. Modais locais abertos (ajuda, configurações, carteira, leilão ou troca) podiam continuar sobre a partida encerrada.
 - Correção: resultado final passa a ter prioridade sobre cartas, animações e avisos pendentes; ao receber o estado encerrado, a interface limpa animações, avisos e painéis locais. Ajuda e configurações não podem cobrir o resultado final.
 - `npm run verify`: 231 testes em 45 arquivos e builds do frontend/servidor passaram; `npm run graphify -- update .` atualizou o grafo. O build mantém o aviso conhecido de chunk 3D acima de 500 KB.
-- A lógica que escolhe o painel final está coberta por regressão automatizada. Não consegui reproduzir uma partida final pela interface nesta sessão; o estado terminal foi exercitado nos testes de integração do servidor, mas falta revisão visual real dessa tela.
-- Próximo passo concreto: revisão visual do estado final em uma partida real.
+- A lógica que prioriza o painel final está coberta por regressão automatizada. Em 2026-10-31, uma partida real de dois participantes venceu ao obter AgroBrasil, Aviação Brasil, Energia Brasil e Mineração Brasil. O painel exibiu “PARTIDA ENCERRADA”, “VENCEDOR DA PARTIDA”, patrimônio de R$ 2.400.000, saldo de R$ 50.000 e a classificação completa; a captura visual confirmou o painel central legível sobre o tabuleiro.
+- Próximo passo concreto: revisar dívida e cartas restantes pela interface; vitórias em linha, duplo regional e fim por tempo/falência continuam pendentes de playtest manual.
 
 ## Reforma BANTEC — implementação em andamento (2026-10-31)
 
@@ -47,12 +47,12 @@
 - Implementados: composição regional de 40 casas, fórmula de aluguel escalonada, vitórias por Monopólio em Linha/Duplo Regional/quatro companhias, duração e cor escolhidas no lobby, bônus da Volta ao Brasil, recompra forçada sem consentimento do dono, remoção do Express, modelo central da FATEC Itapetininga com três blocos e torre, e nova rolagem por duplas com Prisão na terceira dupla seguida.
 - A preferência local de modo noturno está implementada na home, sala e jogo: a home fica escura por inteiro, enquanto na partida apenas o fundo externo ao tabuleiro muda de cor. O ajuste persiste neste navegador. Os atalhos Bens, Config, Emote e Regras agora formam uma coluna de botões quadrados iguais na lateral direita, com tamanhos responsivos.
 - O baralho autoral de 12 cartas já está no código e no servidor, incluindo alvos escolhidos pelos jogadores e pagamentos com tratamento de dívida. A seleção de qualquer cidade/imóvel usa o tabuleiro, com casas válidas iluminadas e inválidas apagadas. Durante dívida, devolver uma propriedade ao banco rende metade do preço, libera o título e apaga suas construções; hipoteca, resgate e aluguel por dado das antigas estações foram removidos.
-- No playtest foram resolvidas Volta ao Brasil (destino São Paulo e compra), Troca-troca e Prisão (com opção de aguardar), além da seleção de propriedades, carteira, compra e recusa. A revelação e as mensagens do servidor usam agora o nome “Volta ao Brasil”. Ainda faltam percorrer as demais cartas, liquidar uma dívida real e validar condições de vitória pela interface.
+- No playtest foram resolvidas Volta ao Brasil (destino São Paulo e compra), Troca-troca e Prisão (com opção de aguardar), além da seleção de propriedades, carteira, compra e recusa. A revelação e as mensagens do servidor usam agora o nome “Volta ao Brasil”. A interface também confirmou uma vitória real por quatro companhias e o painel final. Ainda faltam percorrer as demais cartas, liquidar uma dívida real e validar outras condições de vitória.
 - O Graphify local deve ser usado exclusivamente por `npm run graphify -- <comando>`; consultas precedem navegação no código e `npm run graphify -- update .` atualiza o grafo após mudanças. Foi confirmado que o comando local funciona neste ambiente.
 - Os dados agora rolam acima da FATEC no centro do tabuleiro; um teste de regressão garante que ambos ficam acima do edifício e que o indicador do resultado fica mais alto. A revisão do navegador confirmou a rolagem lado a lado, sem cobrir a FATEC, e o fundo externo escuro sem escurecer o tabuleiro. A home e o lobby também foram revisados em modo noturno, incluindo os seletores de duração.
 - A partida real no navegador confirmou compra de Parauapebas, compra de São Paulo com duas casas por R$ 1.900.000, carteira e seleção pelo tabuleiro. Os dados apareceram sobre a FATEC sem cobrir seus prédios; o modo noturno deixou o tabuleiro colorido e escureceu só o fundo de fora.
 - `npm run graphify -- update .` atualizou o grafo local. `npm run verify` passou com 231 testes em 45 arquivos e builds frontend/servidor; permanece o aviso conhecido de chunk 3D acima de 500 KB.
-- A correção do painel de encerramento está publicada em `391e8bf`; ainda falta ver a tela final numa vitória real. Próximos passos concretos: (1) finalizar a home BANTEC; (2) liquidar uma dívida real; (3) percorrer as cartas restantes; (4) validar vitórias em linha, duplo regional e quatro companhias no jogo, além do fim por tempo/falência; (5) confirmar o painel final e o desempate por patrimônio.
+- A correção do painel de encerramento está publicada em `391e8bf` e foi validada visualmente numa vitória pelas quatro companhias. Próximos passos concretos: (1) finalizar a revisão da home BANTEC; (2) liquidar uma dívida real; (3) percorrer as cartas restantes; (4) validar vitórias em linha e duplo regional, além do fim por tempo/falência.
 
 ## Orientação das construções, movimento repetido e revisão — em andamento (2026-10-30)
 
