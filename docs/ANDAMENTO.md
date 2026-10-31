@@ -1,3 +1,11 @@
+## Playtest da Linha 0 — progresso (2026-10-31)
+
+- Em partida local normal, com Modo DEV apenas para direcionar os dados, adquiri Porto Velho, Parauapebas, Rio Verde, AgroBrasil, Manaus e Canaã dos Carajás. São seis dos sete títulos exigidos na Linha 0; Bot 1 tem Belém com três casas, sem hotel.
+- O playtest confirmou o bônus de R$ 200.000 ao passar pela Partida e a taxa de R$ 125.000 para seis imóveis. A carteira confirmou os seis títulos do anfitrião; saldo atual no teste: R$ 375.000.
+- Na Copa do Mundo, a cena iluminou os imóveis próprios válidos e apagou os demais. A carta Generoso também abriu a seleção de imóvel no tabuleiro; o efeito não foi concluído nesta rodada.
+- Com três casas, a recompra forçada de Belém custa R$ 1.312.500 (1,5× R$ 875.000 de investimento); faltam R$ 937.500 ao anfitrião, ou cinco bônus de Partida, antes da recompra. Próximos passos: concluir essa vitória, depois validar Monopólio Duplo Regional e falência pela interface.
+- Nota de continuidade da frente: [Reforma BANTEC](trabalho/reforma-bantec.md).
+
 ## Auditoria de cartas e dívida — progresso (2026-10-31)
 
 - Conferi as regras aprovadas contra `server/test/GameRoom.test.ts`: os efeitos das 12 cartas, pagamentos de Aniversário e Ladrão com dívida, Terremoto, Apagão, Proteção, movimentos, troca de posição, Cidade-sede sem sede e início têm cobertura de integração autoritativa.
@@ -5,7 +13,7 @@
 - `npm run verify`: 234 testes em 46 arquivos passaram; builds do frontend e servidor passaram. Graphify foi atualizado. Permanece o aviso conhecido do chunk 3D acima de 500 KB.
 - No navegador, uma partida de dois participantes confirmou a carta Aniversário (+R$ 50.000 recebido do outro participante) e a dívida de aluguel de R$ 210.000 em Maceió. A seleção pelo tabuleiro vendeu um nível de construção em Joinville e outro em Belém; a dívida foi paga e os títulos continuaram com o anfitrião.
 - Playtest desta retomada: uma sala local encerrou quando o relógio chegou a zero; a interface exibiu “PARTIDA ENCERRADA”, vencedor, classificação, patrimônios/saldos e botão para voltar ao início, sem travar.
-- Próximo passo concreto: percorrer visualmente as cartas restantes e validar Monopólio em Linha, Monopólio Duplo Regional e encerramento por falência.
+- Próximo passo concreto: concluir o playtest de Monopólio em Linha, depois validar Monopólio Duplo Regional, as cartas restantes e o encerramento por falência.
 - Nota de continuidade da frente: [Reforma BANTEC](trabalho/reforma-bantec.md).
 
 ## Rota regional na home BANTEC — concluído (2026-10-31)

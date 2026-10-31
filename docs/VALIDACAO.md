@@ -592,3 +592,10 @@
 - A carta Prisão foi testada em seguida: a ficha chegou ao canto, na vez posterior apareceram “Tentar duplas”, “Pagar R$ 200.000 e sair” e “Aguardar este turno preso”; aguardar consumiu o turno e passou a vez ao bot.
 - Corrigi o nome antigo no cartão de revelação, no aviso sincronizado do servidor e na descrição vigente do plano. Regressões unitárias e de servidor cobrem os nomes atualizados.
 - Ainda pendem a inspeção visual pós-correção da revelação Volta ao Brasil, as demais cartas, uma liquidação real de dívida e as condições de vitória pela interface.
+
+## Linha 0 e seleção de alvos no navegador — 2026-10-31
+
+- Em sala de uma hora com dois participantes, forcei apenas os dados pelo painel DEV e comprei Porto Velho, Parauapebas, Rio Verde, AgroBrasil, Manaus e Canaã dos Carajás. O saldo final desse trecho foi R$ 375.000 após o bônus de Partida e a taxa de R$ 125.000 por seis títulos.
+- Bot 1 comprou Belém e depois construiu até três casas. A carteira confirmou que não há hotel. A recompra forçada calculada sobre R$ 875.000 de investimento custará R$ 1.312.500; a regra da Linha 0 ainda não foi concluída.
+- Na seleção da sede da Copa, a captura mostrou aro dourado nas propriedades válidas do anfitrião e os demais pisos apagados. A carta Generoso abriu o prompt de escolha no tabuleiro; não registrei a transferência porque a seleção não foi concluída antes de expirar.
+- Próxima validação: acumular recursos na mesma regra de jogo, recomprar Belém (sem hotel) e observar o encerramento pela Linha 0.

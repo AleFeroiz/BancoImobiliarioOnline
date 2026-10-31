@@ -30,7 +30,7 @@ Atualizar o jogo para um tabuleiro inspirado nas economias das cinco regiões br
 3. **Prédios centrais:** modelo low-poly da FATEC Itapetininga criado no Blender 5.2.2 LTS e integrado como GLB; a captura desktop mostra a peça no centro sem ocupar o perímetro.
 4. **Tabuleiro e HUD:** cidades, regiões, pisos, cartas, taxas, cantos, escada de aluguel, construção e corredor estão implementados. Tabuleiro e home foram revisados em desktop; carteira/inspetor em móvel; a seleção de imóveis e a venda de construções durante uma dívida foram verificadas em partida real.
 5. **Página inicial:** identidade BANTEC, criação/entrada por sala, escolha de duração e visual brasileiro implementados. Revisão móvel e desktop feita após correção do cabeçalho de marca.
-6. **Validação e publicação:** home, lobby, tabuleiro, compra, carteira, dívida e vitória pelas quatro companhias foram revisados no navegador; a posição dos dados acima da FATEC também foi confirmada. O encerramento por tempo também foi visto no navegador e exibiu o painel final. A verificação automatizada e as evidências manuais constam em `docs/VALIDACAO.md`. Ainda falta a revisão visual das cartas restantes, a falência pela interface e as vitórias por linha e por duas regiões.
+6. **Validação e publicação:** home, lobby, tabuleiro, compra, carteira, dívida e vitória pelas quatro companhias foram revisados no navegador; a posição dos dados acima da FATEC também foi confirmada. O encerramento por tempo também foi visto no navegador e exibiu o painel final. O playtest de Linha 0 adquiriu seis dos sete títulos e confirmou a seleção válida para a sede da Copa; falta a recompra de Belém (R$ 1.312.500 com três casas) e a vitória na interface. Ainda falta também a falência pela interface, a vitória por duas regiões e a revisão visual das cartas restantes.
 
 ## Estado atual — 2026-10-31
 
@@ -40,5 +40,5 @@ Atualizar o jogo para um tabuleiro inspirado nas economias das cinco regiões br
 - A dívida foi liquidada em partida real; a vitória pelas quatro companhias também abriu o painel final. As três vitórias por monopólio, falência e fim do relógio têm testes de integração. A Cidade-sede sem sede e a Proteção contra Generoso também estão cobertas por teste automatizado.
 - O hook de pré-commit passou em 2026-10-31 com 236 testes em 46 arquivos e os builds do frontend e servidor; a publicação está documentada em `docs/VALIDACAO.md`. O chunk de cena 3D acima de 500 KB continua como aviso conhecido.
 - Graphify local foi consultado e atualizado por `npm run graphify --`; rodar `npm run graphify -- update .` depois das mudanças de código.
-- Próximo passo: percorrer visualmente as cartas restantes, validar as vitórias por linha e por duas regiões e observar o painel final após falência.
+- Próximo passo: retomar o playtest de Linha 0 pela recompra forçada de Belém e validar o painel de vitória; depois observar a vitória por duas regiões e o painel final após falência.
 - Preservar alterações locais dos assets `special-corners.blend` e `special-corners.blend1` fora do escopo.
