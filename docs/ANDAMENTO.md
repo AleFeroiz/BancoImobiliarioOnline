@@ -1,5 +1,12 @@
 # Playtest manual das 12 cartas BANTEC — concluído (2026-10-31)
 
+## Hospedagem Render — publicação solicitada pelo CI (2026-10-31)
+
+- A escolha do usuário foi Render por simplicidade. No workflow de `4c85f48`, a verificação passou, o segredo `RENDER_DEPLOY_HOOK_URL` estava presente (mascarado) e o Render aceitou o pedido de deploy.
+- Aceitação do pedido não comprova publicação concluída. Não foi possível entrar no painel Render nesta sessão; ainda falta conferir a saúde/versão publicada e se `Auto-Deploy` está desligado para evitar deploy duplicado.
+- O segredo não foi exibido nem registrado. O deploy solicitado não envolveu upgrade pago.
+- Próximo passo concreto: confirmar no painel Render o resultado do deploy de `4c85f48` e a configuração de `Auto-Deploy`; manter pendentes os playtests humanos de equilíbrio para 15, 30 e 60 minutos.
+
 # Dados ainda mais baixos durante a rolagem — ajuste implementado (2026-10-31)
 
 - A pedido do usuário, baixei a posição-base dos dados de Y=1,10 para Y=1,065 e reduzi a escala de 0,63 para 0,55. A animação mantém pelo menos 0,01 unidade de folga geométrica em qualquer rotação sobre os telhados da FATEC.
@@ -9,7 +16,7 @@
 - Na sala descartável RZMAQ, Cidade-sede foi descartada sem mover quando não havia sede ativa. Sede da Copa permitiu selecionar Joinville e o inspetor mostrou aluguel de R$ 135.000 (base R$ 45.000, triplicada).
 - Na sala descartável P28D9, Proteção iluminou Fortaleza como alvo elegível e confirmou imunidade a cartas por três turnos do dono. Ladrão permitiu selecionar Bot 1 e transferiu R$ 200.000 após a liquidação da dívida. Troca-troca confirmou que BANTEC QA Restante e Bot 1 trocaram de lugar sem resolver as casas de chegada.
 - Com Generoso, Aniversário, Apagão, Terremoto, Prisão, Volta ao Brasil, Sede da Copa, Troca-troca, Cidade-sede, Ladrão, Proteção e Vá para o início revisados, as 12 cartas estão confirmadas visualmente. Volta ao Brasil creditou R$ 200.000 ao chegar; Vá para o início também teve crédito de R$ 200.000 registrado em validação anterior.
-- A sala temporária foi usada apenas para teste e encerrada; as alterações locais de `special-corners.blend` e `.blend1` foram preservadas e ficaram fora do escopo. O usuário escolheu Render por simplicidade; falta revisar a configuração de deploy no painel/Actions. O serviço Free pode dormir e serve para teste, mas não para produção; não foi autorizado upgrade pago. Permanecem playtests humanos de equilíbrio para 15, 30 e 60 minutos.
+- A sala temporária foi usada apenas para teste e encerrada; as alterações locais de `special-corners.blend` e `.blend1` foram preservadas e ficaram fora do escopo. O usuário escolheu Render por simplicidade. O workflow confirmou o segredo e o pedido de deploy aceito; falta revisar no painel se o deploy terminou e se o Auto-Deploy está desligado. O serviço Free pode dormir e não é recomendado pelo fornecedor para produção; não foi autorizado upgrade pago. Permanecem playtests humanos de equilíbrio para 15, 30 e 60 minutos.
 
 # Seleção de casas pelo tabuleiro — correção visual concluída (2026-10-31)
 

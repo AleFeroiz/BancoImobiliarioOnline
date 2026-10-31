@@ -7,22 +7,29 @@
 - O commit de teste vazio `03ef597` foi enviado a `origin/main`, mas não gerou evento de deploy no Render; o deploy ativo permaneceu em `2def5f6` e o histórico visível registra gatilhos manuais.
 - O serviço tem um Deploy Hook configurado. A documentação oficial do Render permite chamar esse hook por HTTP e mostra GitHub Actions como integração. O plano Free permite Web Services; o limite do plano não explica a ausência do gatilho.
 
+## Estado atualizado — 2026-10-31
+
+- No workflow CI do commit `4c85f48`, `npm run verify` terminou com sucesso e a etapa `Trigger Render deploy` foi executada. O log confirmou “Render accepted the deployment request.” O valor do segredo apareceu mascarado; isso confirma que `RENDER_DEPLOY_HOOK_URL` está configurado sem revelar o conteúdo.
+- A resposta confirma que o pedido foi aceito, mas não confirma que o serviço terminou de publicar nem que a versão nova está no ar. Esta sessão não estava autenticada no painel Render e não conseguiu confirmar o estado final do deploy.
+- Não é necessária a configuração inicial do segredo descrita nas notas antigas. Ainda falta confirmar no painel a configuração de `Auto-Deploy` e verificar que o deploy aceito terminou. Não dispare outro deploy só para repetir essa checagem.
+
 ## Contorno preparado
 
 O workflow `.github/workflows/ci.yml` agora pode disparar o Deploy Hook depois que `npm run verify` passar em pushes para `main`. O workflow também aceita `workflow_dispatch` na branch `main`, permitindo disparar o deploy mais recente depois da configuração inicial sem abrir o Render.
 
-## Configuração única pendente no painel
+## Procedimento configurado / checagem pendente
 
-1. Em Render → Settings → Deploy, copie o Deploy Hook sem compartilhá-lo no chat.
-2. No GitHub, em Settings → Secrets and variables → Actions, crie o segredo de repositório `RENDER_DEPLOY_HOOK_URL` com esse valor.
-3. Em Render → Settings → Deploy, altere `Auto-Deploy` para `Off` para evitar deploys duplicados pelo gatilho nativo e pelo GitHub Actions.
-4. No GitHub, abra Actions → CI → Run workflow e execute na branch `main`. O workflow valida a configuração e publica o HEAD atual. Depois, pushes para `main` publicam automaticamente após a suíte passar.
+1. O workflow `.github/workflows/ci.yml` chama o Deploy Hook após `npm run verify` passar em pushes para `main`.
+2. O workflow também aceita `workflow_dispatch` na branch `main`.
+3. No painel Render, confirmar se `Auto-Deploy` está `Off`, evitando publicação duplicada pelo gatilho nativo e pelo GitHub Actions.
+4. No painel Render, verificar se o deploy solicitado pelo workflow do commit `4c85f48` foi concluído e se o serviço está saudável.
 
 ## Segurança
 
 - Não grave o Deploy Hook em arquivos, logs, commits ou mensagens.
 - Se o hook for exposto, regenere-o no Render e atualize o segredo no GitHub.
-- Até o segredo ser adicionado e o gatilho nativo ser desligado, a automação alternativa ainda não pode acionar o serviço.
+- O segredo está configurado no GitHub Actions; seu valor permanece mascarado e não foi copiado para arquivos, logs ou mensagens.
+- A configuração `Auto-Deploy` do serviço ainda precisa ser conferida no painel.
 
 ## Comparação de hospedagem — 2026-10-31
 
@@ -31,4 +38,4 @@ O workflow `.github/workflows/ci.yml` agora pode disparar o Deploy Hook depois q
 - Railway: o plano Hobby é um compromisso mínimo de US$ 5/mês aplicado ao uso, com excedente cobrado; as regiões atualmente listadas são Califórnia, Virgínia, Amsterdã e Singapura.
 - Decisão do usuário em 2026-10-31: continuar no Render por simplicidade, aproveitando o serviço já vinculado. Não fazer upgrade pago sem confirmar o custo. O Free serve para testes e partidas privadas, mas pode hibernar após 15 minutos sem tráfego e levar cerca de um minuto para despertar; o fornecedor não o recomenda para produção.
 - Fontes oficiais: [Fly regions](https://fly.io/docs/reference/regions/), [Fly pricing](https://fly.io/docs/about/pricing/), [Render pricing](https://render.com/pricing), [Render Free](https://render.com/docs/free), [Render regions](https://render.com/docs/regions), [Railway billing](https://docs.railway.com/pricing/understanding-your-bill), [Railway regions](https://docs.railway.com/deployments/regions).
-- Nota operacional: esta sessão não estava autenticada no painel Render. A configuração do serviço deve ser revisada no painel antes da primeira publicação do estado atual; o segredo `RENDER_DEPLOY_HOOK_URL` continua sendo inserido diretamente em GitHub Actions Secrets pelo proprietário, sem compartilhá-lo em chat.
+- Nota operacional: esta sessão não estava autenticada no painel Render. O GitHub confirmou que o hook aceitou um pedido de deploy para `4c85f48`, mas o estado final precisa ser confirmado no painel. O segredo permanece no GitHub Actions Secrets e não deve ser compartilhado em chat.
