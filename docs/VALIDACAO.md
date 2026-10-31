@@ -1,3 +1,10 @@
+# 2026-10-31 — Início das durações e economia em sala local com bots
+
+- Em sala local de 15 minutos com BANTEC QA e três bots, a partida começou com relógio em 15:00 e R$ 2.000.000 para cada participante. BANTEC QA comprou Manaus por R$ 650.000; a prévia mostrou aluguel de R$ 65.000 sem construção, R$ 130.000 com uma casa, R$ 260.000 com duas e R$ 455.000 com três, com os custos totais correspondentes de R$ 650.000, R$ 975.000, R$ 1.300.000 e R$ 1.625.000.
+- Bot 1 caiu em Manaus, pagou R$ 65.000 ao dono e recebeu a opção de recompra por R$ 975.000 (1,5× o investimento), depois do aluguel. A sala avançou ao turno do Bot 2. A sessão foi encerrada sem concluir uma partida e não mede o equilíbrio entre pessoas.
+- Em salas locais separadas com um bot, as modalidades de 30 minutos e 1 hora iniciaram com relógios sincronizados em 30:00 e 60:00; ambas foram encerradas logo após confirmar o início. O início de 15 minutos também foi visto na sala acima.
+- Na tentativa de abrir o painel Render, a página pediu autenticação e o acesso por GitHub chegou à tela de login do GitHub. Nenhuma credencial foi digitada nem solicitação de permissão/aceite foi aprovada. Versão ativa e `Auto-Deploy` permanecem sem confirmação.
+
 # 2026-10-31 — Smoke test público da sala e da partida BANTEC
 
 - Na home pública, confirmei que 15 min, 30 min e 1 hora são selecionáveis, com apenas uma duração ativa por vez. Não criei outra sala nem iniciei outra partida durante esta conferência.
