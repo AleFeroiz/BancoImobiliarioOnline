@@ -18,10 +18,12 @@ describe('apresentação minimalista dos dados', () => {
 
   it('mantém os dados e o total elevados sobre a FATEC no centro da mesa', () => {
     expect(DICE_PRESENTATION_POSITIONS).toHaveLength(2)
-    expect(DICE_PRESENTATION_POSITIONS.every((position) => position[1] > 2)).toBe(true)
+    expect(DICE_PRESENTATION_POSITIONS.every((position) => position[1] >= 4 && position[1] <= 4.5)).toBe(true)
     expect(DICE_PRESENTATION_POSITIONS[0]?.[0]).toBeLessThan(0)
     expect(DICE_PRESENTATION_POSITIONS[1]?.[0]).toBeGreaterThan(0)
+    expect(Math.sign(DICE_PRESENTATION_POSITIONS[0]![2])).toBe(-Math.sign(DICE_PRESENTATION_POSITIONS[1]![2]!))
     expect(Math.abs(DICE_RESULT_BADGE_POSITION[0])).toBeLessThan(0.1)
     expect(DICE_RESULT_BADGE_POSITION[1]).toBeGreaterThan(DICE_PRESENTATION_POSITIONS[0]![1])
+    expect(DICE_RESULT_BADGE_POSITION[1]).toBeLessThan(5.5)
   })
 })

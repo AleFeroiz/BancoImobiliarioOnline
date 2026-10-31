@@ -4,7 +4,7 @@ import { createServer } from 'node:net'
 import appConfig from '../src/app.config.js'
 import type { LobbyState } from '../src/rooms/schema/LobbyState.js'
 import { PropertyState } from '../src/rooms/schema/LobbyState.js'
-import { boardSpaces } from '../../shared/board.js'
+import { boardSpaces, getLineTitleIds } from '../../shared/board.js'
 import { EVENT_CARDS, type EventCard } from '../../shared/cards.js'
 import { START_BONUS, STARTING_CASH, bankReturnValue, buildingSaleValue, calculateRent, constructionCost, forcedBuybackCost } from '../../shared/game.js'
 
@@ -731,6 +731,39 @@ describe('sala privada', () => {
     expect(room.state.turnPhase).toBe('roll')
   }, 25_000)
 
+  it('encerra a partida no servidor para cada condição imediata de monopólio', async () => {
+    const regionalIds = boardSpaces
+      .filter((space) => space.buildable && (space.region === 'north' || space.region === 'center-west'))
+      .map((space) => space.id)
+    const companyIds = boardSpaces.filter((space) => space.company).map((space) => space.id)
+    const winConditions = [
+      { label: 'Monopólio em Linha', propertyIds: getLineTitleIds(0) },
+      { label: 'Monopólio Duplo Regional', propertyIds: regionalIds },
+      { label: 'quatro companhias', propertyIds: companyIds },
+    ]
+
+    for (const condition of winConditions) {
+      const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
+      const host = await colyseus.connectTo(room, { name: 'Ana' })
+      await colyseus.connectTo(room, { name: 'Bia' })
+      host.send('start')
+      await waitFor(() => room.state.status === 'playing')
+
+      for (const propertyId of condition.propertyIds) {
+        const property = new PropertyState()
+        property.ownerSessionId = host.sessionId
+        room.state.properties.set(String(propertyId), property)
+      }
+
+      const checkMonopolyVictory = (room as unknown as { checkMonopolyVictory: (sessionId: string) => boolean }).checkMonopolyVictory
+      expect(checkMonopolyVictory.call(room, host.sessionId), condition.label).toBe(true)
+      expect(room.state.status, condition.label).toBe('ended')
+      expect(room.state.turnPhase, condition.label).toBe('ended')
+      expect(room.state.winnerSessionId, condition.label).toBe(host.sessionId)
+      expect(room.state.landingDescription, condition.label).toContain('venceu ao completar um monopólio')
+    }
+  })
+
   it('valida construções no servidor, permite até três casas e hotel em visita posterior', async () => {
     const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
     const host = await colyseus.connectTo(room, { name: 'Ana' })
@@ -1279,6 +1312,79 @@ describe('sala privada', () => {
     host.send('resolveCardTarget', { propertyId: protectionId })
     await waitFor(() => protectionChoice.protectionTurns === 4)
     expect(protectionChoice.protectionTurns).toBe(4)
+  })
+
+  it('suspende o aluguel durante três turnos do dono por Apagão e retoma a cobrança ao expirar', async () => {
+    const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
+    const host = await colyseus.connectTo(room, { name: 'Ana' })
+    const guest = await colyseus.connectTo(room, { name: 'Bia' })
+    host.send('start')
+    await waitFor(() => room.state.status === 'playing')
+
+    const propertySpace = boardSpaces.find((space) => space.buildable)!
+    const property = new PropertyState()
+    property.ownerSessionId = guest.sessionId
+    property.houses = 1
+    property.blackoutTurns = 3
+    room.state.properties.set(String(propertySpace.id), property)
+
+    const privateRoom = room as unknown as {
+      resolveSpace: (sessionId: string, player: NonNullable<ReturnType<typeof room.state.players.get>>, drawEvent?: boolean) => void
+      advanceTurn: () => void
+    }
+    const visitor = room.state.players.get(host.sessionId)!
+    const owner = room.state.players.get(guest.sessionId)!
+    visitor.position = propertySpace.id
+    room.state.activePlayerSessionId = host.sessionId
+    const visitorCash = visitor.cash
+
+    privateRoom.resolveSpace(host.sessionId, visitor, false)
+    expect(room.state.turnPhase).toBe('resolve')
+    expect(room.state.landingDescription).toContain('está em apagão; não há aluguel')
+    expect(visitor.cash).toBe(visitorCash)
+
+    for (const turnsRemaining of [2, 1, 0]) {
+      room.state.activePlayerSessionId = guest.sessionId
+      privateRoom.advanceTurn()
+      expect(property.blackoutTurns).toBe(turnsRemaining)
+    }
+
+    room.state.activePlayerSessionId = host.sessionId
+    visitor.position = propertySpace.id
+    privateRoom.resolveSpace(host.sessionId, visitor, false)
+    expect(room.state.turnPhase).toBe('buyback')
+    expect(room.state.landingDescription).not.toContain('está em apagão')
+
+    const rent = calculateRent(propertySpace.id, new Map([[propertySpace.id, guest.sessionId]]), 1, 255)
+    host.send('buyback', { accept: false })
+    await waitFor(() => room.state.turnPhase === 'resolve')
+    expect(visitor.cash).toBe(visitorCash - rent)
+    expect(owner.cash).toBe(STARTING_CASH + rent)
+  })
+
+  it('Terremoto devolve ao banco o imóvel atingido e apaga suas construções', async () => {
+    const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
+    const host = await colyseus.connectTo(room, { name: 'Ana' })
+    const guest = await colyseus.connectTo(room, { name: 'Bia' })
+    host.send('start')
+    await waitFor(() => room.state.status === 'playing')
+
+    const propertySpace = boardSpaces.find((space) => space.buildable)!
+    const property = new PropertyState()
+    property.ownerSessionId = guest.sessionId
+    property.houses = 2
+    room.state.properties.set(String(propertySpace.id), property)
+    room.state.activePlayerSessionId = host.sessionId
+    room.state.turnPhase = 'card-target'
+    room.state.activeCardId = 'earthquake'
+
+    host.send('resolveCardTarget', { propertyId: propertySpace.id, targetSessionId: guest.sessionId })
+    await waitFor(() => property.ownerSessionId === '')
+
+    expect(property.houses).toBe(0)
+    expect(room.state.turnPhase).toBe('resolve')
+    expect(room.state.landingDescription.toLowerCase()).toContain('terremoto')
+    expect(room.state.players.get(guest.sessionId)?.cash).toBe(STARTING_CASH)
   })
 
   it('paga Aniversário a cada pessoa e processa Ladrão com dívida ao alvo', async () => {

@@ -10,7 +10,7 @@ Como referência histórica de regras clássicas, o [manual oficial do Super Ban
 
 ## Tabuleiro regional aprovado — implementação em andamento
 
-Esta seção descreve as regras vigentes da reforma e prevalece sobre as regras anteriores abaixo. O código usa a composição regional, novos preços e aluguéis, impostos, condições de vitória, duração escolhida no lobby, Volta ao Brasil, recompra e baralho de 12 cartas. O modo Express, o estado de imóvel hipotecado e o aluguel por dado das antigas estações foram removidos. A suíte automática passou; ainda falta completar o playtest visual desktop e revisar liquidação de dívida em partida. Dois detalhes de alvo das cartas seguem como hipóteses provisórias em `DECISOES.md`.
+Esta seção descreve as regras vigentes da reforma e prevalece sobre as regras anteriores abaixo. O código usa a composição regional, novos preços e aluguéis, impostos, condições de vitória, duração escolhida no lobby, Volta ao Brasil, recompra e baralho de 12 cartas. O modo Express, o estado de imóvel hipotecado e o aluguel por dado das antigas estações foram removidos. A suíte automática passou; ainda falta revisar liquidação de dívida em partida e percorrer manualmente as cartas e condições de vitória. Os alvos de Proteção e Cidade-sede estão definidos em `DECISOES.md`.
 
 ### Composição vigente do tabuleiro
 

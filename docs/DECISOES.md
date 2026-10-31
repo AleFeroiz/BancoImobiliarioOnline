@@ -107,7 +107,6 @@ Os PIBs municipais usados para a ordenação são produção econômica total e 
 ## Detalhes de implementação que ainda serão calibrados
 
 - Balanceamento da economia do tabuleiro para sustentar partidas nos tempos definidos.
-- Setores e nomes definitivos das companhias; os quatro nomes hoje no código são rascunhos.
 - Estratégia e equilíbrio dos bots; no MVP, eles priorizam decisões econômicas simples e recusam ofertas de troca recebidas.
 - Opções visuais de avatares, cores e acessibilidade.
 - Escolha final do provedor Node para hospedar o servidor, depois de validar Colyseus com salas reais.

@@ -14,13 +14,12 @@
 - Graphify update não executou porque a CLI `graphify` não está instalada neste ambiente.
 # Validação visual e de navegador
 
-## 2026-10-31 — Duplas, modo noturno e dados sobre a FATEC
+## 2026-10-31 — Posição dos dados, tema noturno e partida BANTEC
 
-- `npm run graphify -- update .` atualizou o grafo local após as alterações de código.
-- `npm run verify`: 221 testes em 44 arquivos passaram; builds de frontend e servidor passaram. O chunk 3D conhecido (956,45 KB; 259,83 KB gzip) continua acima do aviso de 500 KB.
-- No navegador interno, confirmei que o fundo externo da partida fica escuro e o tabuleiro mantém suas cores. A preferência do tema apareceu ativada nas opções da partida.
-- Um teste de regressão garante que os dois dados ficam acima da FATEC e que o indicador do resultado fica mais alto. A captura da rolagem ficou pendente porque a porta 2567 retornou `EADDRINUSE` e não foi possível identificar o processo que a ocupa; nenhum processo foi interrompido.
-- `git diff --check` será repetido após esta atualização documental.
+- `npm run verify`: 224 testes em 44 arquivos passaram; builds do frontend e servidor passaram. O build mantém o aviso conhecido de chunk de cena 3D com 956,45 KB (259,83 KB gzip). `git diff --check` passou.
+- Após o ajuste de altura de 6 para 4,2 unidades, a captura da partida mostra os dados lado a lado flutuando logo acima da FATEC Itapetininga, com o total acima deles; o modelo permanece visível e os dados não ficam isolados no alto da tela. O tabuleiro mantém as cores das regiões enquanto o fundo externo fica escuro.
+- Na home e no lobby, os seletores de duração foram revisados em modo noturno depois de ajustar seus fundos e bordas para manter contraste. A partida real também confirmou compra da companhia Aviação Brasil por R$ 500.000, saldo atualizado para R$ 1.500.000 e o imóvel disponível na carteira com preço e aluguel.
+- Testes de integração cobrem vitória imediata por Monopólio em Linha, Monopólio Duplo Regional e quatro companhias, três turnos de Apagão e liberação de imóvel após Terremoto. Liquidação real de dívida e navegação manual por todas as cartas/vitórias permanecem pendentes.
 
 ## 2026-10-31 — Marca, carteira, construção e Proteção
 

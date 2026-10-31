@@ -38,6 +38,8 @@ describe('modo noturno BANTEC', () => {
 
     expect(styles).toContain('.screen-home[data-night-mode="true"]')
     expect(styles).toContain('.screen-home[data-night-mode="true"] .entry-card')
+    expect(styles).toContain('.screen-home[data-night-mode="true"] .mode-tab.selected{border-color:#c7ad5e;background:#35483d')
+    expect(styles).toContain('.screen-room[data-night-mode="true"] .lobby-duration-option[aria-pressed="true"]')
     expect(styles).toMatch(/\.screen-game\[data-night-mode="true"\]\{background:#142326\}/)
     expect(styles).not.toContain('.screen-game[data-night-mode="true"] .scene-backdrop')
     expect(styles).not.toContain('.screen-game[data-night-mode="true"] canvas')
