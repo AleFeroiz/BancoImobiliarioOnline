@@ -26,6 +26,7 @@ import { getGraphicsDprRange, type GraphicsQuality } from './graphicsQuality'
 import { getGameBackgroundColor } from './nightMode'
 import { getPlayerEmoteSymbol, type PlayerEmote } from '../../shared/playerEmotes'
 import { THROW_PROJECTILE_DURATION_MS, type ThrowableObject } from '../../shared/throwables'
+import { getThrowableAimPoint, getThrowableFlightPoint, type ThrowablePoint } from './throwableTrajectory'
 
 type PropertyBuilding = { spaceId: number; ownerSessionId: string; houses: number; blackoutTurns?: number; protectionTurns?: number; ownerColor: string }
 type PlayerToken = { id: string; position: number; color: string; seatIndex: number; cash: number; characterType: 'pawn' | 'car' | 'motorcycle' | 'airplane'; activity?: string; emote?: { emote: PlayerEmote; sequence: number } }
@@ -217,7 +218,7 @@ function SpaceLabel({ name, size, ink, outline, outwardRotation }: { name: strin
   )
 }
 
-function AnimatedPawn({ player, seatIndex, reducedMotion, movementEnabled, moveMode, presentationSpeed, pawnStepSoundEnabled, onMovementComplete }: { player: PlayerToken; seatIndex: number; reducedMotion: boolean; movementEnabled: boolean; moveMode: 'walk' | 'teleport'; presentationSpeed: AnimationSpeed; pawnStepSoundEnabled: boolean; onMovementComplete: () => void }) {
+function AnimatedPawn({ player, seatIndex, pawnGroups, reducedMotion, movementEnabled, moveMode, presentationSpeed, pawnStepSoundEnabled, onMovementComplete }: { player: PlayerToken; seatIndex: number; pawnGroups: Map<string, Group>; reducedMotion: boolean; movementEnabled: boolean; moveMode: 'walk' | 'teleport'; presentationSpeed: AnimationSpeed; pawnStepSoundEnabled: boolean; onMovementComplete: () => void }) {
   const group = useRef<Group>(null)
   const { invalidate } = useThree()
   const { scene: tokenScene } = useGLTF('/assets/player-tokens.glb')
@@ -229,6 +230,11 @@ function AnimatedPawn({ player, seatIndex, reducedMotion, movementEnabled, moveM
   const hopDuration = useRef(getAnimationDuration(PAWN_STEP_ANIMATION_DURATION_MS, presentationSpeed) / 1000)
   const onMovementCompleteRef = useRef(onMovementComplete)
   onMovementCompleteRef.current = onMovementComplete
+  const registerPawnGroup = useCallback((node: Group | null) => {
+    group.current = node
+    if (node) pawnGroups.set(player.id, node)
+    else pawnGroups.delete(player.id)
+  }, [pawnGroups, player.id])
   const vehicleOffsets = [[-0.2, -0.2], [0.2, -0.2], [-0.2, 0.2], [0.2, 0.2]] as const
   const offsetX = player.characterType === 'pawn' ? 0.13 * (seatIndex - 1.5) : vehicleOffsets[seatIndex]?.[0] ?? 0
   const offsetZ = player.characterType === 'pawn' ? 0.06 : vehicleOffsets[seatIndex]?.[1] ?? 0
@@ -320,7 +326,7 @@ function AnimatedPawn({ player, seatIndex, reducedMotion, movementEnabled, moveM
   })
 
   return (
-    <group ref={group} position={[initial.x + offsetX, baseY, initial.z + offsetZ]} rotation={[0, player.position <= 10 ? Math.PI / 2 : player.position <= 20 ? Math.PI : player.position <= 30 ? -Math.PI / 2 : 0, 0]}>
+    <group ref={registerPawnGroup} position={[initial.x + offsetX, baseY, initial.z + offsetZ]} rotation={[0, player.position <= 10 ? Math.PI / 2 : player.position <= 20 ? Math.PI : player.position <= 30 ? -Math.PI / 2 : 0, 0]}>
       <TokenHighlight color={player.color} baseY={baseY} />
       {player.characterType === 'pawn' ? <>
         <group scale={1.24}>
@@ -350,41 +356,39 @@ function AnimatedPawn({ player, seatIndex, reducedMotion, movementEnabled, moveM
   )
 }
 
-function ThrowableProjectile({ event, players }: { event: ThrowableEvent; players: PlayerToken[] }) {
+function ThrowableProjectile({ event, pawnGroups }: { event: ThrowableEvent; pawnGroups: Map<string, Group> }) {
   const projectile = useRef<Group>(null)
   const elapsed = useRef(0)
+  const start = useRef<ThrowablePoint>([0, 0.9, 0])
+  const hasStarted = useRef(false)
   const { invalidate } = useThree()
-  const start = useMemo(() => getThrowablePosition(players.find((player) => player.id === event.fromSessionId)), [event.fromSessionId, players])
-  const end = useMemo(() => getThrowablePosition(players.find((player) => player.id === event.toSessionId)), [event.toSessionId, players])
 
   useFrame((_, delta) => {
     if (!projectile.current || elapsed.current >= THROW_PROJECTILE_DURATION_MS / 1000) return
+    const thrower = pawnGroups.get(event.fromSessionId)
+    const target = pawnGroups.get(event.toSessionId)
+    if (!thrower || !target) {
+      invalidate()
+      return
+    }
+    if (!hasStarted.current) {
+      start.current = getThrowableAimPoint([thrower.position.x, thrower.position.y, thrower.position.z])
+      hasStarted.current = true
+    }
     elapsed.current += delta
     const progress = Math.min(elapsed.current / (THROW_PROJECTILE_DURATION_MS / 1000), 1)
-    projectile.current.position.set(
-      start[0] + (end[0] - start[0]) * progress,
-      start[1] + (end[1] - start[1]) * progress + Math.sin(progress * Math.PI) * 1.05,
-      start[2] + (end[2] - start[2]) * progress,
-    )
+    const end = getThrowableAimPoint([target.position.x, target.position.y, target.position.z])
+    projectile.current.position.set(...getThrowableFlightPoint(start.current, end, progress))
     projectile.current.rotation.set(progress * Math.PI * 5, progress * Math.PI * 7, progress * Math.PI * 4)
     if (progress < 1) invalidate()
   })
 
-  return <group ref={projectile} position={start} scale={0.15} raycast={skipRaycast}>
+  return <group ref={projectile} position={[0, 0.9, 0]} scale={0.15} raycast={skipRaycast}>
     {event.object === 'tomato' && <group><mesh><icosahedronGeometry args={[1, 1]} /><meshBasicMaterial color="#e43a31" /></mesh><mesh position={[0, 0.94, 0]}><coneGeometry args={[0.16, 0.3, 5]} /><meshBasicMaterial color="#398345" /></mesh><mesh position={[0.22, 0.88, 0]} rotation={[0, 0, -0.45]}><sphereGeometry args={[0.22, 5, 3]} /><meshBasicMaterial color="#4f9b51" /></mesh></group>}
     {event.object === 'egg' && <mesh scale={[0.72, 1, 0.7]}><sphereGeometry args={[1, 10, 7]} /><meshBasicMaterial color="#fff1cf" /></mesh>}
     {event.object === 'mud' && <group><mesh><icosahedronGeometry args={[0.72, 1]} /><meshBasicMaterial color="#795033" /></mesh><mesh position={[0.48, 0.12, 0.08]} scale={0.62}><icosahedronGeometry args={[0.62, 0]} /><meshBasicMaterial color="#8c6040" /></mesh><mesh position={[-0.34, 0.25, 0.25]} scale={0.47}><icosahedronGeometry args={[0.62, 0]} /><meshBasicMaterial color="#62402d" /></mesh></group>}
     {event.object === 'flour' && <group><mesh scale={0.8}><sphereGeometry args={[0.72, 8, 6]} /><meshBasicMaterial color="#fff9e9" transparent opacity={0.88} /></mesh><mesh position={[0.48, 0.08, 0.08]} scale={0.56}><sphereGeometry args={[0.64, 8, 5]} /><meshBasicMaterial color="#f3ead5" transparent opacity={0.8} /></mesh><mesh position={[-0.4, 0.1, 0]} scale={0.48}><sphereGeometry args={[0.66, 8, 5]} /><meshBasicMaterial color="#fffdf4" transparent opacity={0.8} /></mesh></group>}
   </group>
-}
-
-function getThrowablePosition(player?: PlayerToken): [number, number, number] {
-  if (!player) return [0, 0.85, 0]
-  const vehicleOffsets = [[-0.2, -0.2], [0.2, -0.2], [-0.2, 0.2], [0.2, 0.2]] as const
-  const offsetX = player.characterType === 'pawn' ? 0.13 * (player.seatIndex - 1.5) : vehicleOffsets[player.seatIndex]?.[0] ?? 0
-  const offsetZ = player.characterType === 'pawn' ? 0.06 : vehicleOffsets[player.seatIndex]?.[1] ?? 0
-  const { x, z } = positionOnBoard(player.position)
-  return [x + offsetX, player.characterType === 'pawn' ? 0.9 : 0.72, z + offsetZ]
 }
 
 const dicePips: Record<number, [number, number][]> = {
@@ -571,6 +575,7 @@ function FatecLandmark() {
 }
 
 function Board({ players, propertyBuildings, thrownObjects, worldCupSpaceId, highlightedSpaceIds, selectionMode, landingPulseSpaceId, landingPulseSequence, diceRollSequence, dice, diceVisible, diceResultVisible, presentationSpeed, reducedMotion, pawnMovementEnabled, pawnMoveMode, pawnStepSoundEnabled, onMovementComplete, onSelectSpace }: { players: PlayerToken[]; propertyBuildings: PropertyBuilding[]; thrownObjects: ThrowableEvent[]; worldCupSpaceId: number; highlightedSpaceIds: readonly number[]; selectionMode: boolean; landingPulseSpaceId: number; landingPulseSequence: number; dice: [number, number]; diceVisible: boolean; diceResultVisible: boolean; diceRollSequence: number; presentationSpeed: AnimationSpeed; reducedMotion: boolean; pawnMovementEnabled: boolean; pawnMoveMode: 'walk' | 'teleport'; pawnStepSoundEnabled: boolean; onMovementComplete: () => void; onSelectSpace: (spaceId: number) => void }) {
+  const pawnGroups = useMemo(() => new Map<string, Group>(), [])
   const { scene: buildingScene } = useGLTF('/assets/board-models/board-models.glb')
   const propertyRentLabels = useMemo(() => boardSpaces
     .filter((space) => space.kind === 'property' && propertyBuildings.some((holding) => holding.spaceId === space.id && Boolean(holding.ownerSessionId)))
@@ -644,8 +649,8 @@ function Board({ players, propertyBuildings, thrownObjects, worldCupSpaceId, hig
       <Suspense fallback={null}>
         {propertyBuildings.filter(({ ownerSessionId }) => Boolean(ownerSessionId)).map(({ spaceId, houses, ownerColor, ownerSessionId }) => <AnimatedBuilding key={`buildings-${spaceId}`} spaceId={spaceId} houses={houses} ownerColor={ownerColor} ownerSessionId={ownerSessionId} reducedMotion={reducedMotion} presentationSpeed={presentationSpeed} dimmed={selectionMode && !highlightedSpaceIds.includes(spaceId)} />)}
       </Suspense>
-      {players.map((player) => <AnimatedPawn key={player.id} player={player} seatIndex={player.seatIndex} reducedMotion={reducedMotion} movementEnabled={pawnMovementEnabled} moveMode={pawnMoveMode} presentationSpeed={presentationSpeed} pawnStepSoundEnabled={pawnStepSoundEnabled} onMovementComplete={onMovementComplete} />)}
-      {thrownObjects.map((event) => <ThrowableProjectile key={event.id} event={event} players={players} />)}
+      {players.map((player) => <AnimatedPawn key={player.id} player={player} seatIndex={player.seatIndex} pawnGroups={pawnGroups} reducedMotion={reducedMotion} movementEnabled={pawnMovementEnabled} moveMode={pawnMoveMode} presentationSpeed={presentationSpeed} pawnStepSoundEnabled={pawnStepSoundEnabled} onMovementComplete={onMovementComplete} />)}
+      {thrownObjects.map((event) => <ThrowableProjectile key={event.id} event={event} pawnGroups={pawnGroups} />)}
       {diceVisible && <>
         <AnimatedDie position={DICE_PRESENTATION_POSITIONS[0]!} rotation={[0.12, 0.25, 0.25]} sequence={diceRollSequence} value={dice[0] || 1} reducedMotion={reducedMotion} visible={diceVisible} presentationSpeed={presentationSpeed} />
         {dice[1] > 0 && <AnimatedDie position={DICE_PRESENTATION_POSITIONS[1]!} rotation={[-0.18, 0.3, -0.2]} sequence={diceRollSequence} value={dice[1]} reducedMotion={reducedMotion} visible={diceVisible} presentationSpeed={presentationSpeed} />}

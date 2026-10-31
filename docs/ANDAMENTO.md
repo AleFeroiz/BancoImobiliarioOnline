@@ -493,3 +493,9 @@
 - Cada objeto é animado em 3D da ficha de quem lançou até a ficha-alvo; apenas o cliente atingido recebe o overlay visual por três segundos. O overlay não captura cliques. Em sala local com dois clientes, vi o tomate alcançar a ficha e o efeito aparecer apenas no alvo; abri Bens enquanto ele estava ativo, confirmando que a interface continuou clicável.
 - Regressões cobrem alvo inválido, item inválido, alvo próprio, sucesso, cooldown e lançamento a outro alvo durante o cooldown do primeiro. `npm run verify` passou com 252 testes em 48 arquivos, build web e build do servidor; o Vite manteve o aviso conhecido de chunk 3D acima de 500 kB. `git diff --check` passou. Graphify foi atualizado.
 - Próximo passo: seguir com a próxima frente pendente da reforma e continuar os playtests humanos de equilíbrio e duração.
+# Trajetória do arremesso em fichas em movimento — concluída (2026-10-31)
+
+- O projétil antes calculava a origem e o destino a partir da casa lógica (`player.position`), que muda antes da ficha concluir o movimento visual. Agora cada ficha registra seu grupo 3D animado; o arremesso captura a origem visual no disparo e atualiza o alvo pela posição renderizada a cada frame.
+- Regressões cobrem ancoragem e percurso entre coordenadas atuais, incluindo movimento e limites exatos de início/fim. Em playtest local, lancei durante a animação do Bot 1 e vi o tomate junto à ficha em movimento; o percurso usou a ficha que estava visível, em vez da casa final.
+- `npm run verify`: 254 testes em 49 arquivos passaram; builds frontend/servidor passaram. `npm run graphify -- update .` atualizou o grafo para 977 nós e 1.820 arestas. O build mantém o aviso conhecido de chunk 3D acima de 500 kB.
+- Próximo passo: continuar os playtests humanos pendentes da reforma BANTEC.
