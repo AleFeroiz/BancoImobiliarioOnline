@@ -6,7 +6,8 @@
 - Na rolagem real da sala local F6BG5, os dados apareceram baixos junto aos prédios sem atravessar o volume da Fatec.
 
 - Em sala local FHNFW com Modo DEV e Bot 1, confirmei Generoso transferindo Manaus ao bot; Aniversário transferindo R$ 50.000 do bot ao anfitrião; Apagão destacando alvos válidos, aplicando-se a Manaus e zerando o aluguel na chegada seguinte (mensagem: 2 turnos restantes); Terremoto destruindo Manaus e devolvendo-a ao banco.
-- Isso conclui a validação manual de quatro cartas. Faltam as cartas restantes e os playtests humanos de equilíbrio para 15, 30 e 60 minutos. A escolha da hospedagem continua pendente de prioridade/custo do usuário.
+- Na sala descartável RZMAQ, a carta Cidade-sede foi descartada sem mover quando não havia sede ativa. A carta Sede da Copa permitiu selecionar Joinville do anfitrião e o inspetor mostrou aluguel de R$ 135.000 (base de R$ 45.000, triplicada). Troca-troca abriu a escolha entre participantes, mas o prazo expirou antes de confirmar a troca; Proteção abriu a fase de seleção, mas o turno expirou antes de escolher o imóvel. Estas duas verificações continuam pendentes.
+- Estão confirmadas manualmente seis cartas: Generoso, Aniversário, Apagão, Terremoto, Sede da Copa e Cidade-sede. Faltam confirmar as demais, sobretudo Proteção e Troca-troca, e fazer playtests humanos de equilíbrio para 15, 30 e 60 minutos. A escolha da hospedagem continua pendente de prioridade/custo do usuário.
 - A sala temporária foi criada apenas para teste; a tela DEV manteve o modo ativado só nessa partida. Alterações locais dos arquivos Blender `special-corners.blend` e `.blend1` permanecem preservadas e fora do escopo.
 
 # Seleção de casas pelo tabuleiro — correção visual concluída (2026-10-31)

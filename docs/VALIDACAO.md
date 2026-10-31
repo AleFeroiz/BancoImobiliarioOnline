@@ -725,6 +725,13 @@
 - Terremoto aceitou Manaus sem hotel e confirmou que o imóvel foi destruído e voltou ao banco. Essas observações confirmam Generoso, Aniversário, Apagão e Terremoto na interface.
 - Permanecem a revisão visual das demais cartas, playtests humanos de equilíbrio para 15/30/60 minutos e decisão de hospedagem; esta sala não substitui os playtests humanos.
 
+## 2026-10-31 — Sede da Copa e Cidade-sede no navegador
+
+- Na sala local descartável RZMAQ, Cidade-sede informou que não havia sede ativa e não moveu o participante.
+- Com Joinville como propriedade do anfitrião, Sede da Copa mostrou a seleção de imóveis elegíveis; ao escolher Joinville, o inspetor exibiu aluguel de R$ 135.000, três vezes o aluguel-base de R$ 45.000.
+- Troca-troca abriu a seleção entre os dois participantes, mas o prazo do turno expirou antes da confirmação da troca. Proteção também chegou à fase de escolha do imóvel, mas o prazo expirou antes de confirmar o alvo. Não considero esses dois efeitos confirmados visualmente.
+- Sala descartável fechada ao fim da revisão. Próximo passo: repetir Proteção com tempo suficiente e confirmar a troca de posições; depois percorrer as cartas restantes. Playtests humanos de equilíbrio (15/30/60 min) e decisão de hospedagem continuam pendentes.
+
 ## 2026-10-31 — Causa exibida no resultado final
 
 - O estado autoritativo agora sincroniza uma causa para tempo, falência, ausência de participantes solventes e cada vitória imediata. A tela final mostra um resumo correspondente; a condição de monopólio é identificada na origem do servidor.
