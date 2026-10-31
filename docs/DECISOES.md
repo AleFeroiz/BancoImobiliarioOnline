@@ -32,7 +32,7 @@ A volta começa pela região de menor participação no PIB nacional e termina n
 - **Duplas:** numa rolagem normal, duplas permitem repetir depois de concluir a chegada. A terceira dupla consecutiva envia à Prisão sem mover pelo terceiro resultado. Duplas tentadas para sair da Prisão não concedem nova jogada.
 - **Sorte ou Revés:** baralho autoral de 12 cartas com reposição; efeitos e exceções atuais estão em [REGRAS-DE-JOGO.md](REGRAS-DE-JOGO.md).
 - **Seleção no tabuleiro:** toda ação que pede escolher cidade/imóvel destaca as casas válidas e apaga as inválidas; seleção de participantes continua nos controles de jogadores.
-- **Marca e modelo central:** BANTEC é a identidade global. A FATEC Itapetininga fica no centro do tabuleiro como modelo visual somente dos três blocos e da torre mostrados nas referências do usuário; não ocupa uma casa nem altera regras. Durante a rolagem, os dados ficam na altura Y=2,45, com cerca de 0,43 unidade de folga acima da torre em repouso; o salto da animação só os afasta mais do prédio.
+- **Marca e modelo central:** BANTEC é a identidade global. A FATEC Itapetininga fica no centro do tabuleiro como modelo visual somente dos três blocos e da torre mostrados nas referências do usuário; não ocupa uma casa nem altera regras. Durante a rolagem, os dados ficam na altura Y=2,3, com um salto curto de 0,16 unidade. A margem considera o giro dos dados para mantê-los acima da torre sem fazê-los voar alto.
 - **Modo noturno:** preferência local persistida; escurece toda a home e o lobby e somente o fundo externo na partida, sem escurecer ou recolorir o tabuleiro.
 
 ## Propostas abertas e validações necessárias

@@ -45,6 +45,11 @@
 - Graphify update não executou porque a CLI `graphify` não está instalada neste ambiente.
 # Validação visual e de navegador
 
+## 2026-10-31 — Redução adicional da altura dos dados
+
+- A rolagem agora usa posição-base Y=2,3 e salto vertical de 0,16 (antes 2,45 e 0,48). O total acompanha a mudança e fica em Y=3,05. A rotação dos dados ainda mantém margem sobre o topo da torre da FATEC (Y≈1,81).
+- Teste de regressão verifica o envelope vertical dos dados enquanto giram e saltam, para mantê-los visíveis sem atravessar a torre. A conferência visual desta revisão ficou pendente: a sala na aba local já tinha terminado e o ambiente bloqueou o acesso local ao Vite (`127.0.0.1:5173`).
+
 ## 2026-10-31 — Cartas Ladrão e Apagão
 
 - Em uma partida local, a seleção do Ladrão mostrou o alvo Bot 1; após confirmar, Codex Cartas recebeu R$ 200.000 (R$ 2.250.000 → R$ 2.450.000) e Bot 1 perdeu R$ 200.000 (R$ 435.000 → R$ 235.000).

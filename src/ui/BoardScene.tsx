@@ -12,7 +12,7 @@ import { getBoardTileTheme } from './boardTileTheme'
 import { fitSpaceLabel, shouldRenderSpaceLabel } from './spaceLabel'
 import { getPawnStepPath } from './pawnPath'
 import { getPropertyVisualChange } from './gameFeedback'
-import { DICE_PRESENTATION_POSITIONS, DICE_RESULT_BADGE_POSITION, getDiceRollRotation } from './dicePresentation'
+import { DICE_PRESENTATION_POSITIONS, DICE_RESULT_BADGE_POSITION, DICE_ROLL_BOUNCE_HEIGHT, getDiceRollRotation } from './dicePresentation'
 import { getRouletteFloorSectors } from './rouletteFloor'
 import { shouldStartCameraDrag } from './cameraDrag'
 import { BUILDING_ANIMATION_DURATION_MS, DICE_ANIMATION_DURATION_MS, LANDING_PULSE_DURATION_MS, PAWN_STEP_ANIMATION_DURATION_MS, PAWN_TELEPORT_ANIMATION_DURATION_MS, PROPERTY_HOTEL_LEVEL, getAnimationDuration, type AnimationSpeed } from '../../shared/game'
@@ -396,7 +396,7 @@ function AnimatedDie({ position, rotation, sequence, value, reducedMotion, visib
     elapsed.current = Math.min(duration, elapsed.current + delta)
     const progress = elapsed.current / duration
     die.rotation.set(...getDiceRollRotation(startRotation.current as [number, number, number], progress))
-    die.position.y = position[1] + Math.sin(progress * Math.PI) * 0.48
+    die.position.y = position[1] + Math.sin(progress * Math.PI) * DICE_ROLL_BOUNCE_HEIGHT
     if (progress >= 1) {
       die.rotation.set(0, 0, 0)
       die.position.y = position[1]
