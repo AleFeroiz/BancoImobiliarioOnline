@@ -81,7 +81,7 @@ export function calculateRent(spaceId: number, ownership: ReadonlyMap<number, st
   const groupSpaces = boardSpaces.filter((candidate) => candidate.region === space.region)
   const groupIsComplete = groupSpaces.length > 1 && groupSpaces.every((candidate) => ownership.get(candidate.id) === ownership.get(spaceId))
   const rentRate = [0.1, 0.2, 0.4, 0.7, 1][Math.max(0, Math.min(4, houses))] ?? 0.1
-  const rent = Math.floor(space.price * rentRate) * (groupIsComplete ? 2 : 1)
+  const rent = Math.round(space.price * rentRate) * (groupIsComplete ? 2 : 1)
   return spaceId === worldCupSpaceId ? rent * 3 : rent
 }
 

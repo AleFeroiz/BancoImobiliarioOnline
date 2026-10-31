@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { boardSpaces } from './board.js'
-import { ANIMATION_SPEEDS, DEFAULT_ANIMATION_SPEED, DICE_ANIMATION_DURATION_MS, PAWN_STEP_ANIMATION_DURATION_MS, TURN_DECISION_SECONDS, areDiceDoubles, calculateCompanyRent, calculateNetWorth, forcedBuybackCost, getAnimationDuration, hasWinningMonopoly, isAnimationSpeed, liquidatablePropertyIds } from './game.js'
+import { ANIMATION_SPEEDS, DEFAULT_ANIMATION_SPEED, DICE_ANIMATION_DURATION_MS, PAWN_STEP_ANIMATION_DURATION_MS, TURN_DECISION_SECONDS, areDiceDoubles, calculateCompanyRent, calculateNetWorth, calculateRent, forcedBuybackCost, getAnimationDuration, hasWinningMonopoly, isAnimationSpeed, liquidatablePropertyIds } from './game.js'
 
 describe('tentativas para sair da prisão', () => {
   it('reconhece dois dados iguais como duplas', () => {
@@ -47,6 +47,16 @@ describe('vitórias e companhias do tabuleiro regional', () => {
     const ownership = new Map(boardSpaces.filter((space) => space.company).map((space) => [space.id, 'ana']))
     expect(hasWinningMonopoly(ownership, 'ana')).toBe(true)
     expect(calculateCompanyRent(ownership, 'ana')).toBe(750_000)
+  })
+})
+
+describe('aluguéis de cidades', () => {
+  it('preserva o valor exato de 70% sem perder um real por precisão decimal', () => {
+    const belem = boardSpaces.find((space) => space.name === 'Belém')
+    if (!belem) throw new Error('Belém não foi configurada no tabuleiro.')
+
+    const ownership = new Map([[belem.id, 'ana']])
+    expect(calculateRent(belem.id, ownership, 3)).toBe(245_000)
   })
 })
 

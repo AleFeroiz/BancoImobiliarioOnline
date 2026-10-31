@@ -24,6 +24,14 @@
 - Próximo passo concreto: conferir a leitura dos cartões em diferentes resoluções após os próximos playtests humanos.
 # Andamento do projeto
 
+## Precisão dos aluguéis BANTEC — progresso (2026-10-31)
+
+- O playtest de compra de Belém expôs um erro: três casas mostravam R$ 244.999, embora 70% de R$ 350.000 sejam R$ 245.000. A causa era `Math.floor` aplicado ao resultado de ponto flutuante.
+- A fórmula agora arredonda ao real mais próximo. O teste de regressão falhou antes da correção com R$ 244.999 e passou depois. No navegador, a compra de Belém mostrou R$ 245.000 em três casas e preço total de R$ 875.000.
+- `npm run graphify -- update .` concluiu. `npm run verify` passou: 235 testes em 46 arquivos, build do frontend e build do servidor. A primeira execução de testes falhou porque o sandbox bloqueou o loopback (`fetch failed`); a repetição com a permissão local do playtest passou. Continua o aviso conhecido do chunk 3D acima de 500 KB.
+- A árvore segue em `main`; as mudanças locais nos arquivos do Blender foram preservadas. O teste visual confirmou compra e escada de aluguel, mas não chegou ao estado final da partida.
+- Próximo passo concreto da reforma: continuar a auditoria de dívida, cartas e encerramento real pela interface; o painel final já tem correção e regressão automatizada, mas a captura de uma vitória real continua pendente.
+
 ## Painel de encerramento da partida — concluído (2026-10-31)
 
 - Relato: ao finalizar a partida, o painel de resultado pode sumir ou ficar com estado visual incorreto.
