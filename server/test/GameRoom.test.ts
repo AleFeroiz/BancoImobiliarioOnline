@@ -76,6 +76,36 @@ describe('sala privada', () => {
     expect((await invalid).message).toContain('emote')
   })
 
+  it('arremessa objetos a outros participantes com intervalo de cinco segundos por alvo', async () => {
+    const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
+    const host = await colyseus.connectTo(room, { name: 'Ana' })
+    const guest = await colyseus.connectTo(room, { name: 'Bia' })
+    const third = await colyseus.connectTo(room, { name: 'Caio' })
+    const started = new Promise<void>((resolve) => host.onMessage('game:started', () => resolve()))
+    host.send('start')
+    await started
+
+    const selfTarget = new Promise<{ message: string }>((resolve) => host.onMessage('room:error', resolve))
+    host.send('throwObject', { targetSessionId: host.sessionId, object: 'tomato' })
+    expect((await selfTarget).message).toContain('lançamento')
+
+    const invalidObject = new Promise<{ message: string }>((resolve) => host.onMessage('room:error', resolve))
+    host.send('throwObject', { targetSessionId: guest.sessionId, object: 'banana' })
+    expect((await invalidObject).message).toContain('lançamento')
+
+    const firstThrow = new Promise<{ id: number; fromSessionId: string; toSessionId: string; object: string }>((resolve) => host.onMessage('game:throw', resolve))
+    host.send('throwObject', { targetSessionId: guest.sessionId, object: 'tomato' })
+    expect(await firstThrow).toMatchObject({ id: 1, fromSessionId: host.sessionId, toSessionId: guest.sessionId, object: 'tomato' })
+
+    const cooldown = new Promise<{ message: string }>((resolve) => host.onMessage('room:error', resolve))
+    host.send('throwObject', { targetSessionId: guest.sessionId, object: 'egg' })
+    expect((await cooldown).message).toContain('intervalo')
+
+    const otherTargetThrow = new Promise<{ id: number; toSessionId: string; object: string }>((resolve) => host.onMessage('game:throw', resolve))
+    host.send('throwObject', { targetSessionId: third.sessionId, object: 'flour' })
+    expect(await otherTargetThrow).toMatchObject({ id: 2, toSessionId: third.sessionId, object: 'flour' })
+  })
+
   it('sincroniza a ficha escolhida por cada pessoa somente antes de iniciar', async () => {
     const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
     const host = await colyseus.connectTo(room, { name: 'Lia' })

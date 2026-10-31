@@ -65,6 +65,7 @@ Proteção bloqueia qualquer efeito de carta, inclusive Generoso. Apagão e Prot
 ## Ações e negociação
 
 - Ao clicar numa cidade, qualquer pessoa pode inspecionar preço, construção, aluguel e dono, inclusive durante o turno de outra pessoa. A carteira mostra os bens de cada participante.
+- Durante a partida, cada pessoa pode escolher tomate, ovo, lama ou farinha no controle ao lado do cartão de outro participante para lançar o objeto em sua ficha. O lançamento é cosmético: não altera saldo, turno ou regras; somente o alvo vê o efeito de impacto, que dura três segundos e não bloqueia controles. A sala impõe intervalo de cinco segundos entre lançamentos do mesmo remetente para o mesmo alvo.
 - Durante o próprio turno, fora de rolagem, movimento, compra ou dívida, a pessoa pode abrir um leilão voluntário de propriedade sua. O vendedor escolhe o lance inicial; lances devem aumentar pelo menos R$ 10.000 e ficam reservados por 20 segundos. A maior oferta compra o título; sem oferta, o dono o mantém. Construções do grupo precisam ser vendidas antes de leiloar um título.
 - Propostas de troca de dinheiro e títulos podem ser enviadas pelo perfil de participante a qualquer momento. Há uma proposta ativa por sala; ela fica aberta até ser aceita, recusada, cancelada pelo remetente, ou encerrada por falência/fim de partida. O servidor valida títulos, construções e saldos ao enviar e aceitar.
 - A anfitriã pode ativar o modo DEV no lobby. Quando ativo, apenas ela pode forçar os dados durante a rolagem válida; o servidor verifica anfitriã, jogador ativo e valores.

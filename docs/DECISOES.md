@@ -7,6 +7,7 @@
 - O percurso tem 40 casas: 24 cidades, quatro companhias, quatro taxas, quatro Sorte ou Revés e quatro cantos especiais. Não existem casas de descanso nem o modo Express.
 - As cidades, regiões, cores e preços abaixo definem a economia do tabuleiro. Os preços são valores de jogo orientados pela ordem do PIB municipal, não uma conversão de PIB para reais.
 - Regras atuais de aluguel, construções, dívida, vitória, cartas, cantos e negociação estão especificadas em [REGRAS-DE-JOGO.md](REGRAS-DE-JOGO.md). Essa especificação substitui as regras antigas registradas no histórico.
+- Durante a partida, cada participante pode lançar tomate, ovo, lama ou farinha em outro participante. A sala valida um intervalo de cinco segundos por par lançador/alvo; o projétil é uma animação visual e o impacto temporário aparece apenas na tela do alvo, sem interceptar cliques.
 
 ## Cidades, regiões e cores
 

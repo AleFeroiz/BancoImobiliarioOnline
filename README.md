@@ -8,6 +8,8 @@ Cada pessoa tem 20 segundos para lançar os dados e 15 segundos para cada decis�
 
 O cartão de cada participante exibe brevemente ganhos em verde ou perdas em vermelho sempre que o saldo muda.
 
+Cada cartão de outra pessoa também tem um controle para lançar tomate, ovo, lama ou farinha. A animação viaja entre fichas; apenas quem recebe vê o impacto temporário. É uma interação cosmética com intervalo de cinco segundos por alvo e não bloqueia a interface.
+
 Os modelos 3D de cédulas e maços de ouro e prata acompanham o saldo de cada participante. Na partida, o tabuleiro e o HUD 3D usam materiais sem luzes ou sombras; avisos aparecem em sequência e aguardam antes de mostrar a próxima decisão. A tela ocupa toda a janela, com inclinação inicial discreta e câmera orbitável pelo arraste do mouse ou toque no tabuleiro. Durante escolhas de destino, as casas indisponíveis ficam apagadas pela alteração dos próprios materiais, enquanto as opções válidas preservam as cores. Copa do Mundo e Volta ao Brasil usam um estádio e um aeroporto com avião low-poly originais. Os quatro pisos Sorte formam roletas completas, e a rolagem usa dados 3D nivelados com o total legível durante o movimento do peão. Cartas informativas são temporárias; os saldos 3D aparecem ligados aos cartões dos participantes na interface.
 
 Somente propriedades que já têm dono mostram o aluguel em texto 3D maior e reforçado, voltado para a câmera; o valor acompanha o monopólio regional, as construções e a sede da Copa. Clicar numa propriedade abre uma inspeção visual dos níveis do terreno e respectivos aluguéis, destacando o nível já construído.

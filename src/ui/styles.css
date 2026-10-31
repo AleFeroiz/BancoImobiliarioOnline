@@ -269,6 +269,10 @@ button:disabled{opacity:.55;cursor:not-allowed}
 .game-topline .back-link{font-size:9px;color:#435d48;margin:0}
 .game-pill{padding:8px 13px;background:rgba(250,248,237,.9);border:1px solid rgba(105,132,97,.3);border-radius:999px;box-shadow:0 6px 18px rgba(56,76,54,.08);color:#465d48;font-size:8px}
 .player-hud{position:absolute;inset:0;display:block;pointer-events:none;margin:0;width:auto}
+.player-card-slot{position:absolute;display:flex;align-items:center;gap:7px;width:calc(clamp(190px,20vw,236px) + 43px);pointer-events:none}
+.player-card-slot.seat-0{top:110px;left:22px}.player-card-slot.seat-1{top:110px;right:22px;flex-direction:row-reverse}.player-card-slot.seat-2{bottom:39px;left:22px}.player-card-slot.seat-3{right:22px;bottom:39px;flex-direction:row-reverse}
+.player-card-slot .player-card{position:relative;inset:auto;width:clamp(190px,20vw,236px);flex:1 1 auto}
+.player-card-slot .player-card.seat-0,.player-card-slot .player-card.seat-1,.player-card-slot .player-card.seat-2,.player-card-slot .player-card.seat-3{top:auto;right:auto;bottom:auto;left:auto}
 .player-card{position:absolute;width:clamp(156px,17vw,218px);min-height:60px;grid-template-columns:34px 1fr;grid-template-rows:auto auto;padding:9px 11px;border-color:rgba(113,133,101,.24);border-radius:14px;background:rgba(250,248,237,.95);box-shadow:0 10px 28px rgba(57,75,53,.15);color:#33483a;pointer-events:auto}
 .player-card.seat-0{top:110px;left:22px}
 .player-card.seat-1{top:110px;right:22px}
@@ -284,6 +288,28 @@ button:disabled{opacity:.55;cursor:not-allowed}
 .player-info strong{font-size:11px;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .player-info small{margin-top:3px;color:#819080;font-size:7px}
 .player-card b{grid-column:2;grid-row:2;margin-top:4px;color:#526b4c;font-size:10px}
+.player-throw-control{position:relative;z-index:7;flex:0 0 36px;pointer-events:auto}
+.player-throw-button{display:grid;place-items:center;align-content:center;gap:1px;width:36px;height:36px;padding:2px;border:1px solid rgba(239,244,223,.8);border-radius:12px;background:rgba(30,54,44,.92);color:#fff7dd;box-shadow:0 5px 14px rgba(10,20,16,.25);font-size:21px;line-height:1}
+.player-throw-button:hover,.player-throw-button:focus-visible{background:#c96e4f;outline:2px solid #f5d48a;outline-offset:2px}
+.player-throw-button:disabled{cursor:wait;opacity:.68}
+.player-throw-button small{font-size:8px;font-weight:800}
+.throw-picker{position:absolute;top:50%;left:calc(100% + 8px);z-index:25;display:grid;grid-template-columns:repeat(2,68px);gap:5px;padding:7px;border:1px solid #d7ddce;border-radius:13px;background:#fffdf3;box-shadow:0 12px 34px rgba(38,57,42,.28);transform:translateY(-50%);animation:settings-fade-in .12s ease-out both}
+.toward-center-left .throw-picker{right:calc(100% + 8px);left:auto}
+.throw-picker button{display:grid;place-items:center;gap:1px;min-height:47px;border:1px solid #e4e6db;border-radius:9px;background:#f0f1e5;color:#364b3d}
+.throw-picker button:hover,.throw-picker button:focus-visible{border-color:#d1b253;background:#e8eedb}
+.throw-picker button span{font-size:20px;line-height:1}
+.throw-picker button small{font-size:8px;font-weight:700}
+.throw-impact-screen{position:fixed;inset:0;z-index:12;display:grid;place-content:center;justify-items:center;gap:4px;pointer-events:none;animation:throw-impact-fade 3s ease-out both}
+.throw-impact-screen::before{content:'';position:absolute;inset:0;pointer-events:none}
+.throw-impact-screen>span,.throw-impact-screen>small{position:relative;filter:drop-shadow(0 3px 8px rgba(16,20,14,.35))}
+.throw-impact-screen>span{font-size:clamp(90px,24vw,220px);line-height:1;animation:throw-impact-pop .32s cubic-bezier(.14,.9,.3,1.25) both}
+.throw-impact-screen>small{padding:5px 10px;border-radius:999px;background:rgba(29,35,29,.66);color:#fff9e9;font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
+.throw-impact-screen.impact-tomato::before{background:radial-gradient(ellipse at 50% 50%,rgba(192,35,29,.22),transparent 44%),radial-gradient(circle at 10% 15%,rgba(194,42,34,.48) 0 3%,transparent 10%),radial-gradient(circle at 91% 24%,rgba(194,42,34,.32) 0 4%,transparent 12%),radial-gradient(circle at 18% 88%,rgba(194,42,34,.3) 0 4%,transparent 13%)}
+.throw-impact-screen.impact-egg::before{background:radial-gradient(ellipse at 50% 50%,rgba(255,243,199,.22),transparent 46%),radial-gradient(ellipse at 8% 20%,rgba(255,244,212,.8) 0 3%,transparent 10%),radial-gradient(ellipse at 93% 85%,rgba(255,244,212,.7) 0 4%,transparent 12%)}
+.throw-impact-screen.impact-mud::before{background:radial-gradient(ellipse at 50% 50%,rgba(85,53,31,.32),transparent 45%),radial-gradient(circle at 9% 83%,rgba(90,57,35,.58) 0 4%,transparent 12%),radial-gradient(circle at 92% 15%,rgba(90,57,35,.52) 0 4%,transparent 12%)}
+.throw-impact-screen.impact-flour::before{background:radial-gradient(ellipse at 50% 50%,rgba(255,250,234,.45),transparent 53%),linear-gradient(90deg,rgba(255,250,234,.36),transparent 40%,rgba(255,250,234,.26))}
+@keyframes throw-impact-pop{0%{transform:scale(.25) rotate(-14deg);opacity:0}55%{transform:scale(1.08) rotate(4deg);opacity:1}100%{transform:scale(1) rotate(0)}}
+@keyframes throw-impact-fade{0%,75%{opacity:1}100%{opacity:0}}
 .turn-card{align-self:flex-end;width:min(350px,calc(100vw - 36px));margin:auto auto 2px;padding:12px 15px;background:rgba(250,248,237,.97);border:1px solid #d1d9c8;border-radius:17px;box-shadow:0 18px 50px rgba(43,62,46,.2);color:#2f4439;pointer-events:auto}
 .turn-card h2{font-size:19px;margin:6px 0 3px}
 .turn-card p{font-size:10px;margin-bottom:10px}
@@ -296,6 +322,9 @@ button:disabled{opacity:.55;cursor:not-allowed}
   .player-card{width:clamp(150px,25vw,195px)}
   .player-card.seat-0{top:110px;left:12px}.player-card.seat-1{top:110px;right:12px}
   .player-card.seat-2{left:12px;bottom:14px}.player-card.seat-3{right:12px;bottom:14px}
+  .player-card-slot{width:calc(clamp(190px,20vw,236px) + 43px)}
+  .player-card-slot.seat-0{top:110px;left:12px}.player-card-slot.seat-1{top:110px;right:12px}
+  .player-card-slot.seat-2{left:12px;bottom:39px}.player-card-slot.seat-3{right:12px;bottom:39px}
   .turn-card{width:min(370px,calc(100vw - 28px))}
 }
 @media(max-width:640px){
@@ -308,6 +337,13 @@ button:disabled{opacity:.55;cursor:not-allowed}
   .game-pill{padding:7px 9px;font-size:6px;letter-spacing:.08em}
   .portfolio-toggle{min-height:28px;padding:0 8px;font-size:7px}
   .player-hud{inset:0 0 auto;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px;padding:0 9px;top:98px;height:max-content}
+  .player-card-slot,.player-card-slot.seat-0,.player-card-slot.seat-1,.player-card-slot.seat-2,.player-card-slot.seat-3{position:relative;inset:auto;width:100%;min-width:0;gap:4px;flex-direction:row}
+  .player-card-slot.seat-1,.player-card-slot.seat-3{flex-direction:row-reverse}
+  .screen-game .player-card-slot .player-card{width:auto;min-width:0;flex:1}
+  .player-throw-control{flex-basis:30px}
+  .player-throw-button{width:30px;height:30px;border-radius:9px;font-size:17px}
+  .player-throw-button small{font-size:7px}
+  .throw-picker,.toward-center-left .throw-picker{top:calc(100% + 4px);right:auto;left:0;grid-template-columns:repeat(2,58px);transform:none}
   .player-card,.player-card.seat-0,.player-card.seat-1,.player-card.seat-2,.player-card.seat-3{position:relative;inset:auto;width:auto;min-height:48px;padding:6px 7px;border-radius:10px;grid-template-columns:25px 1fr;grid-template-rows:auto auto}
   .player-avatar{width:22px;height:22px;font-size:10px}
   .player-info strong{font-size:9px;max-width:calc(100vw / 4)}
@@ -1014,6 +1050,7 @@ button:disabled{opacity:.55;cursor:not-allowed}
   .screen-game .player-info strong{font-size:8px}
   .screen-game .player-info small{font-size:5px}
   .screen-game .player-card>b{font-size:7px}
+  .screen-game .player-card-slot .player-card.seat-0,.screen-game .player-card-slot .player-card.seat-1,.screen-game .player-card-slot .player-card.seat-2,.screen-game .player-card-slot .player-card.seat-3{top:auto;right:auto;bottom:auto;left:auto}
   .screen-game .player-money-anchor{top:3px;right:3px;width:74px;height:31px}
   .cash-silver{left:22px}.cash-note{left:45px}
   .roll-control,.turn-action-control{bottom:55px}

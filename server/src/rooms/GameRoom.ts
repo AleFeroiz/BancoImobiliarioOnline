@@ -6,6 +6,7 @@ import { AUCTION_DURATION_SECONDS, AUCTION_MIN_BID_INCREMENT, CLASSIC_MATCH_SECO
 import { boardSpaces } from '../../../shared/board.js'
 import { PLAYER_COLORS, isPlayerColor } from '../../../shared/playerColors.js'
 import { isPlayerEmote } from '../../../shared/playerEmotes.js'
+import { isThrowableObject, THROW_COOLDOWN_MS } from '../../../shared/throwables.js'
 import { EVENT_CARDS } from '../../../shared/cards.js'
 import { LobbyPlayerState, LobbyState, PropertyState } from './schema/LobbyState.js'
 import { chooseBotAuctionBid, shouldBotBuyProperty } from './botStrategy.js'
@@ -41,6 +42,8 @@ export class GameRoom extends Room<{ state: LobbyState }> {
   private tradeOfferSequence = 0
   private auctionSequence = 0
   private botSequence = 0
+  private throwSequence = 0
+  private throwCooldowns = new Map<string, number>()
   private turnTimerKey = ''
   private presentationTimers = new Set<ReturnType<typeof setTimeout>>()
   private pendingCardPayments: { sessionId: string; amount: number; reason: string }[] = []
@@ -90,6 +93,31 @@ export class GameRoom extends Room<{ state: LobbyState }> {
         return
       }
       this.broadcast('game:emote', { sessionId: client.sessionId, emote: payload.emote })
+    },
+    throwObject: (client: Client, payload: { targetSessionId?: unknown; object?: unknown }) => {
+      const thrower = this.state.players.get(client.sessionId)
+      const targetSessionId = payload?.targetSessionId
+      const target = typeof targetSessionId === 'string' ? this.state.players.get(targetSessionId) : undefined
+      if (this.state.status !== 'playing' || !thrower || thrower.isBot || thrower.isBankrupt || !target || targetSessionId === client.sessionId || target.isBankrupt || !isThrowableObject(payload?.object)) {
+        client.send('room:error', { message: 'Esse lançamento não está disponível para esse participante.' })
+        return
+      }
+
+      const cooldownKey = `${client.sessionId}:${targetSessionId}`
+      const now = Date.now()
+      const lastThrowAt = this.throwCooldowns.get(cooldownKey) ?? 0
+      if (now - lastThrowAt < THROW_COOLDOWN_MS) {
+        client.send('room:error', { message: 'Aguarde o fim do intervalo antes de lançar outro objeto nesse participante.' })
+        return
+      }
+
+      this.throwCooldowns.set(cooldownKey, now)
+      this.broadcast('game:throw', {
+        id: ++this.throwSequence,
+        fromSessionId: client.sessionId,
+        toSessionId: targetSessionId,
+        object: payload.object,
+      })
     },
     setCharacter: (client: Client, payload: { characterType?: unknown }) => {
       const player = this.state.players.get(client.sessionId)

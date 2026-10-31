@@ -25,9 +25,11 @@ import { playGameSound } from './gameAudio'
 import { getGraphicsDprRange, type GraphicsQuality } from './graphicsQuality'
 import { getGameBackgroundColor } from './nightMode'
 import { getPlayerEmoteSymbol, type PlayerEmote } from '../../shared/playerEmotes'
+import { THROW_PROJECTILE_DURATION_MS, type ThrowableObject } from '../../shared/throwables'
 
 type PropertyBuilding = { spaceId: number; ownerSessionId: string; houses: number; blackoutTurns?: number; protectionTurns?: number; ownerColor: string }
 type PlayerToken = { id: string; position: number; color: string; seatIndex: number; cash: number; characterType: 'pawn' | 'car' | 'motorcycle' | 'airplane'; activity?: string; emote?: { emote: PlayerEmote; sequence: number } }
+type ThrowableEvent = { id: number; fromSessionId: string; toSessionId: string; object: ThrowableObject }
 
 type CameraOrbitControls = {
   enabled: boolean
@@ -348,6 +350,43 @@ function AnimatedPawn({ player, seatIndex, reducedMotion, movementEnabled, moveM
   )
 }
 
+function ThrowableProjectile({ event, players }: { event: ThrowableEvent; players: PlayerToken[] }) {
+  const projectile = useRef<Group>(null)
+  const elapsed = useRef(0)
+  const { invalidate } = useThree()
+  const start = useMemo(() => getThrowablePosition(players.find((player) => player.id === event.fromSessionId)), [event.fromSessionId, players])
+  const end = useMemo(() => getThrowablePosition(players.find((player) => player.id === event.toSessionId)), [event.toSessionId, players])
+
+  useFrame((_, delta) => {
+    if (!projectile.current || elapsed.current >= THROW_PROJECTILE_DURATION_MS / 1000) return
+    elapsed.current += delta
+    const progress = Math.min(elapsed.current / (THROW_PROJECTILE_DURATION_MS / 1000), 1)
+    projectile.current.position.set(
+      start[0] + (end[0] - start[0]) * progress,
+      start[1] + (end[1] - start[1]) * progress + Math.sin(progress * Math.PI) * 1.05,
+      start[2] + (end[2] - start[2]) * progress,
+    )
+    projectile.current.rotation.set(progress * Math.PI * 5, progress * Math.PI * 7, progress * Math.PI * 4)
+    if (progress < 1) invalidate()
+  })
+
+  return <group ref={projectile} position={start} scale={0.15} raycast={skipRaycast}>
+    {event.object === 'tomato' && <group><mesh><icosahedronGeometry args={[1, 1]} /><meshBasicMaterial color="#e43a31" /></mesh><mesh position={[0, 0.94, 0]}><coneGeometry args={[0.16, 0.3, 5]} /><meshBasicMaterial color="#398345" /></mesh><mesh position={[0.22, 0.88, 0]} rotation={[0, 0, -0.45]}><sphereGeometry args={[0.22, 5, 3]} /><meshBasicMaterial color="#4f9b51" /></mesh></group>}
+    {event.object === 'egg' && <mesh scale={[0.72, 1, 0.7]}><sphereGeometry args={[1, 10, 7]} /><meshBasicMaterial color="#fff1cf" /></mesh>}
+    {event.object === 'mud' && <group><mesh><icosahedronGeometry args={[0.72, 1]} /><meshBasicMaterial color="#795033" /></mesh><mesh position={[0.48, 0.12, 0.08]} scale={0.62}><icosahedronGeometry args={[0.62, 0]} /><meshBasicMaterial color="#8c6040" /></mesh><mesh position={[-0.34, 0.25, 0.25]} scale={0.47}><icosahedronGeometry args={[0.62, 0]} /><meshBasicMaterial color="#62402d" /></mesh></group>}
+    {event.object === 'flour' && <group><mesh scale={0.8}><sphereGeometry args={[0.72, 8, 6]} /><meshBasicMaterial color="#fff9e9" transparent opacity={0.88} /></mesh><mesh position={[0.48, 0.08, 0.08]} scale={0.56}><sphereGeometry args={[0.64, 8, 5]} /><meshBasicMaterial color="#f3ead5" transparent opacity={0.8} /></mesh><mesh position={[-0.4, 0.1, 0]} scale={0.48}><sphereGeometry args={[0.66, 8, 5]} /><meshBasicMaterial color="#fffdf4" transparent opacity={0.8} /></mesh></group>}
+  </group>
+}
+
+function getThrowablePosition(player?: PlayerToken): [number, number, number] {
+  if (!player) return [0, 0.85, 0]
+  const vehicleOffsets = [[-0.2, -0.2], [0.2, -0.2], [-0.2, 0.2], [0.2, 0.2]] as const
+  const offsetX = player.characterType === 'pawn' ? 0.13 * (player.seatIndex - 1.5) : vehicleOffsets[player.seatIndex]?.[0] ?? 0
+  const offsetZ = player.characterType === 'pawn' ? 0.06 : vehicleOffsets[player.seatIndex]?.[1] ?? 0
+  const { x, z } = positionOnBoard(player.position)
+  return [x + offsetX, player.characterType === 'pawn' ? 0.9 : 0.72, z + offsetZ]
+}
+
 const dicePips: Record<number, [number, number][]> = {
   1: [[0, 0]],
   2: [[-0.1, -0.1], [0.1, 0.1]],
@@ -531,7 +570,7 @@ function FatecLandmark() {
   return <group position={[0, 0.045, 0]} scale={0.48} raycast={skipRaycast}><primitive object={model} /></group>
 }
 
-function Board({ players, propertyBuildings, worldCupSpaceId, highlightedSpaceIds, selectionMode, landingPulseSpaceId, landingPulseSequence, diceRollSequence, dice, diceVisible, diceResultVisible, presentationSpeed, reducedMotion, pawnMovementEnabled, pawnMoveMode, pawnStepSoundEnabled, onMovementComplete, onSelectSpace }: { players: PlayerToken[]; propertyBuildings: PropertyBuilding[]; worldCupSpaceId: number; highlightedSpaceIds: readonly number[]; selectionMode: boolean; landingPulseSpaceId: number; landingPulseSequence: number; dice: [number, number]; diceVisible: boolean; diceResultVisible: boolean; diceRollSequence: number; presentationSpeed: AnimationSpeed; reducedMotion: boolean; pawnMovementEnabled: boolean; pawnMoveMode: 'walk' | 'teleport'; pawnStepSoundEnabled: boolean; onMovementComplete: () => void; onSelectSpace: (spaceId: number) => void }) {
+function Board({ players, propertyBuildings, thrownObjects, worldCupSpaceId, highlightedSpaceIds, selectionMode, landingPulseSpaceId, landingPulseSequence, diceRollSequence, dice, diceVisible, diceResultVisible, presentationSpeed, reducedMotion, pawnMovementEnabled, pawnMoveMode, pawnStepSoundEnabled, onMovementComplete, onSelectSpace }: { players: PlayerToken[]; propertyBuildings: PropertyBuilding[]; thrownObjects: ThrowableEvent[]; worldCupSpaceId: number; highlightedSpaceIds: readonly number[]; selectionMode: boolean; landingPulseSpaceId: number; landingPulseSequence: number; dice: [number, number]; diceVisible: boolean; diceResultVisible: boolean; diceRollSequence: number; presentationSpeed: AnimationSpeed; reducedMotion: boolean; pawnMovementEnabled: boolean; pawnMoveMode: 'walk' | 'teleport'; pawnStepSoundEnabled: boolean; onMovementComplete: () => void; onSelectSpace: (spaceId: number) => void }) {
   const { scene: buildingScene } = useGLTF('/assets/board-models/board-models.glb')
   const propertyRentLabels = useMemo(() => boardSpaces
     .filter((space) => space.kind === 'property' && propertyBuildings.some((holding) => holding.spaceId === space.id && Boolean(holding.ownerSessionId)))
@@ -606,6 +645,7 @@ function Board({ players, propertyBuildings, worldCupSpaceId, highlightedSpaceId
         {propertyBuildings.filter(({ ownerSessionId }) => Boolean(ownerSessionId)).map(({ spaceId, houses, ownerColor, ownerSessionId }) => <AnimatedBuilding key={`buildings-${spaceId}`} spaceId={spaceId} houses={houses} ownerColor={ownerColor} ownerSessionId={ownerSessionId} reducedMotion={reducedMotion} presentationSpeed={presentationSpeed} dimmed={selectionMode && !highlightedSpaceIds.includes(spaceId)} />)}
       </Suspense>
       {players.map((player) => <AnimatedPawn key={player.id} player={player} seatIndex={player.seatIndex} reducedMotion={reducedMotion} movementEnabled={pawnMovementEnabled} moveMode={pawnMoveMode} presentationSpeed={presentationSpeed} pawnStepSoundEnabled={pawnStepSoundEnabled} onMovementComplete={onMovementComplete} />)}
+      {thrownObjects.map((event) => <ThrowableProjectile key={event.id} event={event} players={players} />)}
       {diceVisible && <>
         <AnimatedDie position={DICE_PRESENTATION_POSITIONS[0]!} rotation={[0.12, 0.25, 0.25]} sequence={diceRollSequence} value={dice[0] || 1} reducedMotion={reducedMotion} visible={diceVisible} presentationSpeed={presentationSpeed} />
         {dice[1] > 0 && <AnimatedDie position={DICE_PRESENTATION_POSITIONS[1]!} rotation={[-0.18, 0.3, -0.2]} sequence={diceRollSequence} value={dice[1]} reducedMotion={reducedMotion} visible={diceVisible} presentationSpeed={presentationSpeed} />}
@@ -657,7 +697,7 @@ function CornerLandmark({ type, position, dimmed }: { type: 'stadium' | 'airport
   return <group position={position}><primitive object={model} scale={type === 'stadium' ? 0.64 : 0.36} /></group>
 }
 
-type BoardSceneProps = { nightMode: boolean; players: PlayerToken[]; propertyBuildings: PropertyBuilding[]; worldCupSpaceId?: number; highlightedSpaceIds?: readonly number[]; selectionMode?: boolean; landingPulseSpaceId?: number; landingPulseSequence?: number; diceRollSequence?: number; dice?: [number, number]; diceVisible?: boolean; diceResultVisible?: boolean; presentationSpeed?: AnimationSpeed; reducedMotion?: boolean; pawnMovementEnabled?: boolean; pawnMoveMode?: 'walk' | 'teleport'; pawnStepSoundEnabled?: boolean; cameraEnabled?: boolean; graphicsQuality?: GraphicsQuality; fpsMeterEnabled?: boolean; fpsSamples?: { current: FrameRateAccumulator }; onMovementComplete: () => void; onSelectSpace: (spaceId: number) => void }
+type BoardSceneProps = { nightMode: boolean; players: PlayerToken[]; propertyBuildings: PropertyBuilding[]; thrownObjects: ThrowableEvent[]; worldCupSpaceId?: number; highlightedSpaceIds?: readonly number[]; selectionMode?: boolean; landingPulseSpaceId?: number; landingPulseSequence?: number; diceRollSequence?: number; dice?: [number, number]; diceVisible?: boolean; diceResultVisible?: boolean; presentationSpeed?: AnimationSpeed; reducedMotion?: boolean; pawnMovementEnabled?: boolean; pawnMoveMode?: 'walk' | 'teleport'; pawnStepSoundEnabled?: boolean; cameraEnabled?: boolean; graphicsQuality?: GraphicsQuality; fpsMeterEnabled?: boolean; fpsSamples?: { current: FrameRateAccumulator }; onMovementComplete: () => void; onSelectSpace: (spaceId: number) => void }
 
 function FrameRateProbe({ samples }: { samples: { current: FrameRateAccumulator } }) {
   useFrame(() => {
@@ -666,7 +706,7 @@ function FrameRateProbe({ samples }: { samples: { current: FrameRateAccumulator 
   return null
 }
 
-function BoardSceneCanvas({ nightMode, players, propertyBuildings, worldCupSpaceId = 255, highlightedSpaceIds = [], selectionMode = false, landingPulseSpaceId = -1, landingPulseSequence = 0, diceRollSequence = 0, dice = [0, 0], diceVisible = false, diceResultVisible = false, presentationSpeed = 1, reducedMotion = false, pawnMovementEnabled = false, pawnMoveMode = 'walk', pawnStepSoundEnabled = false, cameraEnabled = true, graphicsQuality = 'high', fpsMeterEnabled = false, fpsSamples, onMovementComplete, onSelectSpace }: BoardSceneProps) {
+function BoardSceneCanvas({ nightMode, players, propertyBuildings, thrownObjects, worldCupSpaceId = 255, highlightedSpaceIds = [], selectionMode = false, landingPulseSpaceId = -1, landingPulseSequence = 0, diceRollSequence = 0, dice = [0, 0], diceVisible = false, diceResultVisible = false, presentationSpeed = 1, reducedMotion = false, pawnMovementEnabled = false, pawnMoveMode = 'walk', pawnStepSoundEnabled = false, cameraEnabled = true, graphicsQuality = 'high', fpsMeterEnabled = false, fpsSamples, onMovementComplete, onSelectSpace }: BoardSceneProps) {
   return (
     <Canvas camera={{ position: [12.5, 15.5, 15.5], fov: 34 }} dpr={getGraphicsDprRange(graphicsQuality)} frameloop="demand" gl={{ antialias: false, powerPreference: 'high-performance', stencil: false }}>
       <color attach="background" args={[getGameBackgroundColor(nightMode)]} />
@@ -675,7 +715,7 @@ function BoardSceneCanvas({ nightMode, players, propertyBuildings, worldCupSpace
       <CameraZoomBounds />
       <CameraDragAnywhere enabled={cameraEnabled} />
       {fpsMeterEnabled && fpsSamples && <FrameRateProbe samples={fpsSamples} />}
-      <Board players={players} propertyBuildings={propertyBuildings} worldCupSpaceId={worldCupSpaceId} highlightedSpaceIds={highlightedSpaceIds} selectionMode={selectionMode} landingPulseSpaceId={landingPulseSpaceId} landingPulseSequence={landingPulseSequence} diceRollSequence={diceRollSequence} dice={dice} diceVisible={diceVisible} diceResultVisible={diceResultVisible} presentationSpeed={presentationSpeed} reducedMotion={reducedMotion} pawnMovementEnabled={pawnMovementEnabled} pawnMoveMode={pawnMoveMode} pawnStepSoundEnabled={pawnStepSoundEnabled} onMovementComplete={onMovementComplete} onSelectSpace={onSelectSpace} />
+      <Board players={players} propertyBuildings={propertyBuildings} thrownObjects={thrownObjects} worldCupSpaceId={worldCupSpaceId} highlightedSpaceIds={highlightedSpaceIds} selectionMode={selectionMode} landingPulseSpaceId={landingPulseSpaceId} landingPulseSequence={landingPulseSequence} diceRollSequence={diceRollSequence} dice={dice} diceVisible={diceVisible} diceResultVisible={diceResultVisible} presentationSpeed={presentationSpeed} reducedMotion={reducedMotion} pawnMovementEnabled={pawnMovementEnabled} pawnMoveMode={pawnMoveMode} pawnStepSoundEnabled={pawnStepSoundEnabled} onMovementComplete={onMovementComplete} onSelectSpace={onSelectSpace} />
     </Canvas>
   )
 }
@@ -684,6 +724,13 @@ function samePlayers(first: PlayerToken[], second: PlayerToken[]) {
   return first.length === second.length && first.every((player, index) => {
     const other = second[index]
     return Boolean(other && player.id === other.id && player.position === other.position && player.color === other.color && player.seatIndex === other.seatIndex && player.characterType === other.characterType && player.activity === other.activity && player.emote?.sequence === other.emote?.sequence)
+  })
+}
+
+function sameThrows(first: ThrowableEvent[], second: ThrowableEvent[]) {
+  return first.length === second.length && first.every((event, index) => {
+    const other = second[index]
+    return Boolean(other && event.id === other.id && event.fromSessionId === other.fromSessionId && event.toSessionId === other.toSessionId && event.object === other.object)
   })
 }
 
@@ -701,6 +748,7 @@ function sameNumbers(first: readonly number[], second: readonly number[]) {
 function areScenePropsEqual(first: BoardSceneProps, second: BoardSceneProps) {
   return first.nightMode === second.nightMode
     && samePlayers(first.players, second.players)
+    && sameThrows(first.thrownObjects, second.thrownObjects)
     && sameBuildings(first.propertyBuildings, second.propertyBuildings)
     && first.worldCupSpaceId === second.worldCupSpaceId
     && sameNumbers(first.highlightedSpaceIds ?? [], second.highlightedSpaceIds ?? [])

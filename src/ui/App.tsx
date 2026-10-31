@@ -32,6 +32,7 @@ import { dismissCardRevealOnPointerDown } from './cardRevealInput'
 import { adjustMoneyValue } from './moneyStepper'
 import { DEFAULT_GRAPHICS_QUALITY, type GraphicsQuality } from './graphicsQuality'
 import { isPlayerEmote, PLAYER_EMOTES, type PlayerEmote } from '../../shared/playerEmotes'
+import { getThrowableLabel, getThrowableSymbol, isThrowableObject, THROWABLES, THROW_COOLDOWN_MS, THROW_IMPACT_DURATION_MS, THROW_PROJECTILE_DURATION_MS, type ThrowableObject } from '../../shared/throwables'
 import { getRevealKicker } from './revealCopy'
 import { HOME_REGION_ROUTE } from './homeRegionRoute'
 
@@ -40,6 +41,7 @@ type Screen = 'home' | 'room' | 'game'
 type TurnPhase = 'roll' | 'rolling' | 'moving' | 'resolve' | 'purchase' | 'buyback' | 'jail' | 'world-cup' | 'world-tour' | 'card-target' | 'debt' | 'ended'
 type SyncedPlayer = LobbyPlayer & { sessionId: string; cash: number; devInfiniteCash: boolean; isJailed: boolean; jailTurns: number; isBankrupt: boolean; finalCash: number; finalNetWorth: number; tieBreakRoll: number }
 type TradeOfferView = { id: number; fromSessionId: string; toSessionId: string; cashOffered: number; cashRequested: number; propertiesOffered: number[]; propertiesRequested: number[] }
+type ThrowableEvent = { id: number; fromSessionId: string; toSessionId: string; object: ThrowableObject }
 const BoardScene = lazy(() => import('./BoardScene'))
 const CashHudOverlay = lazy(() => import('./CashHud').then(({ CashHudOverlay }) => ({ default: CashHudOverlay })))
 
@@ -156,6 +158,11 @@ function App() {
   const [showHelp, setShowHelp] = useState(false)
   const [showOptions, setShowOptions] = useState(false)
   const [showEmotePicker, setShowEmotePicker] = useState(false)
+  const [throwPickerTargetSessionId, setThrowPickerTargetSessionId] = useState('')
+  const [throwCooldowns, setThrowCooldowns] = useState<Record<string, number>>({})
+  const [throwCooldownNow, setThrowCooldownNow] = useState(Date.now())
+  const [thrownObjects, setThrownObjects] = useState<ThrowableEvent[]>([])
+  const [throwImpacts, setThrowImpacts] = useState<ThrowableEvent[]>([])
   const [graphicsQuality, setGraphicsQuality] = useState<GraphicsQuality>(DEFAULT_GRAPHICS_QUALITY)
   const [playerEmotes, setPlayerEmotes] = useState<Record<string, { emote: PlayerEmote; sequence: number }>>({})
   const [auctionSeconds, setAuctionSeconds] = useState(0)
@@ -185,6 +192,8 @@ function App() {
   const pendingLandingSound = useRef<GameSound | null>(null)
   const emoteSequence = useRef(0)
   const emoteTimeouts = useRef(new Map<string, number>())
+  const throwTimeouts = useRef(new Map<number, number>())
+  const impactTimeouts = useRef(new Map<number, number>())
   useEffect(() => {
     setSelectedCardPropertyId(null)
   }, [activeCardId])
@@ -449,7 +458,17 @@ function App() {
   useEffect(() => () => {
     emoteTimeouts.current.forEach((timer) => window.clearTimeout(timer))
     emoteTimeouts.current.clear()
+    throwTimeouts.current.forEach((timer) => window.clearTimeout(timer))
+    throwTimeouts.current.clear()
+    impactTimeouts.current.forEach((timer) => window.clearTimeout(timer))
+    impactTimeouts.current.clear()
   }, [])
+
+  useEffect(() => {
+    if (!Object.keys(throwCooldowns).length) return
+    const interval = window.setInterval(() => setThrowCooldownNow(Date.now()), 250)
+    return () => window.clearInterval(interval)
+  }, [throwCooldowns])
 
   useEffect(() => {
     if (!room) return
@@ -637,14 +656,44 @@ function App() {
       emoteTimeouts.current.set(sessionId, timer)
     }
     const removePlayerEmoteMessage = room.onMessage<{ sessionId: string; emote: PlayerEmote }>('game:emote', handlePlayerEmote)
+    const handleThrowable = (payload: { id?: unknown; fromSessionId?: unknown; toSessionId?: unknown; object?: unknown }) => {
+      if (typeof payload?.id !== 'number' || typeof payload.fromSessionId !== 'string' || typeof payload.toSessionId !== 'string' || !isThrowableObject(payload.object)) return
+      const event = { id: payload.id, fromSessionId: payload.fromSessionId, toSessionId: payload.toSessionId, object: payload.object }
+      setThrownObjects((current) => [...current.filter((item) => item.id !== event.id), event])
+      const projectileTimer = window.setTimeout(() => {
+        setThrownObjects((current) => current.filter((item) => item.id !== event.id))
+        throwTimeouts.current.delete(event.id)
+      }, THROW_PROJECTILE_DURATION_MS)
+      throwTimeouts.current.set(event.id, projectileTimer)
+      if (event.toSessionId === room.sessionId) {
+        const impactStartTimer = window.setTimeout(() => {
+          setThrowImpacts((current) => [...current.filter((item) => item.id !== event.id), event])
+          const impactEndTimer = window.setTimeout(() => {
+            setThrowImpacts((current) => current.filter((item) => item.id !== event.id))
+            impactTimeouts.current.delete(event.id)
+          }, THROW_IMPACT_DURATION_MS)
+          impactTimeouts.current.set(event.id, impactEndTimer)
+        }, THROW_PROJECTILE_DURATION_MS)
+        impactTimeouts.current.set(event.id, impactStartTimer)
+      }
+    }
+    const removeThrowableMessage = room.onMessage<ThrowableEvent>('game:throw', handleThrowable)
     const handleLeave = (_code: number, reason?: string) => {
       if (activeRoom.current !== room) return
       activeRoom.current = null
       setRoom(null)
       setPlayerEmotes({})
+      setThrownObjects([])
+      setThrowImpacts([])
+      setThrowPickerTargetSessionId('')
+      setThrowCooldowns({})
       setDevArmedEventCardId('')
       emoteTimeouts.current.forEach((timer) => window.clearTimeout(timer))
       emoteTimeouts.current.clear()
+      throwTimeouts.current.forEach((timer) => window.clearTimeout(timer))
+      throwTimeouts.current.clear()
+      impactTimeouts.current.forEach((timer) => window.clearTimeout(timer))
+      impactTimeouts.current.clear()
       setIsReconnecting(false)
       setScreen('home')
       setError(reason || 'A conexão com a sala foi encerrada.')
@@ -663,6 +712,7 @@ function App() {
       room.onDrop.remove(handleDrop)
       room.onReconnect.remove(handleReconnect)
       removePlayerEmoteMessage()
+      removeThrowableMessage()
       removeDevCardArmedMessage()
       removeDevCardUsedMessage()
     }
@@ -857,7 +907,7 @@ function App() {
       <div className="scene-backdrop">
         {sceneReady && (
           <Suspense fallback={<div className="scene-placeholder" aria-hidden="true" />}>
-            <BoardScene nightMode={nightMode} players={playerTokens} propertyBuildings={propertyBuildings} worldCupSpaceId={worldCupSpaceId} highlightedSpaceIds={highlightedSpaceIds} selectionMode={Boolean(boardChoicePhase) && !isPresentationAnimating} landingPulseSpaceId={landingPulseSpaceId} landingPulseSequence={landingPulseSequence} diceRollSequence={diceRollSequence} dice={dice} diceVisible={showDice} diceResultVisible={turnPhase === 'moving' && diceForPawnMovement} presentationSpeed={presentationSpeed} reducedMotion={reducedMotion} pawnMovementEnabled={turnPhase === 'moving'} pawnMoveMode={pawnMoveMode} pawnStepSoundEnabled={soundEnabled} graphicsQuality={graphicsQuality} cameraEnabled={screen === 'game' && turnPhase !== 'ended'} fpsMeterEnabled={fpsMeterEnabled} fpsSamples={fpsSamples} onMovementComplete={() => setPresentationStage('idle')} onSelectSpace={handleSelectSpace} />
+            <BoardScene nightMode={nightMode} players={playerTokens} propertyBuildings={propertyBuildings} thrownObjects={thrownObjects} worldCupSpaceId={worldCupSpaceId} highlightedSpaceIds={highlightedSpaceIds} selectionMode={Boolean(boardChoicePhase) && !isPresentationAnimating} landingPulseSpaceId={landingPulseSpaceId} landingPulseSequence={landingPulseSequence} diceRollSequence={diceRollSequence} dice={dice} diceVisible={showDice} diceResultVisible={turnPhase === 'moving' && diceForPawnMovement} presentationSpeed={presentationSpeed} reducedMotion={reducedMotion} pawnMovementEnabled={turnPhase === 'moving'} pawnMoveMode={pawnMoveMode} pawnStepSoundEnabled={soundEnabled} graphicsQuality={graphicsQuality} cameraEnabled={screen === 'game' && turnPhase !== 'ended'} fpsMeterEnabled={fpsMeterEnabled} fpsSamples={fpsSamples} onMovementComplete={() => setPresentationStage('idle')} onSelectSpace={handleSelectSpace} />
           </Suspense>
         )}
       </div>
@@ -943,7 +993,18 @@ function App() {
         <section className="game-overlay">
           <div className="game-topline"><button className="back-link" onClick={() => setScreen('room')}>← Sala {roomCode}</button><div className="game-status-cluster"><div className={`game-pill ${matchEnding || matchSeconds <= 60 ? 'clock-warning' : ''}`}>{modeDetails[mode].title.toUpperCase()} <span>·</span> {formatClock(matchSeconds)}</div>{turnPhase !== 'ended' && <div className={`turn-clock-pill ${turnSeconds > 0 && turnSeconds <= 5 ? 'clock-warning' : ''}`} role="timer" aria-label={`Relógio do turno de ${activePlayer?.name ?? 'jogador ativo'}: ${turnSeconds} segundos restantes`}><span aria-hidden="true">◷</span><small>VEZ · {activePlayer?.name ?? '—'}</small><strong>{formatClock(turnSeconds)}</strong></div>}{animationSpeedControl}</div><div className="game-tools">{auctionId > 0 && <button className="portfolio-toggle auction-toggle-active" aria-expanded={showAuctionPanel} onClick={() => { setShowAuctionPanel((open) => !open); setShowTradePanel(false); setShowPropertyPanel(false); setError('') }}>{`Leilão · ${auctionSeconds}s`}</button>}</div></div>
           <div className="game-topline-camera-hint" aria-label="Controles da câmera">Arraste para girar · scroll ou pinça para zoom</div>
-          <div className="player-hud">{roomPlayers.map((player, index) => <button type="button" aria-label={`Ver perfil de ${player.name}, saldo ${formatMoney(player.cash)}`} aria-expanded={profilePlayerSessionId === player.sessionId} className={`player-card seat-${index} ${player.sessionId === activePlayerSessionId ? 'active' : ''} ${player.isBankrupt ? 'bankrupt' : ''} ${player.isConnected === false ? 'disconnected' : ''} ${tradeOffer?.toSessionId === player.sessionId ? 'has-trade-offer' : ''}`} key={player.sessionId} style={{ backgroundColor: player.color ?? PLAYER_COLORS[index] ?? PLAYER_COLORS[0] }} onClick={() => { setProfilePlayerSessionId(player.sessionId); setTradeTargetSessionId(player.sessionId); setShowTradePanel(false); setTradeBoardSelectionTarget(null); setShowPropertyPanel(false); setShowAuctionPanel(false); setSelectedSpaceId(null); setError('') }}><div className="player-card-main"><strong>{player.name}</strong><b>{formatMoney(player.cash)}</b></div><CashChangeToast cash={player.cash} playerName={player.name} placement={getCashToastPlacement(index)} /><span className="player-money-anchor" data-cash-anchor={player.sessionId} aria-hidden="true"><CashHudSymbols cash={player.cash} /></span>{tradeOffer?.toSessionId === player.sessionId && <span className="player-card-offer-badge">PROPOSTA</span>}</button>)}</div>
+          <div className="player-hud">{roomPlayers.map((player, index) => {
+            const remainingCooldown = Math.max(0, (throwCooldowns[player.sessionId] ?? 0) - throwCooldownNow)
+            const canThrowAtPlayer = Boolean(localPlayer && player.sessionId !== room?.sessionId && !player.isBankrupt && !localPlayer.isBankrupt && turnPhase !== 'ended')
+            return <div className={`player-card-slot seat-${index}`} key={player.sessionId}>
+              <button type="button" aria-label={`Ver perfil de ${player.name}, saldo ${formatMoney(player.cash)}`} aria-expanded={profilePlayerSessionId === player.sessionId} className={`player-card seat-${index} ${player.sessionId === activePlayerSessionId ? 'active' : ''} ${player.isBankrupt ? 'bankrupt' : ''} ${player.isConnected === false ? 'disconnected' : ''} ${tradeOffer?.toSessionId === player.sessionId ? 'has-trade-offer' : ''}`} style={{ backgroundColor: player.color ?? PLAYER_COLORS[index] ?? PLAYER_COLORS[0] }} onClick={() => { setProfilePlayerSessionId(player.sessionId); setTradeTargetSessionId(player.sessionId); setShowTradePanel(false); setTradeBoardSelectionTarget(null); setShowPropertyPanel(false); setShowAuctionPanel(false); setSelectedSpaceId(null); setError('') }}><div className="player-card-main"><strong>{player.name}</strong><b>{formatMoney(player.cash)}</b></div><CashChangeToast cash={player.cash} playerName={player.name} placement={getCashToastPlacement(index)} /><span className="player-money-anchor" data-cash-anchor={player.sessionId} aria-hidden="true"><CashHudSymbols cash={player.cash} /></span>{tradeOffer?.toSessionId === player.sessionId && <span className="player-card-offer-badge">PROPOSTA</span>}</button>
+              {canThrowAtPlayer && <div className={`player-throw-control${index % 2 === 1 ? ' toward-center-left' : ''}`} data-camera-drag="off">
+                <button type="button" className="player-throw-button" aria-label={`Lançar objeto em ${player.name}`} aria-expanded={throwPickerTargetSessionId === player.sessionId} disabled={remainingCooldown > 0} title={remainingCooldown > 0 ? `Aguarde ${Math.ceil(remainingCooldown / 1000)}s` : `Lançar objeto em ${player.name}`} onClick={() => { setShowEmotePicker(false); setThrowPickerTargetSessionId((target) => target === player.sessionId ? '' : player.sessionId) }}><span aria-hidden="true">➶</span>{remainingCooldown > 0 && <small>{Math.ceil(remainingCooldown / 1000)}s</small>}</button>
+                {throwPickerTargetSessionId === player.sessionId && <div className="throw-picker" role="group" aria-label={`Escolha o objeto para lançar em ${player.name}`}>{THROWABLES.map(({ id, label, symbol }) => <button key={id} type="button" onClick={() => { if (!room) return; const now = Date.now(); room.send('throwObject', { targetSessionId: player.sessionId, object: id }); setThrowCooldownNow(now); setThrowCooldowns((current) => ({ ...current, [player.sessionId]: now + THROW_COOLDOWN_MS })); setThrowPickerTargetSessionId('') }}><span aria-hidden="true">{symbol}</span><small>{label}</small></button>)}</div>}
+              </div>}
+            </div>
+          })}</div>
+          {throwImpacts.length > 0 && <div className={`throw-impact-screen impact-${throwImpacts[throwImpacts.length - 1].object}`} role="status" aria-live="polite" aria-label={`Você foi atingido com ${getThrowableLabel(throwImpacts[throwImpacts.length - 1].object)}`}><span key={throwImpacts[throwImpacts.length - 1].id}>{getThrowableSymbol(throwImpacts[throwImpacts.length - 1].object)}</span><small>{getThrowableLabel(throwImpacts[throwImpacts.length - 1].object)}</small></div>}
           {localPlayer && turnPhase !== 'ended' && <div className={`game-quick-actions seat-${roomPlayers.findIndex((player) => player.sessionId === localPlayer.sessionId)}`} aria-label="Ações rápidas" data-camera-drag="off"><button type="button" onClick={() => { if (turnPhase === 'debt') return; setShowPropertyPanel((open) => !open); setPortfolioBoardSelection(false); setShowTradePanel(false); setTradeBoardSelectionTarget(null); setShowAuctionPanel(false); setSelectedSpaceId(null) }} disabled={turnPhase === 'debt'} aria-label="Abrir meus bens" aria-expanded={showPropertyPanel}><span aria-hidden="true">▤</span><small>Bens</small></button><button type="button" onClick={() => setShowOptions(true)} aria-label="Configurações da partida"><span aria-hidden="true">⚙</span><small>Config</small></button><div className="emote-control"><button type="button" onClick={() => setShowEmotePicker((open) => !open)} aria-label="Escolher emote" aria-expanded={showEmotePicker}><span aria-hidden="true">☺</span><small>Emote</small></button>{showEmotePicker && <div className="emote-picker" role="group" aria-label="Escolha um emote">{PLAYER_EMOTES.map(({ id, label, symbol }) => <button key={id} type="button" aria-label={label} title={label} onClick={() => { room?.send('emote', { emote: id }); setShowEmotePicker(false) }}>{symbol}</button>)}</div>}</div><button type="button" onClick={() => setShowHelp((open) => !open)} aria-label="Prévia das regras" aria-expanded={showHelp} aria-controls="game-help-dialog"><span aria-hidden="true">?</span><small>Regras</small></button></div>}
           {modalVisible && !feedbackPending && <div className="game-modal-backdrop" aria-hidden="true" />}
           {selectedSpace && turnPhase !== 'ended' && !boardChoicePhase && !ownPropertyLanding && !(isMyTurn && (turnPhase === 'purchase' || turnPhase === 'world-cup' || turnPhase === 'world-tour')) && !showTradePanel && !incomingTradeOffer && !showPropertyPanel && (

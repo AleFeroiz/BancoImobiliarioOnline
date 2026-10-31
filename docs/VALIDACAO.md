@@ -753,3 +753,9 @@
 - Testes de integração verificam causas por tempo, falência, Monopólio em Linha, Monopólio Duplo Regional e quatro companhias. Testes unitários cobrem os textos do resultado.
 - Em sala local com Modo DEV, Bot 1 possuía AgroBrasil e Aviação Brasil. Com saldo zero e sem imóveis, o anfitrião foi teleportado para AgroBrasil, registrou dívida de aluguel de R$ 250.000 e declarou falência. A captura confirmou o painel “PARTIDA ENCERRADA”, Bot 1 vencedor, a mensagem “Vitória após a falência do último adversário solvente.” e a classificação com patrimônio/saldo.
 - `npm run graphify -- update .` atualizou o grafo para 939 nós e 1.745 arestas. `npm run verify`: 246 testes em 46 arquivos passaram; builds do frontend e servidor passaram. O chunk 3D mantém o aviso conhecido acima de 500 kB.
+# 2026-10-31 — Lançamento cosmético de objetos
+
+- Em sala local com dois clientes, o seletor do cartão adversário exibiu Tomate, Ovo, Lama e Farinha. Lancei tomate e observei o projétil 3D alcançar a ficha do alvo.
+- O cliente destinatário mostrou `Você foi atingido com Tomate` e o overlay visual; o cliente lançador não recebeu o impacto. Enquanto o efeito estava visível, cliquei em Bens no destinatário e a tela de bens abriu normalmente, verificando que o efeito não bloqueia a interface.
+- A interface exibiu cooldown de 5 segundos para o mesmo alvo. Testes automatizados cobrem também cooldown isolado por par lançador/alvo, validação de item/alvo e rejeição de autoalvo.
+- `npm run verify`: 252 testes em 48 arquivos passaram; builds do frontend e servidor passaram. O build mantém o aviso do chunk de cena 3D acima de 500 kB. `git diff --check` passou. Não testei manualmente cada um dos quatro formatos de projétil/impacto; os demais são cobertos pelos tipos e renderizadores da implementação, e uma revisão manual complementar ainda pode ser feita.
