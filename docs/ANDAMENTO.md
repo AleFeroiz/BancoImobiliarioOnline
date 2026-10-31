@@ -1,3 +1,10 @@
+## Preparação de cartas pelo Modo DEV — implementação concluída; revisão manual parcial (2026-10-31)
+
+- Acrescentei ao Modo DEV uma seleção da próxima carta, validada no servidor, acessível apenas à anfitriã e consumida uma única vez no próximo sorteio Sorte ou Revés. Regressões cobrem permissão, id inválido, consumo único, seleção de alvo e efeito de Apagão.
+- Em sala local, armei Apagão e vi a propriedade adversária elegível destacada, com as demais apagadas. A seleção manual não foi concluída antes de expirar o prazo; a suspensão de aluguel ainda depende de revisão manual.
+- `npm run graphify -- update .` atualizou o grafo para 934 nós e 1.732 arestas. `npm run verify`: 243 testes em 46 arquivos passaram; builds web e servidor passaram. Persiste o aviso já conhecido de chunk 3D acima de 500 kB. `git diff --check` passou.
+- Permanecem pendentes na reforma completa: playtests humanos de equilíbrio/ritmo para 15, 30 e 60 minutos e a escolha de hospedagem após confirmar prioridade de latência versus simplicidade/custo.
+
 ## Altura dos dados na rolagem — concluído (2026-10-31)
 
 - Novo ajuste solicitado: posição-base Y=1,18, escala 0,82 e indicador do resultado Y=1,7. Mantive a animação e posições laterais que afastam os dados da torre.

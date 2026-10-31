@@ -46,6 +46,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
   private pendingCardPayments: { sessionId: string; amount: number; reason: string }[] = []
   private pendingCardPaymentActorSessionId = ''
   private cardTargetRevealPending = false
+  private devNextEventCardId = ''
   private consecutiveDoubles = 0
   private lastRollWasDouble = false
 
@@ -253,6 +254,24 @@ export class GameRoom extends Room<{ state: LobbyState }> {
         return
       }
       this.rollForPlayer(this.state.activePlayerSessionId, [diceOne, diceTwo])
+    },
+    devSetNextEventCard: (client: Client, payload: { cardId?: unknown } = {}) => {
+      const requester = this.state.players.get(client.sessionId)
+      if (!requester?.isHost || !this.state.devToolsEnabled) {
+        client.send('room:error', { message: 'A preparação de cartas está desativada ou disponível apenas para a pessoa anfitriã.' })
+        return
+      }
+      if (this.state.status !== 'playing' || this.state.turnPhase !== 'roll') {
+        client.send('room:error', { message: 'Só é possível preparar uma carta durante a etapa de rolagem.' })
+        return
+      }
+      const card = EVENT_CARDS.find((candidate) => candidate.id === payload?.cardId)
+      if (!card) {
+        client.send('room:error', { message: 'Escolha uma carta Sorte ou Revés válida.' })
+        return
+      }
+      this.devNextEventCardId = card.id
+      client.send('game:dev-card-armed', { cardId: card.id })
     },
     devTeleport: (client: Client, payload: { spaceId?: unknown } = {}) => {
       const requester = this.state.players.get(client.sessionId)
@@ -1505,6 +1524,12 @@ export class GameRoom extends Room<{ state: LobbyState }> {
   }
 
   private drawEventCard() {
+    const forcedCard = this.state.devToolsEnabled ? EVENT_CARDS.find((card) => card.id === this.devNextEventCardId) : undefined
+    this.devNextEventCardId = ''
+    if (forcedCard) {
+      this.broadcast('game:dev-card-used', { cardId: forcedCard.id })
+      return forcedCard
+    }
     return EVENT_CARDS[randomInt(EVENT_CARDS.length)]
   }
 

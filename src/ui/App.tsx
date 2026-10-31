@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react'
 import type { Room } from '@colyseus/sdk'
 import { CHARACTER_OPTIONS, type CharacterType, type GameMode, type LobbyPlayer } from '../../shared/lobby'
+import { EVENT_CARDS } from '../../shared/cards'
 import { scheduleSceneLoad } from './sceneLoading'
 import { roomClient } from './roomClient'
 import { finalScoreMetrics, rankFinalScore, scoreCriteria } from './scoreCriteria'
@@ -126,6 +127,8 @@ function App() {
   const [presentationSpeed, setPresentationSpeed] = useState<AnimationSpeed>(DEFAULT_ANIMATION_SPEED)
   const [devModeEnabled, setDevModeEnabled] = useState(false)
   const [forcedDice, setForcedDice] = useState<[number, number]>([3, 4])
+  const [devEventCardId, setDevEventCardId] = useState('blackout')
+  const [devArmedEventCardId, setDevArmedEventCardId] = useState('')
   const [devDestinationId, setDevDestinationId] = useState('0')
   const [devCashTargetSessionId, setDevCashTargetSessionId] = useState('')
   const [devCashAmount, setDevCashAmount] = useState(String(START_BONUS * 10))
@@ -602,7 +605,16 @@ function App() {
       setAuctionSeconds(snapshot.auctionSeconds)
       if (snapshot.status === 'playing' || snapshot.status === 'ended') setScreen('game')
     }
-    const handleRoomError = (payload: { message: string }) => setError(payload.message)
+    const handleRoomError = (payload: { message: string }) => {
+      setError(payload.message)
+      setDevArmedEventCardId('')
+    }
+    const removeDevCardArmedMessage = room.onMessage<{ cardId?: unknown }>('game:dev-card-armed', (payload) => {
+      if (typeof payload?.cardId === 'string' && EVENT_CARDS.some((card) => card.id === payload.cardId)) setDevArmedEventCardId(payload.cardId)
+    })
+    const removeDevCardUsedMessage = room.onMessage<{ cardId?: unknown }>('game:dev-card-used', (payload) => {
+      if (typeof payload?.cardId === 'string') setDevArmedEventCardId((current) => current === payload.cardId ? '' : current)
+    })
     const handleDrop = () => setIsReconnecting(true)
     const handleReconnect = () => setIsReconnecting(false)
     const handlePlayerEmote = (payload: { sessionId?: unknown; emote?: unknown }) => {
@@ -625,6 +637,7 @@ function App() {
       activeRoom.current = null
       setRoom(null)
       setPlayerEmotes({})
+      setDevArmedEventCardId('')
       emoteTimeouts.current.forEach((timer) => window.clearTimeout(timer))
       emoteTimeouts.current.clear()
       setIsReconnecting(false)
@@ -645,6 +658,8 @@ function App() {
       room.onDrop.remove(handleDrop)
       room.onReconnect.remove(handleReconnect)
       removePlayerEmoteMessage()
+      removeDevCardArmedMessage()
+      removeDevCardUsedMessage()
     }
   }, [room, soundEnabled, reducedMotion])
 
@@ -1124,6 +1139,12 @@ function App() {
               <label htmlFor="dev-destination">Casa de destino</label>
               <select id="dev-destination" value={devDestinationId} onChange={(event) => setDevDestinationId(event.target.value)}>{boardSpaces.map((space) => <option key={space.id} value={space.id}>{String(space.id).padStart(2, '0')} · {space.name}</option>)}</select>
               <button type="submit">Teleportar</button>
+            </form>}
+            {isHost && devModeEnabled && turnPhase === 'roll' && <form className="dev-event-card-controls" aria-label="Preparar carta Sorte ou Revés para teste" onSubmit={(event) => { event.preventDefault(); setError(''); room?.send('devSetNextEventCard', { cardId: devEventCardId }) }}>
+              <label htmlFor="dev-event-card">Próxima carta</label>
+              <select id="dev-event-card" value={devEventCardId} onChange={(event) => setDevEventCardId(event.target.value)}>{EVENT_CARDS.map((card) => <option key={card.id} value={card.id}>{card.title}</option>)}</select>
+              <button type="submit">Preparar</button>
+              {devArmedEventCardId && <small role="status">{EVENT_CARDS.find((card) => card.id === devArmedEventCardId)?.title} armada para o próximo sorteio</small>}
             </form>}
             {isHost && devModeEnabled && <form className="dev-cash-controls" aria-label="Ajustar dinheiro DEV" onSubmit={(event) => { event.preventDefault(); if (devCashTarget) room?.send('devSetCash', { sessionId: devCashTarget.sessionId, cash: Number(devCashAmount), infinite: devCashTarget.devInfiniteCash }) }}>
               <label htmlFor="dev-cash-player">Saldo do jogador</label>

@@ -691,3 +691,9 @@
 
 - Uma sessão local com Modo DEV mostrou a carta Terremoto. Fechei o aviso com 14 segundos restantes; a carta saiu da tela, o painel de escolha apareceu e o relógio voltou a 15 segundos. Como nenhum outro participante possuía imóvel, a interface informou corretamente que não havia alvo elegível.
 - A regressão do servidor confirmou a pausa da contagem durante a leitura, a reinicialização dos 15 segundos depois da dispensa e o descarte automático ao fim da seleção. Ainda falta repetir com um imóvel adversário elegível e verificar manualmente a suspensão do aluguel por Apagão.
+
+## 2026-10-31 — Ferramenta DEV para preparar cartas
+
+- O teste de integração prepara Apagão pelo protocolo DEV, confirma que somente a anfitriã pode armar uma carta válida durante a fase de rolagem e que a carta é consumida uma única vez. Depois da seleção de Parauapebas, o servidor aplicou três turnos de suspensão de aluguel.
+- No navegador, a anfitriã armou Apagão e o sorteio abriu a tela de escolha. Com Bot 1 proprietário de Parauapebas, a propriedade elegível ficou iluminada com aro dourado e as demais casas ficaram apagadas. O clique no alvo não foi confirmado antes do prazo, então a conclusão visual do alvo e a suspensão de aluguel permanecem pendentes.
+- Não foi feita revisão visual das outras cartas. `npm run graphify -- update .` atualizou o grafo para 934 nós e 1.732 arestas. `npm run verify`: 243 testes em 46 arquivos passaram; builds do frontend e servidor passaram. `git diff --check` passou. O build mantém o aviso já conhecido de chunk de cena 3D acima de 500 kB.

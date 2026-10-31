@@ -220,6 +220,46 @@ describe('sala privada', () => {
     }
   })
 
+  it('permite preparar uma carta DEV de uso único e a consome no próximo sorteio', async () => {
+    const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
+    const host = await colyseus.connectTo(room, { name: 'Caio' })
+    const guest = await colyseus.connectTo(room, { name: 'Duda' })
+    host.send('setDevToolsEnabled', { enabled: true })
+    await waitFor(() => room.state.devToolsEnabled)
+    const started = new Promise<void>((resolve) => host.onMessage('game:started', () => resolve()))
+    host.send('start')
+    await started
+
+    const unauthorized = new Promise<{ message: string }>((resolve) => guest.onMessage('room:error', resolve))
+    guest.send('devSetNextEventCard', { cardId: 'blackout' })
+    await expect(unauthorized).resolves.toMatchObject({ message: 'A preparação de cartas está desativada ou disponível apenas para a pessoa anfitriã.' })
+
+    const invalid = new Promise<{ message: string }>((resolve) => host.onMessage('room:error', resolve))
+    host.send('devSetNextEventCard', { cardId: 'not-a-card' })
+    await expect(invalid).resolves.toMatchObject({ message: 'Escolha uma carta Sorte ou Revés válida.' })
+
+    const propertySpace = boardSpaces.find((space) => space.kind === 'property' && space.buildable)!
+    const eventSpace = boardSpaces.find((space) => space.kind === 'event')!
+    const property = new PropertyState()
+    property.ownerSessionId = guest.sessionId
+    room.state.properties.set(String(propertySpace.id), property)
+
+    const armed = new Promise<{ cardId: string }>((resolve) => host.onMessage('game:dev-card-armed', resolve))
+    host.send('devSetNextEventCard', { cardId: 'blackout' })
+    await expect(armed).resolves.toEqual({ cardId: 'blackout' })
+
+    const used = new Promise<{ cardId: string }>((resolve) => host.onMessage('game:dev-card-used', resolve))
+    host.send('devTeleport', { spaceId: eventSpace.id })
+    await expect(used).resolves.toEqual({ cardId: 'blackout' })
+    await waitFor(() => room.state.turnPhase === 'card-target')
+    expect(room.state.activeCardId).toBe('blackout')
+
+    host.send('resolveCardTarget', { propertyId: propertySpace.id, targetSessionId: guest.sessionId })
+    await waitFor(() => property.blackoutTurns === 3)
+    expect(room.state.turnPhase).toBe('resolve')
+    expect((room as unknown as { devNextEventCardId: string }).devNextEventCardId).toBe('')
+  })
+
   it('teleporta para qualquer casa e resolve a aterrissagem; ferramentas DEV ajustam saldo e dinheiro infinito', async () => {
     const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
     const host = await colyseus.connectTo(room, { name: 'Caio' })
