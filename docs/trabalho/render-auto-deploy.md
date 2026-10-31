@@ -3,7 +3,7 @@
 ## Fatos verificados
 
 - O serviço `BancoImobiliarioOnline` é um Web Service no plano Free, conectado ao repositório `AleFeroiz/BancoImobiliarioOnline` e à branch `main`.
-- A configuração atual mostra `Auto-Deploy: On Commit`, sem filtros de build.
+- Em 2026-10-29, o painel mostrava `Auto-Deploy: On Commit`, sem filtros de build. Em 2026-10-31, o usuário confirmou que desligou essa opção.
 - O commit de teste vazio `03ef597` foi enviado a `origin/main`, mas não gerou evento de deploy no Render; o deploy ativo permaneceu em `2def5f6` e o histórico visível registra gatilhos manuais.
 - O serviço tem um Deploy Hook configurado. A documentação oficial do Render permite chamar esse hook por HTTP e mostra GitHub Actions como integração. O plano Free permite Web Services; o limite do plano não explica a ausência do gatilho.
 
@@ -13,26 +13,27 @@
 - O status de Vercel reportou “Deployment has completed” no último commit consultado; isso confirma o frontend publicado, não o estado do serviço Render.
 - Um smoke test público criou uma sala com bot, iniciou a partida e resolveu uma jogada multiplayer, confirmando que o serviço de salas está respondendo. Isso não identifica o SHA ativo do Render nem a configuração do deploy nativo.
 - A inspeção do servidor confirmou que ele inicia somente o transporte WebSocket do Colyseus e não expõe rota HTTP de saúde ou versão. Portanto, não há endpoint público para obter o SHA do serviço; a confirmação continua dependendo do painel Render.
-- A resposta do hook confirma que o pedido foi aceito, mas não associa o SHA ativo do Render ao commit. Esta sessão não conseguiu confirmar a configuração no painel.
-- Não é necessária a configuração inicial do segredo descrita nas notas antigas. Ainda falta confirmar no painel a configuração de `Auto-Deploy` e verificar que o deploy aceito terminou. Não dispare outro deploy só para repetir essa checagem.
+- A resposta do hook confirma que o pedido foi aceito, mas não associa o SHA ativo do Render ao commit. O usuário confirmou depois que o site está rodando; o SHA exato não foi capturado.
+- Após o push de `df78bd9`, o CI passou e a etapa `Trigger Render deploy` confirmou que o Render aceitou o pedido. O usuário testou o site público e confirmou que o jogo já está rodando; isso confirma disponibilidade operacional, mas não registra o SHA exato ativo no painel.
+- O usuário confirmou que o `Auto-Deploy` nativo está desligado, evitando duplicidade com o Deploy Hook do GitHub Actions. Não é necessária a configuração inicial do segredo descrita nas notas antigas e não se deve disparar outro deploy só para repetir a checagem.
 
 ## Contorno preparado
 
 O workflow `.github/workflows/ci.yml` agora pode disparar o Deploy Hook depois que `npm run verify` passar em pushes para `main`. O workflow também aceita `workflow_dispatch` na branch `main`, permitindo disparar o deploy mais recente depois da configuração inicial sem abrir o Render.
 
-## Procedimento configurado / checagem pendente
+## Procedimento e estado atual
 
 1. O workflow `.github/workflows/ci.yml` chama o Deploy Hook após `npm run verify` passar em pushes para `main`.
 2. O workflow também aceita `workflow_dispatch` na branch `main`.
-3. No painel Render, confirmar se `Auto-Deploy` está `Off`, evitando publicação duplicada pelo gatilho nativo e pelo GitHub Actions.
-4. No painel Render, verificar se o deploy solicitado pelo workflow do commit `4c85f48` foi concluído e se o serviço está saudável.
+3. O usuário confirmou que `Auto-Deploy` está `Off`, evitando publicação duplicada pelo gatilho nativo e pelo GitHub Actions.
+4. O usuário testou o site público e informou que o jogo está rodando. A versão exata do backend não foi capturada no painel; a validação funcional do usuário é a evidência operacional disponível.
 
 ## Segurança
 
 - Não grave o Deploy Hook em arquivos, logs, commits ou mensagens.
 - Se o hook for exposto, regenere-o no Render e atualize o segredo no GitHub.
 - O segredo está configurado no GitHub Actions; seu valor permanece mascarado e não foi copiado para arquivos, logs ou mensagens.
-- A configuração `Auto-Deploy` do serviço ainda precisa ser conferida no painel.
+- O usuário confirmou que a configuração `Auto-Deploy` está desligada.
 
 ## Comparação de hospedagem — 2026-10-31
 
