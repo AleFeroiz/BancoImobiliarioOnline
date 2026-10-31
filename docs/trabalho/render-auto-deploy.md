@@ -11,7 +11,8 @@
 
 - Em workflows CI recentes, `npm run verify` terminou com sucesso e a etapa `Trigger Render deploy` foi executada. Os logs confirmaram “Render accepted the deployment request.” O valor do segredo apareceu mascarado; isso confirma que `RENDER_DEPLOY_HOOK_URL` está configurado sem revelar o conteúdo.
 - O status de Vercel reportou “Deployment has completed” no último commit consultado; isso confirma o frontend publicado, não o estado do serviço Render.
-- A resposta confirma que o pedido foi aceito, mas não confirma que o serviço terminou de publicar nem que a versão nova está no ar. Esta sessão não estava autenticada no painel Render e não conseguiu confirmar o estado final do deploy.
+- Um smoke test público criou uma sala com bot, iniciou a partida e resolveu uma jogada multiplayer, confirmando que o serviço de salas está respondendo. Isso não identifica o SHA ativo do Render nem a configuração do deploy nativo.
+- A resposta do hook confirma que o pedido foi aceito, mas não associa o SHA ativo do Render ao commit. Esta sessão não conseguiu confirmar a configuração no painel.
 - Não é necessária a configuração inicial do segredo descrita nas notas antigas. Ainda falta confirmar no painel a configuração de `Auto-Deploy` e verificar que o deploy aceito terminou. Não dispare outro deploy só para repetir essa checagem.
 
 ## Contorno preparado

@@ -1,3 +1,10 @@
+# 2026-10-31 — Smoke test público da sala e da partida BANTEC
+
+- O status Vercel do commit `4547e14` confirmou “Deployment has completed”. Abri `https://banco-imobiliario-online.vercel.app`, criei uma sala temporária, adicionei Bot 1 e iniciei uma partida de 15 minutos.
+- A partida abriu com o relógio em 15:00 e os dois saldos em R$ 2.000.000. A primeira rolagem foi 9; o servidor resolveu a chegada em Rio Verde e a interface mostrou oferta de R$ 225.000 e aluguel de R$ 22.500 sem construção, R$ 45.000 com uma casa, R$ 90.000 com duas e R$ 157.500 com três. Inspecionei uma captura do tabuleiro e da oferta.
+- Isso confirma o acesso ao frontend publicado, a conexão multiplayer em tempo real e a resolução da primeira jogada usando o servidor de salas. O hook de deploy do Render também confirmou que aceitou o pedido para o push. Não confirma qual SHA está ativo no serviço Render nem a configuração de Auto-Deploy, que ainda dependem do painel.
+- Saí da sala e fechei a aba temporária. Os logs de console consultados não retornaram erros ou avisos durante o smoke test.
+
 ## 2026-10-31 — Dados ainda mais baixos sobre a FATEC
 
 - Baixei a posição-base dos dados de Y=1,18 para Y=1,12, reduzi a escala de 0,82 para 0,68 e reposicionei o indicador do resultado para Y=1,62.
