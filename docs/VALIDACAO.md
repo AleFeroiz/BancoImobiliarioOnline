@@ -580,6 +580,11 @@
 - `npm run verify`: 229 testes em 44 arquivos passaram; builds frontend e servidor passaram. Para os testes Colyseus, o loopback local foi liberado após `fetch failed` no sandbox. O aviso conhecido de chunk de cena 3D acima de 500 KB permanece. Graphify atualizado.
 - Limite: o estado final não foi alcançado manualmente na interface nesta sessão; testes de integração existentes verificam o encerramento autoritativo do servidor e a regressão exercita a decisão de visibilidade do cartão.
 
+## 2026-10-31 — Encerramento por tempo no navegador
+
+- Em uma sala local com duas pessoas, deixei o relógio da partida chegar a zero. A interface mudou para “PARTIDA ENCERRADA”, mostrou o vencedor e a classificação com patrimônio/saldo, e manteve o botão “Voltar ao início” funcional. O painel não ficou preso na carta ou em outra etapa.
+- Essa observação confirma o fluxo visual de encerramento por tempo; a falência ainda precisa de uma observação manual pela interface. Os testes de integração existentes cobrem o encerramento autoritativo por falência.
+
 ## Nome Volta ao Brasil e cartas no navegador — 2026-10-31
 
 - Em partida local com DEV ativo, forcei uma dupla até Sorte ou Revés. O baralho apresentou Troca-troca; escolhi os dois participantes e o servidor confirmou a troca sem resolver as casas de chegada.

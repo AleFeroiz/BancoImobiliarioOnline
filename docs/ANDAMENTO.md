@@ -4,7 +4,8 @@
 - A exceção de hotel para Apagão e Terremoto não tinha regressão específica. Adicionei um teste que tenta os dois efeitos num imóvel com hotel e confirma rejeição sem alterar posse, hotel ou aluguel suspenso; passou.
 - `npm run verify`: 234 testes em 46 arquivos passaram; builds do frontend e servidor passaram. Graphify foi atualizado. Permanece o aviso conhecido do chunk 3D acima de 500 KB.
 - No navegador, uma partida de dois participantes confirmou a carta Aniversário (+R$ 50.000 recebido do outro participante) e a dívida de aluguel de R$ 210.000 em Maceió. A seleção pelo tabuleiro vendeu um nível de construção em Joinville e outro em Belém; a dívida foi paga e os títulos continuaram com o anfitrião.
-- Próximo passo concreto: percorrer visualmente as cartas restantes e validar Monopólio em Linha, Monopólio Duplo Regional, fim por tempo e falência.
+- Playtest desta retomada: uma sala local encerrou quando o relógio chegou a zero; a interface exibiu “PARTIDA ENCERRADA”, vencedor, classificação, patrimônios/saldos e botão para voltar ao início, sem travar.
+- Próximo passo concreto: percorrer visualmente as cartas restantes e validar Monopólio em Linha, Monopólio Duplo Regional e encerramento por falência.
 - Nota de continuidade da frente: [Reforma BANTEC](trabalho/reforma-bantec.md).
 
 ## Rota regional na home BANTEC — concluído (2026-10-31)
