@@ -1,7 +1,14 @@
 import { boardSpaces, formatMoney } from '../game/board'
-import { PROPERTY_HOTEL_LEVEL, calculateCompanyRent, calculateRent } from '../../shared/game'
+import { PROPERTY_HOTEL_LEVEL, bankReturnValue, buildingSaleValue, calculateCompanyRent, calculateRent } from '../../shared/game'
 
 export type PropertyRentHolding = { spaceId: number; ownerSessionId: string; houses: number; blackoutTurns?: number }
+
+export function getPropertyLiquidationLabel(spaceId: number, holdings: readonly PropertyRentHolding[]) {
+  const space = boardSpaces[spaceId]
+  const holding = holdings.find((item) => item.spaceId === spaceId)
+  if (space?.kind !== 'property' || !holding?.ownerSessionId) return null
+  return formatMoney(holding.houses > 0 ? buildingSaleValue(spaceId, holding.houses) : bankReturnValue(spaceId))
+}
 
 export function getPropertyRentLabel(spaceId: number, holdings: readonly PropertyRentHolding[], worldCupSpaceId = -1, festivalSpaceIds: ReadonlySet<number> = new Set()) {
   const space = boardSpaces[spaceId]

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { boardSpaces } from '../game/board'
-import { getPropertyRentLabel } from './propertyRentLabel'
+import { getPropertyLiquidationLabel, getPropertyRentLabel } from './propertyRentLabel'
+import { PROPERTY_HOTEL_LEVEL, bankReturnValue, buildingSaleValue } from '../../shared/game'
 
 describe('rótulos 3D de aluguel', () => {
   it('mostra o aluguel base, grupo completo e construções da propriedade', () => {
@@ -26,5 +27,13 @@ describe('rótulos 3D de aluguel', () => {
     const holding = { spaceId: property.id, ownerSessionId: 'ana', houses: 0, blackoutTurns: 2 }
     expect(getPropertyRentLabel(property.id, [holding])).toBe('R$ 0')
     expect(getPropertyRentLabel(property.id, [{ ...holding, houses: 4 }])).not.toBe('R$ 0')
+  })
+
+  it('mostra quanto rende a liquidação do terreno ou do nível construído', () => {
+    const property = boardSpaces.find((space) => space.kind === 'property' && space.buildable)!
+    expect(getPropertyLiquidationLabel(property.id, [])).toBeNull()
+    expect(getPropertyLiquidationLabel(property.id, [{ spaceId: property.id, ownerSessionId: 'ana', houses: 0 }])).toBe(`R$ ${bankReturnValue(property.id).toLocaleString('pt-BR')}`)
+    expect(getPropertyLiquidationLabel(property.id, [{ spaceId: property.id, ownerSessionId: 'ana', houses: 2 }])).toBe(`R$ ${buildingSaleValue(property.id, 2).toLocaleString('pt-BR')}`)
+    expect(getPropertyLiquidationLabel(property.id, [{ spaceId: property.id, ownerSessionId: 'ana', houses: PROPERTY_HOTEL_LEVEL }])).toBe(`R$ ${buildingSaleValue(property.id, PROPERTY_HOTEL_LEVEL).toLocaleString('pt-BR')}`)
   })
 })

@@ -955,6 +955,35 @@ describe('sala privada', () => {
     }
   })
 
+  it('preserva a tela de vitória quando a recompra completa uma linha ou duas regiões', async () => {
+    const cases = [
+      { reason: 'monopoly-line', propertyIds: getLineTitleIds(0) },
+      { reason: 'double-regional-monopoly', propertyIds: boardSpaces.filter((space) => space.region === 'north' || space.region === 'northeast').map((space) => space.id) },
+    ] as const
+    for (const condition of cases) {
+      const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
+      const host = await colyseus.connectTo(room, { name: 'Ana' })
+      const guest = await colyseus.connectTo(room, { name: 'Bia' })
+      host.send('start')
+      await waitFor(() => room.state.status === 'playing')
+      const propertyId = condition.propertyIds.at(-1)!
+      for (const id of condition.propertyIds) {
+        const title = new PropertyState()
+        title.ownerSessionId = id === propertyId ? guest.sessionId : host.sessionId
+        room.state.properties.set(String(id), title)
+      }
+      room.state.activePlayerSessionId = host.sessionId
+      room.state.turnPhase = 'buyback'
+      room.state.pendingPropertyId = propertyId
+      host.send('buyback', { accept: true })
+      await waitFor(() => room.state.status === 'ended')
+      expect(room.state.turnPhase).toBe('ended')
+      expect(room.state.winnerSessionId).toBe(host.sessionId)
+      expect(room.state.matchEndReason).toBe(condition.reason)
+      expect(room.state.landingDescription).toContain('venceu:')
+    }
+  })
+
   it('registra a falência como causa quando resta uma pessoa solvente', async () => {
     const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
     const host = await colyseus.connectTo(room, { name: 'Ana' })
@@ -1503,7 +1532,7 @@ describe('sala privada', () => {
     expect(player.cash).toBe(cashBefore)
   })
 
-  it('rola um D6 novo para calcular o aluguel da companhia', async () => {
+  it('mostra e resolve a rolagem de um D6 novo para o aluguel da companhia', async () => {
     const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
     const host = await colyseus.connectTo(room, { name: 'Ana' })
     const guest = await colyseus.connectTo(room, { name: 'Bia' })
@@ -1518,11 +1547,21 @@ describe('sala privada', () => {
     const owner = room.state.players.get(host.sessionId)!
     visitor.position = company.id
     room.state.activePlayerSessionId = guest.sessionId
-    const privateRoom = room as unknown as { resolveSpace: (sessionId: string, player: typeof visitor) => void }
+    let finishCompanyRoll = () => undefined
+    const privateRoom = room as unknown as {
+      resolveSpace: (sessionId: string, player: typeof visitor) => void
+      schedulePresentation: (delayMs: number, action: () => void) => void
+    }
+    privateRoom.schedulePresentation = (_delayMs, action) => { finishCompanyRoll = action }
     privateRoom.resolveSpace(guest.sessionId, visitor)
-    const dieRoll = Number(room.state.landingDescription.match(/dado da companhia marcou (\d+)/)?.[1])
+    const dieRoll = room.state.diceOne
     expect(dieRoll).toBeGreaterThanOrEqual(1)
     expect(dieRoll).toBeLessThanOrEqual(6)
+    expect(room.state.diceTwo).toBe(0)
+    expect(room.state.turnPhase).toBe('rolling')
+    expect(visitor.cash).toBe(STARTING_CASH)
+    finishCompanyRoll()
+    expect(room.state.landingDescription).toContain(`D6 marcou ${dieRoll}`)
     expect(visitor.cash).toBe(STARTING_CASH - 50_000 * dieRoll)
     expect(owner.cash).toBe(STARTING_CASH + 50_000 * dieRoll)
   })
@@ -1547,7 +1586,9 @@ describe('sala privada', () => {
       drawEventCard: () => EventCard
       resolveEventCard: (sessionId: string, player: typeof visitor) => void
       resolveSpace: (sessionId: string, player: typeof visitor) => void
+      schedulePresentation: (delayMs: number, action: () => void) => void
     }
+    privateRoom.schedulePresentation = (_delayMs, action) => action()
     privateRoom.drawEventCard = () => EVENT_CARDS.find((card) => card.id === 'double-next-rent')!
     privateRoom.resolveEventCard(guest.sessionId, visitor)
     expect(visitor.nextRentMultiplier).toBe(2)
@@ -1558,7 +1599,7 @@ describe('sala privada', () => {
     const guestCash = visitor.cash
     const ownerCash = owner.cash
     privateRoom.resolveSpace(guest.sessionId, visitor)
-    const dieRoll = Number(room.state.landingDescription.match(/dado da companhia marcou (\d+)/)?.[1])
+    const dieRoll = room.state.diceOne
     expect(dieRoll).toBeGreaterThanOrEqual(1)
     expect(dieRoll).toBeLessThanOrEqual(6)
     expect(visitor.cash).toBe(guestCash - 50_000 * dieRoll)
@@ -1709,7 +1750,35 @@ describe('sala privada', () => {
     room.state.turnSeconds = 1
     serverGame.updateTurnClock()
     expect(room.state.turnPhase).toBe('resolve')
-    expect(room.state.landingDescription).toContain('carta foi descartada')
+    expect(room.state.landingDescription).toContain('ficará sem aluguel')
+  })
+
+  it('sorteia uma opção válida de Generoso quando a escolha expira', async () => {
+    const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
+    const host = await colyseus.connectTo(room, { name: 'Ana' })
+    const guest = await colyseus.connectTo(room, { name: 'Bia' })
+    const third = await colyseus.connectTo(room, { name: 'Caio' })
+    host.send('start')
+    await waitFor(() => room.state.status === 'playing')
+
+    const choices = boardSpaces.filter((space) => space.kind === 'property').slice(0, 2)
+    for (const space of choices) {
+      const title = new PropertyState()
+      title.ownerSessionId = host.sessionId
+      room.state.properties.set(String(space.id), title)
+    }
+    room.state.activePlayerSessionId = host.sessionId
+    room.state.turnPhase = 'card-target'
+    room.state.activeCardId = 'generous'
+    room.state.turnSeconds = 1
+    const serverRoom = room as unknown as { updateTurnClock: () => void; turnTimerKey: string }
+    serverRoom.turnTimerKey = `${room.state.turnNumber}:${host.sessionId}:card-target`
+    serverRoom.updateTurnClock()
+
+    const owners = choices.map((space) => room.state.properties.get(String(space.id))!.ownerSessionId)
+    expect(room.state.turnPhase).toBe('resolve')
+    expect(owners.filter((owner) => owner !== host.sessionId)).toHaveLength(1)
+    expect([guest.sessionId, third.sessionId]).toContain(owners.find((owner) => owner !== host.sessionId))
   })
 
   it('inicia a janela de seleção quando o aviso da carta expira sozinho', async () => {
@@ -1934,7 +2003,7 @@ describe('sala privada', () => {
     }
   })
 
-  it('paga Aniversário a cada pessoa e processa Ladrão com dívida ao alvo', async () => {
+  it('paga Aniversário e Ladrão somente com o saldo disponível da pessoa alvo', async () => {
     const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
     const host = await colyseus.connectTo(room, { name: 'Ana' })
     const guest = await colyseus.connectTo(room, { name: 'Bia' })
@@ -1947,13 +2016,15 @@ describe('sala privada', () => {
       resolveSpace: (sessionId: string, player: NonNullable<ReturnType<typeof room.state.players.get>>, drawEvent?: boolean) => void
     }
     const actor = room.state.players.get(host.sessionId)!
+    room.state.players.get(guest.sessionId)!.cash = 20_000
+    room.state.players.get(third.sessionId)!.cash = 40_000
     const eventSpace = boardSpaces.find((space) => space.kind === 'event')!
     actor.position = eventSpace.id
     serverGame.drawEventCard = () => EVENT_CARDS.find((card) => card.id === 'birthday')!
     serverGame.resolveSpace(host.sessionId, actor, true)
-    await waitFor(() => room.state.players.get(host.sessionId)!.cash === STARTING_CASH + 100_000)
-    expect(room.state.players.get(guest.sessionId)!.cash).toBe(STARTING_CASH - 50_000)
-    expect(room.state.players.get(third.sessionId)!.cash).toBe(STARTING_CASH - 50_000)
+    await waitFor(() => room.state.players.get(host.sessionId)!.cash === STARTING_CASH + 60_000)
+    expect(room.state.players.get(guest.sessionId)!.cash).toBe(0)
+    expect(room.state.players.get(third.sessionId)!.cash).toBe(0)
 
     const guestProperty = new PropertyState()
     guestProperty.ownerSessionId = guest.sessionId
@@ -1963,11 +2034,14 @@ describe('sala privada', () => {
     room.state.activePlayerSessionId = host.sessionId
     room.state.turnPhase = 'card-target'
     room.state.activeCardId = 'thief'
-    host.send('resolveCardTarget', { targetSessionId: guest.sessionId })
-    await waitFor(() => room.state.turnPhase === 'debt')
-    expect(room.state.activePlayerSessionId).toBe(guest.sessionId)
-    expect(room.state.debtAmount).toBe(200_000)
-    expect(room.state.debtCreditorSessionId).toBe(host.sessionId)
+    const hostCashBefore = room.state.players.get(host.sessionId)!.cash
+    const serverRoom = room as unknown as { messages: { resolveCardTarget: (client: { sessionId: string; send: () => undefined }, payload: { targetSessionId: string }) => void } }
+    serverRoom.messages.resolveCardTarget({ sessionId: host.sessionId, send: () => undefined }, { targetSessionId: guest.sessionId })
+    expect(room.state.players.get(guest.sessionId)!.cash).toBe(0)
+    expect(room.state.players.get(host.sessionId)!.cash).toBe(hostCashBefore + 100_000)
+    expect(room.state.activePlayerSessionId).toBe(host.sessionId)
+    expect(room.state.debtAmount).toBe(0)
+    expect(room.state.landingDescription).toContain('pagou somente esse valor')
   })
 
   it('resolve as cartas de movimento sem duplicar bônus ou efeitos de chegada', async () => {

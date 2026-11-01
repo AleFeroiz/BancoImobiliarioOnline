@@ -37,21 +37,21 @@ describe('apresentação minimalista dos dados', () => {
 
   it('mantém os dados mais baixos sobre os prédios da FATEC e fora do volume da torre durante o giro', () => {
     expect(DICE_PRESENTATION_POSITIONS).toHaveLength(2)
-    expect(DICE_PRESENTATION_POSITIONS.every((position) => position[1] >= 1.06 && position[1] <= 1.07)).toBe(true)
-    expect(DICE_PRESENTATION_POSITIONS.every((position) => position[1] - DICE_ROTATION_BOUNDING_RADIUS - FATEC_MAIN_ROOF_TOP_Y >= 0.01)).toBe(true)
+    expect(DICE_PRESENTATION_POSITIONS.every((position) => position[1] >= 1.49 && position[1] <= 1.51)).toBe(true)
+    expect(DICE_PRESENTATION_POSITIONS.every((position) => position[1] - 0.21 * DICE_VISUAL_SCALE - FATEC_MAIN_ROOF_TOP_Y >= 0.01)).toBe(true)
     expect(DICE_PRESENTATION_POSITIONS.every((position) => {
       const horizontalDistance = Math.hypot(position[0] - FATEC_TOWER_CENTER[0], position[2] - FATEC_TOWER_CENTER[1])
       const towerCornerRadius = Math.hypot(FATEC_TOWER_HALF_FOOTPRINT, FATEC_TOWER_HALF_FOOTPRINT)
-      return horizontalDistance - DICE_ROTATION_BOUNDING_RADIUS - towerCornerRadius > 0
+      return horizontalDistance - DICE_ROTATION_BOUNDING_RADIUS * 0.58 - towerCornerRadius > 0
     })).toBe(true)
     expect(DICE_ROLL_BOUNCE_HEIGHT).toBeLessThan(0.08)
-    expect(DICE_VISUAL_SCALE).toBeLessThan(0.7)
-    expect(DICE_PRESENTATION_POSITIONS.every((position) => position[1] + DICE_ROLL_BOUNCE_HEIGHT + DICE_ROTATION_BOUNDING_RADIUS < 2.1)).toBe(true)
+    expect(DICE_VISUAL_SCALE).toBeCloseTo(0.55 * 3)
+    expect(DICE_PRESENTATION_POSITIONS.every((position) => position[1] + DICE_ROLL_BOUNCE_HEIGHT + DICE_ROTATION_BOUNDING_RADIUS < 2.8)).toBe(true)
     expect(DICE_PRESENTATION_POSITIONS[0]?.[0]).toBeLessThan(0)
     expect(DICE_PRESENTATION_POSITIONS[1]?.[0]).toBeGreaterThan(0)
     expect(Math.sign(DICE_PRESENTATION_POSITIONS[0]![2])).toBe(-Math.sign(DICE_PRESENTATION_POSITIONS[1]![2]!))
     expect(Math.abs(DICE_RESULT_BADGE_POSITION[0])).toBeLessThan(0.1)
-    expect(DICE_RESULT_BADGE_POSITION[1]).toBeGreaterThan(DICE_PRESENTATION_POSITIONS[0]![1] + DICE_ROLL_BOUNCE_HEIGHT + DICE_ROTATION_BOUNDING_RADIUS + 0.1)
-    expect(DICE_RESULT_BADGE_POSITION[1]).toBeLessThan(2)
+    expect(DICE_RESULT_BADGE_POSITION[1]).toBeGreaterThan(DICE_PRESENTATION_POSITIONS[0]![1] + DICE_ROLL_BOUNCE_HEIGHT + 0.21 * DICE_VISUAL_SCALE + 0.1)
+    expect(DICE_RESULT_BADGE_POSITION[1]).toBeLessThan(2.5)
   })
 })

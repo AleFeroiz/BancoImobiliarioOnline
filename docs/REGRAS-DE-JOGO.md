@@ -27,14 +27,16 @@ Este documento descreve somente as regras atuais do BANTEC. Referências ao Expr
 - Monopólio Regional, festival e sede da Copa do Mundo dobram cada um o aluguel calculado e seus multiplicadores se acumulam. Três cidades aleatórias são marcadas como festivais no início da partida.
 - As companhias são AgroBrasil, Aviação Brasil, Energia Brasil e Mineração Brasil. Cada uma custa R$ 500.000. Ao cair numa companhia, o servidor rola um novo D6; o aluguel é R$ 50.000 multiplicados pela quantidade de companhias do dono e pelo resultado do dado. A quantidade máxima é três, pois possuir as quatro encerra a partida com vitória.
 - As quatro taxas cobram por imóvel que a pessoa possui: R$ 10.000, R$ 15.000, R$ 20.000 e R$ 25.000. Cidades e companhias contam; construções não. Títulos já vendidos ou devolvidos ao banco não contam.
-- Ao cair num imóvel de outra pessoa, primeiro se paga o aluguel normal ao dono. Depois, se ainda houver saldo para pagar 2× o investimento total da propriedade e ela não tiver hotel, aparece a opção de recompra. O valor integral da recompra vai diretamente ao dono, sem depender da aceitação dele; a posse passa ao comprador. Hotel impede recompra. Se o aluguel entrar em dívida, a opção só aparece depois que a dívida for quitada e se restar saldo suficiente.
+- Ao cair num imóvel de outra pessoa, primeiro se paga o aluguel normal ao dono. Depois, se ainda houver saldo para pagar 2× o investimento total da propriedade e ela não tiver hotel, aparece a opção de recompra. O valor integral da recompra vai diretamente ao dono, sem depender da aceitação dele; a posse passa ao comprador. Hotel impede recompra. Se o aluguel entrar em dívida, a opção só aparece depois que a dívida for quitada e se restar saldo suficiente. Após recomprar uma cidade residencial, o novo dono pode pagar para construir nela durante essa mesma chegada, respeitando a primeira volta, os limites do nível e o saldo.
 
 ## Dívidas e falência
 
 - Quando uma cobrança ultrapassa o saldo, registra-se o valor integral da dívida, sem débito parcial. Enquanto não puder pagar, a pessoa pode vender construções por metade do custo de construção ou devolver ao banco uma cidade/companhia por metade do preço de compra.
+- Ladrão e Aniversário são exceções: transferem somente o saldo que a pessoa cobrada possui, até o limite da cobrança. Essas cartas não criam dívida nem iniciam liquidação forçada.
 - Devolver um título ao banco encerra a posse imediatamente: ele fica livre para ser comprado por qualquer pessoa. Não existe hipoteca, aluguel suspenso por hipoteca ou resgate de título. Construções do grupo precisam ser vendidas antes de devolver um título.
 - Quando houver saldo suficiente, a dívida integral é paga ao credor ou ao banco. Se não restarem ativos liquidáveis e o saldo não cobrir a dívida, a pessoa declara falência: o dinheiro restante e seus títulos passam ao credor jogador; se o credor for o banco, os títulos voltam ao banco sem construções. A partida termina quando sobra uma única pessoa solvente.
 - Toda escolha de imóvel durante uma dívida é feita no tabuleiro: opções válidas ficam iluminadas e as inválidas apagadas.
+- No painel de dívida aparecem em destaque o total cobrado, o saldo disponível e quanto ainda falta levantar. Sobre cada imóvel próprio, o marcador informa o aluguel atual e quanto rende liquidar o título ou vender o nível de construção atual.
 
 ## Cantos especiais
 
@@ -62,7 +64,7 @@ O servidor sorteia com reposição entre estas quatorze cartas autorais:
 13. **Aluguel em dobro:** pague duas vezes o próximo aluguel devido, seja de cidade ou companhia.
 14. **Desconto no aluguel:** pague metade do próximo aluguel devido, seja de cidade ou companhia.
 
-Proteção bloqueia qualquer efeito de carta, inclusive Generoso. Apagão e Proteção duram os três próximos turnos do dono. As cartas de dobro e desconto se acumulam multiplicativamente e são consumidas juntas no próximo aluguel devido; duas cartas pendentes de efeitos opostos se cancelam. Elas também modificam aluguéis de companhias e incidem sobre o valor final após os demais multiplicadores. Se um efeito cobrar dinheiro sem saldo suficiente, aplicam-se as regras de dívida. A seleção de qualquer propriedade-alvo acontece diretamente no tabuleiro com o padrão de opções iluminadas/apagadas; alvos que sejam pessoas são selecionados pelos controles de participantes.
+Proteção bloqueia qualquer efeito de carta, inclusive Generoso. Apagão e Proteção duram os três próximos turnos do dono. As cartas de dobro e desconto se acumulam multiplicativamente e são consumidas juntas no próximo aluguel devido; duas cartas pendentes de efeitos opostos se cancelam. Elas também modificam aluguéis de companhias e incidem sobre o valor final após os demais multiplicadores. Se o relógio expirar durante uma escolha de carta, o servidor sorteia uma das opções válidas; se não houver opção, encerra o efeito. A seleção manual de qualquer propriedade-alvo acontece diretamente no tabuleiro com o padrão de opções iluminadas/apagadas; alvos que sejam pessoas são selecionados pelos controles de participantes.
 
 ## Ações e negociação
 

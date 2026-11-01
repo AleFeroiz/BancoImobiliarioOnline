@@ -21,7 +21,7 @@ import type { FrameRateAccumulator } from './fpsMeter'
 import { recordRenderedFrame } from './fpsMeter'
 import { applySelectionContrast, createTokenOutlineMaterial, createUnlitMaterial, getOwnerTintOverride } from './sceneMaterials'
 import { getBuildingInnerEdgeOffset, getBuildingRentLabelPosition, getCenteredModelPlacement, getModelFootprintDepth } from './modelPlacement'
-import { getPropertyRentLabel } from './propertyRentLabel'
+import { getPropertyLiquidationLabel, getPropertyRentLabel } from './propertyRentLabel'
 import { playGameSound } from './gameAudio'
 import { scheduleSceneRenderWake } from './sceneRenderWake'
 import { getGraphicsDprRange, type GraphicsQuality } from './graphicsQuality'
@@ -561,7 +561,7 @@ function AnimatedBuilding({ spaceId, houses, ownerColor, ownerSessionId, reduced
     return { object: clone, footprintDepth }
   }, [blackoutTurns, dimmed, displayColor, ownerSessionId, scene, variantName])
   const modelScale = 1.25
-  const [offsetX, offsetZ] = modelData ? getBuildingInnerEdgeOffset(spaceId, 0.98, modelData.footprintDepth, modelScale) : decoration.buildingOffset
+  const [offsetX, offsetZ] = modelData ? getBuildingInnerEdgeOffset(spaceId, 0.98, modelData.footprintDepth, modelScale, 0.08) : decoration.buildingOffset
   return (
     <group ref={group} position={[x + offsetX, BUILDING_GROUP_Y, z + offsetZ]} rotation={[0, buildingRotation, 0]}>
       {modelData && <primitive object={modelData.object} position={[0, BUILDING_MODEL_Y_OFFSET, 0]} scale={modelScale} />}
@@ -626,8 +626,10 @@ function Board({ players, propertyBuildings, thrownObjects, earthquakeEvents, wo
       const model = buildingScene.getObjectByName(variantName)
       const bounds = model ? new Box3().setFromObject(model) : null
       const { x, z } = positionOnBoard(space.id)
-      const local = bounds ? getBuildingRentLabelPosition(space.id, bounds, 0.98, 1.25, 0.02, 0.2, BUILDING_GROUP_Y) : [0, 0.95, 0] as [number, number, number]
-      return { id: space.id, position: [x + local[0], local[1], z + local[2]] as [number, number, number], text: getPropertyRentLabel(space.id, propertyBuildings, worldCupSpaceId, new Set(festivalSpaceIds)) ?? '' }
+      const local = bounds ? getBuildingRentLabelPosition(space.id, bounds, 0.98, 1.25, 0.08, 0.2, BUILDING_GROUP_Y) : [0, 0.95, 0] as [number, number, number]
+      const rent = getPropertyRentLabel(space.id, propertyBuildings, worldCupSpaceId, new Set(festivalSpaceIds))
+      const liquidation = getPropertyLiquidationLabel(space.id, propertyBuildings)
+      return { id: space.id, position: [x + local[0], local[1], z + local[2]] as [number, number, number], text: rent && liquidation ? `${rent}\nLIQ. ${liquidation}` : rent ?? '' }
     }), [buildingScene, propertyBuildings, worldCupSpaceId, festivalSpaceIds])
 
   return (
@@ -687,7 +689,7 @@ function Board({ players, propertyBuildings, thrownObjects, earthquakeEvents, wo
           </group>
         )
       })}
-      {propertyRentLabels.map(({ id, position, text }) => <Billboard key={`rent-${id}`} position={position} follow><Text fontSize={0.2} fontWeight="bold" maxWidth={1.65} textAlign="center" anchorX="center" anchorY="middle" color="#243b2e" outlineColor="#fff9eb" outlineWidth={0.022} depthOffset={-1} raycast={skipRaycast}>{text}</Text></Billboard>)}
+      {propertyRentLabels.map(({ id, position, text }) => <Billboard key={`rent-${id}`} position={position} follow><Text fontSize={0.15} lineHeight={1.2} fontWeight="bold" maxWidth={2} textAlign="center" anchorX="center" anchorY="middle" color="#243b2e" outlineColor="#fff9eb" outlineWidth={0.018} depthOffset={-1} raycast={skipRaycast}>{text}</Text></Billboard>)}
       <Suspense fallback={null}>
         {propertyBuildings.filter(({ ownerSessionId }) => Boolean(ownerSessionId)).map(({ spaceId, houses, blackoutTurns = 0, protectionTurns = 0, ownerColor, ownerSessionId }) => <AnimatedBuilding key={`buildings-${spaceId}`} spaceId={spaceId} houses={houses} blackoutTurns={blackoutTurns} protectionTurns={protectionTurns} ownerColor={ownerColor} ownerSessionId={ownerSessionId} reducedMotion={reducedMotion} presentationSpeed={presentationSpeed} dimmed={selectionMode && !highlightedSpaceIds.includes(spaceId)} />)}
       </Suspense>
@@ -697,7 +699,7 @@ function Board({ players, propertyBuildings, thrownObjects, earthquakeEvents, wo
       {diceVisible && <>
         <AnimatedDie position={DICE_PRESENTATION_POSITIONS[0]!} rotation={[0.12, 0.25, 0.25]} sequence={diceRollSequence} value={dice[0] || 1} reducedMotion={reducedMotion} visible={diceVisible} presentationSpeed={presentationSpeed} />
         {dice[1] > 0 && <AnimatedDie position={DICE_PRESENTATION_POSITIONS[1]!} rotation={[-0.18, 0.3, -0.2]} sequence={diceRollSequence} value={dice[1]} reducedMotion={reducedMotion} visible={diceVisible} presentationSpeed={presentationSpeed} />}
-        {diceResultVisible && <Html position={DICE_RESULT_BADGE_POSITION} center distanceFactor={9} zIndexRange={[6, 6]}><div className="dice-result-badge" role="status" aria-live="polite"><small>{dice[1] > 0 ? 'TOTAL' : 'ESTAÇÃO'}</small><strong>{dice[1] > 0 ? dice[0] + dice[1] : dice[0]}</strong></div></Html>}
+        {diceResultVisible && <Html position={DICE_RESULT_BADGE_POSITION} center distanceFactor={9} zIndexRange={[6, 6]}><div className="dice-result-badge" role="status" aria-live="polite"><small>{dice[1] > 0 ? 'TOTAL' : 'D6'}</small><strong>{dice[1] > 0 ? dice[0] + dice[1] : dice[0]}</strong></div></Html>}
       </>}
     </group>
   )

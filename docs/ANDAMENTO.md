@@ -1,3 +1,11 @@
+# Ajustes de regras, liquidação e apresentação — implementado (2026-11-01)
+
+- Implementados: cobranças de cartas limitadas ao saldo; escolhas expiradas aleatórias entre opções válidas; rolagem D6 visível nas companhias; dívida e liquidação destacadas; opções de compra/melhoria limitadas ao saldo; melhoria após recompra; dados ampliados; construções posicionadas mais para dentro do piso; preservação da vitória por monopólio durante a recompra.
+- Regressões cobertas para pagamento parcial de cartas, escolha aleatória no timeout, D6 da companhia e vitórias em Linha/Regional após recompra.
+- `npm run verify` passou: 51 arquivos de teste, 279 testes, build web e build do servidor. Playtest local confirmou o painel de compra inicial bloquear a 3ª casa/hotel e uma compra de terreno atualizar saldo/estado.
+- O servidor local padrão na porta 2567 falhou com `EADDRINUSE` sem listener identificável; o playtest foi realizado usando a porta 2569. Os arquivos Blender `assets/blender/special-corners.blend` e `.blend1` são alterações locais fora de escopo e devem ser preservados.
+- Próximo passo: revisar as alterações sincronizadas em `main` e publicar somente os arquivos relacionados a esta tarefa.
+
 # Tabuleiro 3D some na troca de turno — proteção implementada (2026-11-01)
 
 - Relato: ao concluir a primeira vez, a tela do usuário pisca; no cliente da amiga, HUD e botões permanecem, mas o tabuleiro 3D desaparece. A captura mostra que a interface segue ativa enquanto a cena 3D não é desenhada.

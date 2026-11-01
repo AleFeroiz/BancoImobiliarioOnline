@@ -422,11 +422,11 @@ export class GameRoom extends Room<{ state: LobbyState }> {
         if (owner && !owner.isBankrupt) this.creditCash(owner, price)
         property.ownerSessionId = client.sessionId
         this.state.landingDescription += ` ${space.name} recomprada por ${price.toLocaleString('pt-BR')}; o valor integral da recompra foi pago ao antigo proprietário.`
-        this.checkMonopolyVictory(client.sessionId)
+        if (this.checkMonopolyVictory(client.sessionId)) return
       } else {
         this.state.landingDescription += ' Você escolheu continuar sem recomprar; o aluguel já foi pago.'
       }
-      this.state.pendingPropertyId = 255
+      this.state.pendingPropertyId = payload.accept ? propertyId : 255
       const debtOpened = (this.state as LobbyState).turnPhase === 'debt'
       if (!debtOpened) this.state.turnPhase = 'resolve'
       this.finishExpiredPhaseIfReady()
@@ -1134,15 +1134,11 @@ export class GameRoom extends Room<{ state: LobbyState }> {
     else if (phase === 'start-upgrade') this.messages.startUpgrade(client, { accept: false })
     else if (phase === 'resolve') this.messages.finishTurn(client)
     else if (phase === 'jail') this.messages.finishTurn(client)
-    else if (phase === 'world-cup') this.chooseDefaultWorldCup(client, sessionId)
-    else if (phase === 'world-tour') this.messages.chooseWorldTour(client, { spaceId: this.getWorldTourDefaultDestination(sessionId) })
+    else if (phase === 'world-cup') this.chooseDefaultWorldCup(client, sessionId, this.state.activeCardId !== '')
+    else if (phase === 'world-tour') this.messages.chooseWorldTour(client, { spaceId: this.getWorldTourDefaultDestination(sessionId, true) })
     else if (phase === 'card-target') {
       this.cardTargetRevealPending = false
-      this.state.turnPhase = 'resolve'
-      this.state.turnSeconds = TURN_DECISION_SECONDS
-      this.turnTimerKey = `${this.state.turnNumber}:${sessionId}:resolve`
-      this.state.landingDescription += ' Não houve escolha de alvo; a carta foi descartada.'
-      this.finishExpiredPhaseIfReady()
+      this.autoResolveCardTarget(client, sessionId)
     }
     else {
       this.autoResolveDebt(sessionId)
@@ -1529,20 +1525,12 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       const payment = this.pendingCardPayments.shift()!
       const debtor = this.state.players.get(payment.sessionId)
       if (!debtor || debtor.isBankrupt) continue
-      if (this.canSpend(debtor, payment.amount)) {
-        this.spendCash(debtor, payment.amount)
-        this.creditCash(actor, payment.amount)
-        continue
+      const paid = Math.min(payment.amount, Math.max(0, debtor.cash))
+      if (paid > 0) {
+        this.spendCash(debtor, paid)
+        this.creditCash(actor, paid)
       }
-      this.state.activePlayerSessionId = payment.sessionId
-      this.state.turnPhase = 'debt'
-      this.state.turnSeconds = TURN_DECISION_SECONDS
-      this.turnTimerKey = `${this.state.turnNumber}:${payment.sessionId}:debt`
-      this.state.debtAmount = payment.amount
-      this.state.debtCreditorSessionId = actorSessionId
-      this.state.debtReason = payment.reason
-      this.state.landingDescription += ` ${debtor.name} deve ${payment.amount.toLocaleString('pt-BR')} por uma carta. Venda construções ou devolva imóveis ao banco para pagar.`
-      return
+      if (paid < payment.amount) this.state.landingDescription += ` ${debtor.name} tinha ${paid.toLocaleString('pt-BR')} disponível e pagou somente esse valor.`
     }
     this.pendingCardPaymentActorSessionId = ''
     this.state.activePlayerSessionId = actorSessionId
@@ -1557,27 +1545,32 @@ export class GameRoom extends Room<{ state: LobbyState }> {
     if (!card) return
     const players = Array.from(this.state.players.entries()).filter(([, player]) => !player.isBankrupt)
     const properties = Array.from(this.state.properties.entries()).map(([id, property]) => [Number(id), property] as const)
+    const pick = <T,>(options: readonly T[]) => options.length ? options[randomInt(options.length)] : undefined
     if (card.effect.kind === 'generous') {
-      const property = properties.find(([, holding]) => holding.ownerSessionId === sessionId && holding.protectionTurns === 0)
-      const recipient = players.find(([id]) => id !== sessionId)
+      const property = pick(properties.filter(([, holding]) => holding.ownerSessionId === sessionId && holding.protectionTurns === 0))
+      const recipient = pick(players.filter(([id]) => id !== sessionId))
       if (property && recipient) this.messages.resolveCardTarget(client, { propertyId: property[0], targetSessionId: recipient[0] })
     } else if (card.effect.kind === 'blackout' || card.effect.kind === 'earthquake') {
-      const property = properties.find(([id, holding]) => holding.ownerSessionId !== '' && holding.ownerSessionId !== sessionId && holding.houses !== PROPERTY_HOTEL_LEVEL && holding.protectionTurns === 0)
+      const property = pick(properties.filter(([id, holding]) => boardSpaces[id]?.kind === 'property' && holding.ownerSessionId !== '' && holding.ownerSessionId !== sessionId && holding.houses !== PROPERTY_HOTEL_LEVEL && holding.protectionTurns === 0))
       if (property) this.messages.resolveCardTarget(client, { propertyId: property[0], targetSessionId: property[1].ownerSessionId })
     } else if (card.effect.kind === 'thief') {
-      const target = players.find(([id]) => id !== sessionId)
+      const target = pick(players.filter(([id]) => id !== sessionId))
       if (target) this.messages.resolveCardTarget(client, { targetSessionId: target[0] })
     } else if (card.effect.kind === 'protection') {
-      const property = properties.find(([, holding]) => holding.ownerSessionId === sessionId)
+      const property = pick(properties.filter(([id, holding]) => boardSpaces[id]?.kind === 'property' && holding.ownerSessionId === sessionId))
       if (property) this.messages.resolveCardTarget(client, { propertyId: property[0] })
     } else if (card.effect.kind === 'swap') {
-      const first = players[0]
-      const second = players.find(([id]) => id !== first?.[0])
+      const pair = pick(players.flatMap((first, index) => players.slice(index + 1).map((second) => [first, second] as const)))
+      const first = pair?.[0]
+      const second = pair?.[1]
       if (first && second) this.messages.resolveCardTarget(client, { targetSessionId: first[0], secondSessionId: second[0] })
     }
     if (this.state.turnPhase === 'card-target') {
       this.state.turnPhase = 'resolve'
-      this.state.landingDescription += ' Não havia alvo válido; a carta foi descartada.'
+      this.state.turnSeconds = TURN_DECISION_SECONDS
+      this.turnTimerKey = `${this.state.turnNumber}:${sessionId}:resolve`
+      this.state.landingDescription += ' Não havia opção válida; a carta foi descartada.'
+      this.finishExpiredPhaseIfReady()
     }
   }
 
@@ -1724,8 +1717,13 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       .sort((first, second) => (second.price ?? 0) - (first.price ?? 0))[0]?.id ?? -1
   }
 
-  private chooseDefaultWorldCup(client: Client, sessionId: string) {
-    const propertyId = this.getWorldCupDefaultPropertyId(sessionId)
+  private chooseDefaultWorldCup(client: Client, sessionId: string, random = false) {
+    const propertyId = random
+      ? (() => {
+          const options = boardSpaces.filter((space) => space.kind === 'property' && this.state.properties.get(String(space.id))?.ownerSessionId === sessionId)
+          return options.length ? options[randomInt(options.length)]!.id : -1
+        })()
+      : this.getWorldCupDefaultPropertyId(sessionId)
     if (propertyId < 0) {
       this.state.turnPhase = 'resolve'
       this.state.landingDescription += ' Você não possui propriedades para sediar a Copa; não há uma sede disponível.'
@@ -1735,7 +1733,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
     this.messages.chooseWorldCup(client, { propertyId })
   }
 
-  private getWorldTourDefaultDestination(sessionId: string) {
+  private getWorldTourDefaultDestination(sessionId: string, random = false) {
     const player = this.state.players.get(sessionId)
     const eligible = boardSpaces.filter((space) => {
       if (space.id === 30 || space.id === player?.position) return false
@@ -1743,6 +1741,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       const ownerSessionId = this.state.properties.get(String(space.id))?.ownerSessionId
       return !ownerSessionId || ownerSessionId === sessionId
     })
+    if (random) return eligible.length ? eligible[randomInt(eligible.length)]!.id : 0
     return eligible
       .filter((space) => space.kind === 'property')
       .sort((first, second) => (second.price ?? 0) - (first.price ?? 0))[0]?.id
@@ -1790,15 +1789,30 @@ export class GameRoom extends Room<{ state: LobbyState }> {
         const rent = calculateRent(space.id, ownership, property.houses, this.state.worldCupSpaceId, this.getFestivalSpaceIds())
         if (owner && property.blackoutTurns > 0 && property.houses !== PROPERTY_HOTEL_LEVEL) {
           this.state.landingDescription += ` ${space.name} está em apagão; não há aluguel por ${property.blackoutTurns} turno(s) do dono.`
+        } else if (owner && space.company) {
+          const companyDieRoll = randomInt(1, 7)
+          this.state.diceSequence += 1
+          this.state.diceOne = companyDieRoll
+          this.state.diceTwo = 0
+          this.state.turnPhase = 'rolling'
+          this.state.presentationSpeed = this.state.animationSpeed
+          this.state.landingDescription += ' Rolando o D6 para calcular o aluguel da companhia…'
+          this.schedulePresentation(getAnimationDuration(DICE_ANIMATION_DURATION_MS, this.state.presentationSpeed), () => {
+            if (this.state.turnPhase !== 'rolling' || this.state.activePlayerSessionId !== sessionId) return
+            this.state.turnPhase = 'resolve'
+            this.state.landingDescription = `${space.name}: o D6 marcou ${companyDieRoll}.`
+            const amount = applyRentMultiplier(calculateCompanyRent(ownership, property.ownerSessionId, companyDieRoll), player.nextRentMultiplier)
+            player.nextRentMultiplier = 1
+            this.collectPayment(sessionId, player, amount, property.ownerSessionId, 'Aluguel da companhia')
+            const debtOpened = this.state.turnPhase === 'debt'
+            if (!debtOpened && !this.offerBuybackAfterRent(sessionId, space.id)) this.state.pendingPropertyId = 255
+            this.finishExpiredPhaseIfReady()
+          })
+          return
         } else if (owner) {
-          const companyDieRoll = space.company ? randomInt(1, 7) : 0
-          const baseAmount = space.company
-            ? calculateCompanyRent(ownership, property.ownerSessionId, companyDieRoll) * (space.id === this.state.worldCupSpaceId ? 2 : 1)
-            : rent
-          const amount = applyRentMultiplier(baseAmount, player.nextRentMultiplier)
+          const amount = applyRentMultiplier(rent, player.nextRentMultiplier)
           player.nextRentMultiplier = 1
-          const reason = space.company ? 'Aluguel da companhia' : 'Aluguel'
-          if (space.company) this.state.landingDescription += ` O dado da companhia marcou ${companyDieRoll}.`
+          const reason = 'Aluguel'
           if (property.houses !== PROPERTY_HOTEL_LEVEL) this.state.pendingPropertyId = space.id
           this.collectPayment(sessionId, player, amount, property.ownerSessionId, reason)
           const debtOpened = (this.state as LobbyState).turnPhase === 'debt'

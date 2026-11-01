@@ -13,7 +13,7 @@ export function getCenteredModelPlacement(bounds: Bounds3): [number, number, num
   ]
 }
 
-export function getBuildingInnerEdgeOffset(spaceId: number, tileSize: number, modelDepth: number, modelScale = 1, gap = 0.02): [number, number] {
+export function getBuildingInnerEdgeOffset(spaceId: number, tileSize: number, modelDepth: number, modelScale = 1, gap = 0.08): [number, number] {
   if (!Number.isInteger(spaceId) || spaceId < 0 || spaceId >= 40) throw new RangeError('spaceId must be a board index')
   const inset = tileSize / 2 + modelDepth * modelScale / 2 + gap
   if (spaceId <= 10) return [0, -inset]
