@@ -68,10 +68,10 @@ Proteção bloqueia qualquer efeito de carta, inclusive Generoso. Apagão e Prot
 
 ## Ações e negociação
 
-- Ao clicar numa cidade, qualquer pessoa pode inspecionar preço, construção, aluguel e dono, inclusive durante o turno de outra pessoa. A carteira mostra os bens de cada participante.
+- Ao clicar numa cidade, qualquer pessoa pode inspecionar preço, construção, aluguel e dono, inclusive durante o turno de outra pessoa. Clicar no cartão de uma pessoa ilumina suas cidades próprias e escurece os demais espaços; clicar outra vez no mesmo cartão remove o destaque. A lateral não tem botão Bens.
 - Durante a partida, cada pessoa pode escolher tomate, ovo, lama ou farinha no controle ao lado do cartão de outro participante para lançar o objeto em sua ficha. O lançamento é cosmético: não altera saldo, turno ou regras; somente o alvo vê o efeito de impacto, que dura três segundos e não bloqueia controles. A sala impõe intervalo de cinco segundos entre lançamentos do mesmo remetente para o mesmo alvo.
 - Durante o próprio turno, fora de rolagem, movimento, compra ou dívida, a pessoa pode abrir um leilão voluntário de propriedade sua. O vendedor escolhe o lance inicial; lances devem aumentar pelo menos R$ 10.000 e ficam reservados por 20 segundos. A maior oferta compra o título; sem oferta, o dono o mantém. Construções do grupo precisam ser vendidas antes de leiloar um título.
-- Propostas de troca de dinheiro e títulos podem ser enviadas pelo perfil de participante a qualquer momento. Há uma proposta ativa por sala; ela fica aberta até ser aceita, recusada, cancelada pelo remetente, ou encerrada por falência/fim de partida. O servidor valida títulos, construções e saldos ao enviar e aceitar.
+- Propostas de troca de dinheiro e títulos podem ser enviadas após destacar uma pessoa no cartão e usar a ação contextual Troca. Há uma proposta ativa por sala; ela fica aberta até ser aceita, recusada, cancelada pelo remetente, ou encerrada por falência/fim de partida. O servidor valida títulos, construções e saldos ao enviar e aceitar.
 - A anfitriã pode ativar o modo DEV no lobby. Quando ativo, apenas ela pode forçar os dados durante a rolagem válida; o servidor verifica anfitriã, jogador ativo e valores.
 - A velocidade visual compartilhada é 0,5×, 1× ou 2×. O turno dá 20 segundos para rolar e até 15 segundos para cada decisão. Se alguém não agir, a compra é recusada, a Prisão aguarda, ações obrigatórias são concluídas e a dívida avança pela próxima liquidação disponível.
 - Se uma pessoa desconectar ou sair durante a partida, a cadeira e os bens permanecem e um bot passa a controlá-la. O cartão do jogador informa “BOT NO CONTROLE”. Para recuperar o controle, a pessoa entra novamente no mesmo código de sala e usa exatamente o mesmo nome (a comparação distingue maiúsculas de minúsculas); a conexão assume a cadeira existente e preserva o estado da partida.
@@ -84,7 +84,7 @@ Proteção bloqueia qualquer efeito de carta, inclusive Generoso. Apagão e Prot
 - O lobby oferece 12 cores e 14 fichas cosméticas (peão, carrinho, moto, avião, sapato de salto, trem, cartola, cofrinho, navio, patinho de borracha, cachorro, gato, vaca e pinguim). A escolha visual não afeta as regras.
 - A FATEC Itapetininga fica no centro como modelo visual dos três blocos e da torre mostrados nas imagens de referência. Não ocupa casa de jogo. Os dados ficam suspensos pouco acima dos prédios durante a rolagem.
 - O modo noturno escurece a home e o lobby. Na partida, altera somente o fundo externo, sem escurecer o tabuleiro. A preferência é local e pode ser alterada durante o jogo.
-- Bens, Config, Emote e Regras ficam em botões quadrados na lateral; a interface adapta-se ao celular. Movimento reduzido, áudio e qualidade gráfica são controles locais.
+- Config, Emote e Regras ficam em botões quadrados na lateral; a ação contextual Troca aparece quando uma pessoa está selecionada. A interface adapta-se ao celular. Movimento reduzido, áudio e qualidade gráfica são controles locais.
 - A câmera gira por mouse/toque na área do tabuleiro e usa a roda/pinça para zoom; botões e painéis interativos não devem iniciar rotação.
 
 ## Escopo removido e referências

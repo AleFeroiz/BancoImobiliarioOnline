@@ -11,7 +11,7 @@ describe('orientação das casas do tabuleiro', () => {
 
   it('eleva a base das construções acima do topo do piso sem afundar', () => {
     const modelBaseY = BUILDING_GROUP_Y + BUILDING_MODEL_Y_OFFSET + 0.0005 * 1.16
-    expect(modelBaseY).toBeCloseTo(BOARD_SURFACE_Y + 0.08058)
+    expect(modelBaseY).toBeCloseTo(BOARD_SURFACE_Y + 0.20058)
     expect(modelBaseY).toBeGreaterThan(BOARD_SURFACE_Y)
   })
 

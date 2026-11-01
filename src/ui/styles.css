@@ -826,6 +826,7 @@ button:disabled{opacity:.55;cursor:not-allowed}
 .game-feedback-toast{color:color-mix(in srgb,var(--feedback-player-color,#405a43) 68%,#33483a)}
 .game-feedback-toast>strong{color:var(--feedback-player-color,#405a43);font-weight:800}
 .screen-game .player-card{appearance:none;-webkit-appearance:none;text-align:left;font:inherit}
+.screen-game .player-card.highlighted{outline:3px solid #fff3b3;outline-offset:3px;box-shadow:0 0 0 5px rgba(240,199,96,.38),0 0 24px rgba(255,230,151,.65)}
 .player-card-offer-badge{position:absolute;right:10px;bottom:-7px;padding:3px 7px;border:1px solid rgba(255,255,255,.8);border-radius:999px;background:#fff8e6;color:#6d5830;font-size:7px;font-weight:800;letter-spacing:.07em;box-shadow:0 2px 6px rgba(42,59,43,.14)}
 .player-profile-panel{position:fixed;top:50%;right:18px;z-index:9;display:flex;flex-direction:column;gap:13px;width:min(410px,calc(100vw - 32px));max-height:min(78dvh,780px);overflow-y:auto;overscroll-behavior:contain;padding:19px;border:1px solid #d5d8c8;border-top:5px solid var(--profile-player-color,#73946c);border-radius:17px;background:#f8f4e9;color:#354b3e;box-shadow:0 20px 54px rgba(27,45,38,.3);transform:translateY(-50%);animation:profile-panel-enter .24s cubic-bezier(.18,.75,.2,1) both;touch-action:pan-y}
 .player-profile-heading{position:relative;display:flex;justify-content:space-between;align-items:flex-start;padding:2px 36px 12px 2px;border-bottom:1px solid #dbe0d2}
@@ -951,7 +952,7 @@ button:disabled{opacity:.55;cursor:not-allowed}
 .turn-clock-pill.clock-warning{border-color:#b86f55;background:#fff1dd;color:#934d37}
 .game-status-cluster .animation-speed-control{gap:7px;padding:5px 8px 5px 10px;font-size:9px;letter-spacing:.06em}
 .game-status-cluster .animation-speed-control button{min-width:37px;min-height:35px;padding:0 8px;font-size:11px}
-.game-quick-actions{--quick-action-size:56px;position:fixed;z-index:7;top:50%;right:16px;bottom:auto;left:auto;display:grid;grid-template-columns:var(--quick-action-size);grid-template-rows:repeat(4,var(--quick-action-size));gap:8px;transform:translateY(-50%);pointer-events:auto}
+.game-quick-actions{--quick-action-size:56px;position:fixed;z-index:7;top:50%;right:16px;bottom:auto;left:auto;display:grid;grid-template-columns:var(--quick-action-size);grid-template-rows:repeat(3,var(--quick-action-size));grid-auto-rows:var(--quick-action-size);gap:8px;transform:translateY(-50%);pointer-events:auto}
 .game-quick-actions>button,.game-quick-actions .emote-control>button{display:grid;place-items:center;align-content:center;gap:2px;width:var(--quick-action-size);height:var(--quick-action-size);min-width:var(--quick-action-size);min-height:var(--quick-action-size);padding:4px;border:1px solid rgba(105,132,97,.3);border-radius:13px;background:rgba(250,248,237,.96);box-shadow:0 7px 18px rgba(56,76,54,.15);color:#49604d;touch-action:manipulation}
 .game-quick-actions>button>span,.game-quick-actions .emote-control>button>span{font-size:21px;line-height:1}
 .game-quick-actions>button>small,.game-quick-actions .emote-control>button>small{font-size:8px;font-weight:800;letter-spacing:.01em}
@@ -974,7 +975,7 @@ button:disabled{opacity:.55;cursor:not-allowed}
   .game-status-cluster .animation-speed-control{gap:2px;padding:3px}
   .game-status-cluster .animation-speed-control>span{display:none}
   .game-status-cluster .animation-speed-control button{min-width:27px;min-height:29px;padding:0 4px;font-size:8px}
-  .game-quick-actions{--quick-action-size:48px;top:50%;right:8px;left:auto;bottom:auto;grid-template-columns:var(--quick-action-size);grid-template-rows:repeat(4,var(--quick-action-size));gap:6px;transform:translateY(-50%)}
+  .game-quick-actions{--quick-action-size:48px;top:50%;right:8px;left:auto;bottom:auto;grid-template-columns:var(--quick-action-size);grid-template-rows:repeat(3,var(--quick-action-size));grid-auto-rows:var(--quick-action-size);gap:6px;transform:translateY(-50%)}
   .game-quick-actions>button,.game-quick-actions .emote-control>button{border-radius:11px}
   .game-quick-actions>button>span,.game-quick-actions .emote-control>button>span{font-size:18px}
   .game-quick-actions>button>small,.game-quick-actions .emote-control>button>small{font-size:7px}

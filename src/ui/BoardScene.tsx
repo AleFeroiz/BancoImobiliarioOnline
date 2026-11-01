@@ -622,6 +622,7 @@ function Board({ players, propertyBuildings, thrownObjects, earthquakeEvents, wo
   const { scene: buildingScene } = useGLTF('/assets/board-models/board-models.glb')
   const propertyRentLabels = useMemo(() => boardSpaces
     .filter((space) => space.kind === 'property' && propertyBuildings.some((holding) => holding.spaceId === space.id && Boolean(holding.ownerSessionId)))
+    .filter((space) => !selectionMode || highlightedSpaceIds.includes(space.id))
     .map((space) => {
       const holding = propertyBuildings.find((item) => item.spaceId === space.id)
       const houses = holding?.houses ?? 0
@@ -632,7 +633,7 @@ function Board({ players, propertyBuildings, thrownObjects, earthquakeEvents, wo
       const local = bounds ? getBuildingRentLabelPosition(space.id, bounds, 0.98, 1.25, 0.08, 0.2, BUILDING_GROUP_Y) : [0, 0.95, 0] as [number, number, number]
       const label = getPropertyBoardLabel(space.id, propertyBuildings, worldCupSpaceId, new Set(festivalSpaceIds), showLiquidationValues)
       return { id: space.id, position: [x + local[0], local[1], z + local[2]] as [number, number, number], label }
-    }), [buildingScene, propertyBuildings, worldCupSpaceId, festivalSpaceIds, showLiquidationValues])
+    }), [buildingScene, propertyBuildings, worldCupSpaceId, festivalSpaceIds, showLiquidationValues, selectionMode, highlightedSpaceIds])
 
   return (
     <group>

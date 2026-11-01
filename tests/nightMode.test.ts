@@ -45,13 +45,22 @@ describe('modo noturno BANTEC', () => {
     expect(styles).not.toContain('.screen-game[data-night-mode="true"] canvas')
   })
 
-  it('mantém os quatro atalhos quadrados e alinhados à lateral em desktop e celular', () => {
+  it('mantém três atalhos quadrados e alinhados à lateral em desktop e celular', () => {
     const styles = readFileSync(new URL('../src/ui/styles.css', import.meta.url), 'utf8')
 
     expect(styles).toMatch(/\.game-quick-actions\{--quick-action-size:56px;position:fixed;z-index:7;top:50%;right:16px/)
-    expect(styles).toContain('grid-template-rows:repeat(4,var(--quick-action-size))')
+    expect(styles).toContain('grid-template-rows:repeat(3,var(--quick-action-size))')
     expect(styles).toContain('width:var(--quick-action-size);height:var(--quick-action-size)')
     expect(styles).toMatch(/\.game-quick-actions\{--quick-action-size:48px;top:50%;right:8px/)
     expect(styles).toContain('.game-quick-actions .emote-picker{top:50%;right:calc(100% + 8px)')
+  })
+
+  it('usa o cartão para destacar as cidades do participante sem abrir o perfil nem Bens', () => {
+    const app = readFileSync(new URL('../src/ui/App.tsx', import.meta.url), 'utf8')
+
+    expect(app).toContain('aria-label={`Destacar cidades de ${player.name}`}')
+    expect(app).toContain('setSelectedPlayerSessionId((current) => current === player.sessionId ? \'\' : player.sessionId)')
+    expect(app).not.toContain('PERFIL DO JOGADOR')
+    expect(app).not.toContain('aria-label="Abrir meus bens"')
   })
 })

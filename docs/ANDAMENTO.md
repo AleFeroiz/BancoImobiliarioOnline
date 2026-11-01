@@ -1,3 +1,10 @@
+# Cartões destacam cidades e ajuste de construções — concluído (2026-11-01)
+
+- Pedido: elevar as construções até o modelo ficar todo acima do piso sem alterar o deslocamento lateral; remover o atalho Bens e trocar o clique do cartão por destaque das cidades da pessoa, escurecendo os demais espaços.
+- Implementado: elevação vertical passou a 0,2 unidade, mantendo o deslocamento lateral; seleção de cartão ilumina cidades próprias e escurece os demais espaços, e clicar novamente limpa o destaque. O atalho Bens e o perfil foram removidos; Troca aparece como ação contextual.
+- `npm run verify` passou: 54 arquivos, 290 testes, build web e build do servidor. Playtest local com Modo DEV confirmou o cartão como controle de destaque, cidade própria iluminada e demais casas escurecidas; a partida não mostrou perfil nem atalho Bens. Comprei Canaã dos Carajás já com duas casas e aproximei a câmera: os modelos das casas ficaram visíveis sobre o piso. O offset vertical compartilhado também é verificado por teste geométrico.
+- Próximo passo: observar a leitura dos rótulos e do modelo de hotel em partidas com ângulo de câmera diferente.
+
 # Personalização de fichas, colocação no tabuleiro e reconexão — concluídas (2026-11-01)
 
 - Dez fichas low-poly adicionais estão no GLB, totalizando 14 opções; o seletor oferece 12 cores. “Salto” é um sapato de salto com a silhueta refinada e GLB reexportado pelo Blender 5.2.2 LTS. Após revisão visual do usuário, as construções foram elevadas 0,08 unidade acima da superfície do piso; o deslocamento lateral rumo à borda e os rótulos à frente dos peões foram preservados.

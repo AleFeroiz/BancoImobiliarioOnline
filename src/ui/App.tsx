@@ -16,7 +16,7 @@ import { PLAYER_COLOR_NAMES } from '../../shared/playerColors'
 import { getCashToastPlacement, getGameSound, getLandingSpecialSound, getPropertyChangeSound, getPropertyVisualChange, formatCashDelta, type GameSound } from './gameFeedback'
 import { CashChangeToast } from './CashChangeToast'
 import { stepDieValue } from './forcedDice'
-import { getPropertyRentLabel } from './propertyRentLabel'
+import { getOwnedCitySpaceIds } from './playerOwnershipHighlight'
 import { appendGameFeedback, personalizePlayerFeedback, type GameFeedbackItem } from './feedbackQueue'
 import { playGameSound, startGameMusic, stopGameMusic, unlockGameAudio } from './gameAudio'
 import { getTurnActivityLabel, isBoardSelectionGuidanceActive, shouldShowResolvedTurnContinue, shouldShowTurnCard, shouldSuppressTurnCardForFeedback, shouldSuppressTurnCardForSpaceSelection } from './turnActivity'
@@ -157,6 +157,7 @@ function App() {
   const [showPropertyPanel, setShowPropertyPanel] = useState(false)
   const [portfolioBoardSelection, setPortfolioBoardSelection] = useState(false)
   const [profilePlayerSessionId, setProfilePlayerSessionId] = useState('')
+  const [selectedPlayerSessionId, setSelectedPlayerSessionId] = useState('')
   const [showTradePanel, setShowTradePanel] = useState(false)
   const [showAuctionPanel, setShowAuctionPanel] = useState(false)
   const [showHelp, setShowHelp] = useState(false)
@@ -230,6 +231,7 @@ function App() {
   const incomingTradeOffer = tradeOffer?.toSessionId === localSessionId
   const outgoingTradeOffer = tradeOffer?.fromSessionId === localSessionId
   const profilePlayer = roomPlayers.find((player) => player.sessionId === profilePlayerSessionId)
+  const selectedPlayer = roomPlayers.find((player) => player.sessionId === selectedPlayerSessionId)
   const auctionSeller = roomPlayers.find((player) => player.sessionId === auctionSellerSessionId)
   const auctionHighBidder = roomPlayers.find((player) => player.sessionId === auctionHighestBidderSessionId)
   const auctionMinimumBid = auctionHighestBid > 0 ? auctionHighestBid + AUCTION_MIN_BID_INCREMENT : auctionStartingBid
@@ -304,21 +306,24 @@ function App() {
               : boardChoicePhase === 'manage-property'
                 ? myProperties.map(({ spaceId }) => spaceId)
               : []
+  const selectedPlayerCitySpaceIds = getOwnedCitySpaceIds(selectedPlayerSessionId, Array.from(roomProperties.entries()).map(([id, holding]) => ({
+    spaceId: Number(id),
+    ownerSessionId: holding.ownerSessionId,
+    isCity: Boolean(boardSpaces[Number(id)]?.buildable),
+  })))
+  const playerHighlightMode = Boolean(selectedPlayerSessionId) && turnPhase !== 'ended' && !boardChoicePhase
   const highlightedSpaceIds = boardChoicePhase
     ? boardChoiceSpaceIds
     : turnPhase === 'purchase'
       ? [pendingPropertyId, ...(selectedSpaceId === null ? [] : [selectedSpaceId])]
       : turnPhase === 'card-target' && activeCardId === 'generous' && selectedCardPropertyId !== null
         ? [selectedCardPropertyId]
-        : selectedSpaceId === null ? [] : [selectedSpaceId]
+        : playerHighlightMode
+          ? selectedPlayerCitySpaceIds
+          : selectedSpaceId === null ? [] : [selectedSpaceId]
   useEffect(() => {
     if (boardChoicePhase) setSelectedSpaceId(null)
   }, [boardChoicePhase])
-  const profileProperties = Array.from(roomProperties.entries())
-    .filter(([, holding]) => holding.ownerSessionId === profilePlayer?.sessionId)
-    .map(([id, holding]) => ({ spaceId: Number(id), holding, space: boardSpaces[Number(id)] }))
-    .filter((entry) => entry.space)
-    .sort((first, second) => first.spaceId - second.spaceId)
   const landedHolding = activePlayer && activeSpace.kind === 'property' ? holdingsById.get(activeSpace.id) : undefined
   const ownPropertyLanding = turnPhase === 'resolve' && activeSpace.kind === 'property' && Boolean(activeSpace.buildable) && pendingPropertyId === activeSpace.id && landedHolding?.ownerSessionId === activePlayerSessionId
   const canBuildSelected = activePlayer && ownPropertyLanding ? canBuildLevelAfterFirstLap(Boolean(activePlayer.hasCompletedFirstLap), targetBuildHouses) && canBuildProperty(activeSpace.id, activePlayerSessionId, holdingsById, availableCash(activePlayer), targetBuildHouses) : false
@@ -442,6 +447,7 @@ function App() {
     setShowPropertyPanel(false)
     setPortfolioBoardSelection(false)
     setProfilePlayerSessionId('')
+    setSelectedPlayerSessionId('')
     setShowTradePanel(false)
     setTradeBoardSelectionTarget(null)
     setShowAuctionPanel(false)
@@ -833,6 +839,8 @@ function App() {
     setLandingPulseSpaceId(-1)
     setIsHost(false)
     setActivePlayerSessionId('')
+    setSelectedPlayerSessionId('')
+    setProfilePlayerSessionId('')
     setTurnNumber(0)
     setDice([0, 0])
     setLandingDescription('')
@@ -845,6 +853,7 @@ function App() {
     setDebtCreditorSessionId('')
     setWinnerSessionId('')
     setShowPropertyPanel(false)
+    setPortfolioBoardSelection(false)
     setShowTradePanel(false)
     setTradeOffer(null)
     setIsReconnecting(false)
@@ -947,7 +956,7 @@ function App() {
       <div className="scene-backdrop">
         {sceneReady && (
           <Suspense fallback={<div className="scene-placeholder" aria-hidden="true" />}>
-            <BoardScene nightMode={nightMode} players={playerTokens} propertyBuildings={propertyBuildings} thrownObjects={thrownObjects} earthquakeEvents={earthquakeEvents} worldCupSpaceId={worldCupSpaceId} festivalSpaceIds={festivalSpaceIds} highlightedSpaceIds={highlightedSpaceIds} selectionMode={Boolean(boardChoicePhase) && !isPresentationAnimating} showLiquidationValues={turnPhase === 'debt'} landingPulseSpaceId={landingPulseSpaceId} landingPulseSequence={landingPulseSequence} diceRollSequence={diceRollSequence} renderWakeSequence={turnNumber} dice={dice} diceVisible={showDice} diceResultVisible={(turnPhase === 'moving' && diceForPawnMovement) || (turnPhase === 'rolling' && dice[0] > 0 && dice[1] === 0)} presentationSpeed={presentationSpeed} reducedMotion={reducedMotion} pawnMovementEnabled={turnPhase === 'moving'} pawnMoveMode={pawnMoveMode} pawnStepSoundEnabled={soundEnabled} graphicsQuality={graphicsQuality} cameraEnabled={screen === 'game' && turnPhase !== 'ended'} fpsMeterEnabled={fpsMeterEnabled} fpsSamples={fpsSamples} onMovementComplete={() => setPresentationStage('idle')} onSelectSpace={handleSelectSpace} />
+            <BoardScene nightMode={nightMode} players={playerTokens} propertyBuildings={propertyBuildings} thrownObjects={thrownObjects} earthquakeEvents={earthquakeEvents} worldCupSpaceId={worldCupSpaceId} festivalSpaceIds={festivalSpaceIds} highlightedSpaceIds={highlightedSpaceIds} selectionMode={(Boolean(boardChoicePhase) || playerHighlightMode) && !isPresentationAnimating} showLiquidationValues={turnPhase === 'debt'} landingPulseSpaceId={landingPulseSpaceId} landingPulseSequence={landingPulseSequence} diceRollSequence={diceRollSequence} renderWakeSequence={turnNumber} dice={dice} diceVisible={showDice} diceResultVisible={(turnPhase === 'moving' && diceForPawnMovement) || (turnPhase === 'rolling' && dice[0] > 0 && dice[1] === 0)} presentationSpeed={presentationSpeed} reducedMotion={reducedMotion} pawnMovementEnabled={turnPhase === 'moving'} pawnMoveMode={pawnMoveMode} pawnStepSoundEnabled={soundEnabled} graphicsQuality={graphicsQuality} cameraEnabled={screen === 'game' && turnPhase !== 'ended'} fpsMeterEnabled={fpsMeterEnabled} fpsSamples={fpsSamples} onMovementComplete={() => setPresentationStage('idle')} onSelectSpace={handleSelectSpace} />
           </Suspense>
         )}
       </div>
@@ -1038,7 +1047,7 @@ function App() {
             const remainingCooldown = Math.max(0, (throwCooldowns[player.sessionId] ?? 0) - throwCooldownNow)
             const canThrowAtPlayer = Boolean(localPlayer && player.sessionId !== localSessionId && !player.isBankrupt && !localPlayer.isBankrupt && turnPhase !== 'ended')
             return <div className={`player-card-slot seat-${index}`} key={player.sessionId}>
-              <button type="button" aria-label={`Ver perfil de ${player.name}, saldo ${formatMoney(player.cash)}`} aria-expanded={profilePlayerSessionId === player.sessionId} className={`player-card seat-${index} ${player.sessionId === activePlayerSessionId ? 'active' : ''} ${player.isBankrupt ? 'bankrupt' : ''} ${player.isConnected === false ? 'disconnected' : ''} ${tradeOffer?.toSessionId === player.sessionId ? 'has-trade-offer' : ''}`} style={{ backgroundColor: player.color ?? PLAYER_COLORS[index] ?? PLAYER_COLORS[0] }} onClick={() => { setProfilePlayerSessionId(player.sessionId); setTradeTargetSessionId(player.sessionId); setShowTradePanel(false); setTradeBoardSelectionTarget(null); setShowPropertyPanel(false); setShowAuctionPanel(false); setSelectedSpaceId(null); setError('') }}><div className="player-card-main"><strong>{player.name}</strong><b>{formatMoney(player.cash)}</b></div>{player.isBotControlled && <span className="player-bot-control-label">BOT NO CONTROLE</span>}<CashChangeToast cash={player.cash} playerName={player.name} placement={getCashToastPlacement(index)} /><span className="player-money-anchor" data-cash-anchor={player.sessionId} aria-hidden="true"><CashHudSymbols cash={player.cash} /></span>{tradeOffer?.toSessionId === player.sessionId && <span className="player-card-offer-badge">PROPOSTA</span>}</button>
+              <button type="button" aria-label={`Destacar cidades de ${player.name}`} aria-pressed={selectedPlayerSessionId === player.sessionId} className={`player-card seat-${index} ${player.sessionId === activePlayerSessionId ? 'active' : ''} ${selectedPlayerSessionId === player.sessionId ? 'highlighted' : ''} ${player.isBankrupt ? 'bankrupt' : ''} ${player.isConnected === false ? 'disconnected' : ''} ${tradeOffer?.toSessionId === player.sessionId ? 'has-trade-offer' : ''}`} style={{ backgroundColor: player.color ?? PLAYER_COLORS[index] ?? PLAYER_COLORS[0] }} onClick={() => { setSelectedPlayerSessionId((current) => current === player.sessionId ? '' : player.sessionId); setShowPropertyPanel(false); setPortfolioBoardSelection(false); setShowAuctionPanel(false); setSelectedSpaceId(null); if (!incomingTradeOffer && !outgoingTradeOffer) { setProfilePlayerSessionId(''); setShowTradePanel(false); setTradeBoardSelectionTarget(null) } setError('') }}><div className="player-card-main"><strong>{player.name}</strong><b>{formatMoney(player.cash)}</b></div>{player.isBotControlled && <span className="player-bot-control-label">BOT NO CONTROLE</span>}<CashChangeToast cash={player.cash} playerName={player.name} placement={getCashToastPlacement(index)} /><span className="player-money-anchor" data-cash-anchor={player.sessionId} aria-hidden="true"><CashHudSymbols cash={player.cash} /></span>{tradeOffer?.toSessionId === player.sessionId && <span className="player-card-offer-badge">PROPOSTA</span>}</button>
               {canThrowAtPlayer && <div className={`player-throw-control${index % 2 === 1 ? ' toward-center-left' : ''}`} data-camera-drag="off">
                 <button type="button" className="player-throw-button" aria-label={`Lançar objeto em ${player.name}`} aria-expanded={throwPickerTargetSessionId === player.sessionId} disabled={remainingCooldown > 0} title={remainingCooldown > 0 ? `Aguarde ${Math.ceil(remainingCooldown / 1000)}s` : `Lançar objeto em ${player.name}`} onClick={() => { setShowEmotePicker(false); setThrowPickerTargetSessionId((target) => target === player.sessionId ? '' : player.sessionId) }}><span aria-hidden="true">➶</span>{remainingCooldown > 0 && <small>{Math.ceil(remainingCooldown / 1000)}s</small>}</button>
                 {throwPickerTargetSessionId === player.sessionId && <div className="throw-picker" role="group" aria-label={`Escolha o objeto para lançar em ${player.name}`}>{THROWABLES.map(({ id, label, symbol }) => <button key={id} type="button" onClick={() => { if (!room) return; const now = Date.now(); room.send('throwObject', { targetSessionId: player.sessionId, object: id }); setThrowCooldownNow(now); setThrowCooldowns((current) => ({ ...current, [player.sessionId]: now + THROW_COOLDOWN_MS })); setThrowPickerTargetSessionId('') }}><span aria-hidden="true">{symbol}</span><small>{label}</small></button>)}</div>}
@@ -1046,7 +1055,7 @@ function App() {
             </div>
           })}</div>
           {throwImpacts.length > 0 && <div className={`throw-impact-screen impact-${throwImpacts[throwImpacts.length - 1].object}`} role="status" aria-live="polite" aria-label={`Você foi atingido com ${getThrowableLabel(throwImpacts[throwImpacts.length - 1].object)}`}><span key={throwImpacts[throwImpacts.length - 1].id}>{getThrowableSymbol(throwImpacts[throwImpacts.length - 1].object)}</span><small>{getThrowableLabel(throwImpacts[throwImpacts.length - 1].object)}</small></div>}
-          {localPlayer && turnPhase !== 'ended' && <div className={`game-quick-actions seat-${roomPlayers.findIndex((player) => player.sessionId === localPlayer.sessionId)}`} aria-label="Ações rápidas" data-camera-drag="off"><button type="button" onClick={() => { if (turnPhase === 'debt') return; setShowPropertyPanel((open) => !open); setPortfolioBoardSelection(false); setShowTradePanel(false); setTradeBoardSelectionTarget(null); setShowAuctionPanel(false); setSelectedSpaceId(null) }} disabled={turnPhase === 'debt'} aria-label="Abrir meus bens" aria-expanded={showPropertyPanel}><span aria-hidden="true">▤</span><small>Bens</small></button><button type="button" onClick={() => setShowOptions(true)} aria-label="Configurações da partida"><span aria-hidden="true">⚙</span><small>Config</small></button><div className="emote-control"><button type="button" onClick={() => setShowEmotePicker((open) => !open)} aria-label="Escolher emote" aria-expanded={showEmotePicker}><span aria-hidden="true">☺</span><small>Emote</small></button>{showEmotePicker && <div className="emote-picker" role="group" aria-label="Escolha um emote">{PLAYER_EMOTES.map(({ id, label, symbol }) => <button key={id} type="button" aria-label={label} title={label} onClick={() => { room?.send('emote', { emote: id }); setShowEmotePicker(false) }}>{symbol}</button>)}</div>}</div><button type="button" onClick={() => setShowHelp((open) => !open)} aria-label="Prévia das regras" aria-expanded={showHelp} aria-controls="game-help-dialog"><span aria-hidden="true">?</span><small>Regras</small></button></div>}
+          {localPlayer && turnPhase !== 'ended' && <div className={`game-quick-actions seat-${roomPlayers.findIndex((player) => player.sessionId === localPlayer.sessionId)}`} aria-label="Ações rápidas" data-camera-drag="off">{selectedPlayer && selectedPlayer.sessionId !== localSessionId && !selectedPlayer.isBankrupt && <button type="button" aria-label={`Propor troca para ${selectedPlayer.name}`} disabled={Boolean(tradeOffer) || auctionId > 0} onClick={() => { setTradeTargetSessionId(selectedPlayer.sessionId); setProfilePlayerSessionId(selectedPlayer.sessionId); setShowTradePanel(true); setTradeBoardSelectionTarget(null); setTradePropertiesOffered([]); setTradePropertiesRequested([]); setShowPropertyPanel(false); setShowAuctionPanel(false); setSelectedSpaceId(null); setError('') }}><span aria-hidden="true">⇄</span><small>Troca</small></button>}<button type="button" onClick={() => setShowOptions(true)} aria-label="Configurações da partida"><span aria-hidden="true">⚙</span><small>Config</small></button><div className="emote-control"><button type="button" onClick={() => setShowEmotePicker((open) => !open)} aria-label="Escolher emote" aria-expanded={showEmotePicker}><span aria-hidden="true">☺</span><small>Emote</small></button>{showEmotePicker && <div className="emote-picker" role="group" aria-label="Escolha um emote">{PLAYER_EMOTES.map(({ id, label, symbol }) => <button key={id} type="button" aria-label={label} title={label} onClick={() => { room?.send('emote', { emote: id }); setShowEmotePicker(false) }}>{symbol}</button>)}</div>}</div><button type="button" onClick={() => setShowHelp((open) => !open)} aria-label="Prévia das regras" aria-expanded={showHelp} aria-controls="game-help-dialog"><span aria-hidden="true">?</span><small>Regras</small></button></div>}
           {modalVisible && !feedbackPending && <div className="game-modal-backdrop" aria-hidden="true" />}
           {selectedSpace && turnPhase !== 'ended' && !boardChoicePhase && !ownPropertyLanding && !(isMyTurn && (turnPhase === 'purchase' || turnPhase === 'world-cup' || turnPhase === 'world-tour')) && !showTradePanel && !incomingTradeOffer && !showPropertyPanel && (
             <aside className={`space-inspector${selectedSpace.kind === 'property' ? ' property-inspection-panel' : ''}`} aria-label={`Detalhes de ${selectedSpace.name}`}>
@@ -1214,20 +1223,11 @@ function App() {
               )}
             </div>
           )}
-          {profilePlayer && turnPhase !== 'ended' && <aside className="player-profile-panel" aria-label={`Perfil de ${profilePlayer.name}`} style={{ '--profile-player-color': profilePlayer.color ?? PLAYER_COLORS[Math.max(0, roomPlayers.findIndex((player) => player.sessionId === profilePlayer.sessionId))] ?? PLAYER_COLORS[0] } as CSSProperties}>
-            <div className="player-profile-heading"><div><span className="turn-label">PERFIL DO JOGADOR</span><h2>{profilePlayer.name}</h2><strong>{formatMoney(profilePlayer.cash)}</strong></div><button className="trade-close" aria-label="Fechar perfil" onClick={() => { setProfilePlayerSessionId(''); setShowTradePanel(false); setTradeBoardSelectionTarget(null) }}>×</button></div>
+          {profilePlayer && turnPhase !== 'ended' && (showTradePanel || incomingTradeOffer || outgoingTradeOffer) && <aside className="player-profile-panel trade-interaction-panel" aria-label="Troca de propriedades" style={{ '--profile-player-color': profilePlayer.color ?? PLAYER_COLORS[Math.max(0, roomPlayers.findIndex((player) => player.sessionId === profilePlayer.sessionId))] ?? PLAYER_COLORS[0] } as CSSProperties}>
+            <div className="player-profile-heading"><div><span className="turn-label">{incomingTradeOffer ? 'PROPOSTA RECEBIDA' : outgoingTradeOffer ? 'PROPOSTA ENVIADA' : 'NOVA PROPOSTA'}</span><h2>{incomingTradeOffer || outgoingTradeOffer ? tradeCounterparty?.name ?? 'Jogador' : profilePlayer.name}</h2></div><button className="trade-close" aria-label="Fechar troca" onClick={() => { setProfilePlayerSessionId(''); setShowTradePanel(false); setTradeBoardSelectionTarget(null) }}>×</button></div>
             {incomingTradeOffer && tradeOffer && <section className="profile-offer-card" aria-label="Proposta recebida"><span className="turn-label">PROPOSTA RECEBIDA</span><h3>{tradeCounterparty?.name ?? 'Jogador'} propõe uma troca</h3><p>Você entrega {formatMoney(tradeOffer.cashRequested)}{tradeOffer.propertiesRequested.length ? ` e ${tradeOffer.propertiesRequested.map((id) => boardSpaces[id].name).join(', ')}` : ''}. Você recebe {formatMoney(tradeOffer.cashOffered)}{tradeOffer.propertiesOffered.length ? ` e ${tradeOffer.propertiesOffered.map((id) => boardSpaces[id].name).join(', ')}` : ''}.</p><div className="trade-actions"><button className="roll-button" onClick={() => room?.send('tradeAccept', { offerId: tradeOffer.id })}>Aceitar</button><button className="secondary-action" onClick={() => room?.send('tradeReject', { offerId: tradeOffer.id })}>Recusar</button></div></section>}
             {outgoingTradeOffer && tradeOffer && <section className="profile-offer-card" aria-label="Proposta enviada"><span className="turn-label">PROPOSTA PENDENTE</span><h3>Aguardando {tradeCounterparty?.name ?? 'jogador'}</h3><p>A proposta fica disponível até a outra pessoa responder. Você pode cancelá-la quando quiser.</p><button className="secondary-action trade-full-button" onClick={() => room?.send('tradeCancel', { offerId: tradeOffer.id })}>Cancelar proposta</button></section>}
             {tradeOffer && !incomingTradeOffer && !outgoingTradeOffer && <p className="trade-note">Já existe outra proposta aguardando resposta.</p>}
-            <div className={`profile-property-list${profileProperties.length === 1 ? ' profile-property-list--single' : ''}`} aria-label={`Imóveis de ${profilePlayer.name}`}>
-              {profileProperties.length === 0 ? <span className="asset-empty">Este jogador ainda não tem imóveis.</span> : profileProperties.map(({ spaceId, holding, space }) => {
-                const icon = !space.buildable ? '🚉' : holding.houses === PROPERTY_HOTEL_LEVEL ? '🏨' : holding.houses > 0 ? '🏠'.repeat(holding.houses) : '🏡'
-                const type = !space.buildable ? 'Estação' : holding.houses === PROPERTY_HOTEL_LEVEL ? 'Hotel' : holding.houses > 0 ? `${holding.houses} ${holding.houses === 1 ? 'casa' : 'casas'}` : 'Terreno'
-                const rentLabel = getPropertyRentLabel(spaceId, propertyBuildings, worldCupSpaceId, festivalSet) ?? '—'
-                return <div className="profile-property-row" key={spaceId}><span className="profile-property-icon" aria-label={type}>{icon}</span><span className="profile-property-copy"><strong>{space.name}</strong><small>{type}</small></span><span className="profile-property-rent"><small>ALUGUEL</small><b>{rentLabel}</b></span></div>
-              })}
-            </div>
-            {profilePlayer.sessionId !== localSessionId && !profilePlayer.isBankrupt && !incomingTradeOffer && !outgoingTradeOffer && <div className="profile-trade-actions">{showTradePanel ? <button className="secondary-action trade-full-button" onClick={() => { setShowTradePanel(false); setTradeBoardSelectionTarget(null) }}>Fechar proposta</button> : <button className="roll-button trade-full-button" disabled={Boolean(tradeOffer) || auctionId > 0} onClick={() => { setTradeTargetSessionId(profilePlayer.sessionId); setShowTradePanel(true); setTradeBoardSelectionTarget(null); setTradePropertiesOffered([]); setTradePropertiesRequested([]); setError('') }}>Propor troca</button>}</div>}
             {showTradePanel && !tradeOffer && profilePlayer.sessionId !== localSessionId && <section className="profile-trade-composer" aria-label={`Proposta para ${profilePlayer.name}`}>
               <div className="trade-columns">
                 <div>

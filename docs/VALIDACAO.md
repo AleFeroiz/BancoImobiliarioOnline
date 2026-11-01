@@ -1,3 +1,10 @@
+# 2026-11-01 — Destaque das cidades por cartão e altura das construções
+
+- `npm run verify` passou com loopback local: 54 arquivos, 290 testes; build web e build do servidor. O build mantém o aviso existente de chunk 3D maior que 500 KB. Testes direcionados de destaque, geometria e layout: 12 testes aprovados.
+- No playtest local com Modo DEV, comprei Canaã dos Carajás já com duas casas e aproximei a câmera: os modelos das casas ficaram inteiros e visíveis sobre o piso. Selecionei o cartão e confirmei que a cidade própria ficou iluminada e os demais espaços escurecidos. A árvore de acessibilidade mostrou apenas Config, Emote e Regras na lateral, sem janela “PERFIL DO JOGADOR”; a ação de troca permanece contextual.
+- A elevação de `BUILDING_MODEL_Y_OFFSET` de 0,08 para 0,2 preserva o deslocamento horizontal e possui teste confirmando a base acima do topo do piso. O hotel compartilha esse posicionamento; ainda cabe observar sua silhueta de perto e os rótulos em ângulos de câmera diferentes.
+- A porta 2567 estava ocupada e não foi possível identificar o processo com CIM; não encerrei processo desconhecido. O playtest usou Colyseus em 2569 e Vite em 5173. Os servidores e a sala temporária foram encerrados após a revisão.
+
 # 2026-11-01 — Elevação dos modelos de propriedade
 
 - A pedido do usuário, os modelos foram elevados em 0,08 unidade enquanto o recuo horizontal em direção à borda permaneceu igual.
