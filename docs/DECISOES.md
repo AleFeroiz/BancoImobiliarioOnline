@@ -3,11 +3,13 @@
 ## Confirmadas e vigentes
 
 - O produto é **BANTEC**: jogo de tabuleiro privado para navegador, sem contas, para 2–4 participantes, com tabuleiro 3D original e interface responsiva.
-- Existe um modo. A anfitriã escolhe no lobby partidas de 15 minutos, 30 minutos ou 1 hora. O saldo inicial é R$ 2.000.000 por participante.
+- Existe um modo. A anfitriã escolhe no lobby partidas de 15 minutos, 30 minutos, 1 hora ou sem limite de tempo. O saldo inicial aprovado permanece em R$ 2.000.000 por participante enquanto a revisão econômica solicitada pelo usuário está em aberto.
 - O percurso tem 40 casas: 24 cidades, quatro companhias, quatro taxas, quatro Sorte ou Revés e quatro cantos especiais. Não existem casas de descanso nem o modo Express.
 - As cidades, regiões, cores e preços abaixo definem a economia do tabuleiro. Os preços são valores de jogo orientados pela ordem do PIB municipal, não uma conversão de PIB para reais.
 - Regras atuais de aluguel, construções, dívida, vitória, cartas, cantos e negociação estão especificadas em [REGRAS-DE-JOGO.md](REGRAS-DE-JOGO.md). Essa especificação substitui as regras antigas registradas no histórico.
 - Durante a partida, cada participante pode lançar tomate, ovo, lama ou farinha em outro participante. A sala valida um intervalo de cinco segundos por par lançador/alvo; o projétil é uma animação visual e o impacto temporário aparece apenas na tela do alvo, sem interceptar cliques.
+- Duplas numa rolagem normal são anunciadas em destaque; a terceira dupla consecutiva continua enviando a pessoa à Prisão.
+- Apagão escurece visualmente a propriedade e zera seu aluguel durante o efeito, exceto quando há hotel. Proteção é representada por uma bolha 3D. Terremoto anima a propriedade afundando e toca um efeito sonoro.
 
 ## Cidades, regiões e cores
 
@@ -39,8 +41,8 @@ A volta começa pela região de menor participação no PIB nacional e termina n
 
 ## Propostas abertas e validações necessárias
 
-- As 12 cartas foram percorridas em revisão manual visual; a evidência consolidada está em `docs/VALIDACAO.md`. Continuam pendentes os playtests humanos de equilíbrio/ritmo para 15, 30 e 60 minutos.
-- Validar equilíbrio e ritmo das partidas de 15, 30 e 60 minutos com pessoas; o saldo inicial e a economia continuam sujeitos a calibração depois desses jogos.
+- As 12 cartas foram percorridas em revisão manual visual; a evidência consolidada está em `docs/VALIDACAO.md`. Playtests humanos podem ser feitos pelo usuário, mas não são critério para concluir a reforma.
+- **Em aberto:** recalibrar a economia inicial após decisão do usuário em conversa separada; por enquanto, manter preços, custos e caixa inicial aprovados.
 - A home foi repaginada com o percurso visual das cinco regiões; a próxima revisão da página inicial deve preservar esse caminho, a leitura rápida e o acesso direto a criar/entrar em sala.
 - **Hospedagem escolhida: Render, priorizando simplicidade** (2026-10-31). O frontend continua na Vercel; o serviço multiplayer existente no Render está documentado como Free e vinculado ao repositório. A escolha não aprova upgrade pago. O Free pode hibernar após 15 minutos sem tráfego de entrada e levar cerca de um minuto para despertar; o fornecedor não o recomenda para produção. O usuário confirmou em 2026-10-31 que desligou o Auto-Deploy nativo e testou o site público, onde o jogo está rodando. O workflow do commit `63bb40e` concluiu `npm run verify` e o passo `Trigger Render deploy`; isso confirma que o pedido do Deploy Hook foi aceito, não o SHA efetivamente ativo no painel. Para uso contínuo, confirmar o custo do Starter (referência pesquisada: US$ 7/mês, 512 MB). Fontes: [limites do Render Free](https://render.com/docs/free), [Deploy Hooks](https://render.com/docs/deploy-hooks), [preços Render](https://render.com/pricing).
 

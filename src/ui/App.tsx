@@ -42,6 +42,7 @@ type TurnPhase = 'roll' | 'rolling' | 'moving' | 'resolve' | 'purchase' | 'buyba
 type SyncedPlayer = LobbyPlayer & { sessionId: string; cash: number; devInfiniteCash: boolean; isJailed: boolean; jailTurns: number; isBankrupt: boolean; finalCash: number; finalNetWorth: number; tieBreakRoll: number }
 type TradeOfferView = { id: number; fromSessionId: string; toSessionId: string; cashOffered: number; cashRequested: number; propertiesOffered: number[]; propertiesRequested: number[] }
 type ThrowableEvent = { id: number; fromSessionId: string; toSessionId: string; object: ThrowableObject }
+type EarthquakeEvent = { id: number; spaceId: number; houses: number; ownerColor: string }
 const BoardScene = lazy(() => import('./BoardScene'))
 const CashHudOverlay = lazy(() => import('./CashHud').then(({ CashHudOverlay }) => ({ default: CashHudOverlay })))
 
@@ -60,7 +61,7 @@ const modeDetails: Record<Mode, { title: string; duration: string; detail: strin
 }
 
 function durationLabel(seconds: number) {
-  return seconds === 3600 ? '1 hora' : `${seconds / 60} min`
+  return seconds === 0 ? 'Sem tempo' : seconds === 3600 ? '1 hora' : `${seconds / 60} min`
 }
 
 function getLocalStorage() {
@@ -162,6 +163,8 @@ function App() {
   const [throwCooldowns, setThrowCooldowns] = useState<Record<string, number>>({})
   const [throwCooldownNow, setThrowCooldownNow] = useState(Date.now())
   const [thrownObjects, setThrownObjects] = useState<ThrowableEvent[]>([])
+  const [earthquakeEvents, setEarthquakeEvents] = useState<EarthquakeEvent[]>([])
+  const [doublesAnnouncementVisible, setDoublesAnnouncementVisible] = useState(false)
   const [throwImpacts, setThrowImpacts] = useState<ThrowableEvent[]>([])
   const [graphicsQuality, setGraphicsQuality] = useState<GraphicsQuality>(DEFAULT_GRAPHICS_QUALITY)
   const [playerEmotes, setPlayerEmotes] = useState<Record<string, { emote: PlayerEmote; sequence: number }>>({})
@@ -194,6 +197,7 @@ function App() {
   const emoteTimeouts = useRef(new Map<string, number>())
   const throwTimeouts = useRef(new Map<number, number>())
   const impactTimeouts = useRef(new Map<number, number>())
+  const earthquakeTimeouts = useRef(new Map<number, number>())
   useEffect(() => {
     setSelectedCardPropertyId(null)
   }, [activeCardId])
@@ -348,7 +352,7 @@ function App() {
   const rentOwnership = new Map(Array.from(roomProperties.entries()).map(([id, holding]) => [Number(id), holding.ownerSessionId]))
   if (selectedSpace?.kind === 'property' && !selectedHolding?.ownerSessionId) rentOwnership.set(selectedSpace.id, '__preview__')
   const selectedRent = selectedSpace?.kind === 'property'
-    ? selectedSpace.company ? calculateCompanyRent(rentOwnership, selectedHolding?.ownerSessionId || '__preview__') : calculateRent(selectedSpace.id, rentOwnership, selectedHolding?.houses ?? 0, worldCupSpaceId)
+    ? selectedSpace.company ? calculateCompanyRent(rentOwnership, selectedHolding?.ownerSessionId || '__preview__') : selectedHolding?.blackoutTurns && selectedHolding.houses !== PROPERTY_HOTEL_LEVEL ? 0 : calculateRent(selectedSpace.id, rentOwnership, selectedHolding?.houses ?? 0, worldCupSpaceId)
     : 0
   function showGameFeedback(message: string, sound: GameSound, player?: { name: string; color: string }) {
     feedbackSequence.current += 1
@@ -462,6 +466,8 @@ function App() {
     throwTimeouts.current.clear()
     impactTimeouts.current.forEach((timer) => window.clearTimeout(timer))
     impactTimeouts.current.clear()
+    earthquakeTimeouts.current.forEach((timer) => window.clearTimeout(timer))
+    earthquakeTimeouts.current.clear()
   }, [])
 
   useEffect(() => {
@@ -551,6 +557,11 @@ function App() {
         if (didRoll) {
           setDiceRollSequence((sequence) => sequence + 1)
           setDiceForPawnMovement(true)
+          const active = snapshot.players.get(snapshot.activePlayerSessionId)
+          if (snapshot.diceOne === snapshot.diceTwo && !active?.isJailed && !snapshot.landingDescription.includes('três vezes seguidas')) {
+            setDoublesAnnouncementVisible(true)
+            window.setTimeout(() => setDoublesAnnouncementVisible(false), 2200)
+          }
         } else if (!['rolling', 'moving'].includes(snapshot.turnPhase)) {
           setDiceForPawnMovement(false)
         }
@@ -678,12 +689,28 @@ function App() {
       }
     }
     const removeThrowableMessage = room.onMessage<ThrowableEvent>('game:throw', handleThrowable)
+    const handleEarthquake = (event: EarthquakeEvent) => {
+      if (!Number.isInteger(event?.id) || !Number.isInteger(event?.spaceId)) return
+      setEarthquakeEvents((current) => [...current.filter((item) => item.id !== event.id), event])
+      if (soundEnabled) playGameSound('earthquake')
+      const previousTimer = earthquakeTimeouts.current.get(event.id)
+      if (previousTimer !== undefined) window.clearTimeout(previousTimer)
+      const timer = window.setTimeout(() => {
+        setEarthquakeEvents((current) => current.filter((item) => item.id !== event.id))
+        earthquakeTimeouts.current.delete(event.id)
+      }, 1600)
+      earthquakeTimeouts.current.set(event.id, timer)
+    }
+    const removeEarthquakeMessage = room.onMessage<EarthquakeEvent>('game:earthquake', handleEarthquake)
     const handleLeave = (_code: number, reason?: string) => {
       if (activeRoom.current !== room) return
       activeRoom.current = null
       setRoom(null)
       setPlayerEmotes({})
       setThrownObjects([])
+      setEarthquakeEvents([])
+      earthquakeTimeouts.current.forEach((timer) => window.clearTimeout(timer))
+      earthquakeTimeouts.current.clear()
       setThrowImpacts([])
       setThrowPickerTargetSessionId('')
       setThrowCooldowns({})
@@ -713,6 +740,7 @@ function App() {
       room.onReconnect.remove(handleReconnect)
       removePlayerEmoteMessage()
       removeThrowableMessage()
+      removeEarthquakeMessage()
       removeDevCardArmedMessage()
       removeDevCardUsedMessage()
     }
@@ -907,7 +935,7 @@ function App() {
       <div className="scene-backdrop">
         {sceneReady && (
           <Suspense fallback={<div className="scene-placeholder" aria-hidden="true" />}>
-            <BoardScene nightMode={nightMode} players={playerTokens} propertyBuildings={propertyBuildings} thrownObjects={thrownObjects} worldCupSpaceId={worldCupSpaceId} highlightedSpaceIds={highlightedSpaceIds} selectionMode={Boolean(boardChoicePhase) && !isPresentationAnimating} landingPulseSpaceId={landingPulseSpaceId} landingPulseSequence={landingPulseSequence} diceRollSequence={diceRollSequence} dice={dice} diceVisible={showDice} diceResultVisible={turnPhase === 'moving' && diceForPawnMovement} presentationSpeed={presentationSpeed} reducedMotion={reducedMotion} pawnMovementEnabled={turnPhase === 'moving'} pawnMoveMode={pawnMoveMode} pawnStepSoundEnabled={soundEnabled} graphicsQuality={graphicsQuality} cameraEnabled={screen === 'game' && turnPhase !== 'ended'} fpsMeterEnabled={fpsMeterEnabled} fpsSamples={fpsSamples} onMovementComplete={() => setPresentationStage('idle')} onSelectSpace={handleSelectSpace} />
+            <BoardScene nightMode={nightMode} players={playerTokens} propertyBuildings={propertyBuildings} thrownObjects={thrownObjects} earthquakeEvents={earthquakeEvents} worldCupSpaceId={worldCupSpaceId} highlightedSpaceIds={highlightedSpaceIds} selectionMode={Boolean(boardChoicePhase) && !isPresentationAnimating} landingPulseSpaceId={landingPulseSpaceId} landingPulseSequence={landingPulseSequence} diceRollSequence={diceRollSequence} dice={dice} diceVisible={showDice} diceResultVisible={turnPhase === 'moving' && diceForPawnMovement} presentationSpeed={presentationSpeed} reducedMotion={reducedMotion} pawnMovementEnabled={turnPhase === 'moving'} pawnMoveMode={pawnMoveMode} pawnStepSoundEnabled={soundEnabled} graphicsQuality={graphicsQuality} cameraEnabled={screen === 'game' && turnPhase !== 'ended'} fpsMeterEnabled={fpsMeterEnabled} fpsSamples={fpsSamples} onMovementComplete={() => setPresentationStage('idle')} onSelectSpace={handleSelectSpace} />
           </Suspense>
         )}
       </div>
@@ -931,7 +959,7 @@ function App() {
               </ol>
             </div>
             <div className="mode-switch match-duration-selector" role="group" aria-label="Duração da partida">
-              {MATCH_DURATIONS.map((duration) => <button key={duration} type="button" aria-pressed={matchDuration === duration} className={`mode-tab${matchDuration === duration ? ' selected' : ''}`} onClick={() => setMatchDuration(duration)}><span>{durationLabel(duration)}</span><small>{duration === 900 ? 'Partida rápida' : duration === 1800 ? 'Clássica' : 'Partida longa'}</small></button>)}
+              {MATCH_DURATIONS.map((duration) => <button key={duration} type="button" aria-pressed={matchDuration === duration} className={`mode-tab${matchDuration === duration ? ' selected' : ''}`} onClick={() => setMatchDuration(duration)}><span>{durationLabel(duration)}</span><small>{duration === 0 ? 'Sem limite' : duration === 900 ? 'Partida rápida' : duration === 1800 ? 'Clássica' : 'Partida longa'}</small></button>)}
             </div>
             <div className="mode-note"><span className="note-icon">✦</span><span>Complete regiões, monopolize linhas e vença.</span><span className="player-limit">2–4 JOGADORES</span></div>
           </div>
@@ -958,7 +986,7 @@ function App() {
             <h1>Chame a<br /><em>sua turma.</em></h1>
             <p>Compartilhe o código com seus amigos para sentarem à mesa.</p>
             <div className="room-code-label">CÓDIGO DA SALA</div><button className="room-code" onClick={() => navigator.clipboard?.writeText(roomCode)}>{roomCode}<span>▣</span></button>
-            <div className="room-mode"><span className="mode-icon">✦</span><div><strong>BANTEC · {durationLabel(matchDuration)}</strong><small>Vence quem completar um monopólio ou tiver o maior patrimônio ao fim do tempo.</small></div></div>
+            <div className="room-mode"><span className="mode-icon">✦</span><div><strong>BANTEC · {durationLabel(matchDuration)}</strong><small>{matchDuration === 0 ? 'Sem cronômetro: vence por monopólio ou quando restar apenas uma pessoa solvente.' : 'Vence quem completar um monopólio ou tiver o maior patrimônio ao fim do tempo.'}</small></div></div>
             {isHost && <div className="lobby-duration-selector" role="group" aria-label="Duração da partida"><span>DURAÇÃO DA PARTIDA</span>{MATCH_DURATIONS.map((duration) => <button key={duration} type="button" className="lobby-duration-option" aria-pressed={matchDuration === duration} onClick={() => room?.send('setMatchDuration', { duration })}>{durationLabel(duration)}</button>)}</div>}
             <div className={`dev-tools-setting${devModeEnabled ? ' enabled' : ''}`} aria-live="polite"><span><strong>Modo DEV · dados forçados</strong><small>{devModeEnabled ? 'Ativado para esta partida' : 'Desativado para esta partida'}</small></span>{isHost && <button type="button" aria-pressed={devModeEnabled} onClick={() => room?.send('setDevToolsEnabled', { enabled: !devModeEnabled })}>{devModeEnabled ? 'Desativar' : 'Ativar'}</button>}</div>
             {roomPlayers.some((player) => player.sessionId === room?.sessionId) && <div className="player-color-selector" aria-label="Escolha sua cor"><span className="character-selector-label">ESCOLHA SUA COR</span><div className="player-color-options">{PLAYER_COLORS.map((color, index) => { const selectedColor = roomPlayers.find((player) => player.sessionId === room?.sessionId)?.color; const taken = roomPlayers.some((player) => player.sessionId !== room?.sessionId && player.color === color); return <button key={color} type="button" aria-label={`Cor ${PLAYER_COLOR_NAMES[index]}`} aria-pressed={selectedColor === color} disabled={taken} className={`player-color-option${selectedColor === color ? ' selected' : ''}`} style={{ '--player-option-color': color } as CSSProperties} onClick={() => selectPlayerColor(color)}><i />{PLAYER_COLOR_NAMES[index]}{taken ? ' · ocupada' : ''}</button> })}</div></div>}
@@ -991,8 +1019,9 @@ function App() {
 
       {screen === 'game' && (
         <section className="game-overlay">
-          <div className="game-topline"><button className="back-link" onClick={() => setScreen('room')}>← Sala {roomCode}</button><div className="game-status-cluster"><div className={`game-pill ${matchEnding || matchSeconds <= 60 ? 'clock-warning' : ''}`}>{modeDetails[mode].title.toUpperCase()} <span>·</span> {formatClock(matchSeconds)}</div>{turnPhase !== 'ended' && <div className={`turn-clock-pill ${turnSeconds > 0 && turnSeconds <= 5 ? 'clock-warning' : ''}`} role="timer" aria-label={`Relógio do turno de ${activePlayer?.name ?? 'jogador ativo'}: ${turnSeconds} segundos restantes`}><span aria-hidden="true">◷</span><small>VEZ · {activePlayer?.name ?? '—'}</small><strong>{formatClock(turnSeconds)}</strong></div>}{animationSpeedControl}</div><div className="game-tools">{auctionId > 0 && <button className="portfolio-toggle auction-toggle-active" aria-expanded={showAuctionPanel} onClick={() => { setShowAuctionPanel((open) => !open); setShowTradePanel(false); setShowPropertyPanel(false); setError('') }}>{`Leilão · ${auctionSeconds}s`}</button>}</div></div>
+          <div className="game-topline"><button className="back-link" onClick={() => setScreen('room')}>← Sala {roomCode}</button><div className="game-status-cluster"><div className={`game-pill ${matchEnding || (matchDuration > 0 && matchSeconds <= 60) ? 'clock-warning' : ''}`}>{modeDetails[mode].title.toUpperCase()} <span>·</span> {matchDuration === 0 ? 'SEM TEMPO' : formatClock(matchSeconds)}</div>{turnPhase !== 'ended' && <div className={`turn-clock-pill ${turnSeconds > 0 && turnSeconds <= 5 ? 'clock-warning' : ''}`} role="timer" aria-label={`Relógio do turno de ${activePlayer?.name ?? 'jogador ativo'}: ${turnSeconds} segundos restantes`}><span aria-hidden="true">◷</span><small>VEZ · {activePlayer?.name ?? '—'}</small><strong>{formatClock(turnSeconds)}</strong></div>}{animationSpeedControl}</div><div className="game-tools">{auctionId > 0 && <button className="portfolio-toggle auction-toggle-active" aria-expanded={showAuctionPanel} onClick={() => { setShowAuctionPanel((open) => !open); setShowTradePanel(false); setShowPropertyPanel(false); setError('') }}>{`Leilão · ${auctionSeconds}s`}</button>}</div></div>
           <div className="game-topline-camera-hint" aria-label="Controles da câmera">Arraste para girar · scroll ou pinça para zoom</div>
+          {doublesAnnouncementVisible && <div className="doubles-announcement" role="status" aria-live="assertive"><span>✦</span><strong>TIROU DUPLAS!</strong><small>Você joga novamente</small></div>}
           <div className="player-hud">{roomPlayers.map((player, index) => {
             const remainingCooldown = Math.max(0, (throwCooldowns[player.sessionId] ?? 0) - throwCooldownNow)
             const canThrowAtPlayer = Boolean(localPlayer && player.sessionId !== room?.sessionId && !player.isBankrupt && !localPlayer.isBankrupt && turnPhase !== 'ended')
@@ -1040,7 +1069,7 @@ function App() {
                 {[1, 2, 3].filter((level) => level > (landedHolding?.houses ?? 0)).map((level) => <button key={level} className={`property-level-option ${targetBuildHouses === level ? 'selected' : ''}`} onClick={() => setTargetBuildHouses(level)}><span>{level === 1 ? '1 casa' : `${level} casas`}</span><small>+{formatMoney((level - (landedHolding?.houses ?? 0)) * constructionCost(activeSpace.id))}</small></button>)}
                 {(landedHolding?.houses ?? 0) === 3 && <button className="property-level-option hotel-level-option" onClick={() => room?.send('build', { propertyId: activeSpace.id, hotel: true })} disabled={!isMyTurn || !canBuildHotelHere}><span>Hotel</span><small>{formatMoney(hotelConstructionCost(activeSpace.id))}</small></button>}
               </div>
-              <div className="space-facts"><div><small>ALUGUEL POR PARADA</small><strong>{activeSpace.company ? formatMoney(calculateCompanyRent(rentOwnership, landedHolding?.ownerSessionId ?? '')) : formatMoney(calculateRent(activeSpace.id, rentOwnership, landedHolding?.houses ?? 0, worldCupSpaceId))}</strong></div><div><small>PRÓXIMA CONSTRUÇÃO</small><strong>{landedHolding?.houses === PROPERTY_HOTEL_LEVEL ? 'Hotel' : formatMoney(constructionCost(activeSpace.id))}</strong></div></div>
+              <div className="space-facts"><div><small>ALUGUEL POR PARADA</small><strong>{activeSpace.company ? formatMoney(calculateCompanyRent(rentOwnership, landedHolding?.ownerSessionId ?? '')) : landedHolding?.blackoutTurns && landedHolding.houses !== PROPERTY_HOTEL_LEVEL ? formatMoney(0) : formatMoney(calculateRent(activeSpace.id, rentOwnership, landedHolding?.houses ?? 0, worldCupSpaceId))}</strong></div><div><small>PRÓXIMA CONSTRUÇÃO</small><strong>{landedHolding?.houses === PROPERTY_HOTEL_LEVEL ? 'Hotel' : formatMoney(constructionCost(activeSpace.id))}</strong></div></div>
               <div className="purchase-actions property-decision-actions"><button className="roll-button" onClick={() => room?.send('build', { propertyId: activeSpace.id, targetHouses: targetBuildHouses })} disabled={!isMyTurn || !canBuildSelected}>Construir <span>{formatMoney(Math.max(0, targetBuildHouses - (landedHolding?.houses ?? 0)) * constructionCost(activeSpace.id))}</span></button><button className="secondary-action" onClick={() => room?.send('finishTurn')} disabled={!isMyTurn}>Concluir vez</button></div>
               {landedHolding?.houses === PROPERTY_HOTEL_LEVEL && <p className="purchase-hint">Este terreno já tem hotel.</p>}
             </aside>

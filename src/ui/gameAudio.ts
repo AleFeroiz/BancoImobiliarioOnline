@@ -40,9 +40,10 @@ const soundNotes: Record<GameSound, number[]> = {
   'airplane-pass': [],
   'police-siren': [],
   'crowd-cheer': [],
+  earthquake: [],
 }
 
-export type GameAudioEffectStyle = 'silent' | 'cash-register' | 'distorted-loss' | 'dice-rattle' | 'pawn-puff' | 'airplane-pass' | 'police-siren' | 'crowd-cheer' | 'musical'
+export type GameAudioEffectStyle = 'silent' | 'cash-register' | 'distorted-loss' | 'dice-rattle' | 'pawn-puff' | 'airplane-pass' | 'police-siren' | 'crowd-cheer' | 'earthquake-rumble' | 'musical'
 
 export function getGameAudioEffectStyle(sound: GameSound): GameAudioEffectStyle {
   if (sound === 'money-in') return 'cash-register'
@@ -52,6 +53,7 @@ export function getGameAudioEffectStyle(sound: GameSound): GameAudioEffectStyle 
   if (sound === 'airplane-pass') return 'airplane-pass'
   if (sound === 'police-siren') return 'police-siren'
   if (sound === 'crowd-cheer') return 'crowd-cheer'
+  if (sound === 'earthquake') return 'earthquake-rumble'
   if (sound === 'none') return 'silent'
   return 'musical'
 }
@@ -211,6 +213,28 @@ function playCrowdCheer(audio: AudioContext) {
   }
 }
 
+function playEarthquake(audio: AudioContext) {
+  const start = audio.currentTime
+  playNoise(audio, start, 1.25, 72, 0.13)
+  playNoise(audio, start + 0.08, 0.85, 145, 0.07)
+  const oscillator = audio.createOscillator()
+  const gain = audio.createGain()
+  const filter = audio.createBiquadFilter()
+  oscillator.type = 'sawtooth'
+  oscillator.frequency.setValueAtTime(58, start)
+  oscillator.frequency.exponentialRampToValueAtTime(31, start + 1.1)
+  filter.type = 'lowpass'
+  filter.frequency.setValueAtTime(135, start)
+  gain.gain.setValueAtTime(0.0001, start)
+  gain.gain.exponentialRampToValueAtTime(0.07, start + 0.1)
+  gain.gain.exponentialRampToValueAtTime(0.0001, start + 1.2)
+  oscillator.connect(filter)
+  filter.connect(gain)
+  gain.connect(audio.destination)
+  oscillator.start(start)
+  oscillator.stop(start + 1.22)
+}
+
 export function playGameSound(sound: GameSound) {
   if (getGameAudioEffectStyle(sound) === 'silent') return
   const audio = getAudioContext()
@@ -236,6 +260,7 @@ export function playGameSound(sound: GameSound) {
     if (style === 'airplane-pass') { playAirplanePass(audio); return }
     if (style === 'police-siren') { playPoliceSiren(audio); return }
     if (style === 'crowd-cheer') { playCrowdCheer(audio); return }
+    if (style === 'earthquake-rumble') { playEarthquake(audio); return }
     const start = audio.currentTime
     soundNotes[sound].forEach((frequency, index) => {
       const oscillator = audio.createOscillator()

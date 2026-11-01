@@ -19,4 +19,11 @@ describe('rótulos 3D de aluguel', () => {
     expect(getPropertyRentLabel(company.id, owned)).toBe('R$ 450.000')
     expect(getPropertyRentLabel(company.id, owned, company.id)).toBe('R$ 1.350.000')
   })
+
+  it('exibe aluguel zero durante apagão e mantém a exceção de hotel', () => {
+    const property = boardSpaces.find((space) => space.kind === 'property' && space.buildable)!
+    const holding = { spaceId: property.id, ownerSessionId: 'ana', houses: 0, blackoutTurns: 2 }
+    expect(getPropertyRentLabel(property.id, [holding])).toBe('R$ 0')
+    expect(getPropertyRentLabel(property.id, [{ ...holding, houses: 4 }])).not.toBe('R$ 0')
+  })
 })

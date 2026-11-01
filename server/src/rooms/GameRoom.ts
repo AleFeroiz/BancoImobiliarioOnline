@@ -142,7 +142,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
     setMatchDuration: (client: Client, payload: { duration?: unknown }) => {
       const requester = this.state.players.get(client.sessionId)
       if (this.state.status !== 'waiting' || !requester?.isHost || !isMatchDuration(payload?.duration)) {
-        client.send('room:error', { message: 'Só a pessoa anfitriã pode escolher 15, 30 ou 60 minutos no lobby.' })
+        client.send('room:error', { message: 'Só a pessoa anfitriã pode escolher a duração da partida no lobby.' })
         return
       }
       this.state.matchDuration = payload.duration
@@ -480,6 +480,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       property.houses -= 1
       this.creditCash(player, amount)
       this.state.landingDescription = `${previousLevel === PROPERTY_HOTEL_LEVEL ? 'Hotel vendido; três casas permaneceram' : `Construção vendida (nível ${property.houses})`} em ${boardSpaces[propertyId].name}. Você recebeu ${amount.toLocaleString('pt-BR')}.`
+      if (this.state.turnPhase === 'debt' && this.canSpend(player, this.state.debtAmount)) this.messages.payDebt(client)
     },
     returnPropertyToBank: (client: Client, payload: { propertyId?: unknown }) => {
       if (this.state.status !== 'playing' || this.state.turnPhase !== 'debt' || client.sessionId !== this.state.activePlayerSessionId) {
@@ -506,6 +507,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       property.protectionTurns = 0
       this.creditCash(player, amount)
       this.state.landingDescription = `${boardSpaces[propertyId].name} devolvida ao banco. Você recebeu ${amount.toLocaleString('pt-BR')}; o imóvel voltou a ficar livre.`
+      if (this.canSpend(player, this.state.debtAmount)) this.messages.payDebt(client)
     },
     payDebt: (client: Client) => {
       if (this.state.status !== 'playing' || this.state.turnPhase !== 'debt' || client.sessionId !== this.state.activePlayerSessionId) return
@@ -881,15 +883,22 @@ export class GameRoom extends Room<{ state: LobbyState }> {
         client.send('room:error', { message: 'Escolha uma propriedade sua, livre ou uma casa especial diferente desta.' })
         return
       }
+      const startPosition = player.position
+      const distance = (spaceId - startPosition + boardSpaces.length) % boardSpaces.length
+      const passesStart = distance > 0 && startPosition + distance >= boardSpaces.length
+      const travelDescription = `Volta ao Brasil: sua peça viajou para ${space.name}.${passesStart ? ` Passou pela Partida e recebeu R$ ${START_BONUS.toLocaleString('pt-BR')}.` : ''}`
       player.position = spaceId
       this.state.pawnMoveMode = 'teleport'
       this.state.turnPhase = 'moving'
-      this.state.landingDescription = `Volta ao Brasil: sua peça viajou para ${space.name}, sem bônus por passagem pela Partida.`
+      this.state.landingDescription = travelDescription
+      if (passesStart) {
+        this.creditCash(player, START_BONUS)
+      }
       this.state.presentationSpeed = this.state.animationSpeed
       this.schedulePresentation(getAnimationDuration(PAWN_TELEPORT_ANIMATION_DURATION_MS, this.state.presentationSpeed), () => {
         if (this.state.turnPhase !== 'moving' || this.state.activePlayerSessionId !== client.sessionId || player.position !== spaceId) return
         this.state.pawnMoveMode = 'walk'
-        this.resolveSpace(client.sessionId, player, true, `Volta ao Brasil: chegada em ${space.name}, sem bônus por passagem pela Partida.`)
+        this.resolveSpace(client.sessionId, player, true, `Volta ao Brasil: chegada em ${space.name}.${passesStart ? ` Passou pela Partida e recebeu R$ ${START_BONUS.toLocaleString('pt-BR')}.` : ''}`)
         this.finishExpiredPhaseIfReady()
       })
     },
@@ -929,6 +938,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
           invalid('Escolha um imóvel sem hotel e sem proteção que pertença a outra pessoa.')
           return
         }
+        this.broadcast('game:earthquake', { id: ++this.throwSequence, spaceId: propertyId, houses: property.houses, ownerColor: this.state.players.get(property.ownerSessionId)?.color ?? '#536c7d' })
         property.ownerSessionId = ''
         property.houses = 0
         property.blackoutTurns = 0
@@ -961,6 +971,18 @@ export class GameRoom extends Room<{ state: LobbyState }> {
         second.position = targetPosition
         this.state.pawnMoveMode = 'teleport'
         this.state.landingDescription = `${target!.name} e ${second.name} trocaram de lugar sem resolver as casas de chegada.`
+        this.state.turnPhase = 'moving'
+        this.state.presentationSpeed = this.state.animationSpeed
+        this.schedulePresentation(getAnimationDuration(PAWN_TELEPORT_ANIMATION_DURATION_MS, this.state.presentationSpeed), () => {
+          if (this.state.turnPhase !== 'moving' || this.state.activePlayerSessionId !== actorId) return
+          this.state.pawnMoveMode = 'walk'
+          this.state.turnPhase = 'resolve'
+          this.state.turnSeconds = TURN_DECISION_SECONDS
+          this.turnTimerKey = `${this.state.turnNumber}:${actorId}:resolve`
+          this.finishExpiredPhaseIfReady()
+        })
+        this.cardTargetRevealPending = false
+        return
       } else {
         invalid('Esta carta não exige escolha de alvo.')
         return
@@ -1016,6 +1038,11 @@ export class GameRoom extends Room<{ state: LobbyState }> {
 
   private startMatchClock() {
     this.stopMatchClock()
+    if (this.state.matchDuration === 0) {
+      this.state.matchSeconds = 0
+      this.state.matchEnding = false
+      return
+    }
     this.matchClockInterval = setInterval(() => {
       if (this.state.status !== 'playing') return this.stopMatchClock()
       this.updateTurnClock()
@@ -1117,6 +1144,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
     this.state.activeCardTitle = ''
     this.state.activeCardDescription = ''
     this.state.activeCardId = ''
+    this.state.landingDescription = this.lastRollWasDouble ? 'TIROU DUPLAS! Você joga novamente após resolver esta casa.' : ''
     if (rolledDoubles && this.consecutiveDoubles === 3) {
       this.state.landingDescription = `${player.name} tirou duplas três vezes seguidas e vai direto para a Prisão sem avançar.`
       this.schedulePresentation(getAnimationDuration(DICE_ANIMATION_DURATION_MS, this.state.presentationSpeed), () => {
@@ -1526,12 +1554,8 @@ export class GameRoom extends Room<{ state: LobbyState }> {
     } else if (card.effect.kind === 'jail') {
       this.sendToJail(sessionId, player, `${card.description} Sua peça foi enviada à prisão por três turnos.`)
     } else if (card.effect.kind === 'world-tour') {
-      const distance = (30 - player.position + boardSpaces.length) % boardSpaces.length
-      if (distance > 0) this.movePlayer(sessionId, player, distance)
       this.startCardTeleport(sessionId, player, 30, 'Carta Volta ao Brasil: chegada ao canto. Escolha seu destino.')
     } else if (card.effect.kind === 'world-cup') {
-      const distance = (20 - player.position + boardSpaces.length) % boardSpaces.length
-      if (distance > 0) this.movePlayer(sessionId, player, distance)
       this.startCardTeleport(sessionId, player, 20, 'Carta Sede da Copa: chegada ao canto.')
     } else if (card.effect.kind === 'world-cup-city') {
       const venueId = this.state.worldCupSpaceId
@@ -1539,14 +1563,9 @@ export class GameRoom extends Room<{ state: LobbyState }> {
         this.state.landingDescription = `${card.description} Não há uma cidade-sede ativa; nada acontece.`
         return
       }
-      const distance = (venueId - player.position + boardSpaces.length) % boardSpaces.length
-      if (distance > 0) this.movePlayer(sessionId, player, distance)
       this.startCardTeleport(sessionId, player, venueId, `Carta Cidade-sede: chegada a ${boardSpaces[venueId].name}.`)
     } else if (card.effect.kind === 'start') {
-      player.position = 0
-      this.creditCash(player, START_BONUS)
-      this.state.turnPhase = 'resolve'
-      this.state.landingDescription = `${card.description} Você recebeu R$ ${START_BONUS.toLocaleString('pt-BR')}.`
+      this.startCardTeleport(sessionId, player, 0, card.description)
     }
   }
 
@@ -1561,15 +1580,22 @@ export class GameRoom extends Room<{ state: LobbyState }> {
   }
 
   private startCardTeleport(sessionId: string, player: LobbyPlayerState, destinationId: number, description: string) {
+    const startPosition = player.position
+    const distance = (destinationId - startPosition + boardSpaces.length) % boardSpaces.length
+    const passesStart = distance > 0 && startPosition + distance >= boardSpaces.length
     player.position = destinationId
     this.state.pawnMoveMode = 'teleport'
     this.state.turnPhase = 'moving'
-    this.state.landingDescription = description
+    const travelDescription = passesStart ? `${description} Você passou pela Partida e recebeu R$ ${START_BONUS.toLocaleString('pt-BR')}.` : description
+    this.state.landingDescription = travelDescription
+    if (passesStart) {
+      this.creditCash(player, START_BONUS)
+    }
     this.state.presentationSpeed = this.state.animationSpeed
     this.schedulePresentation(getAnimationDuration(PAWN_TELEPORT_ANIMATION_DURATION_MS, this.state.presentationSpeed), () => {
       if (this.state.turnPhase !== 'moving' || this.state.activePlayerSessionId !== sessionId || player.position !== destinationId) return
       this.state.pawnMoveMode = 'walk'
-      this.resolveSpace(sessionId, player, false, description)
+      this.resolveSpace(sessionId, player, false, travelDescription)
       this.finishExpiredPhaseIfReady()
     })
   }
@@ -1742,9 +1768,8 @@ export class GameRoom extends Room<{ state: LobbyState }> {
         this.state.landingDescription += ' Escolha uma propriedade sua para sediar o evento.'
       }
     } else if (space.kind === 'world-tour') {
-      this.creditCash(player, START_BONUS)
       this.state.turnPhase = 'world-tour'
-      this.state.landingDescription = `${describeLanding(space.id)} Você recebeu R$ ${START_BONUS.toLocaleString('pt-BR')}. Escolha sua próxima casa.`
+      this.state.landingDescription = `${describeLanding(space.id)} Escolha sua próxima casa.`
     } else if (space.kind === 'event' && drawEvent) {
       this.resolveEventCard(sessionId, player)
     }

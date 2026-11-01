@@ -1,6 +1,6 @@
 import { boardSpaces } from '../game/board'
 
-export type GameSound = 'none' | 'dice' | 'pawn-step' | 'purchase' | 'money-in' | 'money-out' | 'auction' | 'milestone' | 'construction' | 'demolition' | 'ownership' | 'airplane-pass' | 'police-siren' | 'crowd-cheer'
+export type GameSound = 'none' | 'dice' | 'pawn-step' | 'purchase' | 'money-in' | 'money-out' | 'auction' | 'milestone' | 'construction' | 'demolition' | 'ownership' | 'airplane-pass' | 'police-siren' | 'crowd-cheer' | 'earthquake'
 export type PropertyVisualState = { ownerSessionId: string; houses: number }
 export type PropertyVisualChange = 'placed' | 'built' | 'demolished' | 'ownership' | 'released'
 

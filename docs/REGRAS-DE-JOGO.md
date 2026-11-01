@@ -5,7 +5,7 @@ Este documento descreve somente as regras atuais do BANTEC. Referências ao Expr
 ## Sala e partida
 
 - Partidas privadas para 2–4 participantes, sem conta. A anfitriã pode preencher lugares vazios com bots antes de começar.
-- Há um modo de jogo. No lobby, a anfitriã escolhe 15 minutos, 30 minutos ou 1 hora; cada participante começa com R$ 2.000.000.
+- Há um modo de jogo. No lobby, a anfitriã escolhe 15 minutos, 30 minutos, 1 hora ou sem limite de tempo; cada participante começa com R$ 2.000.000 enquanto a economia aguarda nova decisão.
 - A partida termina imediatamente se alguém completar um Monopólio em Linha, dois Monopólios Regionais ou possuir as quatro companhias. Se o relógio zerar, a resolução já iniciada termina e vence quem tiver maior patrimônio; dívidas continuam até serem quitadas ou levarem à falência.
 - Para o desempate pelo tempo, compara-se dinheiro disponível + preço de compra dos títulos ainda possuídos + valor de venda das construções (metade do custo pago por construção). Empates seguem para decisão nos dados; se os resultados continuarem iguais, o servidor escolhe aleatoriamente entre as pessoas empatadas.
 - O servidor controla ordem, dados, movimento, compras, pagamentos, cartas, trocas e encerramento. Dados repetidos numa rolagem normal permitem nova jogada depois da resolução; a terceira dupla consecutiva leva diretamente à Prisão sem avançar.
@@ -41,7 +41,7 @@ Este documento descreve somente as regras atuais do BANTEC. Referências ao Expr
 - **Partida:** ao passar ou chegar, recebe R$ 200.000.
 - **Prisão:** pode aguardar um turno, tentar sair com duplas ou pagar R$ 200.000 e lançar no mesmo turno. Uma tentativa sem duplas consome o turno preso; depois de três turnos, sai automaticamente. Duplas tentadas para sair não concedem uma rolagem extra.
 - **Copa do Mundo:** escolhe uma propriedade própria para sediar a Copa; ela cobra três vezes o aluguel normal até a sede mudar. Sem propriedade própria elegível, não há nova sede. A escolha usa o tabuleiro e destaca as opções válidas.
-- **Volta ao Brasil:** ao chegar, recebe R$ 200.000 e escolhe no tabuleiro uma propriedade própria, uma propriedade livre ou uma casa especial para visitar; a chegada é resolvida normalmente. A carta Volta ao Brasil paga o bônus por chegar ao canto.
+- **Volta ao Brasil:** ao chegar, escolhe no tabuleiro uma propriedade própria, uma propriedade livre ou uma casa especial para visitar; a chegada é resolvida normalmente. O bônus de R$ 200.000 só é pago se o trajeto escolhido passar pela Partida. A carta Volta ao Brasil paga o bônus apenas quando o caminho até o canto cruzar a Partida.
 
 ## Cartas Sorte ou Revés
 
@@ -54,11 +54,11 @@ O servidor sorteia com reposição entre estas doze cartas autorais:
 5. **Ladrão:** escolha uma pessoa e roube R$ 200.000 dela.
 6. **Proteção:** escolha uma propriedade sua; por três turnos do dono, nenhum efeito de carta pode afetá-la.
 7. **Prisão:** vá para a Prisão e aplique as opções normais desse canto.
-8. **Volta ao Brasil:** vá para o canto Volta ao Brasil, receba R$ 200.000 e escolha um destino válido.
+8. **Volta ao Brasil:** vá para o canto Volta ao Brasil e escolha um destino válido. Receba R$ 200.000 se o caminho até o canto cruzar a Partida.
 9. **Sede da Copa:** vá para a Copa do Mundo e escolha uma propriedade própria elegível.
 10. **Troca-troca:** escolha duas pessoas, podendo incluir você; elas trocam de posição sem resolver as casas de chegada.
 11. **Cidade-sede:** vá para a cidade que sedia a Copa e resolva a casa de chegada. Sem sede ativa, descarte a carta sem mover.
-12. **Início:** vá para a Partida e receba R$ 200.000.
+12. **Início:** vá para a Partida; receba R$ 200.000 somente se o trajeto cruzar a Partida.
 
 Proteção bloqueia qualquer efeito de carta, inclusive Generoso. Apagão e Proteção duram os três próximos turnos do dono. Se um efeito cobrar dinheiro sem saldo suficiente, aplicam-se as regras de dívida. A seleção de qualquer propriedade-alvo acontece diretamente no tabuleiro com o padrão de opções iluminadas/apagadas; alvos que sejam pessoas são selecionados pelos controles de participantes.
 

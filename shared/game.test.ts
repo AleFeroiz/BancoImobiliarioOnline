@@ -1,11 +1,20 @@
 import { describe, expect, it } from 'vitest'
 import { boardSpaces } from './board.js'
-import { ANIMATION_SPEEDS, DEFAULT_ANIMATION_SPEED, DICE_ANIMATION_DURATION_MS, PAWN_STEP_ANIMATION_DURATION_MS, TURN_DECISION_SECONDS, areDiceDoubles, calculateCompanyRent, calculateNetWorth, calculateRent, forcedBuybackCost, getAnimationDuration, getMatchEndSummary, getMonopolyWinReason, hasWinningMonopoly, isAnimationSpeed, liquidatablePropertyIds } from './game.js'
+import { ANIMATION_SPEEDS, DEFAULT_ANIMATION_SPEED, DICE_ANIMATION_DURATION_MS, MATCH_DURATIONS, PAWN_STEP_ANIMATION_DURATION_MS, TURN_DECISION_SECONDS, areDiceDoubles, calculateCompanyRent, calculateNetWorth, calculateRent, forcedBuybackCost, getAnimationDuration, getMatchEndSummary, getMonopolyWinReason, hasWinningMonopoly, isAnimationSpeed, isMatchDuration, liquidatablePropertyIds } from './game.js'
 
 describe('tentativas para sair da prisão', () => {
   it('reconhece dois dados iguais como duplas', () => {
     expect(areDiceDoubles([4, 4])).toBe(true)
     expect(areDiceDoubles([4, 5])).toBe(false)
+  })
+})
+
+describe('duração da partida', () => {
+  it('inclui a opção sem limite sem aceitar durações arbitrárias', () => {
+    expect(MATCH_DURATIONS).toContain(0)
+    expect(isMatchDuration(0)).toBe(true)
+    expect(isMatchDuration(900)).toBe(true)
+    expect(isMatchDuration(1200)).toBe(false)
   })
 })
 

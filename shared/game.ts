@@ -26,7 +26,7 @@ export function getAnimationDuration(durationMs: number, speed: number) {
 
 export const LANDING_PULSE_DURATION_MS = 2_200
 export const JAIL_TURNS = 3
-export const MATCH_DURATIONS = [15 * 60, 30 * 60, 60 * 60] as const
+export const MATCH_DURATIONS = [15 * 60, 30 * 60, 60 * 60, 0] as const
 export type MatchDuration = (typeof MATCH_DURATIONS)[number]
 export const CLASSIC_MATCH_SECONDS: MatchDuration = 30 * 60
 export const TURN_ROLL_SECONDS = 20

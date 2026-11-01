@@ -21,6 +21,7 @@ describe('identidade dos efeitos de áudio', () => {
     expect(getGameAudioEffectStyle('airplane-pass')).toBe('airplane-pass')
     expect(getGameAudioEffectStyle('police-siren')).toBe('police-siren')
     expect(getGameAudioEffectStyle('crowd-cheer')).toBe('crowd-cheer')
+    expect(getGameAudioEffectStyle('earthquake')).toBe('earthquake-rumble')
     expect(getGameAudioEffectStyle('construction')).toBe('musical')
     expect(getGameAudioEffectStyle('none')).toBe('silent')
   })

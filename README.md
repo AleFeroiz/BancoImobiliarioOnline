@@ -1,6 +1,6 @@
 # BANTEC
 
-Jogo de tabuleiro 3D para navegador, para partidas privadas entre amigos. Sem conta: cada pessoa informa um nome e cria uma sala ou entra usando código. Para 2–4 pessoas, em uma modalidade com duração escolhida no lobby: 15, 30 ou 60 minutos. O tabuleiro representa as cinco regiões do Brasil e tem 24 cidades, quatro companhias, quatro taxas, quatro casas Sorte ou Revés e quatro cantos especiais. Ao comprar um terreno residencial, é possível incluir até três casas; novas casas exigem revisitar o imóvel e o hotel só fica disponível numa visita posterior quando ele já tem três casas.
+Jogo de tabuleiro 3D para navegador, para partidas privadas entre amigos. Sem conta: cada pessoa informa um nome e cria uma sala ou entra usando código. Para 2–4 pessoas, em uma modalidade com duração escolhida no lobby: 15, 30 ou 60 minutos, ou sem limite de tempo. O tabuleiro representa as cinco regiões do Brasil e tem 24 cidades, quatro companhias, quatro taxas, quatro casas Sorte ou Revés e quatro cantos especiais. Ao comprar um terreno residencial, é possível incluir até três casas; novas casas exigem revisitar o imóvel e o hotel só fica disponível numa visita posterior quando ele já tem três casas.
 
 ## Estado atual
 

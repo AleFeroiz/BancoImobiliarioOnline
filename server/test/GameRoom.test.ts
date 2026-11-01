@@ -59,6 +59,17 @@ describe('sala privada', () => {
     expect(room.state.players.get(guest.sessionId)).toMatchObject({ name: 'Bia', isHost: false })
   })
 
+  it('mantém a partida ativa quando a anfitriã escolhe sem limite de tempo', async () => {
+    const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic', matchDuration: 0 })
+    const host = await colyseus.connectTo(room, { name: 'Ana' })
+    await colyseus.connectTo(room, { name: 'Bia' })
+    const started = new Promise<void>((resolve) => host.onMessage('game:started', () => resolve()))
+    host.send('start')
+    await started
+    await new Promise((resolve) => setTimeout(resolve, 1_100))
+    expect(room.state).toMatchObject({ status: 'playing', matchDuration: 0, matchSeconds: 0, matchEnding: false })
+  })
+
   it('transmite emotes escolhidos por qualquer participante e rejeita valores inválidos', async () => {
     const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
     const host = await colyseus.connectTo(room, { name: 'Ana' })
@@ -831,6 +842,7 @@ describe('sala privada', () => {
     room.state.animationSpeed = 2
     const rollDoubles = async (expectedPosition: number) => {
       host.send('devRoll', { diceOne: 1, diceTwo: 1 })
+      await waitFor(() => room.state.landingDescription.startsWith('TIROU DUPLAS!'), 1_000)
       await waitFor(() => room.state.turnPhase === 'purchase' || room.state.turnPhase === 'resolve', 6000)
       expect(room.state.players.get(host.sessionId)?.position).toBe(expectedPosition)
       if (room.state.turnPhase === 'purchase') host.send('declinePurchase')
@@ -1003,14 +1015,14 @@ describe('sala privada', () => {
     host.send('returnPropertyToBank', { propertyId })
     await new Promise((resolve) => setTimeout(resolve, 30))
     expect(property).toMatchObject({ ownerSessionId: '', houses: 0 })
-    expect(hostPlayer.cash).toBe(100_000 + bankReturnValue(propertyId))
+    expect(hostPlayer.cash).toBe(100_000 + bankReturnValue(propertyId) - 180_000)
 
     const secondTitle = new PropertyState()
     secondTitle.ownerSessionId = host.sessionId
     room.state.properties.set('16', secondTitle)
     const alreadyCovered = new Promise<{ message: string }>((resolve) => host.onMessage('room:error', resolve))
     host.send('returnPropertyToBank', { propertyId: 16 })
-    await expect(alreadyCovered).resolves.toMatchObject({ message: expect.stringContaining('saldo já cobre') })
+    await expect(alreadyCovered).resolves.toMatchObject({ message: expect.stringContaining('completar uma dívida') })
 
   })
 
@@ -1043,13 +1055,9 @@ describe('sala privada', () => {
     host.send('returnPropertyToBank', { propertyId })
     await new Promise((resolve) => setTimeout(resolve, 30))
     expect(property).toMatchObject({ ownerSessionId: '', houses: 0 })
-    expect(player.cash).toBe(20_000 + bankReturnValue(propertyId))
-
-    host.send('payDebt')
-    await new Promise((resolve) => setTimeout(resolve, 30))
+    expect(player.cash).toBe(20_000 + bankReturnValue(propertyId) - 50_000)
     expect(room.state.debtAmount).toBe(0)
     expect(room.state.turnPhase).toBe('resolve')
-    expect(player.cash).toBe(20_000 + bankReturnValue(propertyId) - 50_000)
   })
 
   it('transfere saldo e títulos do falido ao credor e encerra quando resta uma pessoa solvente', async () => {
@@ -1299,9 +1307,6 @@ describe('sala privada', () => {
     expect(room.state.pendingPropertyId).toBe(propertySpace.id)
 
     visitorClient.send('returnPropertyToBank', { propertyId: debtorAsset.id })
-    await waitFor(() => visitor.cash === returnValue + initialCash)
-    expect(visitor.cash).toBe(returnValue + initialCash)
-    visitorClient.send('payDebt')
     await waitFor(() => room.state.turnPhase !== 'debt')
     expect(room.state.turnPhase).toBe('buyback')
     expect(visitor.cash).toBe(returnValue + initialCash - rent)
@@ -1372,8 +1377,8 @@ describe('sala privada', () => {
     guest.send('chooseWorldTour', { spaceId: 0 })
     await waitFor(() => room.state.turnPhase === 'resolve', 2_500)
     expect(visitor.position).toBe(0)
-    expect(visitor.cash).toBe(STARTING_CASH - normalRent * 3)
-    expect(room.state.landingDescription).toContain('sem bônus por passagem pela Partida')
+    expect(visitor.cash).toBe(STARTING_CASH - normalRent * 3 + START_BONUS)
+    expect(room.state.landingDescription).toContain('Passou pela Partida')
     expect(room.state.landingDescription).toContain('Volta ao Brasil')
   })
 
@@ -1707,7 +1712,9 @@ describe('sala privada', () => {
     room.state.turnPhase = 'card-target'
     room.state.activeCardId = 'earthquake'
 
+    const collapse = new Promise<{ spaceId: number; houses: number; ownerColor: string }>((resolve) => host.onMessage('game:earthquake', resolve))
     host.send('resolveCardTarget', { propertyId: propertySpace.id, targetSessionId: guest.sessionId })
+    await expect(collapse).resolves.toMatchObject({ spaceId: propertySpace.id, houses: 2, ownerColor: expect.any(String) })
     await waitFor(() => property.ownerSessionId === '')
 
     expect(property.houses).toBe(0)
@@ -1789,6 +1796,7 @@ describe('sala privada', () => {
       resolveSpace: (sessionId: string, player: NonNullable<ReturnType<typeof room.state.players.get>>, drawEvent?: boolean) => void
       schedulePresentation: (_delayMs: number, action: () => void) => void
     }
+    const schedulePresentation = serverGame.schedulePresentation.bind(room)
     serverGame.schedulePresentation = (_delayMs, action) => action()
     const actor = room.state.players.get(host.sessionId)!
     const eventSpace = boardSpaces.find((space) => space.kind === 'event')!
@@ -1805,7 +1813,7 @@ describe('sala privada', () => {
     serverGame.drawEventCard = () => EVENT_CARDS.find((card) => card.id === 'world-tour')!
     serverGame.resolveSpace(host.sessionId, actor, true)
     expect(actor.position).toBe(30)
-    expect(actor.cash).toBe(worldTourCash + START_BONUS)
+    expect(actor.cash).toBe(worldTourCash)
     expect(room.state.turnPhase).toBe('world-tour')
 
     actor.position = eventSpace.id
@@ -1824,7 +1832,7 @@ describe('sala privada', () => {
     serverGame.drawEventCard = () => EVENT_CARDS.find((card) => card.id === 'world-cup-city')!
     serverGame.resolveSpace(host.sessionId, actor, true)
     expect(actor.position).toBe(venueId)
-    expect(actor.cash).toBe(worldTourCash + START_BONUS * 2)
+    expect(actor.cash).toBe(worldTourCash + START_BONUS)
     expect(room.state.turnPhase).toBe('resolve')
 
     room.state.worldCupSpaceId = 255
@@ -1843,10 +1851,14 @@ describe('sala privada', () => {
     const guestPlayer = room.state.players.get(guest.sessionId)!
     actor.position = 4
     guestPlayer.position = 17
+    serverGame.schedulePresentation = schedulePresentation
     room.state.activePlayerSessionId = host.sessionId
     room.state.turnPhase = 'card-target'
     room.state.activeCardId = 'swap'
     host.send('resolveCardTarget', { targetSessionId: host.sessionId, secondSessionId: guest.sessionId })
+    await waitFor(() => room.state.turnPhase === 'moving')
+    expect(actor.position).toBe(17)
+    expect(guestPlayer.position).toBe(4)
     await waitFor(() => room.state.turnPhase === 'resolve')
     expect(actor.position).toBe(17)
     expect(guestPlayer.position).toBe(4)

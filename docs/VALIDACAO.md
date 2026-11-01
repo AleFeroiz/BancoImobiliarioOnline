@@ -1,3 +1,10 @@
+# 2026-11-01 — ajustes de cartas, movimento e duração
+
+- `npm run verify` passou: 49 arquivos de teste, 257 testes, build do frontend e build do servidor.
+- Na partida local com modo DEV, confirmei visualmente a tela de lobby com “Sem tempo”, o indicador “SEM TEMPO” durante o jogo e o anúncio central “TIROU DUPLAS! Você joga novamente” após uma rolagem de duplas.
+- As regressões de servidor cobrem crédito da Partida somente quando o trajeto passa por ela, conclusão automática da dívida após liquidação, troca de posição em fase animada, emissão do evento do Terremoto e partida sem cronômetro. O teste do aluguel confirma R$ 0 durante Apagão e a exceção do hotel.
+- A revisão visual não percorreu manualmente todos os efeitos em sala; a cena de proteção, a queda sísmica e o marcador de sede ainda precisam de confirmação visual numa futura sessão de teste. Testes humanos não bloqueiam a reforma, conforme decisão do usuário.
+
 # 2026-10-31 — Início das durações e economia em sala local com bots
 
 - Em sala local de 15 minutos com BANTEC QA e três bots, a partida começou com relógio em 15:00 e R$ 2.000.000 para cada participante. BANTEC QA comprou Manaus por R$ 650.000; a prévia mostrou aluguel de R$ 65.000 sem construção, R$ 130.000 com uma casa, R$ 260.000 com duas e R$ 455.000 com três, com os custos totais correspondentes de R$ 650.000, R$ 975.000, R$ 1.300.000 e R$ 1.625.000.
