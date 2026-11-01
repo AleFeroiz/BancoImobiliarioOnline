@@ -1,3 +1,11 @@
+# Tabuleiro 3D some na troca de turno — proteção implementada (2026-11-01)
+
+- Relato: ao concluir a primeira vez, a tela do usuário pisca; no cliente da amiga, HUD e botões permanecem, mas o tabuleiro 3D desaparece. A captura mostra que a interface segue ativa enquanto a cena 3D não é desenhada.
+- Causa exata não reproduzida localmente. O Canvas mantido em `frameloop="demand"` já redesenhava normalmente nas trocas anfitrião↔bot; por isso não atribuo o incidente a uma falha confirmada da rede ou do servidor.
+- Proteção: o cliente agora solicita quadros adicionais de renderização na abertura de cada turno e redesenha ao receber o evento de restauração do contexto WebGL. O Canvas continua sob demanda, sem renderização contínua.
+- Regressões cobrem as solicitações de quadros e seu cancelamento quando uma troca de turno substitui a anterior. Validação: `npm run verify` passou em 51 arquivos / 276 testes e builds web/servidor; partida local com bot permaneceu visível após várias trocas.
+- Limitação: não foi possível reproduzir com dois clientes humanos nem confirmar o mesmo sintoma no navegador da amiga. Próximo passo: observar partidas publicadas; se voltar a ocorrer, coletar o console do cliente afetado para identificar a causa específica.
+
 # Continuação após resolver cartas com alvo — concluída (2026-11-01)
 
 - Reprodução relatada: após usar cartas como Proteção, selecionar o alvo encerra o efeito, mas não aparece ação para concluir a vez.

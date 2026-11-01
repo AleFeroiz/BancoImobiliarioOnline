@@ -23,6 +23,7 @@ import { applySelectionContrast, createTokenOutlineMaterial, createUnlitMaterial
 import { getBuildingInnerEdgeOffset, getBuildingRentLabelPosition, getCenteredModelPlacement, getModelFootprintDepth } from './modelPlacement'
 import { getPropertyRentLabel } from './propertyRentLabel'
 import { playGameSound } from './gameAudio'
+import { scheduleSceneRenderWake } from './sceneRenderWake'
 import { getGraphicsDprRange, type GraphicsQuality } from './graphicsQuality'
 import { getGameBackgroundColor } from './nightMode'
 import { getPlayerEmoteSymbol, type PlayerEmote } from '../../shared/playerEmotes'
@@ -763,7 +764,33 @@ function FestivalBanner({ size, dimmed }: { size: number; dimmed: boolean }) {
   return <group position={placement.position} scale={placement.scale}><primitive object={model} /></group>
 }
 
-type BoardSceneProps = { nightMode: boolean; players: PlayerToken[]; propertyBuildings: PropertyBuilding[]; thrownObjects: ThrowableEvent[]; earthquakeEvents?: EarthquakeEvent[]; worldCupSpaceId?: number; festivalSpaceIds?: readonly number[]; highlightedSpaceIds?: readonly number[]; selectionMode?: boolean; landingPulseSpaceId?: number; landingPulseSequence?: number; diceRollSequence?: number; dice?: [number, number]; diceVisible?: boolean; diceResultVisible?: boolean; presentationSpeed?: AnimationSpeed; reducedMotion?: boolean; pawnMovementEnabled?: boolean; pawnMoveMode?: 'walk' | 'teleport'; pawnStepSoundEnabled?: boolean; cameraEnabled?: boolean; graphicsQuality?: GraphicsQuality; fpsMeterEnabled?: boolean; fpsSamples?: { current: FrameRateAccumulator }; onMovementComplete: () => void; onSelectSpace: (spaceId: number) => void }
+type BoardSceneProps = { nightMode: boolean; players: PlayerToken[]; propertyBuildings: PropertyBuilding[]; thrownObjects: ThrowableEvent[]; earthquakeEvents?: EarthquakeEvent[]; worldCupSpaceId?: number; festivalSpaceIds?: readonly number[]; highlightedSpaceIds?: readonly number[]; selectionMode?: boolean; landingPulseSpaceId?: number; landingPulseSequence?: number; diceRollSequence?: number; renderWakeSequence?: number; dice?: [number, number]; diceVisible?: boolean; diceResultVisible?: boolean; presentationSpeed?: AnimationSpeed; reducedMotion?: boolean; pawnMovementEnabled?: boolean; pawnMoveMode?: 'walk' | 'teleport'; pawnStepSoundEnabled?: boolean; cameraEnabled?: boolean; graphicsQuality?: GraphicsQuality; fpsMeterEnabled?: boolean; fpsSamples?: { current: FrameRateAccumulator }; onMovementComplete: () => void; onSelectSpace: (spaceId: number) => void }
+
+function SceneRenderWake({ sequence }: { sequence: number }) {
+  const { gl, invalidate } = useThree()
+
+  useEffect(() => scheduleSceneRenderWake(
+    invalidate,
+    (callback) => window.requestAnimationFrame(callback),
+    (frame) => window.cancelAnimationFrame(frame),
+    (callback, delayMs) => window.setTimeout(callback, delayMs),
+    (timer) => window.clearTimeout(timer),
+  ), [invalidate, sequence])
+
+  useEffect(() => {
+    const canvas = gl.domElement
+    const onContextLost: EventListener = (event) => event.preventDefault()
+    const onContextRestored = () => invalidate(3)
+    canvas.addEventListener('webglcontextlost', onContextLost)
+    canvas.addEventListener('webglcontextrestored', onContextRestored)
+    return () => {
+      canvas.removeEventListener('webglcontextlost', onContextLost)
+      canvas.removeEventListener('webglcontextrestored', onContextRestored)
+    }
+  }, [gl, invalidate])
+
+  return null
+}
 
 function FrameRateProbe({ samples }: { samples: { current: FrameRateAccumulator } }) {
   useFrame(() => {
@@ -772,10 +799,11 @@ function FrameRateProbe({ samples }: { samples: { current: FrameRateAccumulator 
   return null
 }
 
-function BoardSceneCanvas({ nightMode, players, propertyBuildings, thrownObjects, earthquakeEvents = [], worldCupSpaceId = 255, festivalSpaceIds = [], highlightedSpaceIds = [], selectionMode = false, landingPulseSpaceId = -1, landingPulseSequence = 0, diceRollSequence = 0, dice = [0, 0], diceVisible = false, diceResultVisible = false, presentationSpeed = 1, reducedMotion = false, pawnMovementEnabled = false, pawnMoveMode = 'walk', pawnStepSoundEnabled = false, cameraEnabled = true, graphicsQuality = 'high', fpsMeterEnabled = false, fpsSamples, onMovementComplete, onSelectSpace }: BoardSceneProps) {
+function BoardSceneCanvas({ nightMode, players, propertyBuildings, thrownObjects, earthquakeEvents = [], worldCupSpaceId = 255, festivalSpaceIds = [], highlightedSpaceIds = [], selectionMode = false, landingPulseSpaceId = -1, landingPulseSequence = 0, diceRollSequence = 0, renderWakeSequence = 0, dice = [0, 0], diceVisible = false, diceResultVisible = false, presentationSpeed = 1, reducedMotion = false, pawnMovementEnabled = false, pawnMoveMode = 'walk', pawnStepSoundEnabled = false, cameraEnabled = true, graphicsQuality = 'high', fpsMeterEnabled = false, fpsSamples, onMovementComplete, onSelectSpace }: BoardSceneProps) {
   return (
     <Canvas camera={{ position: [12.5, 15.5, 15.5], fov: 34 }} dpr={getGraphicsDprRange(graphicsQuality)} frameloop="demand" gl={{ antialias: false, powerPreference: 'high-performance', stencil: false }}>
       <color attach="background" args={[getGameBackgroundColor(nightMode)]} />
+      <SceneRenderWake sequence={renderWakeSequence} />
       <ResponsiveCamera tilt={16} horizontal={45} />
       <OrbitControls makeDefault enabled={cameraEnabled} enablePan={false} enableZoom enableRotate minPolarAngle={Math.PI / 12} maxPolarAngle={Math.PI / 2} rotateSpeed={0.72} zoomSpeed={0.75} enableDamping dampingFactor={0.1} />
       <CameraZoomBounds />
@@ -831,6 +859,7 @@ function areScenePropsEqual(first: BoardSceneProps, second: BoardSceneProps) {
     && first.landingPulseSpaceId === second.landingPulseSpaceId
     && first.landingPulseSequence === second.landingPulseSequence
     && first.diceRollSequence === second.diceRollSequence
+    && first.renderWakeSequence === second.renderWakeSequence
     && first.dice?.[0] === second.dice?.[0]
     && first.dice?.[1] === second.dice?.[1]
     && first.diceVisible === second.diceVisible

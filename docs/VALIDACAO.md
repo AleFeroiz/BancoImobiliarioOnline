@@ -1,3 +1,10 @@
+# 2026-11-01 — Redesenho do tabuleiro na troca de turno
+
+- Na partida local, a anfitriã e o Bot 1 jogaram alternadamente; o tabuleiro permaneceu visível antes e depois das trocas. A partida também atravessou as fases de prisão e compra sem erro visual no Canvas.
+- O sintoma do cliente da amiga não foi reproduzido em dois clientes humanos. A correção adiciona quadros de renderização sob demanda no início do turno e invalidação após restauração do contexto WebGL.
+- `npm run verify` passou com loopback aprovado: 51 arquivos de teste, 276 testes, build web e build do servidor.
+- A primeira execução no sandbox bloqueou 64 testes Colyseus por `fetch failed`; repetida com loopback permitido, todos passaram. O build mantém o aviso existente de um chunk 3D maior que 500 KB.
+
 # 2026-11-01 — Reforma econômica inspirada em Business Tour
 
 - `npm run verify` passou: 49 arquivos de teste, 262 testes, build do frontend e build do servidor. O build ainda aponta o chunk da cena 3D acima de 500 KB.
