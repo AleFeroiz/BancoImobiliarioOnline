@@ -1,3 +1,11 @@
+# Auditoria da reforma BANTEC — 2026-11-01
+
+- O worktree está em `main` no commit `63bb40e`, igual a `origin/main`. Preservei sem staging as alterações locais do usuário em `assets/blender/special-corners.blend` e `assets/blender/special-corners.blend1`.
+- O registro mais recente confirma que as 12 cartas foram percorridas manualmente, inclusive os efeitos de Apagão e Terremoto. A trajetória de arremesso em movimento também foi validada. Não há uma pendência de implementação identificada nesta auditoria.
+- O workflow GitHub associado ao commit atual concluiu `npm ci`, `npm run verify` e `Trigger Render deploy` com sucesso. Isso confirma o pedido de deploy; o SHA efetivamente ativo no Render ainda não foi conferido no painel. O usuário já informou que o site público está funcionando e que o Auto-Deploy nativo está desligado.
+- A pendência de produto/validação continua sendo avaliar ritmo e equilíbrio em partidas **com pessoas** nas três durações: 15, 30 e 60 minutos. Criei [`docs/trabalho/playtest-equilibrio-bantec.md`](trabalho/playtest-equilibrio-bantec.md) com um roteiro e campos para registrar evidências. Partidas com bots não substituem essa etapa.
+- Próximo passo concreto: realizar e registrar as três sessões humanas no roteiro; então revisar economia/ritmo à luz dos relatos e decidir se algum valor precisa de ajuste.
+
 # Playtest manual das 12 cartas BANTEC — concluído (2026-10-31)
 
 ## Smoke test público — Vercel e sala multiplayer funcionando (2026-10-31)
