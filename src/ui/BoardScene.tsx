@@ -20,7 +20,7 @@ import { BUILDING_ANIMATION_DURATION_MS, DICE_ANIMATION_DURATION_MS, LANDING_PUL
 import type { FrameRateAccumulator } from './fpsMeter'
 import { recordRenderedFrame } from './fpsMeter'
 import { applySelectionContrast, createTokenOutlineMaterial, createUnlitMaterial, getOwnerTintOverride } from './sceneMaterials'
-import { getBuildingInnerEdgeOffset, getBuildingRentLabelPosition, getCenteredModelPlacement, getModelFootprintDepth } from './modelPlacement'
+import { getBuildingEdgeOffset, getBuildingRentLabelPosition, getCenteredModelPlacement, getModelFootprintDepth } from './modelPlacement'
 import { getPropertyBoardLabel } from './propertyRentLabel'
 import { playGameSound } from './gameAudio'
 import { scheduleSceneRenderWake, subscribeSceneContextRecovery, subscribeSceneResumeWake } from './sceneRenderWake'
@@ -29,9 +29,10 @@ import { getGameBackgroundColor } from './nightMode'
 import { getPlayerEmoteSymbol, type PlayerEmote } from '../../shared/playerEmotes'
 import { THROW_PROJECTILE_DURATION_MS, type ThrowableObject } from '../../shared/throwables'
 import { getThrowableAimPoint, getThrowableFlightPoint, type ThrowablePoint } from './throwableTrajectory'
+import type { CharacterType } from '../../shared/lobby'
 
 type PropertyBuilding = { spaceId: number; ownerSessionId: string; houses: number; blackoutTurns?: number; protectionTurns?: number; ownerColor: string }
-type PlayerToken = { id: string; position: number; color: string; seatIndex: number; cash: number; characterType: 'pawn' | 'car' | 'motorcycle' | 'airplane'; activity?: string; emote?: { emote: PlayerEmote; sequence: number } }
+type PlayerToken = { id: string; position: number; color: string; seatIndex: number; cash: number; characterType: CharacterType; activity?: string; emote?: { emote: PlayerEmote; sequence: number } }
 type ThrowableEvent = { id: number; fromSessionId: string; toSessionId: string; object: ThrowableObject }
 type EarthquakeEvent = { id: number; spaceId: number; houses: number; ownerColor: string }
 
@@ -245,7 +246,9 @@ function AnimatedPawn({ player, seatIndex, pawnGroups, reducedMotion, movementEn
   const initial = positionOnBoard(visualSpace.current)
   const model = useMemo(() => {
     if (player.characterType === 'pawn') return null
-    const source = tokenScene.getObjectByName(({ car: 'Token_Car', motorcycle: 'Token_Motorcycle', airplane: 'Token_Airplane' } as const)[player.characterType])
+    const tokenRoots: Partial<Record<CharacterType, string>> = { car: 'Token_Car', motorcycle: 'Token_Motorcycle', airplane: 'Token_Airplane', highHeel: 'Token_HighHeel', train: 'Token_Train', topHat: 'Token_TopHat', piggyBank: 'Token_PiggyBank', ship: 'Token_Ship', rubberDuck: 'Token_RubberDuck', dog: 'Token_Dog', cat: 'Token_Cat', cow: 'Token_Cow', penguin: 'Token_Penguin' }
+    const sourceName = tokenRoots[player.characterType]
+    const source = sourceName ? tokenScene.getObjectByName(sourceName) : null
     if (!source) return null
     const clone = source.clone(true)
     const bounds = new Box3().setFromObject(clone)
@@ -561,7 +564,7 @@ function AnimatedBuilding({ spaceId, houses, ownerColor, ownerSessionId, reduced
     return { object: clone, footprintDepth }
   }, [blackoutTurns, dimmed, displayColor, ownerSessionId, scene, variantName])
   const modelScale = 1.25
-  const [offsetX, offsetZ] = modelData ? getBuildingInnerEdgeOffset(spaceId, 0.98, modelData.footprintDepth, modelScale, 0.02) : decoration.buildingOffset
+  const [offsetX, offsetZ] = modelData ? getBuildingEdgeOffset(spaceId, 0.98, modelData.footprintDepth, modelScale, 0.04) : decoration.buildingOffset
   return (
     <group ref={group} position={[x + offsetX, BUILDING_GROUP_Y, z + offsetZ]} rotation={[0, buildingRotation, 0]}>
       {modelData && <primitive object={modelData.object} position={[0, BUILDING_MODEL_Y_OFFSET, 0]} scale={modelScale} />}
@@ -690,9 +693,9 @@ function Board({ players, propertyBuildings, thrownObjects, earthquakeEvents, wo
       })}
       {propertyRentLabels.map(({ id, position, label }) => label && <Billboard key={`rent-${id}`} position={position} follow>
         <group>
-          <Text position={[0, 0.18, 0]} fontSize={0.13} lineHeight={1.1} fontWeight="bold" maxWidth={2} textAlign="center" anchorX="center" anchorY="middle" color={label.ownerColor} outlineColor="#fff9eb" outlineWidth={0.018} depthOffset={-1} raycast={skipRaycast}>{label.name}</Text>
-          <Text position={[0, 0, 0]} fontSize={0.15} lineHeight={1.1} fontWeight="bold" maxWidth={2} textAlign="center" anchorX="center" anchorY="middle" color="#243b2e" outlineColor="#fff9eb" outlineWidth={0.018} depthOffset={-1} raycast={skipRaycast}>{label.rent}</Text>
-          {label.liquidation && <Text position={[0, -0.18, 0]} fontSize={0.13} lineHeight={1.1} fontWeight="bold" maxWidth={2} textAlign="center" anchorX="center" anchorY="middle" color="#9a392c" outlineColor="#fff9eb" outlineWidth={0.018} depthOffset={-1} raycast={skipRaycast}>{`LIQ. ${label.liquidation}`}</Text>}
+          <Text position={[0, 0.18, 0]} renderOrder={1000} material-depthTest={false} material-depthWrite={false} fontSize={0.13} lineHeight={1.1} fontWeight="bold" maxWidth={2} textAlign="center" anchorX="center" anchorY="middle" color={label.ownerColor} outlineColor="#fff9eb" outlineWidth={0.018} depthOffset={-10} raycast={skipRaycast}>{label.name}</Text>
+          <Text position={[0, 0, 0]} renderOrder={1000} material-depthTest={false} material-depthWrite={false} fontSize={0.15} lineHeight={1.1} fontWeight="bold" maxWidth={2} textAlign="center" anchorX="center" anchorY="middle" color="#243b2e" outlineColor="#fff9eb" outlineWidth={0.018} depthOffset={-10} raycast={skipRaycast}>{label.rent}</Text>
+          {label.liquidation && <Text position={[0, -0.18, 0]} renderOrder={1000} material-depthTest={false} material-depthWrite={false} fontSize={0.13} lineHeight={1.1} fontWeight="bold" maxWidth={2} textAlign="center" anchorX="center" anchorY="middle" color="#9a392c" outlineColor="#fff9eb" outlineWidth={0.018} depthOffset={-10} raycast={skipRaycast}>{`LIQ. ${label.liquidation}`}</Text>}
         </group>
       </Billboard>)}
       <Suspense fallback={null}>

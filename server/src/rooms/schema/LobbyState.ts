@@ -8,6 +8,7 @@ export const LobbyPlayerState = schema({
   reconnectionExpired: t.boolean().default(false),
   isBot: t.boolean().default(false),
   isBotControlled: t.boolean().default(false),
+  controllerSessionId: t.string().default(''),
   characterType: t.string().default('pawn'),
   color: t.string().default('#ce7558'),
   position: t.uint8().default(0),

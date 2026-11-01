@@ -13,17 +13,17 @@ export function getCenteredModelPlacement(bounds: Bounds3): [number, number, num
   ]
 }
 
-export function getBuildingInnerEdgeOffset(spaceId: number, tileSize: number, modelDepth: number, modelScale = 1, gap = 0.08): [number, number] {
+export function getBuildingEdgeOffset(spaceId: number, tileSize: number, modelDepth: number, modelScale = 1, edgeGap = 0.08): [number, number] {
   if (!Number.isInteger(spaceId) || spaceId < 0 || spaceId >= 40) throw new RangeError('spaceId must be a board index')
-  const inset = Math.max(0, tileSize / 2 - modelDepth * modelScale / 2 - gap)
-  if (spaceId <= 10) return [0, -inset]
-  if (spaceId <= 20) return [-inset, 0]
-  if (spaceId <= 30) return [0, inset]
-  return [inset, 0]
+  const inset = Math.max(0, tileSize / 2 - modelDepth * modelScale / 2 - edgeGap)
+  if (spaceId <= 10) return [0, inset]
+  if (spaceId <= 20) return [inset, 0]
+  if (spaceId <= 30) return [0, -inset]
+  return [-inset, 0]
 }
 
-export function getBuildingRentLabelPosition(spaceId: number, bounds: Bounds3, tileSize = 0.98, modelScale = 1.25, gap = 0.02, verticalGap = 0.2, groupY = 0.16): [number, number, number] {
-  const [offsetX, offsetZ] = getBuildingInnerEdgeOffset(spaceId, tileSize, getModelFootprintDepth(bounds), modelScale, gap)
+export function getBuildingRentLabelPosition(spaceId: number, bounds: Bounds3, tileSize = 0.98, modelScale = 1.25, edgeGap = 0.04, verticalGap = 0.2, groupY = 0.16): [number, number, number] {
+  const [offsetX, offsetZ] = getBuildingEdgeOffset(spaceId, tileSize, getModelFootprintDepth(bounds), modelScale, edgeGap)
   const height = (bounds.max.y - bounds.min.y) * modelScale
   return [offsetX, groupY + height + verticalGap, offsetZ]
 }

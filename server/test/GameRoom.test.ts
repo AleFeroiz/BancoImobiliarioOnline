@@ -427,6 +427,41 @@ describe('sala privada', () => {
     await waitFor(() => room.state.matchSeconds < 30 * 60, 1500)
   })
 
+  it('devolve o controle ao jogador que entra com o mesmo código e nome exato', async () => {
+    const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
+    const host = await colyseus.connectTo(room, { name: 'Lia' })
+    host.send('addBot')
+    await waitFor(() => room.state.players.size === 2)
+    const started = new Promise<void>((resolve) => host.onMessage('game:started', () => resolve()))
+    host.send('start')
+    await started
+
+    const oldSessionId = host.sessionId
+    const property = new PropertyState()
+    property.ownerSessionId = oldSessionId
+    property.houses = 2
+    room.state.properties.set('1', property)
+    host.reconnection.enabled = false
+    const serverRoom = room as unknown as { allowReconnection: (...args: unknown[]) => Promise<never> }
+    serverRoom.allowReconnection = () => Promise.reject(new Error('Manual reconnect test.'))
+    void host.leave(false)
+    await waitFor(() => room.state.players.get(oldSessionId)?.reconnectionExpired === true)
+    expect(room.state.players.get(oldSessionId)?.isBotControlled).toBe(true)
+    expect(room.autoDispose).toBe(false)
+
+    await expect(colyseus.sdk.joinById(room.roomId, { name: 'Lia errada' })).rejects.toBeTruthy()
+    const returning = await colyseus.sdk.joinById(room.roomId, { name: 'Lia' })
+    await waitFor(() => room.state.players.get(oldSessionId)?.controllerSessionId === returning.sessionId)
+    expect(room.state.players.get(oldSessionId)).toMatchObject({ name: 'Lia', isConnected: true, isBotControlled: false, reconnectionExpired: false })
+    expect(room.state.players.has(oldSessionId)).toBe(true)
+    expect(room.autoDispose).toBe(true)
+    expect(property).toMatchObject({ ownerSessionId: oldSessionId, houses: 2 })
+
+    const emote = new Promise<{ sessionId: string }>((resolve) => returning.onMessage('game:emote', resolve))
+    returning.send('emote', { emote: 'laugh' })
+    await expect(emote).resolves.toMatchObject({ sessionId: oldSessionId })
+  })
+
   it('resolve a dívida da pessoa desconectada e devolve o controle na reconexão', async () => {
     const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
     const host = await colyseus.connectTo(room, { name: 'Lia' })

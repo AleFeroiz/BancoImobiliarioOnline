@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { getBuildingInnerEdgeOffset, getBuildingRentLabelPosition, getCenteredModelPlacement } from './modelPlacement'
+import { getBuildingEdgeOffset, getBuildingRentLabelPosition, getCenteredModelPlacement } from './modelPlacement'
 
 describe('posicionamento de modelos de canto', () => {
   it('centraliza o aeroporto e apoia a base no piso sem duplicar a posição original', () => {
@@ -16,23 +16,23 @@ describe('posicionamento de modelos de canto', () => {
     expect(placement[2]).toBeCloseTo(0.1)
   })
 
-  it('mantém os modelos sobre o piso e deslocados até a borda interna em qualquer lado', () => {
-    const offsets = [5, 15, 25, 35].map((spaceId) => getBuildingInnerEdgeOffset(spaceId, 0.98, 0.6, 1.16, 0.02))
-    expect(offsets[0]?.[1]).toBeLessThan(0)
-    expect(offsets[1]?.[0]).toBeLessThan(0)
-    expect(offsets[2]?.[1]).toBeGreaterThan(0)
-    expect(offsets[3]?.[0]).toBeGreaterThan(0)
+  it('mantém os modelos no piso e os afasta do centro em direção à borda externa', () => {
+    const offsets = [5, 15, 25, 35].map((spaceId) => getBuildingEdgeOffset(spaceId, 0.98, 0.6, 1.16, 0.04))
+    expect(offsets[0]?.[1]).toBeGreaterThan(0)
+    expect(offsets[1]?.[0]).toBeGreaterThan(0)
+    expect(offsets[2]?.[1]).toBeLessThan(0)
+    expect(offsets[3]?.[0]).toBeLessThan(0)
     for (const [x, z] of offsets) {
       const centerOffset = Math.hypot(x, z)
-      expect(centerOffset + 0.6 * 1.16 / 2).toBeCloseTo(0.98 / 2 - 0.02)
+      expect(centerOffset + 0.6 * 1.16 / 2).toBeCloseTo(0.98 / 2 - 0.04)
     }
-    expect(getBuildingInnerEdgeOffset(15, 0.98, 0.8, 1.16)[0]).toBeCloseTo(0)
+    expect(getBuildingEdgeOffset(15, 0.98, 0.8, 1.16)[0]).toBeCloseTo(0)
   })
 
-  it('posiciona o rótulo do aluguel acima da construção e no mesmo alinhamento da borda interna', () => {
+  it('posiciona o rótulo do aluguel acima da construção e no mesmo alinhamento da borda externa', () => {
     const bounds = { min: { x: -0.4, y: -0.1, z: -0.3 }, max: { x: 0.4, y: 0.7, z: 0.3 } }
     const position = getBuildingRentLabelPosition(15, bounds)
-    expect(position[0]).toBeLessThan(0)
+    expect(position[0]).toBeGreaterThan(0)
     expect(position[1]).toBeCloseTo(0.16 + 0.8 * 1.25 + 0.2)
     expect(position[2]).toBe(0)
     expect(position[1]).toBeGreaterThan(1)

@@ -18,7 +18,9 @@ A apresentação é mais saturada e caricata que a direção anterior deste proj
 
 ## Modelos e pisos do tabuleiro
 
-As fichas de participantes preservam o peão original e oferecem carrinho, moto e avião low-poly como alternativas visuais selecionáveis no lobby. Os modelos autorais foram feitos no Blender 5.2.2 LTS; as fontes estão em `assets/blender/player-tokens.blend` e o GLB com exportação Y-up em `public/assets/player-tokens.glb`. O material `OWNER_TINT` recebe a cor já associada ao dono. A cena acomoda as quatro fichas sem alterar movimento ou regras.
+As fichas de participantes preservam o peão original e oferecem 13 alternativas visuais selecionáveis no lobby: carrinho, moto, avião, sapato de salto, trem, cartola, cofrinho, navio, patinho de borracha, cachorro, gato, vaca e pinguim. As dez últimas são modelos low-poly próprios. As fontes estão em `assets/blender/player-tokens.blend` e o GLB em `public/assets/player-tokens.glb`. O lobby também apresenta 12 cores distintas; ambas as escolhas são cosméticas e não alteram movimento ou regras.
+
+Os modelos de propriedade permanecem assentados no piso e ficam afastados do centro, próximos da borda externa, enquanto os peões circulam pela faixa verde. Nome e aluguel são rótulos 3D com renderização à frente dos modelos dos personagens; o nome usa a cor do dono.
 
 O usuário pediu cinco níveis visuais originais para propriedades: terreno identificado pela pessoa dona, uma casa, duas casas, três casas e hotel. Os modelos foram criados na sessão conectada do Blender 5.2.2 LTS e reunidos em `public/assets/board-models/board-models.glb`; a fonte editável está em `assets/blender/board-models.blend`. Os telhados, a bandeira e os detalhes marcados com o material `OWNER_TINT` recebem a cor atual do dono no jogo. Paredes claras, janelas azul-escuras e bases de pedra mantêm leitura contra os oito grupos de cores.
 

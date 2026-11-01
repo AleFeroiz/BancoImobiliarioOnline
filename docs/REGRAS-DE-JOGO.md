@@ -74,12 +74,14 @@ Proteção bloqueia qualquer efeito de carta, inclusive Generoso. Apagão e Prot
 - Propostas de troca de dinheiro e títulos podem ser enviadas pelo perfil de participante a qualquer momento. Há uma proposta ativa por sala; ela fica aberta até ser aceita, recusada, cancelada pelo remetente, ou encerrada por falência/fim de partida. O servidor valida títulos, construções e saldos ao enviar e aceitar.
 - A anfitriã pode ativar o modo DEV no lobby. Quando ativo, apenas ela pode forçar os dados durante a rolagem válida; o servidor verifica anfitriã, jogador ativo e valores.
 - A velocidade visual compartilhada é 0,5×, 1× ou 2×. O turno dá 20 segundos para rolar e até 15 segundos para cada decisão. Se alguém não agir, a compra é recusada, a Prisão aguarda, ações obrigatórias são concluídas e a dívida avança pela próxima liquidação disponível.
+- Se uma pessoa desconectar ou sair durante a partida, a cadeira e os bens permanecem e um bot passa a controlá-la. O cartão do jogador informa “BOT NO CONTROLE”. Para recuperar o controle, a pessoa entra novamente no mesmo código de sala e usa exatamente o mesmo nome (a comparação distingue maiúsculas de minúsculas); a conexão assume a cadeira existente e preserva o estado da partida.
 - Quando uma carta exige escolha de alvo, o aviso da carta tem até 15 segundos para ser lido/fechado; depois de fechar, a pessoa da vez recebe uma janela completa de 15 segundos para escolher no tabuleiro. Se o aviso não for fechado, ele desaparece após 15 segundos e a janela de seleção começa automaticamente.
 
 ## Apresentação e acesso
 
 - O jogo usa React + React Three Fiber no navegador. O tabuleiro é 3D e original; menus, regras, lobby e HUD são interface HTML responsiva.
-- As casas selecionáveis no tabuleiro preservam as cores originais quando válidas e ficam apagadas quando inválidas. Construções ficam apoiadas no piso, alinhadas à faixa interna para preservar os nomes e o corredor.
+- As casas selecionáveis no tabuleiro preservam as cores originais quando válidas e ficam apagadas quando inválidas. Construções ficam apoiadas no próprio piso, um pouco mais próximas da borda externa; a faixa central fica livre para os peões. Rótulos de propriedade ficam na frente dos modelos das fichas.
+- O lobby oferece 12 cores e 14 fichas cosméticas (peão, carrinho, moto, avião, sapato de salto, trem, cartola, cofrinho, navio, patinho de borracha, cachorro, gato, vaca e pinguim). A escolha visual não afeta as regras.
 - A FATEC Itapetininga fica no centro como modelo visual dos três blocos e da torre mostrados nas imagens de referência. Não ocupa casa de jogo. Os dados ficam suspensos pouco acima dos prédios durante a rolagem.
 - O modo noturno escurece a home e o lobby. Na partida, altera somente o fundo externo, sem escurecer o tabuleiro. A preferência é local e pode ser alterada durante o jogo.
 - Bens, Config, Emote e Regras ficam em botões quadrados na lateral; a interface adapta-se ao celular. Movimento reduzido, áudio e qualidade gráfica são controles locais.

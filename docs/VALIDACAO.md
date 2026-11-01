@@ -99,6 +99,14 @@
 - Graphify update não executou porque a CLI `graphify` não está instalada neste ambiente.
 # Validação visual e de navegador
 
+## 2026-11-01 — Fichas, cores, propriedades e reconexão
+
+- `npm run verify` passou: 53 arquivos de teste, 287 testes, build do frontend e build do servidor. `git diff --check` passou. O build mantém o aviso conhecido do chunk da cena 3D acima de 500 KB.
+- Playtest no navegador local confirmou 12 opções de cor e 14 fichas no lobby. Em partida com bot, o cartão apresentou “BOT NO CONTROLE”. Propriedades deslocadas foram cobertas por regressão geométrica para a borda externa sem alterar a altura no piso; a frente dos rótulos em relação aos peões usa renderização sem teste de profundidade.
+- Com apenas uma pessoa e um bot na sala, saí pelo controle da interface e reentrei pelo mesmo código e nome. A partida foi restaurada, o controle voltou ao participante humano e o selo do bot desapareceu. O código errado/nome diferente é rejeitado pelos testes de integração.
+- As dez fichas low-poly foram acrescentadas à fonte Blender `assets/blender/player-tokens.blend` e exportadas em `public/assets/player-tokens.glb`; Blender 5.2.2 LTS foi a versão confirmada antes da criação. Após reconectar o MCP, revisei a silhueta do sapato de salto em três quartos e de perfil, refinei o salto para ficar mais estreito e visível, salvei a fonte e reexportei o GLB Y-up. O seletor e o carregamento da cena também foram confirmados no navegador.
+- Para o playtest, a porta padrão 2567 estava ocupada e não foi possível identificar o processo por CIM; usei a porta 2569, Vite em 5173 e encerrei as duas sessões locais após a revisão. Os arquivos `assets/blender/special-corners.blend` e `.blend1` foram preservados sem incluir na publicação.
+
 ## 2026-11-01 — Recuperação do tabuleiro após piscada
 
 - `npm run verify` passou: 51 arquivos de teste, 282 testes e builds do frontend e servidor. A execução inicial em sandbox falhou nas conexões locais Colyseus (`fetch failed`); a repetição com loopback aprovado passou completa.

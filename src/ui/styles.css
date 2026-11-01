@@ -274,6 +274,8 @@ button:disabled{opacity:.55;cursor:not-allowed}
 .player-card-slot .player-card{position:relative;inset:auto;width:clamp(190px,20vw,236px);flex:1 1 auto}
 .player-card-slot .player-card.seat-0,.player-card-slot .player-card.seat-1,.player-card-slot .player-card.seat-2,.player-card-slot .player-card.seat-3{top:auto;right:auto;bottom:auto;left:auto}
 .player-card{position:absolute;width:clamp(156px,17vw,218px);min-height:60px;grid-template-columns:34px 1fr;grid-template-rows:auto auto;padding:9px 11px;border-color:rgba(113,133,101,.24);border-radius:14px;background:rgba(250,248,237,.95);box-shadow:0 10px 28px rgba(57,75,53,.15);color:#33483a;pointer-events:auto}
+.screen-game .player-card{position:relative}
+.player-bot-control-label{grid-column:1 / -1;display:block;margin-top:5px;padding:3px 6px;border-radius:5px;background:rgba(49,66,50,.88);color:#fff;font-size:8px;font-weight:800;letter-spacing:.09em;text-align:center}
 .player-card.seat-0{top:110px;left:22px}
 .player-card.seat-1{top:110px;right:22px}
 .player-card.seat-2{bottom:18px;left:22px}
@@ -690,6 +692,7 @@ button:disabled{opacity:.55;cursor:not-allowed}
 .character-option:hover{border-color:#9bad8e;transform:translateY(-1px)}
 .character-option.selected{border-color:#779675;background:#e8efdf;color:#476b4d;box-shadow:inset 0 0 0 1px #779675}
 .character-option-icon{width:36px;height:29px}
+.character-option-emoji{display:grid;place-items:center;width:36px;height:29px;font-size:22px;line-height:1}
 @media(max-width:640px){.character-selector,.player-color-selector{padding:8px;margin:9px 0}.character-option-list,.player-color-options{gap:5px}.character-option{min-height:56px;font-size:8px}.character-option-icon{width:32px;height:26px}.player-color-option{font-size:7px;min-height:38px}}
 
 /* Overrides finais: qualquer decisão ou inspeção fica centralizada sobre a mesa. */
@@ -907,6 +910,7 @@ button:disabled{opacity:.55;cursor:not-allowed}
 .screen-game .player-card.seat-2{color:#fffaf0}
 .screen-game .player-card.seat-3{color:#30230c}
 .player-card-main{display:grid;gap:8px;min-width:0;padding-top:5px}
+.player-bot-control-label{position:absolute;top:4px;left:8px;padding:2px 4px;border-radius:4px;background:rgba(40,48,38,.72);color:#fff4c7;font-size:6px;font-weight:800;letter-spacing:.08em}
 .player-card-main strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;font-weight:700;line-height:1.2}
 .player-card-main b{grid-column:auto;grid-row:auto;margin:0;color:inherit;font-size:22px;font-weight:800;line-height:1.05;letter-spacing:-.025em;font-variant-numeric:tabular-nums;white-space:nowrap}
 @media(max-width:640px){.screen-game .player-card{min-height:80px;padding:8px 9px}.player-card-main{gap:5px;padding-top:24px}.player-card-main strong{font-size:10px}.player-card-main b{font-size:16px}}
