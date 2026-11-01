@@ -805,3 +805,10 @@
 - A cena 3D posiciona uma bandeira em cada cidade sorteada para festival, relativa ao tamanho do tile. Na partida local, os três pontos de festival ficaram visíveis. A revisão do modelo no Blender confirmou duas estacas e a leitura das bandeirolas.
 - Os dados agora rolam com cambalhotas nos três eixos, oscilação amortecida e três quicadas decrescentes. No navegador, observei a etapa “Girando os dados” seguida de “Movendo o peão”; movimento e resultado final não mudaram.
 - Testes: `npm run verify` passou com 273 testes em 50 arquivos, build web e build do servidor. O build mantém o aviso conhecido de chunk da cena 3D acima de 500 kB. `git diff --check` passou. Graphify atualizado para 1.024 nós, 1.905 arestas e 70 comunidades.
+
+# 2026-11-01 — Continuação após resolver carta com alvo
+
+- Corrigi a interface para exibir “Continuar” na fase `resolve` após fechar a revelação da carta, mesmo que o título dela continue sincronizado. O controle continua oculto enquanto a revelação está aberta, durante feedback pendente ou quando a pessoa ainda pode construir na propriedade em que caiu.
+- O teste de regressão confirma o caso resolvido e verifica que o controle não aparece na vez de outra pessoa, durante a revelação, durante feedback nem ao cair em imóvel próprio.
+- Playtest local em sala descartável: preparei a carta Proteção com Modo DEV, disparei o evento e confirmei o botão “Continuar” após o efeito aparecer no tabuleiro.
+- A primeira execução de `npm run verify` foi bloqueada por falta de loopback (`MatchMakeError: fetch failed`) nos testes Colyseus. Repeti com loopback habilitado: 274 testes em 50 arquivos passaram; build web e servidor passaram. Permanece o aviso conhecido do chunk 3D acima de 500 kB. Graphify foi atualizado para 1.027 nós, 1.911 arestas e 69 comunidades.

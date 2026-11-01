@@ -9,6 +9,10 @@ export function shouldShowTurnCard(isMyTurn: boolean, phase: ActivityPhase, hasA
   return isMyTurn && !isPresentationAnimating && !['roll', 'resolve', 'world-cup', 'world-tour'].includes(phase) && (!hasActiveCardTitle || phase === 'card-target' || phase === 'start-upgrade')
 }
 
+export function shouldShowResolvedTurnContinue(isMyTurn: boolean, phase: ActivityPhase, ownPropertyLanding: boolean, showingCardReveal: boolean, feedbackPending: boolean) {
+  return isMyTurn && phase === 'resolve' && !ownPropertyLanding && !showingCardReveal && !feedbackPending
+}
+
 export function shouldSuppressTurnCardForFeedback(feedbackPending: boolean, phase: ActivityPhase) {
   return phase !== 'ended' && feedbackPending && !['purchase', 'buyback', 'start-upgrade', 'jail', 'debt'].includes(phase)
 }

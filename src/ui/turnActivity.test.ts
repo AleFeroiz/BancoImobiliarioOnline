@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { getTurnActivityLabel, isBoardSelectionGuidanceActive, shouldShowTurnCard, shouldSuppressTurnCardForFeedback, shouldSuppressTurnCardForSpaceSelection } from './turnActivity.js'
+import { getTurnActivityLabel, isBoardSelectionGuidanceActive, shouldShowResolvedTurnContinue, shouldShowTurnCard, shouldSuppressTurnCardForFeedback, shouldSuppressTurnCardForSpaceSelection } from './turnActivity.js'
 
 describe('atividade do jogador da vez', () => {
   it('descreve cada fase para os outros participantes', () => {
@@ -25,6 +25,14 @@ describe('atividade do jogador da vez', () => {
     expect(shouldSuppressTurnCardForFeedback(true, 'ended')).toBe(false)
     expect(shouldShowTurnCard(true, 'purchase', true, false)).toBe(false)
     expect(shouldShowTurnCard(true, 'purchase', false, true)).toBe(false)
+  })
+
+  it('mostra a ação para concluir a vez depois de resolver uma carta com alvo', () => {
+    expect(shouldShowResolvedTurnContinue(true, 'resolve', false, false, false)).toBe(true)
+    expect(shouldShowResolvedTurnContinue(true, 'resolve', false, true, false)).toBe(false)
+    expect(shouldShowResolvedTurnContinue(true, 'resolve', false, false, true)).toBe(false)
+    expect(shouldShowResolvedTurnContinue(true, 'resolve', true, false, false)).toBe(false)
+    expect(shouldShowResolvedTurnContinue(false, 'resolve', false, false, false)).toBe(false)
   })
 
   it('mantém decisões que precisam de ação visíveis enquanto avisos transitórios estão na fila', () => {
