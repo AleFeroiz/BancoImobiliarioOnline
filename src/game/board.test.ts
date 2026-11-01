@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { boardSpaces, positionOnBoard } from './board'
 import { getLineTitleIds } from '../../shared/board'
-import { JAIL_TURNS, STARTING_CASH, bankReturnValue, buildingSaleValue, calculateRent, canBuildHotel, canBuildProperty, canReturnPropertyToBank, canSellBuilding, constructionCost, describeLanding, hasLiquidatableAssets, hotelConstructionCost, movePosition, taxForSpace } from '../../shared/game'
+import { JAIL_TURNS, START_BONUS, STARTING_CASH, bankReturnValue, buildingSaleValue, calculateRent, canBuildHotel, canBuildProperty, canReturnPropertyToBank, canSellBuilding, constructionCost, describeLanding, hasLiquidatableAssets, hotelConstructionCost, movePosition, taxForSpace } from '../../shared/game'
 import { EVENT_CARDS } from '../../shared/cards'
 
 describe('tabuleiro', () => {
@@ -61,20 +61,22 @@ describe('tabuleiro', () => {
     expect(() => describeLanding(40)).toThrow(RangeError)
   })
 
-  it('calcula aluguel base, bônus do grupo e triplicação pela Copa', () => {
+  it('calcula aluguel incremental, monopólio, Copa e festival em multiplicadores de 2', () => {
     const property = boardSpaces.find((space) => space.kind === 'property')!
     const group = boardSpaces.filter((space) => space.kind === 'property' && space.color === property.color)
     const owner = new Map(group.map((space) => [space.id, 'jogador-1']))
-    const base = Math.floor((property.price ?? 0) * 0.1)
+    const base = property.rentAdditions![0]
 
     expect(STARTING_CASH).toBe(2_000_000)
     expect(calculateRent(property.id, new Map([[property.id, 'jogador-1']]))).toBe(base)
     expect(calculateRent(property.id, owner)).toBe(base * 2)
-    expect(calculateRent(property.id, owner, 1)).toBe(Math.floor((property.price ?? 0) * 0.2) * 2)
-    expect(calculateRent(property.id, owner, 2)).toBe(Math.floor((property.price ?? 0) * 0.4) * 2)
-    expect(calculateRent(property.id, owner, 3)).toBe(Math.floor((property.price ?? 0) * 0.7) * 2)
-    expect(calculateRent(property.id, owner, 4)).toBe(Math.floor((property.price ?? 0) * 1) * 2)
-    expect(calculateRent(property.id, owner, 2, property.id)).toBe(Math.floor((property.price ?? 0) * 0.4) * 6)
+    expect(START_BONUS).toBe(300_000)
+    expect(calculateRent(property.id, owner, 1)).toBe(property.rentAdditions!.slice(0, 2).reduce((sum, value) => sum + value, 0) * 2)
+    expect(calculateRent(property.id, owner, 2)).toBe(property.rentAdditions!.slice(0, 3).reduce((sum, value) => sum + value, 0) * 2)
+    expect(calculateRent(property.id, owner, 3)).toBe(property.rentAdditions!.slice(0, 4).reduce((sum, value) => sum + value, 0) * 2)
+    expect(calculateRent(property.id, owner, 4)).toBe(property.rentAdditions!.reduce((sum, value) => sum + value, 0) * 2)
+    expect(calculateRent(property.id, owner, 2, property.id)).toBe(property.rentAdditions!.slice(0, 3).reduce((sum, value) => sum + value, 0) * 4)
+    expect(calculateRent(property.id, owner, 2, property.id, new Set([property.id]))).toBe(property.rentAdditions!.slice(0, 3).reduce((sum, value) => sum + value, 0) * 8)
   })
 
   it('permite até três casas sem grupo completo e exige visita posterior para o hotel', () => {
@@ -82,7 +84,7 @@ describe('tabuleiro', () => {
     const group = boardSpaces.filter((space) => space.kind === 'property' && space.buildable && space.color === first.color)
     const second = group[1]
     const holdings = new Map(group.map((space) => [space.id, { ownerSessionId: 'p1', houses: 0 }]))
-    const cost = Math.floor((first.price ?? 0) * 0.5)
+    const cost = first.constructionCost!
 
     expect(constructionCost(first.id)).toBe(cost)
     expect(canBuildProperty(first.id, 'p1', holdings, 1_000_000)).toBe(true)

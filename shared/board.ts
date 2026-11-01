@@ -7,6 +7,9 @@ export type BoardSpace = {
   kind: SpaceKind
   color: string
   price?: number
+  constructionCost?: number
+  hotelCost?: number
+  rentAdditions?: readonly [number, number, number, number, number]
   buildable?: boolean
   region?: RegionId
   company?: boolean
@@ -45,9 +48,59 @@ const cities: City[] = [
   { name: 'Osasco', price: 600_000, region: 'southeast' },
   { name: 'Belo Horizonte', price: 675_000, region: 'southeast' },
   { name: 'Maricá', price: 700_000, region: 'southeast' },
-  { name: 'Rio de Janeiro', price: 800_000, region: 'southeast' },
   { name: 'São Paulo', price: 950_000, region: 'southeast' },
+  { name: 'Rio de Janeiro', price: 800_000, region: 'southeast' },
 ]
+
+type CityEconomy = { price: number; constructionCost: number; hotelCost: number; rentAdditions: readonly [number, number, number, number, number] }
+const businessTourCityCurve: CityEconomy[] = [
+  { price: 60_000, constructionCost: 50_000, hotelCost: 150_000, rentAdditions: [2_000, 23_000, 25_000, 25_000, 75_000] },
+  { price: 60_000, constructionCost: 50_000, hotelCost: 150_000, rentAdditions: [2_000, 26_000, 27_000, 28_000, 82_000] },
+  { price: 60_000, constructionCost: 50_000, hotelCost: 150_000, rentAdditions: [4_000, 26_000, 30_000, 30_000, 90_000] },
+  { price: 100_000, constructionCost: 50_000, hotelCost: 150_000, rentAdditions: [6_000, 27_000, 32_000, 33_000, 90_000] },
+  { price: 100_000, constructionCost: 50_000, hotelCost: 150_000, rentAdditions: [6_000, 29_000, 40_000, 30_000, 105_000] },
+  { price: 120_000, constructionCost: 50_000, hotelCost: 150_000, rentAdditions: [8_000, 30_000, 37_000, 38_000, 112_000] },
+  { price: 140_000, constructionCost: 100_000, hotelCost: 250_000, rentAdditions: [10_000, 60_000, 70_000, 70_000, 175_000] },
+  { price: 140_000, constructionCost: 100_000, hotelCost: 250_000, rentAdditions: [10_000, 65_000, 75_000, 75_000, 188_000] },
+  { price: 160_000, constructionCost: 100_000, hotelCost: 250_000, rentAdditions: [12_000, 68_000, 80_000, 80_000, 200_000] },
+  { price: 180_000, constructionCost: 100_000, hotelCost: 250_000, rentAdditions: [14_000, 71_000, 85_000, 85_000, 213_000] },
+  { price: 200_000, constructionCost: 100_000, hotelCost: 250_000, rentAdditions: [16_000, 74_000, 90_000, 90_000, 225_000] },
+  { price: 220_000, constructionCost: 150_000, hotelCost: 375_000, rentAdditions: [18_000, 90_000, 112_000, 113_000, 281_000] },
+  { price: 240_000, constructionCost: 150_000, hotelCost: 375_000, rentAdditions: [20_000, 100_000, 120_000, 120_000, 300_000] },
+  { price: 260_000, constructionCost: 150_000, hotelCost: 375_000, rentAdditions: [22_000, 106_000, 127_000, 128_000, 318_000] },
+  { price: 260_000, constructionCost: 150_000, hotelCost: 375_000, rentAdditions: [22_000, 113_000, 135_000, 135_000, 338_000] },
+  { price: 280_000, constructionCost: 150_000, hotelCost: 375_000, rentAdditions: [24_000, 119_000, 142_000, 143_000, 356_000] },
+  { price: 300_000, constructionCost: 200_000, hotelCost: 500_000, rentAdditions: [26_000, 144_000, 170_000, 170_000, 425_000] },
+  { price: 320_000, constructionCost: 200_000, hotelCost: 500_000, rentAdditions: [28_000, 152_000, 180_000, 180_000, 450_000] },
+  { price: 350_000, constructionCost: 200_000, hotelCost: 500_000, rentAdditions: [35_000, 155_000, 190_000, 190_000, 475_000] },
+  { price: 400_000, constructionCost: 200_000, hotelCost: 500_000, rentAdditions: [50_000, 150_000, 200_000, 200_000, 500_000] },
+]
+
+function interpolateAmount(first: number, second: number, amount: number, roundingStep: number) {
+  return Math.round((first + (second - first) * amount) / roundingStep) * roundingStep
+}
+
+function interpolateCityEconomy(rank: number, targetCount: number): CityEconomy {
+  const sourcePosition = rank * (businessTourCityCurve.length - 1) / (targetCount - 1)
+  const firstIndex = Math.floor(sourcePosition)
+  const secondIndex = Math.min(businessTourCityCurve.length - 1, firstIndex + 1)
+  const amount = sourcePosition - firstIndex
+  const first = businessTourCityCurve[firstIndex]!
+  const second = businessTourCityCurve[secondIndex]!
+  const rentAdditions = first.rentAdditions.map((value, index) => interpolateAmount(value, second.rentAdditions[index]!, amount, 1_000)) as unknown as CityEconomy['rentAdditions']
+  return {
+    price: interpolateAmount(first.price, second.price, amount, 5_000),
+    constructionCost: interpolateAmount(first.constructionCost, second.constructionCost, amount, 5_000),
+    hotelCost: interpolateAmount(first.hotelCost, second.hotelCost, amount, 5_000),
+    rentAdditions,
+  }
+}
+
+const cityEconomiesByName = new Map(
+  [...cities]
+    .sort((first, second) => first.price - second.price)
+    .map((city, rank) => [city.name, interpolateCityEconomy(rank, cities.length)] as const),
+)
 
 const companySpaces: Record<number, string> = {
   4: 'AgroBrasil',
@@ -79,7 +132,20 @@ export const boardSpaces: BoardSpace[] = Array.from({ length: 40 }, (_, id) => {
   if (!cityIds.includes(id)) throw new Error(`Casa ${id} não foi configurada.`)
   const city = cities[cityIndex++]
   if (!city) throw new Error(`Cidade ausente para a casa ${id}.`)
-  return { id, name: city.name, kind: 'property', color: REGION_DETAILS[city.region].color, price: city.price, buildable: true, region: city.region }
+  const economy = cityEconomiesByName.get(city.name)
+  if (!economy) throw new Error(`Economia ausente para ${city.name}.`)
+  return {
+    id,
+    name: city.name,
+    kind: 'property',
+    color: REGION_DETAILS[city.region].color,
+    price: economy.price,
+    constructionCost: economy.constructionCost,
+    hotelCost: economy.hotelCost,
+    rentAdditions: economy.rentAdditions,
+    buildable: true,
+    region: city.region,
+  }
 })
 
 export const companyIds = Object.keys(companySpaces).map(Number)

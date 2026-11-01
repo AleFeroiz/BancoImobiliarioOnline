@@ -3,9 +3,9 @@
 ## Confirmadas e vigentes
 
 - O produto é **BANTEC**: jogo de tabuleiro privado para navegador, sem contas, para 2–4 participantes, com tabuleiro 3D original e interface responsiva.
-- Existe um modo. A anfitriã escolhe no lobby partidas de 15 minutos, 30 minutos, 1 hora ou sem limite de tempo. O saldo inicial aprovado permanece em R$ 2.000.000 por participante enquanto a revisão econômica solicitada pelo usuário está em aberto.
+- Existe um modo. A anfitriã escolhe no lobby partidas de 15 minutos, 30 minutos, 1 hora ou sem limite de tempo. A economia inspirada em Business Tour mantém R$ 2.000.000 iniciais e bônus de R$ 300.000 ao passar pela Partida.
 - O percurso tem 40 casas: 24 cidades, quatro companhias, quatro taxas, quatro Sorte ou Revés e quatro cantos especiais. Não existem casas de descanso nem o modo Express.
-- As cidades, regiões, cores e preços abaixo definem a economia do tabuleiro. Os preços são valores de jogo orientados pela ordem do PIB municipal, não uma conversão de PIB para reais.
+- As cidades, regiões e cores abaixo definem o percurso. Os preços seguem uma curva econômica inspirada em Business Tour e adaptada às 24 cidades; não são conversão de PIB para reais.
 - Regras atuais de aluguel, construções, dívida, vitória, cartas, cantos e negociação estão especificadas em [REGRAS-DE-JOGO.md](REGRAS-DE-JOGO.md). Essa especificação substitui as regras antigas registradas no histórico.
 - Durante a partida, cada participante pode lançar tomate, ovo, lama ou farinha em outro participante. A sala valida um intervalo de cinco segundos por par lançador/alvo; o projétil é uma animação visual e o impacto temporário aparece apenas na tela do alvo, sem interceptar cliques.
 - Duplas numa rolagem normal são anunciadas em destaque; a terceira dupla consecutiva continua enviando a pessoa à Prisão.
@@ -16,23 +16,25 @@
 
 | Região | Cor do piso | Cidades e preço de compra |
 |---|---|---|
-| Norte | Turquesa `#00A6A6` | Canaã dos Carajás — R$ 200.000; Porto Velho — R$ 250.000; Parauapebas — R$ 275.000; Belém — R$ 350.000; Manaus — R$ 650.000. |
-| Centro-Oeste | Dourado `#E6B84B` | Rio Verde — R$ 225.000; Cuiabá — R$ 325.000; Campo Grande — R$ 375.000; Goiânia — R$ 500.000; Brasília — R$ 725.000. |
-| Nordeste | Rosa `#D45087` | Maceió — R$ 300.000; São Luís — R$ 400.000; Recife — R$ 475.000; Salvador — R$ 525.000; Fortaleza — R$ 550.000. |
-| Sul | Verde `#4A9D68` | Itajaí — R$ 425.000; Joinville — R$ 450.000; Porto Alegre — R$ 575.000; Curitiba — R$ 625.000. |
-| Sudeste | Azul `#3B65CC` | Osasco — R$ 600.000; Belo Horizonte — R$ 675.000; Maricá — R$ 700.000; Rio de Janeiro — R$ 800.000; São Paulo — R$ 950.000. |
+| Norte | Turquesa `#00A6A6` | Canaã dos Carajás — R$ 60.000; Porto Velho — R$ 60.000; Parauapebas — R$ 80.000; Belém — R$ 120.000; Manaus — R$ 275.000. |
+| Centro-Oeste | Dourado `#E6B84B` | Rio Verde — R$ 60.000; Cuiabá — R$ 105.000; Campo Grande — R$ 135.000; Goiânia — R$ 200.000; Brasília — R$ 330.000. |
+| Nordeste | Rosa `#D45087` | Maceió — R$ 100.000; São Luís — R$ 140.000; Recife — R$ 180.000; Salvador — R$ 215.000; Fortaleza — R$ 230.000. |
+| Sul | Verde `#4A9D68` | Itajaí — R$ 150.000; Joinville — R$ 165.000; Porto Alegre — R$ 250.000; Curitiba — R$ 260.000. |
+| Sudeste | Azul `#3B65CC` | Osasco — R$ 260.000; Belo Horizonte — R$ 295.000; Maricá — R$ 310.000; São Paulo — R$ 400.000; Rio de Janeiro — R$ 360.000. |
 
-A volta começa pela região de menor participação no PIB nacional e termina na de maior: **Norte → Centro-Oeste → Nordeste → Sul → Sudeste**. Dentro de cada região, as cidades seguem do menor para o maior PIB municipal; São Paulo é o último imóvel antes da Partida. Para 2023, as participações regionais são Norte 5,8%, Centro-Oeste 10,6%, Nordeste 13,8%, Sul 16,8% e Sudeste 53,0% ([IBGE](https://agenciadenoticias.ibge.gov.br/media/com_mediaibge/arquivos/9c2b887d59dd6c63da1b39b00c6cacce.pdf)). A seleção de cidades e os preços são uma escala de balanceamento, não uma conversão de PIB.
+A volta começa pela região de menor participação no PIB nacional e termina na de maior: **Norte → Centro-Oeste → Nordeste → Sul → Sudeste**. Dentro de cada região, as cidades seguem do menor para o maior PIB municipal; na região Sudeste, Rio de Janeiro vem logo após São Paulo e encerra o percurso antes da Partida. Para 2023, as participações regionais são Norte 5,8%, Centro-Oeste 10,6%, Nordeste 13,8%, Sul 16,8% e Sudeste 53,0% ([IBGE](https://agenciadenoticias.ibge.gov.br/media/com_mediaibge/arquivos/9c2b887d59dd6c63da1b39b00c6cacce.pdf)). A seleção de cidades e os preços são uma escala de balanceamento, não uma conversão de PIB.
 
 ## Outras regras econômicas aprovadas
 
 - **Monopólio Regional:** possuir todas as cidades de uma região dobra o aluguel. Completar duas regiões diferentes é uma vitória imediata. O Sul tem quatro cidades; cada outra região tem cinco.
 - **Monopólio em Linha:** cada lado do tabuleiro contém seis cidades e uma companhia. Possuir os sete títulos daquele lado vence imediatamente. Taxas e Sorte ou Revés não contam.
-- **Companhias:** AgroBrasil, Aviação Brasil, Energia Brasil e Mineração Brasil custam R$ 500.000 cada. Os aluguéis totais são R$ 100.000, R$ 250.000, R$ 450.000 e R$ 750.000 para uma, duas, três ou quatro companhias. Possuir as quatro vence imediatamente; companhias não pertencem às regiões, mas contam para a linha e os impostos.
-- **Cidades:** aluguel de 10%, 20%, 40%, 70% e 100% do preço para terreno, uma, duas, três casas e hotel. Uma região completa dobra o aluguel; Copa do Mundo multiplica o resultado por três. Casa custa metade do preço da cidade; hotel custa três casas e substitui as três.
+- **Companhias:** AgroBrasil, Aviação Brasil, Energia Brasil e Mineração Brasil custam R$ 500.000 cada. Ao cair numa companhia, role um novo D6: o aluguel é R$ 50.000 × companhias do dono (1–3) × resultado. Possuir as quatro vence imediatamente; companhias não pertencem às regiões, mas contam para a linha e os impostos.
+- **Cidades:** cada nível adiciona ao aluguel o valor configurado para aquela cidade, seguindo a curva observada em Business Tour e interpolada pela ordem dos preços para as 24 cidades do BANTEC. Os custos de terreno, casa e hotel também seguem essa curva. Monopólio Regional, festival e Copa do Mundo multiplicam o aluguel por 2 cada e acumulam entre si.
+- **Festivais:** no início de cada partida, três cidades distintas são sorteadas. O aluguel nelas dobra enquanto durar a partida.
+- **Partida:** ao passar, recebe R$ 300.000. Ao parar exatamente na Partida, uma cidade própria aleatória ainda sem hotel é escolhida para uma oferta opcional de melhoria de um nível; o custo normal deve ser pago. Apenas passar pela casa não oferece melhoria.
 - **Taxas:** R$ 10.000, R$ 15.000, R$ 20.000 e R$ 25.000 por cidade/companhia possuída. Construções não contam. Título vendido ou devolvido ao banco deixa de contar.
 - **Devolução durante dívida:** devolver uma cidade ou companhia ao banco rende 50% do preço e encerra a posse imediatamente; o título volta a ficar livre. Não existe hipoteca ou resgate. Construções do grupo precisam ser vendidas antes.
-- **Recompra forçada:** ao cair em imóvel de outra pessoa, primeiro se paga o aluguel normal. Se, depois disso, ainda houver saldo para 1,5× o investimento total e o imóvel não tiver hotel, o jogador pode recomprá-lo. O valor integral da recompra é pago diretamente ao dono, sem depender de consentimento; a posse passa ao comprador. Hotel impede recompra.
+- **Recompra forçada:** ao cair em imóvel de outra pessoa, primeiro se paga o aluguel normal. Se, depois disso, ainda houver saldo para 2× o investimento total e o imóvel não tiver hotel, o jogador pode recomprá-lo. O valor integral da recompra é pago diretamente ao dono, sem depender de consentimento; a posse passa ao comprador. Hotel impede recompra.
 - **Duplas:** numa rolagem normal, duplas permitem repetir depois de concluir a chegada. A terceira dupla consecutiva envia à Prisão sem mover pelo terceiro resultado. Duplas tentadas para sair da Prisão não concedem nova jogada.
 - **Resultado final:** a tela de encerramento informa a causa sincronizada pelo servidor: tempo, falência, Monopólio em Linha, Monopólio Duplo Regional, quatro companhias ou ausência de participantes solventes.
 - **Sorte ou Revés:** baralho autoral de 12 cartas com reposição; efeitos e exceções atuais estão em [REGRAS-DE-JOGO.md](REGRAS-DE-JOGO.md).
@@ -43,7 +45,7 @@ A volta começa pela região de menor participação no PIB nacional e termina n
 ## Propostas abertas e validações necessárias
 
 - As 12 cartas foram percorridas em revisão manual visual; a evidência consolidada está em `docs/VALIDACAO.md`. Playtests humanos podem ser feitos pelo usuário, mas não são critério para concluir a reforma.
-- **Em aberto:** recalibrar a economia inicial após decisão do usuário em conversa separada; por enquanto, manter preços, custos e caixa inicial aprovados.
+- **Em aberto:** observar ritmo e frequência de falência em partidas humanas depois da reforma econômica; os modificadores de aluguel acumulam sem limite adicional nesta versão.
 - A home foi repaginada com o percurso visual das cinco regiões; a próxima revisão da página inicial deve preservar esse caminho, a leitura rápida e o acesso direto a criar/entrar em sala.
 - **Hospedagem escolhida: Render, priorizando simplicidade** (2026-10-31). O frontend continua na Vercel; o serviço multiplayer existente no Render está documentado como Free e vinculado ao repositório. A escolha não aprova upgrade pago. O Free pode hibernar após 15 minutos sem tráfego de entrada e levar cerca de um minuto para despertar; o fornecedor não o recomenda para produção. O usuário confirmou em 2026-10-31 que desligou o Auto-Deploy nativo e testou o site público, onde o jogo está rodando. O workflow do commit `63bb40e` concluiu `npm run verify` e o passo `Trigger Render deploy`; isso confirma que o pedido do Deploy Hook foi aceito, não o SHA efetivamente ativo no painel. Para uso contínuo, confirmar o custo do Starter (referência pesquisada: US$ 7/mês, 512 MB). Fontes: [limites do Render Free](https://render.com/docs/free), [Deploy Hooks](https://render.com/docs/deploy-hooks), [preços Render](https://render.com/pricing).
 

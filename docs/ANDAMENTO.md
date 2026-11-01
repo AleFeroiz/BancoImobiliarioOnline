@@ -1,9 +1,18 @@
+# Reforma econômica inspirada em Business Tour — implementada (2026-11-01)
+
+- O usuário aprovou manter R$ 2.000.000 iniciais e R$ 300.000 ao passar pela Partida; três cidades aleatórias recebem festival ×2 no início; Copa passa de ×3 para ×2; multiplicadores regionais/festival/Copa acumulam.
+- As 24 cidades mantêm nomes, regiões e cores do BANTEC; compra, custos de construção e aluguéis incrementais foram interpolados pela posição na curva de 20 cidades de Business Tour observadas em capturas. As taxas permanecem como estavam. O estoque do tabuleiro segue com 40 casas.
+- Companhias continuam a R$ 500.000 e quatro dão vitória. Aluguel usa um novo D6 ao cair: R$ 50.000 × companhias do dono (1–3) × resultado. Recompra forçada: 2× investimento, depois do aluguel; hotel continua inelegível.
+- Parar exatamente na Partida oferece uma melhoria de um nível em uma cidade própria aleatória elegível, paga pelo custo normal; passar não oferece melhoria. A melhoria é opcional.
+- Escopo alheio preservado: `assets/blender/special-corners.blend` e `.blend1` têm mudanças do usuário.
+- Validação: `npm run verify` passou com 262 testes, build do frontend e build do servidor. Graphify foi atualizado. Na partida local, confirmei os saldos iniciais de R$ 2.000.000, três marcadores 🎉 ×2 no tabuleiro e a animação de duplas; os testes de integração cobrem a oferta paga ao parar exatamente na Partida e o novo D6 de companhia. Não concluí uma partida para medir o equilíbrio entre pessoas.
+- Próximo passo: observar partidas reais com amigos para calibrar a duração e a pressão financeira sem alterar os multiplicadores aprovados por enquanto.
 # Auditoria da reforma BANTEC — 2026-11-01
 
-- Velocidade-base do movimento ajustada e publicada em `main` (`65b2c0e`): cada casa agora leva 375 ms em 1×, equivalente ao antigo 2×. Testes e builds passaram; partida local confirmou movimento e chegada a Belém. Próximo passo da reforma: continuar as frentes pendentes, mantendo a economia no chat dedicado.
+- Velocidade-base do movimento ajustada e publicada em `main` (`65b2c0e`): cada casa agora leva 375 ms em 1×, equivalente ao antigo 2×. Testes e builds passaram; partida local confirmou movimento e chegada a Belém. Próximo passo da reforma: continuar as frentes pendentes, preservando a revisão econômica registrada no início deste arquivo.
 - O worktree está em `main`; as alterações do usuário em `assets/blender/special-corners.blend` e `.blend1` permanecem fora do escopo e sem staging.
 - Nova frente solicitada: corrigir Apagão e aluguel visível; destaque de duplas; animação persistente de projéteis; bolha 3D da Proteção; colapso e som do Terremoto; troca imediata das fichas; marcador da sede da Copa; bônus da Partida condicionado ao trajeto; liquidação automática ao cobrir dívida; teleportes de cartas animados; e opção sem limite de tempo.
-- A economia está deliberadamente pendente de decisão do usuário em outro chat. Manter preços e caixa inicial existentes (R$ 2.000.000) até receber orientação; não tratar playtest humano como bloqueio.
+- A revisão econômica agora está sendo conduzida nesta frente; consulte a seção mais recente no início deste arquivo para os parâmetros aprovados.
 - Próximo passo: concluir regressões e ajustes visuais, executar `npm run graphify -- update .` e `npm run verify`, fazer revisão visual pelo Game Studio e publicar somente os arquivos relacionados.
 
 # Playtest manual das 12 cartas BANTEC — concluído (2026-10-31)
@@ -507,3 +516,10 @@
 - Regressões cobrem ancoragem e percurso entre coordenadas atuais, incluindo movimento e limites exatos de início/fim. Em playtest local, lancei durante a animação do Bot 1 e vi o tomate junto à ficha em movimento; o percurso usou a ficha que estava visível, em vez da casa final.
 - `npm run verify`: 254 testes em 49 arquivos passaram; builds frontend/servidor passaram. `npm run graphify -- update .` atualizou o grafo para 977 nós e 1.820 arestas. O build mantém o aviso conhecido de chunk 3D acima de 500 kB.
 - Próximo passo: continuar os playtests humanos pendentes da reforma BANTEC.
+# Revisão econômica inspirada em Business Tour — concluída (2026-11-01)
+
+- O usuário confirmou a direção de aproximar a economia das cidades ao Business Tour: caixa inicial segue em R$ 2.000.000; bônus por volta passa a R$ 300.000; Copa dobra o aluguel; as quatro companhias continuam vencendo a partida, e o aluguel usa R$ 50.000 × quantidade de companhias do dono × resultado de um dado de seis faces (apenas até três companhias).
+- Dados observados pelo usuário em 20 cidades do Business Tour: custos BUY/RENT são acréscimos por nível; festivais escolhem três cidades no início e elevam seu aluguel (Roma mostrou R$ 320.000 com duas casas contra R$ 160.000 da tabela base); recompra observada a 2× o investimento. Ao cair exatamente na Partida, a pessoa recebe uma oportunidade paga de melhorar uma cidade aleatória própria, sem precisar estar nela.
+- Para BANTEC, o usuário aprovou distribuir a curva de 20 cidades entre as 24 cidades por interpolação, manter 40 casas para preservar a disponibilidade aproximada por cidade, manter as taxas atuais por falta de referência do Business Tour e tratar o acúmulo de bônus por último, aceitando aluguel muito alto como parte do ritmo rápido.
+- A economia foi aplicada aos módulos do servidor, tabuleiro e HUD; as regras e decisões vigentes foram atualizadas. As alterações locais preexistentes em `assets/blender/special-corners.blend` e `.blend1` foram preservadas e ficaram fora do escopo.
+- Validação concluída conforme a seção inicial e `docs/VALIDACAO.md`; próximo passo é observar partidas completas com pessoas para avaliar duração, ritmo de falência e frequência dos aluguéis extremos.

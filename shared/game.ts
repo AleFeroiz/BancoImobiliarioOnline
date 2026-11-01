@@ -4,7 +4,11 @@ export type DiceRoll = readonly [number, number]
 export type MatchEndReason = 'timeout' | 'bankruptcy' | 'no-solvent-players' | 'monopoly-line' | 'double-regional-monopoly' | 'all-companies'
 
 export const STARTING_CASH = 2_000_000
-export const START_BONUS = 200_000
+export const START_BONUS = 300_000
+export const FESTIVAL_CITY_COUNT = 3
+export const FESTIVAL_RENT_MULTIPLIER = 2
+export const WORLD_CUP_RENT_MULTIPLIER = 2
+export const COMPANY_RENT_PER_OWNED = 50_000
 export const PROPERTY_BUILD_LEVELS = 3
 export const PROPERTY_HOTEL_LEVEL = 4
 export const DICE_ANIMATION_DURATION_MS = 2_800
@@ -57,6 +61,15 @@ export function movePosition(position: number, dice: DiceRoll) {
   return (position + dice[0] + dice[1]) % spaces
 }
 
+export function chooseFestivalCityIds(random: () => number = Math.random) {
+  const candidates = boardSpaces.filter((space) => space.kind === 'property' && space.buildable).map((space) => space.id)
+  for (let index = candidates.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.min(index, Math.max(0, Math.floor(random() * (index + 1))))
+    ;[candidates[index], candidates[swapIndex]] = [candidates[swapIndex]!, candidates[index]!]
+  }
+  return candidates.slice(0, FESTIVAL_CITY_COUNT)
+}
+
 export function areDiceDoubles(dice: DiceRoll) {
   return dice[0] === dice[1]
 }
@@ -70,25 +83,26 @@ export function describeLanding(spaceId: number) {
     event: 'Você parou em uma casa de evento.',
     tax: 'Você parou em uma casa de taxa.',
     prison: 'Você caiu na prisão. Aguarde, tente duplas ou pague R$ 200.000 para sair.',
-    'world-cup': 'Escolha uma propriedade para sediar a Copa do Mundo; o aluguel dela triplica.',
+    'world-cup': 'Escolha uma propriedade para sediar a Copa do Mundo; o aluguel dela dobra.',
     'world-tour': 'Escolha uma propriedade sua, livre ou casa especial para visitar.',
   } satisfies Record<typeof space.kind, string>
   return `${space.name}. ${descriptions[space.kind]}`
 }
 
-export function calculateRent(spaceId: number, ownership: ReadonlyMap<number, string>, houses = 0, worldCupSpaceId = -1) {
+export function calculateRent(spaceId: number, ownership: ReadonlyMap<number, string>, houses = 0, worldCupSpaceId = -1, festivalSpaceIds: ReadonlySet<number> = new Set()) {
   const space = boardSpaces[spaceId]
   if (!space || space.kind !== 'property' || typeof space.price !== 'number' || space.company) return 0
   const groupSpaces = boardSpaces.filter((candidate) => candidate.region === space.region)
   const groupIsComplete = groupSpaces.length > 1 && groupSpaces.every((candidate) => ownership.get(candidate.id) === ownership.get(spaceId))
-  const rentRate = [0.1, 0.2, 0.4, 0.7, 1][Math.max(0, Math.min(4, houses))] ?? 0.1
-  const rent = Math.round(space.price * rentRate) * (groupIsComplete ? 2 : 1)
-  return spaceId === worldCupSpaceId ? rent * 3 : rent
+  const level = Math.max(0, Math.min(4, houses))
+  const rent = (space.rentAdditions ?? []).slice(0, level + 1).reduce((total, addition) => total + addition, 0)
+  const multiplier = (groupIsComplete ? 2 : 1) * (festivalSpaceIds.has(spaceId) ? FESTIVAL_RENT_MULTIPLIER : 1) * (spaceId === worldCupSpaceId ? WORLD_CUP_RENT_MULTIPLIER : 1)
+  return rent * multiplier
 }
 
-export function calculateCompanyRent(ownership: ReadonlyMap<number, string>, ownerSessionId: string) {
+export function calculateCompanyRent(ownership: ReadonlyMap<number, string>, ownerSessionId: string, dieRoll = 1) {
   const ownedCount = companyIds.filter((spaceId) => ownership.get(spaceId) === ownerSessionId).length
-  return [0, 100_000, 250_000, 450_000, 750_000][ownedCount] ?? 0
+  return ownedCount * COMPANY_RENT_PER_OWNED * Math.max(0, Math.min(6, Math.trunc(dieRoll)))
 }
 
 export function getMonopolyWinReason(ownership: ReadonlyMap<number, string>, ownerSessionId: string): MatchEndReason | null {
@@ -124,7 +138,7 @@ export function getMatchEndSummary(reason: MatchEndReason | '') {
 export function constructionCost(spaceId: number) {
   const space = boardSpaces[spaceId]
   return space?.kind === 'property' && space.buildable && typeof space.price === 'number'
-    ? Math.floor(space.price * 0.5)
+    ? space.constructionCost ?? Math.floor(space.price * 0.5)
     : 0
 }
 
@@ -134,7 +148,8 @@ export function buildingSaleValue(spaceId: number, houses = 0) {
 }
 
 export function hotelConstructionCost(spaceId: number) {
-  return constructionCost(spaceId) * 3
+  const space = boardSpaces[spaceId]
+  return space?.kind === 'property' && space.buildable ? space.hotelCost ?? constructionCost(spaceId) * 3 : 0
 }
 
 export function canSellBuilding(
@@ -176,7 +191,7 @@ export function forcedBuybackCost(spaceId: number, houses = 0) {
   const space = boardSpaces[spaceId]
   if (!space || space.kind !== 'property' || typeof space.price !== 'number' || houses === PROPERTY_HOTEL_LEVEL) return 0
   if (!Number.isInteger(houses) || houses < 0 || houses > PROPERTY_BUILD_LEVELS) return 0
-  return Math.floor((space.price + houses * constructionCost(spaceId)) * 1.5)
+  return (space.price + houses * constructionCost(spaceId)) * 2
 }
 
 export function canReturnPropertyToBank(

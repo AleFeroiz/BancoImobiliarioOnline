@@ -2,7 +2,7 @@ import { randomInt } from 'node:crypto'
 import { CloseCode, Client, Room } from '@colyseus/core'
 import type { GameMode } from '../../../shared/lobby.js'
 import { isCharacterType, isGameMode, normalizePlayerName } from '../../../shared/lobby.js'
-import { AUCTION_DURATION_SECONDS, AUCTION_MIN_BID_INCREMENT, CLASSIC_MATCH_SECONDS, DEFAULT_ANIMATION_SPEED, DICE_ANIMATION_DURATION_MS, JAIL_TURNS, MATCH_DURATIONS, PAWN_STEP_ANIMATION_DURATION_MS, PAWN_TELEPORT_ANIMATION_DURATION_MS, PROPERTY_BUILD_LEVELS, PROPERTY_HOTEL_LEVEL, START_BONUS, STARTING_CASH, TURN_DECISION_SECONDS, TURN_ROLL_SECONDS, areDiceDoubles, bankReturnValue, buildingSaleValue, calculateCompanyRent, calculateNetWorth, calculateRent, canBuildHotel, canBuildProperty, canReturnPropertyToBank, canSellBuilding, constructionCost, describeLanding, forcedBuybackCost, getAnimationDuration, getMonopolyWinReason, hasLiquidatableAssets, hotelConstructionCost, isAnimationSpeed, isMatchDuration, movePosition, taxForSpace, type MatchEndReason } from '../../../shared/game.js'
+import { AUCTION_DURATION_SECONDS, AUCTION_MIN_BID_INCREMENT, CLASSIC_MATCH_SECONDS, DEFAULT_ANIMATION_SPEED, DICE_ANIMATION_DURATION_MS, JAIL_TURNS, MATCH_DURATIONS, PAWN_STEP_ANIMATION_DURATION_MS, PAWN_TELEPORT_ANIMATION_DURATION_MS, PROPERTY_BUILD_LEVELS, PROPERTY_HOTEL_LEVEL, START_BONUS, STARTING_CASH, TURN_DECISION_SECONDS, TURN_ROLL_SECONDS, areDiceDoubles, bankReturnValue, buildingSaleValue, calculateCompanyRent, calculateNetWorth, calculateRent, canBuildHotel, canBuildProperty, canReturnPropertyToBank, canSellBuilding, chooseFestivalCityIds, constructionCost, describeLanding, forcedBuybackCost, getAnimationDuration, getMonopolyWinReason, hasLiquidatableAssets, hotelConstructionCost, isAnimationSpeed, isMatchDuration, movePosition, taxForSpace, type MatchEndReason } from '../../../shared/game.js'
 import { boardSpaces } from '../../../shared/board.js'
 import { PLAYER_COLORS, isPlayerColor } from '../../../shared/playerColors.js'
 import { isPlayerEmote } from '../../../shared/playerEmotes.js'
@@ -216,6 +216,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       this.state.status = 'playing'
       this.state.presentationSpeed = this.state.animationSpeed
       this.state.properties.clear()
+      this.state.festivalSpaceIds = chooseFestivalCityIds().join(',')
       for (const player of this.state.players.values()) {
         player.position = 0
         player.cash = STARTING_CASH
@@ -422,6 +423,29 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       this.state.pendingPropertyId = 255
       const debtOpened = (this.state as LobbyState).turnPhase === 'debt'
       if (!debtOpened) this.state.turnPhase = 'resolve'
+      this.finishExpiredPhaseIfReady()
+    },
+    startUpgrade: (client: Client, payload: { accept?: unknown }) => {
+      if (this.state.status !== 'playing' || this.state.turnPhase !== 'start-upgrade' || client.sessionId !== this.state.activePlayerSessionId || typeof payload?.accept !== 'boolean') return
+      const player = this.state.players.get(client.sessionId)
+      const propertyId = this.state.pendingPropertyId
+      const property = this.state.properties.get(String(propertyId))
+      const space = boardSpaces[propertyId]
+      if (!player || !property || !space?.buildable || property.ownerSessionId !== client.sessionId || property.houses >= PROPERTY_HOTEL_LEVEL) return
+      if (payload.accept) {
+        const cost = property.houses === PROPERTY_BUILD_LEVELS ? hotelConstructionCost(propertyId) : constructionCost(propertyId)
+        if (!this.canSpend(player, cost)) {
+          client.send('room:error', { message: `A melhoria custa ${cost.toLocaleString('pt-BR')}; seu saldo é insuficiente.` })
+          return
+        }
+        this.spendCash(player, cost)
+        property.houses = property.houses === PROPERTY_BUILD_LEVELS ? PROPERTY_HOTEL_LEVEL : property.houses + 1
+        this.state.landingDescription = `Você parou exatamente na Partida e melhorou ${space.name} por ${cost.toLocaleString('pt-BR')}.`
+      } else {
+        this.state.landingDescription = `Você parou exatamente na Partida e recusou a melhoria paga de ${space.name}.`
+      }
+      this.state.pendingPropertyId = 255
+      this.state.turnPhase = 'resolve'
       this.finishExpiredPhaseIfReady()
     },
     build: (client: Client, payload: { propertyId?: unknown; targetHouses?: unknown; hotel?: unknown }) => {
@@ -868,7 +892,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       }
       this.state.worldCupSpaceId = propertyId
       this.state.turnPhase = 'resolve'
-      this.state.landingDescription = `${space.name} será sede da Copa do Mundo. O aluguel agora vale três vezes o valor normal.`
+      this.state.landingDescription = `${space.name} será sede da Copa do Mundo. O aluguel agora vale duas vezes o valor normal.`
       this.finishExpiredPhaseIfReady()
     },
     chooseWorldTour: (client: Client, payload: { spaceId?: unknown }) => {
@@ -1004,6 +1028,10 @@ export class GameRoom extends Room<{ state: LobbyState }> {
     }]))
   }
 
+  private getFestivalSpaceIds() {
+    return new Set(this.state.festivalSpaceIds ? this.state.festivalSpaceIds.split(',').map(Number).filter(Number.isInteger) : [])
+  }
+
   private clearDebt() {
     this.state.debtAmount = 0
     this.state.debtCreditorSessionId = ''
@@ -1077,7 +1105,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       }
       return
     }
-    if (this.state.turnSeconds === 0 || !['roll', 'purchase', 'buyback', 'resolve', 'jail', 'world-cup', 'world-tour', 'card-target', 'debt'].includes(phase)) return
+    if (this.state.turnSeconds === 0 || !['roll', 'purchase', 'buyback', 'start-upgrade', 'resolve', 'jail', 'world-cup', 'world-tour', 'card-target', 'debt'].includes(phase)) return
     this.state.turnSeconds -= 1
     if (this.state.turnSeconds > 0) return
 
@@ -1088,6 +1116,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
     if (phase === 'roll') this.rollForPlayer(sessionId)
     else if (phase === 'purchase') this.messages.declinePurchase(client)
     else if (phase === 'buyback') this.messages.buyback(client, { accept: false })
+    else if (phase === 'start-upgrade') this.messages.startUpgrade(client, { accept: false })
     else if (phase === 'resolve') this.messages.finishTurn(client)
     else if (phase === 'jail') this.messages.finishTurn(client)
     else if (phase === 'world-cup') this.chooseDefaultWorldCup(client, sessionId)
@@ -1250,6 +1279,11 @@ export class GameRoom extends Room<{ state: LobbyState }> {
           : 0
         this.messages.buy(client, { houses })
       } else this.messages.declinePurchase(client)
+    } else if (this.state.turnPhase === 'start-upgrade') {
+      const property = this.state.properties.get(String(this.state.pendingPropertyId))
+      const cost = property?.houses === PROPERTY_BUILD_LEVELS ? hotelConstructionCost(this.state.pendingPropertyId) : constructionCost(this.state.pendingPropertyId)
+      if (property && property.ownerSessionId === sessionId && property.houses < PROPERTY_HOTEL_LEVEL && this.canSpend(player, cost + 150_000)) this.messages.startUpgrade(client, { accept: true })
+      else this.messages.startUpgrade(client, { accept: false })
     } else if (this.state.turnPhase === 'jail') {
       this.messages.finishTurn(client)
     } else if (this.state.turnPhase === 'world-cup') {
@@ -1651,7 +1685,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
     this.state.turnPhase = 'buyback'
     this.state.turnSeconds = TURN_DECISION_SECONDS
     this.turnTimerKey = `${this.state.turnNumber}:${sessionId}:buyback`
-    this.state.landingDescription += ` Aluguel quitado. Você ainda pode recomprar ${space.name} por ${price.toLocaleString('pt-BR')} (1,5× o investimento).`
+    this.state.landingDescription += ` Aluguel quitado. Você ainda pode recomprar ${space.name} por ${price.toLocaleString('pt-BR')} (2× o investimento).`
     return true
   }
 
@@ -1732,14 +1766,16 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       } else if (property.ownerSessionId !== this.state.activePlayerSessionId) {
         const owner = this.state.players.get(property.ownerSessionId)
         const ownership = new Map(Array.from(this.state.properties.entries()).map(([id, item]) => [Number(id), item.ownerSessionId]))
-        const rent = calculateRent(space.id, ownership, property.houses, this.state.worldCupSpaceId)
+        const rent = calculateRent(space.id, ownership, property.houses, this.state.worldCupSpaceId, this.getFestivalSpaceIds())
         if (owner && property.blackoutTurns > 0 && property.houses !== PROPERTY_HOTEL_LEVEL) {
           this.state.landingDescription += ` ${space.name} está em apagão; não há aluguel por ${property.blackoutTurns} turno(s) do dono.`
         } else if (owner) {
+          const companyDieRoll = space.company ? randomInt(1, 7) : 0
           const amount = space.company
-            ? calculateCompanyRent(ownership, property.ownerSessionId) * (space.id === this.state.worldCupSpaceId ? 3 : 1)
+            ? calculateCompanyRent(ownership, property.ownerSessionId, companyDieRoll) * (space.id === this.state.worldCupSpaceId ? 2 : 1)
             : rent
           const reason = space.company ? 'Aluguel da companhia' : 'Aluguel'
+          if (space.company) this.state.landingDescription += ` O dado da companhia marcou ${companyDieRoll}.`
           if (property.houses !== PROPERTY_HOTEL_LEVEL) this.state.pendingPropertyId = space.id
           this.collectPayment(sessionId, player, amount, property.ownerSessionId, reason)
           const debtOpened = (this.state as LobbyState).turnPhase === 'debt'
@@ -1749,6 +1785,22 @@ export class GameRoom extends Room<{ state: LobbyState }> {
             this.state.pendingPropertyId = 255
           }
         }
+      }
+    } else if (space.kind === 'start' && player.position === 0) {
+      const holdings = this.getHoldings()
+      const eligible = [...holdings.entries()].filter(([propertyId, holding]) => {
+        const city = boardSpaces[propertyId]
+        return holding.ownerSessionId === sessionId && city?.buildable && holding.houses < PROPERTY_HOTEL_LEVEL
+      })
+      if (eligible.length) {
+        const [propertyId] = eligible[randomInt(eligible.length)]!
+        this.state.pendingPropertyId = propertyId
+        this.state.turnPhase = 'start-upgrade'
+        this.state.turnSeconds = TURN_DECISION_SECONDS
+        this.turnTimerKey = `${this.state.turnNumber}:${sessionId}:start-upgrade`
+        this.state.landingDescription += ` Você parou exatamente na Partida. Pode pagar para melhorar uma cidade sua aleatória: ${boardSpaces[propertyId]!.name}.`
+      } else {
+        this.state.landingDescription += ' Você parou exatamente na Partida, mas não tem cidade disponível para melhorar.'
       }
     } else if (space.kind === 'tax') {
       const ownedProperties = Array.from(this.state.properties.values()).filter((property) => property.ownerSessionId === sessionId).length

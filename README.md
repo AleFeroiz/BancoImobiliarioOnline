@@ -20,6 +20,9 @@ A versão atual contém a experiência inicial BANTEC, salas privadas Colyseus p
 
 No Modo DEV ativado no lobby, a anfitriã também pode teleportar a pessoa da vez diretamente para qualquer casa (a chegada aplica o efeito normal), ajustar o saldo de qualquer participante, ativar dinheiro infinito e preparar uma carta Sorte ou Revés específica para o próximo sorteio. A carta preparada é decidida e consumida pelo servidor uma única vez, para facilitar testes sem afetar partidas normais.
 
+## Economia atual
+
+A partida começa com R$ 2.000.000 e paga R$ 300.000 ao passar pela Partida. Os preços, custos de melhoria e aluguéis incrementais das 24 cidades seguem uma curva adaptada das capturas de Business Tour. Três cidades aleatórias recebem festival e aluguel em dobro; monopólio regional e Copa também dobram e acumulam. Companhias mantêm o preço de R$ 500.000; ao cair numa delas, um D6 novo define o aluguel por quantidade de companhias do dono. As regras detalhadas e valores exatos ficam em `docs/DECISOES.md` e `docs/REGRAS-DE-JOGO.md`.
 ## Desenvolvimento local
 
 Requer Node.js 24 LTS e npm 10 ou superior. Abra dois terminais na pasta do projeto:

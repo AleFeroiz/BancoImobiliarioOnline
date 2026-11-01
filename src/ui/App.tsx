@@ -38,7 +38,7 @@ import { HOME_REGION_ROUTE } from './homeRegionRoute'
 
 type Mode = GameMode
 type Screen = 'home' | 'room' | 'game'
-type TurnPhase = 'roll' | 'rolling' | 'moving' | 'resolve' | 'purchase' | 'buyback' | 'jail' | 'world-cup' | 'world-tour' | 'card-target' | 'debt' | 'ended'
+type TurnPhase = 'roll' | 'rolling' | 'moving' | 'resolve' | 'purchase' | 'buyback' | 'start-upgrade' | 'jail' | 'world-cup' | 'world-tour' | 'card-target' | 'debt' | 'ended'
 type SyncedPlayer = LobbyPlayer & { sessionId: string; cash: number; devInfiniteCash: boolean; isJailed: boolean; jailTurns: number; isBankrupt: boolean; finalCash: number; finalNetWorth: number; tieBreakRoll: number }
 type TradeOfferView = { id: number; fromSessionId: string; toSessionId: string; cashOffered: number; cashRequested: number; propertiesOffered: number[]; propertiesRequested: number[] }
 type ThrowableEvent = { id: number; fromSessionId: string; toSessionId: string; object: ThrowableObject }
@@ -144,6 +144,7 @@ function App() {
   const [dismissedRevealKey, setDismissedRevealKey] = useState('')
   const [pendingPropertyId, setPendingPropertyId] = useState(255)
   const [worldCupSpaceId, setWorldCupSpaceId] = useState(255)
+  const [festivalSpaceIds, setFestivalSpaceIds] = useState<number[]>([])
   const [selectedSpaceId, setSelectedSpaceId] = useState<number | null>(null)
   const [selectedCardPropertyId, setSelectedCardPropertyId] = useState<number | null>(null)
   const [debtAmount, setDebtAmount] = useState(0)
@@ -319,10 +320,11 @@ function App() {
   const ownPropertyLanding = turnPhase === 'resolve' && activeSpace.kind === 'property' && pendingPropertyId === activeSpace.id && landedHolding?.ownerSessionId === activePlayerSessionId
   const canBuildSelected = activePlayer && ownPropertyLanding ? canBuildProperty(activeSpace.id, activePlayerSessionId, holdingsById, availableCash(activePlayer), targetBuildHouses) : false
   const canBuildHotelHere = activePlayer && ownPropertyLanding ? canBuildHotel(activeSpace.id, activePlayerSessionId, holdingsById, availableCash(activePlayer)) : false
+  const festivalSet = new Set(festivalSpaceIds)
   const purchaseRentOwnership = new Map(Array.from(roomProperties.entries()).map(([id, holding]) => [Number(id), holding.ownerSessionId]))
   if (pendingPurchaseSpace?.kind === 'property') purchaseRentOwnership.set(pendingPurchaseSpace.id, '__preview__')
   const pendingPurchaseRent = pendingPurchaseSpace?.kind === 'property'
-    ? pendingPurchaseSpace.company ? calculateCompanyRent(purchaseRentOwnership, '__preview__') : calculateRent(pendingPurchaseSpace.id, purchaseRentOwnership, pendingPurchaseHouses, worldCupSpaceId)
+    ? pendingPurchaseSpace.company ? calculateCompanyRent(purchaseRentOwnership, '__preview__') : calculateRent(pendingPurchaseSpace.id, purchaseRentOwnership, pendingPurchaseHouses, worldCupSpaceId, festivalSet)
     : 0
   const revealKind = activeCardTitle && ['resolve', 'card-target'].includes(turnPhase)
     ? 'event'
@@ -335,7 +337,7 @@ function App() {
   const showTransientReveal = Boolean(revealKind && revealKey !== dismissedRevealKey)
   const showDice = shouldShowRolledDice(turnPhase, diceForPawnMovement)
   const boardSelectionGuidanceActive = isBoardSelectionGuidanceActive(Boolean(boardChoicePhase && boardChoiceSpaceIds.length > 0), showTransientReveal)
-  const modalVisible = !isPresentationAnimating && (showAuctionPanel || (!boardSelectionGuidanceActive && showPropertyPanel) || showTransientReveal || (!boardSelectionGuidanceActive && isMyTurn && (turnPhase === 'purchase' || turnPhase === 'buyback' || turnPhase === 'card-target' || ownPropertyLanding || turnPhase === 'debt' || turnPhase === 'ended')))
+  const modalVisible = !isPresentationAnimating && (showAuctionPanel || (!boardSelectionGuidanceActive && showPropertyPanel) || showTransientReveal || (!boardSelectionGuidanceActive && isMyTurn && (turnPhase === 'purchase' || turnPhase === 'buyback' || turnPhase === 'start-upgrade' || turnPhase === 'card-target' || ownPropertyLanding || turnPhase === 'debt' || turnPhase === 'ended')))
   const propertyBuildings = Array.from(roomProperties.entries()).map(([id, holding]) => ({
     spaceId: Number(id),
     ownerSessionId: holding.ownerSessionId,
@@ -352,7 +354,7 @@ function App() {
   const rentOwnership = new Map(Array.from(roomProperties.entries()).map(([id, holding]) => [Number(id), holding.ownerSessionId]))
   if (selectedSpace?.kind === 'property' && !selectedHolding?.ownerSessionId) rentOwnership.set(selectedSpace.id, '__preview__')
   const selectedRent = selectedSpace?.kind === 'property'
-    ? selectedSpace.company ? calculateCompanyRent(rentOwnership, selectedHolding?.ownerSessionId || '__preview__') : selectedHolding?.blackoutTurns && selectedHolding.houses !== PROPERTY_HOTEL_LEVEL ? 0 : calculateRent(selectedSpace.id, rentOwnership, selectedHolding?.houses ?? 0, worldCupSpaceId)
+    ? selectedSpace.company ? calculateCompanyRent(rentOwnership, selectedHolding?.ownerSessionId || '__preview__') : selectedHolding?.blackoutTurns && selectedHolding.houses !== PROPERTY_HOTEL_LEVEL ? 0 : calculateRent(selectedSpace.id, rentOwnership, selectedHolding?.houses ?? 0, worldCupSpaceId, festivalSet)
     : 0
   function showGameFeedback(message: string, sound: GameSound, player?: { name: string; color: string }) {
     feedbackSequence.current += 1
@@ -508,6 +510,7 @@ function App() {
         activeCardDescription: string
         activeCardId: string
         pendingPropertyId: number
+        festivalSpaceIds: string
         worldCupSpaceId: number
         debtAmount: number
         debtReason: string
@@ -616,6 +619,7 @@ function App() {
       setActiveCardDescription(snapshot.activeCardDescription)
       setActiveCardId(snapshot.activeCardId)
       setPendingPropertyId(snapshot.pendingPropertyId)
+      setFestivalSpaceIds(parseTradeIds(snapshot.festivalSpaceIds))
       setWorldCupSpaceId(snapshot.worldCupSpaceId)
       setDebtAmount(snapshot.debtAmount)
       setDebtReason(snapshot.debtReason)
@@ -935,7 +939,7 @@ function App() {
       <div className="scene-backdrop">
         {sceneReady && (
           <Suspense fallback={<div className="scene-placeholder" aria-hidden="true" />}>
-            <BoardScene nightMode={nightMode} players={playerTokens} propertyBuildings={propertyBuildings} thrownObjects={thrownObjects} earthquakeEvents={earthquakeEvents} worldCupSpaceId={worldCupSpaceId} highlightedSpaceIds={highlightedSpaceIds} selectionMode={Boolean(boardChoicePhase) && !isPresentationAnimating} landingPulseSpaceId={landingPulseSpaceId} landingPulseSequence={landingPulseSequence} diceRollSequence={diceRollSequence} dice={dice} diceVisible={showDice} diceResultVisible={turnPhase === 'moving' && diceForPawnMovement} presentationSpeed={presentationSpeed} reducedMotion={reducedMotion} pawnMovementEnabled={turnPhase === 'moving'} pawnMoveMode={pawnMoveMode} pawnStepSoundEnabled={soundEnabled} graphicsQuality={graphicsQuality} cameraEnabled={screen === 'game' && turnPhase !== 'ended'} fpsMeterEnabled={fpsMeterEnabled} fpsSamples={fpsSamples} onMovementComplete={() => setPresentationStage('idle')} onSelectSpace={handleSelectSpace} />
+            <BoardScene nightMode={nightMode} players={playerTokens} propertyBuildings={propertyBuildings} thrownObjects={thrownObjects} earthquakeEvents={earthquakeEvents} worldCupSpaceId={worldCupSpaceId} festivalSpaceIds={festivalSpaceIds} highlightedSpaceIds={highlightedSpaceIds} selectionMode={Boolean(boardChoicePhase) && !isPresentationAnimating} landingPulseSpaceId={landingPulseSpaceId} landingPulseSequence={landingPulseSequence} diceRollSequence={diceRollSequence} dice={dice} diceVisible={showDice} diceResultVisible={turnPhase === 'moving' && diceForPawnMovement} presentationSpeed={presentationSpeed} reducedMotion={reducedMotion} pawnMovementEnabled={turnPhase === 'moving'} pawnMoveMode={pawnMoveMode} pawnStepSoundEnabled={soundEnabled} graphicsQuality={graphicsQuality} cameraEnabled={screen === 'game' && turnPhase !== 'ended'} fpsMeterEnabled={fpsMeterEnabled} fpsSamples={fpsSamples} onMovementComplete={() => setPresentationStage('idle')} onSelectSpace={handleSelectSpace} />
           </Suspense>
         )}
       </div>
@@ -1048,15 +1052,15 @@ function App() {
                   <p>{selectedHolding?.houses ? selectedHolding.houses === PROPERTY_HOTEL_LEVEL ? 'Hotel construído' : `${selectedHolding.houses} ${selectedHolding.houses === 1 ? 'casa construída' : 'casas construídas'}` : selectedSpace.buildable ? `Imóvel residencial · construção por ${formatMoney(constructionCost(selectedSpace.id))} cada nível` : 'Companhia nacional · aluguel conforme o número de companhias próprias'}</p>
                   {selectedSpace.buildable && <div className="property-build-levels purchase-level-options inspection-level-options" role="group" aria-label="Níveis de construção e aluguel">
                     {Array.from({ length: PROPERTY_BUILD_LEVELS + 1 }, (_, houses) => {
-                      const rent = calculateRent(selectedSpace.id, rentOwnership, houses, worldCupSpaceId)
+                      const rent = calculateRent(selectedSpace.id, rentOwnership, houses, worldCupSpaceId, festivalSet)
                       const isCurrent = Boolean(selectedHolding?.ownerSessionId) && selectedHolding?.houses === houses
                       return <div key={houses} className={`property-level-option purchase-choice inspection-choice${isCurrent ? ' selected' : ''}`} aria-current={isCurrent ? 'true' : undefined}><span>{houses === 0 ? 'Terreno' : houses === 1 ? '1 casa' : `${houses} casas`}</span><span className="property-choice-houses" aria-hidden="true">{houses === 0 ? <i className="property-choice-flag" /> : Array.from({ length: houses }, (_, index) => <i key={index} />)}</span><small>Aluguel · {formatMoney(rent)}</small><b>{formatMoney((selectedSpace.price ?? 0) + houses * constructionCost(selectedSpace.id))}</b></div>
                     })}
-                    {selectedHolding?.houses === PROPERTY_HOTEL_LEVEL && <div className="property-level-option purchase-choice inspection-choice selected" aria-current="true"><span>Hotel</span><span className="property-choice-houses" aria-hidden="true">🏨</span><small>Aluguel · {formatMoney(calculateRent(selectedSpace.id, rentOwnership, PROPERTY_HOTEL_LEVEL, worldCupSpaceId))}</small><b>{formatMoney(hotelConstructionCost(selectedSpace.id))}</b></div>}
+                    {selectedHolding?.houses === PROPERTY_HOTEL_LEVEL && <div className="property-level-option purchase-choice inspection-choice selected" aria-current="true"><span>Hotel</span><span className="property-choice-houses" aria-hidden="true">🏨</span><small>Aluguel · {formatMoney(calculateRent(selectedSpace.id, rentOwnership, PROPERTY_HOTEL_LEVEL, worldCupSpaceId, festivalSet))}</small><b>{formatMoney(hotelConstructionCost(selectedSpace.id))}</b></div>}
                   </div>}
                   {selectedOwner?.sessionId === room?.sessionId && <div className="inspector-auction-actions"><div className="auction-start-label">LANCE INICIAL<span className="auction-bid-stepper"><button type="button" aria-label="Diminuir lance inicial" disabled={Number(auctionStartingBids[selectedSpace.id] ?? selectedSpace.price ?? AUCTION_MIN_BID_INCREMENT) <= AUCTION_MIN_BID_INCREMENT} onClick={() => stepAuctionBid(selectedSpace.id, -1)}>−</button><output>{formatMoney(Number(auctionStartingBids[selectedSpace.id] ?? selectedSpace.price ?? AUCTION_MIN_BID_INCREMENT))}</output><button type="button" aria-label="Aumentar lance inicial" onClick={() => stepAuctionBid(selectedSpace.id, 1)}>+</button></span></div><button className="asset-action auction-inspector-button" disabled={!canAuctionNow || isTradePropertyLocked(selectedSpace.id) || Number(auctionStartingBids[selectedSpace.id] ?? selectedSpace.price ?? 0) < AUCTION_MIN_BID_INCREMENT} title={isTradePropertyLocked(selectedSpace.id) ? 'Venda primeiro as construções do grupo' : 'Leiloar este imóvel durante seu turno'} onClick={() => { room?.send('auctionStart', { propertyId: selectedSpace.id, startingBid: Number(auctionStartingBids[selectedSpace.id] ?? selectedSpace.price ?? 0) }); setError('') }}>Leiloar imóvel</button></div>}
                 </>
-              ) : <p>{selectedSpace.kind === 'tax' ? `Ao parar aqui, pague ${formatMoney(taxForSpace(selectedSpace.id))} ao banco.` : selectedSpace.kind === 'event' ? 'Ao parar aqui, compre uma carta Sorte ou Revés.' : selectedSpace.kind === 'start' ? `Receba ${formatMoney(START_BONUS)} ao cruzar a Partida.` : selectedSpace.kind === 'prison' ? 'Ao cair na prisão, você pode aguardar, tentar duplas para sair ou pagar R$ 200.000 e lançar os dados.' : selectedSpace.kind === 'world-cup' ? `Escolha uma propriedade sua para sediar a Copa. O aluguel dela fica triplicado até outra Copa ser escolhida.${worldCupSpaceId !== 255 ? ` Sede atual: ${boardSpaces[worldCupSpaceId]?.name ?? '—'}.` : ''}` : selectedSpace.kind === 'world-tour' ? 'Escolha uma propriedade sua, livre ou uma casa especial. Receba R$ 200.000 ao chegar e escolha o destino da viagem.' : 'Casa especial do tabuleiro.'}</p>}
+              ) : <p>{selectedSpace.kind === 'tax' ? `Ao parar aqui, pague ${formatMoney(taxForSpace(selectedSpace.id))} ao banco.` : selectedSpace.kind === 'event' ? 'Ao parar aqui, compre uma carta Sorte ou Revés.' : selectedSpace.kind === 'start' ? `Receba ${formatMoney(START_BONUS)} ao passar. Parar exatamente aqui oferece uma melhoria paga em uma cidade sua aleatória.` : selectedSpace.kind === 'prison' ? 'Ao cair na prisão, você pode aguardar, tentar duplas para sair ou pagar R$ 200.000 e lançar os dados.' : selectedSpace.kind === 'world-cup' ? `Escolha uma propriedade sua para sediar a Copa. O aluguel dela fica dobrado até outra Copa ser escolhida.${worldCupSpaceId !== 255 ? ` Sede atual: ${boardSpaces[worldCupSpaceId]?.name ?? '—'}.` : ''}` : selectedSpace.kind === 'world-tour' ? `Escolha uma propriedade sua, livre ou uma casa especial. Receba ${formatMoney(START_BONUS)} se o trajeto até o destino passar pela Partida.` : 'Casa especial do tabuleiro.'}</p>}
             </aside>
           )}
           {feedbackToast && turnPhase !== 'ended' && <div className="game-feedback-toast" role="status" aria-live="polite" style={feedbackToast.playerColor ? { '--feedback-player-color': feedbackToast.playerColor } as CSSProperties : undefined}>{feedbackToast.playerName && <strong>{feedbackToast.playerName}</strong>}<span>{feedbackToast.playerName ? ` · ${feedbackToast.message}` : feedbackToast.message}</span>{feedbackQueue.length > 1 && <small className="feedback-queue-count">+{feedbackQueue.length - 1} {feedbackQueue.length === 2 ? 'aviso na fila' : 'avisos na fila'}</small>}</div>}
@@ -1069,7 +1073,7 @@ function App() {
                 {[1, 2, 3].filter((level) => level > (landedHolding?.houses ?? 0)).map((level) => <button key={level} className={`property-level-option ${targetBuildHouses === level ? 'selected' : ''}`} onClick={() => setTargetBuildHouses(level)}><span>{level === 1 ? '1 casa' : `${level} casas`}</span><small>+{formatMoney((level - (landedHolding?.houses ?? 0)) * constructionCost(activeSpace.id))}</small></button>)}
                 {(landedHolding?.houses ?? 0) === 3 && <button className="property-level-option hotel-level-option" onClick={() => room?.send('build', { propertyId: activeSpace.id, hotel: true })} disabled={!isMyTurn || !canBuildHotelHere}><span>Hotel</span><small>{formatMoney(hotelConstructionCost(activeSpace.id))}</small></button>}
               </div>
-              <div className="space-facts"><div><small>ALUGUEL POR PARADA</small><strong>{activeSpace.company ? formatMoney(calculateCompanyRent(rentOwnership, landedHolding?.ownerSessionId ?? '')) : landedHolding?.blackoutTurns && landedHolding.houses !== PROPERTY_HOTEL_LEVEL ? formatMoney(0) : formatMoney(calculateRent(activeSpace.id, rentOwnership, landedHolding?.houses ?? 0, worldCupSpaceId))}</strong></div><div><small>PRÓXIMA CONSTRUÇÃO</small><strong>{landedHolding?.houses === PROPERTY_HOTEL_LEVEL ? 'Hotel' : formatMoney(constructionCost(activeSpace.id))}</strong></div></div>
+              <div className="space-facts"><div><small>ALUGUEL POR PARADA</small><strong>{activeSpace.company ? formatMoney(calculateCompanyRent(rentOwnership, landedHolding?.ownerSessionId ?? '')) : landedHolding?.blackoutTurns && landedHolding.houses !== PROPERTY_HOTEL_LEVEL ? formatMoney(0) : formatMoney(calculateRent(activeSpace.id, rentOwnership, landedHolding?.houses ?? 0, worldCupSpaceId, festivalSet))}</strong></div><div><small>PRÓXIMA CONSTRUÇÃO</small><strong>{landedHolding?.houses === PROPERTY_HOTEL_LEVEL ? 'Hotel' : formatMoney(constructionCost(activeSpace.id))}</strong></div></div>
               <div className="purchase-actions property-decision-actions"><button className="roll-button" onClick={() => room?.send('build', { propertyId: activeSpace.id, targetHouses: targetBuildHouses })} disabled={!isMyTurn || !canBuildSelected}>Construir <span>{formatMoney(Math.max(0, targetBuildHouses - (landedHolding?.houses ?? 0)) * constructionCost(activeSpace.id))}</span></button><button className="secondary-action" onClick={() => room?.send('finishTurn')} disabled={!isMyTurn}>Concluir vez</button></div>
               {landedHolding?.houses === PROPERTY_HOTEL_LEVEL && <p className="purchase-hint">Este terreno já tem hotel.</p>}
             </aside>
@@ -1099,7 +1103,7 @@ function App() {
                 </>
               )}
             </aside>
-          ) : !feedbackPending && showPropertyPanel && turnPhase !== 'ended' && turnPhase !== 'debt' ? (
+          ) : !feedbackPending && showPropertyPanel && turnPhase !== 'ended' && turnPhase !== 'debt' && turnPhase !== 'start-upgrade' ? (
             <aside className="turn-card asset-panel" aria-label="Minha carteira de imóveis">
               <div className="asset-panel-heading"><span className="turn-label">CARTEIRA DA PARTIDA</span><div className="asset-panel-heading-actions"><span>{formatMoney(localPlayer?.cash ?? 0)}</span><button className="trade-close" onClick={() => { setShowPropertyPanel(false); setPortfolioBoardSelection(false) }} aria-label="Fechar carteira">×</button></div></div>
               <h2>Meus imóveis</h2>
@@ -1109,7 +1113,7 @@ function App() {
                 {myProperties.length === 0 ? <span className="asset-empty">Você ainda não tem propriedades.</span> : myProperties.map(({ spaceId, holding, space }) => {
                   const rent = space.company
                     ? calculateCompanyRent(rentOwnership, room?.sessionId ?? '')
-                    : calculateRent(spaceId, rentOwnership, holding.houses, worldCupSpaceId)
+                    : calculateRent(spaceId, rentOwnership, holding.houses, worldCupSpaceId, festivalSet)
                   return (
                     <div className="asset-row" key={spaceId}>
                       <div className="asset-info"><strong>{space.name}</strong><small>{holding.houses === PROPERTY_HOTEL_LEVEL ? 'HOTEL' : holding.houses ? `${holding.houses} CASA(S)` : space.buildable ? 'CIDADE' : 'COMPANHIA'}</small><span className="asset-info-meta">Aluguel atual <b>{formatMoney(rent)}</b> <i>·</i> Compra {formatMoney(space.price ?? 0)}</span></div>
@@ -1128,7 +1132,7 @@ function App() {
               {presentationStage === 'idle' && turnPhase === 'purchase' && pendingPurchaseSpace?.kind === 'property' && <>
                 {pendingPurchaseSpace.buildable && <div className="property-build-levels purchase-level-options" role="group" aria-label="Pacotes de terreno e casas">{Array.from({ length: PROPERTY_BUILD_LEVELS + 1 }, (_, houses) => {
                   const total = (pendingPurchaseSpace.price ?? 0) + houses * constructionCost(pendingPurchaseSpace.id)
-                  const rent = calculateRent(pendingPurchaseSpace.id, purchaseRentOwnership, houses, worldCupSpaceId)
+                  const rent = calculateRent(pendingPurchaseSpace.id, purchaseRentOwnership, houses, worldCupSpaceId, festivalSet)
                   return <button key={houses} className={`property-level-option purchase-choice ${pendingPurchaseHouses === houses ? 'selected' : ''}`} aria-pressed={pendingPurchaseHouses === houses} disabled={!canAffordPurchase(availableCash(localPlayer), total)} onClick={() => setPendingPurchaseHouses(houses)}><span>{houses === 0 ? 'Terreno' : houses === 1 ? '1 casa' : `${houses} casas`}</span><span className="property-choice-houses" aria-hidden="true">{houses === 0 ? <i className="property-choice-flag" /> : Array.from({ length: houses }, (_, index) => <i key={index} />)}</span><small>Aluguel · {formatMoney(rent)}</small><b>{formatMoney(total)}</b></button>
                 })}</div>}
                 <div className="purchase-rent-preview"><span>ALUGUEL COM ESTA ESCOLHA</span><strong>{formatMoney(pendingPurchaseRent)} <small>/ parada</small></strong></div>
@@ -1163,12 +1167,18 @@ function App() {
                 </div>
               ) : turnPhase === 'buyback' ? (
                 <div className="purchase-actions"><button className="roll-button" onClick={() => room?.send('buyback', { accept: true })} disabled={!isMyTurn || !pendingBuybackHolding || pendingBuybackHolding.houses === PROPERTY_HOTEL_LEVEL || availableCash(localPlayer) < pendingBuybackPrice}>Recomprar <span>{formatMoney(pendingBuybackPrice)}</span></button><button className="secondary-action" onClick={() => room?.send('buyback', { accept: false })} disabled={!isMyTurn}>Continuar sem recomprar</button></div>
+              ) : turnPhase === 'start-upgrade' ? (
+                <div className="purchase-actions">
+                  <p>{pendingBuybackHolding ? `Parar exatamente na Partida permite melhorar ${boardSpaces[pendingPropertyId]?.name}. A melhoria é opcional e custa ${formatMoney(pendingBuybackHolding.houses === PROPERTY_BUILD_LEVELS ? hotelConstructionCost(pendingPropertyId) : constructionCost(pendingPropertyId))}.` : 'Não há cidade disponível para melhorar.'}</p>
+                  <button className="roll-button" onClick={() => room?.send('startUpgrade', { accept: true })} disabled={!isMyTurn || !pendingBuybackHolding || availableCash(localPlayer) < (pendingBuybackHolding.houses === PROPERTY_BUILD_LEVELS ? hotelConstructionCost(pendingPropertyId) : constructionCost(pendingPropertyId))}>Melhorar <span>{pendingBuybackHolding ? formatMoney(pendingBuybackHolding.houses === PROPERTY_BUILD_LEVELS ? hotelConstructionCost(pendingPropertyId) : constructionCost(pendingPropertyId)) : '—'}</span></button>
+                  <button className="secondary-action" onClick={() => room?.send('startUpgrade', { accept: false })} disabled={!isMyTurn}>Recusar melhoria</button>
+                </div>
               ) : turnPhase === 'debt' ? (
                 <div className="debt-actions"><strong>Dívida: {formatMoney(debtAmount)}</strong><p>{debtReason} · credor: {roomPlayers.find((player) => player.sessionId === debtCreditorSessionId)?.name ?? 'banco'}</p><p className="map-choice-hint">Toque em uma propriedade iluminada para vender um nível ou devolver o imóvel ao banco.</p><button className="roll-button" onClick={() => room?.send('payDebt')} disabled={!isMyTurn || availableCash(localPlayer) < debtAmount}>Pagar dívida <span>{formatMoney(debtAmount)}</span></button><button className="secondary-action" onClick={() => room?.send('declareBankruptcy')} disabled={!isMyTurn || availableCash(localPlayer) >= debtAmount || hasLiquidatableAssets(room?.sessionId ?? '', holdingsById)}>Declarar falência</button></div>
               ) : turnPhase === 'jail' ? (
                 <div className="jail-actions"><p className="jail-hint" role="status">Você ainda precisa cumprir {localPlayer?.jailTurns ?? activePlayer?.jailTurns ?? 0} turno(s) preso. Tente duplas para sair ou pague R$ 200.000.</p><button className="roll-button" onClick={() => room?.send('jailRoll')} disabled={!isMyTurn}>Tentar duplas <span>🎲</span></button><button className="secondary-action" onClick={() => room?.send('jailPay')} disabled={!isMyTurn || availableCash(localPlayer) < 200_000}>Pagar R$ 200.000 e sair</button><button className="secondary-action" onClick={() => room?.send('finishTurn')} disabled={!isMyTurn}>Aguardar este turno preso</button></div>
               ) : turnPhase === 'world-cup' ? (
-                <div className="corner-choice-actions"><p className="map-choice-hint">Selecione uma propriedade sua iluminada no tabuleiro para definir a sede. O aluguel dela fica triplicado.</p></div>
+                <div className="corner-choice-actions"><p className="map-choice-hint">Selecione uma propriedade sua iluminada no tabuleiro para definir a sede. O aluguel dela fica dobrado.</p></div>
               ) : turnPhase === 'world-tour' ? (
                 <div className="corner-choice-actions"><p className="map-choice-hint">Clique em uma casa clara no tabuleiro para viajar. Casas de outras pessoas ficam indisponíveis.</p></div>
               ) : (
@@ -1200,7 +1210,7 @@ function App() {
               {profileProperties.length === 0 ? <span className="asset-empty">Este jogador ainda não tem imóveis.</span> : profileProperties.map(({ spaceId, holding, space }) => {
                 const icon = !space.buildable ? '🚉' : holding.houses === PROPERTY_HOTEL_LEVEL ? '🏨' : holding.houses > 0 ? '🏠'.repeat(holding.houses) : '🏡'
                 const type = !space.buildable ? 'Estação' : holding.houses === PROPERTY_HOTEL_LEVEL ? 'Hotel' : holding.houses > 0 ? `${holding.houses} ${holding.houses === 1 ? 'casa' : 'casas'}` : 'Terreno'
-                const rentLabel = getPropertyRentLabel(spaceId, propertyBuildings, worldCupSpaceId) ?? '—'
+                const rentLabel = getPropertyRentLabel(spaceId, propertyBuildings, worldCupSpaceId, festivalSet) ?? '—'
                 return <div className="profile-property-row" key={spaceId}><span className="profile-property-icon" aria-label={type}>{icon}</span><span className="profile-property-copy"><strong>{space.name}</strong><small>{type}</small></span><span className="profile-property-rent"><small>ALUGUEL</small><b>{rentLabel}</b></span></div>
               })}
             </div>
@@ -1257,7 +1267,7 @@ function App() {
           {isMyTurn && !showTransientReveal && !feedbackPending && turnPhase === 'debt' && debtPropertyChoices.length > 0 && <div className="map-choice-prompt" role="status">Toque em uma propriedade iluminada para liquidá-la</div>}
           {tradeBoardSelectionTarget && showTradePanel && <div className="map-choice-prompt" role="status">Toque nas propriedades iluminadas para {tradeBoardSelectionTarget === 'offer' ? 'incluí-las na sua oferta' : 'incluí-las no pedido'}</div>}
           {portfolioBoardSelection && <div className="map-choice-prompt" role="status">Toque numa propriedade sua iluminada para abrir as opções <button type="button" onClick={() => setPortfolioBoardSelection(false)}>Cancelar</button></div>}
-          {showTransientReveal && <div className="card-reveal-backdrop" role="button" tabIndex={0} aria-label="Fechar carta e continuar" onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') dismissTransientReveal() }}><article className="game-event-card" aria-live="polite"><span className="event-card-kicker">{getRevealKicker(revealKind!)}</span><div className="event-card-art" aria-hidden="true">{revealKind === 'world-cup' ? '✦' : revealKind === 'world-tour' ? '↗' : '◆'}</div><h2>{revealKind === 'event' ? activeCardTitle : revealKind === 'world-cup' ? 'Escolha a sede' : 'Escolha para onde viajar'}</h2><p>{revealKind === 'event' ? activeCardDescription : revealKind === 'world-cup' ? 'Toque em uma propriedade sua iluminada no tabuleiro. O aluguel dela vale três vezes.' : 'Toque em uma casa iluminada. Propriedades de outras pessoas ficam indisponíveis.'}</p><small>Toque em qualquer lugar para continuar · {turnSeconds || 15}s</small></article></div>}
+          {showTransientReveal && <div className="card-reveal-backdrop" role="button" tabIndex={0} aria-label="Fechar carta e continuar" onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') dismissTransientReveal() }}><article className="game-event-card" aria-live="polite"><span className="event-card-kicker">{getRevealKicker(revealKind!)}</span><div className="event-card-art" aria-hidden="true">{revealKind === 'world-cup' ? '✦' : revealKind === 'world-tour' ? '↗' : '◆'}</div><h2>{revealKind === 'event' ? activeCardTitle : revealKind === 'world-cup' ? 'Escolha a sede' : 'Escolha para onde viajar'}</h2><p>{revealKind === 'event' ? activeCardDescription : revealKind === 'world-cup' ? 'Toque em uma propriedade sua iluminada no tabuleiro. O aluguel dela vale duas vezes.' : 'Toque em uma casa iluminada. Propriedades de outras pessoas ficam indisponíveis.'}</p><small>Toque em qualquer lugar para continuar · {turnSeconds || 15}s</small></article></div>}
           <div className="game-bottom"><span className="game-sync-label">JOGADA SINCRONIZADA · {modeDetails[mode].title.toUpperCase()}</span><button className="leave-button" onClick={() => void leaveRoom()}>Sair da mesa</button></div>
         </section>
       )}
@@ -1273,7 +1283,7 @@ function App() {
       </div>}
       {screen === 'game' && <Suspense fallback={null}><CashHudOverlay players={roomPlayers.map((player) => ({ id: player.sessionId, cash: player.cash }))} /></Suspense>}
       {screen === 'game' && fpsMeterEnabled && <FpsMeter samples={fpsSamples} />}
-      {showHelp && !(screen === 'game' && turnPhase === 'ended') && <div className="help-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setShowHelp(false) }}><section id="game-help-dialog" className="help-dialog" role="dialog" aria-modal="true" aria-labelledby="help-title"><button className="help-close" onClick={() => setShowHelp(false)} aria-label="Fechar ajuda">×</button><span className="eyebrow">GUIA RÁPIDO</span><h2 id="help-title">Como jogar</h2><p>Jogue com amigos na mesma sala. Na sua vez, lance os dados, acompanhe o peão e responda à ação da casa.</p><ul><li><strong>20 segundos:</strong> sem ação, os dados são lançados automaticamente.</li><li><strong>15 segundos:</strong> para decidir. Compra sem resposta é recusada; cobranças e eventos são confirmados automaticamente. Na prisão, você pode aguardar, tentar duplas ou pagar R$ 200.000 para sair.</li><li><strong>Copa do Mundo:</strong> escolha uma propriedade; o aluguel dela triplica até outra sede ser escolhida.</li><li><strong>Volta ao Brasil:</strong> escolha uma propriedade sua, livre ou uma casa especial. Receba R$ 200.000 ao chegar ao canto; a chegada em outra casa não recebe bônus.</li><li><strong>Comprar:</strong> propriedades livres podem ser compradas pelo preço indicado; recusar mantém o terreno livre. Ao cair num imóvel sem hotel de outra pessoa, você pode recomprá-lo por 1,5× o investimento ou pagar o aluguel.</li><li><strong>Dinheiro:</strong> sons ascendentes indicam entrada; sons descendentes indicam saída. Use o controle de áudio para silenciar.</li><li><strong>Partida:</strong> vence quem completar uma condição de monopólio ou tiver o maior patrimônio ao fim do tempo definido no lobby.</li></ul><button className="roll-button help-ok" onClick={() => setShowHelp(false)}>Entendi</button></section></div>}
+      {showHelp && !(screen === 'game' && turnPhase === 'ended') && <div className="help-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setShowHelp(false) }}><section id="game-help-dialog" className="help-dialog" role="dialog" aria-modal="true" aria-labelledby="help-title"><button className="help-close" onClick={() => setShowHelp(false)} aria-label="Fechar ajuda">×</button><span className="eyebrow">GUIA RÁPIDO</span><h2 id="help-title">Como jogar</h2><p>Jogue com amigos na mesma sala. Na sua vez, lance os dados, acompanhe o peão e responda à ação da casa.</p><ul><li><strong>20 segundos:</strong> sem ação, os dados são lançados automaticamente.</li><li><strong>15 segundos:</strong> para decidir. Compra sem resposta é recusada; cobranças e eventos são confirmados automaticamente. Na prisão, você pode aguardar, tentar duplas ou pagar R$ 200.000 para sair.</li><li><strong>Copa do Mundo:</strong> escolha uma propriedade; o aluguel dela dobra até outra sede ser escolhida.</li><li><strong>Volta ao Brasil:</strong> escolha uma propriedade sua, livre ou uma casa especial. Receba R$ 300.000 ao passar pela Partida no trajeto; a chegada em outra casa não recebe bônus.</li><li><strong>Comprar:</strong> propriedades livres podem ser compradas pelo preço indicado; recusar mantém o terreno livre. Ao cair num imóvel sem hotel de outra pessoa, você pode recomprá-lo por 2× o investimento ou pagar o aluguel.</li><li><strong>Dinheiro:</strong> sons ascendentes indicam entrada; sons descendentes indicam saída. Use o controle de áudio para silenciar.</li><li><strong>Partida:</strong> vence quem completar uma condição de monopólio ou tiver o maior patrimônio ao fim do tempo definido no lobby.</li></ul><button className="roll-button help-ok" onClick={() => setShowHelp(false)}>Entendi</button></section></div>}
     </main>
   )
 }

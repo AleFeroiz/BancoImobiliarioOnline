@@ -7,17 +7,18 @@ describe('rótulos 3D de aluguel', () => {
     const first = boardSpaces.find((space) => space.kind === 'property' && space.buildable)!
     const group = boardSpaces.filter((space) => space.kind === 'property' && space.buildable && space.region === first.region)
     expect(getPropertyRentLabel(first.id, [])).toBeNull()
-    expect(getPropertyRentLabel(first.id, [{ spaceId: first.id, ownerSessionId: 'ana', houses: 0 }])).toBe('R$\u00a020.000')
+    expect(getPropertyRentLabel(first.id, [{ spaceId: first.id, ownerSessionId: 'ana', houses: 0 }])).toBe(`R$\u00a0${first.rentAdditions![0]!.toLocaleString('pt-BR')}`)
     const owned = group.map((space) => ({ spaceId: space.id, ownerSessionId: 'ana', houses: space.id === first.id ? 2 : 0 }))
-    expect(getPropertyRentLabel(first.id, owned)).toBe('R$\u00a0160.000')
+    const expected = first.rentAdditions!.slice(0, 3).reduce((sum, value) => sum + value, 0) * 2
+    expect(getPropertyRentLabel(first.id, owned)).toBe(`R$\u00a0${expected.toLocaleString('pt-BR')}`)
   })
 
   it('mostra aluguel de companhia crescente com a quantidade de companhias próprias', () => {
     const company = boardSpaces.find((space) => space.company)!
     const otherCompanies = boardSpaces.filter((space) => space.company && space.id !== company.id).slice(0, 2)
     const owned = [company, ...otherCompanies].map((space) => ({ spaceId: space.id, ownerSessionId: 'ana', houses: 0 }))
-    expect(getPropertyRentLabel(company.id, owned)).toBe('R$ 450.000')
-    expect(getPropertyRentLabel(company.id, owned, company.id)).toBe('R$ 1.350.000')
+    expect(getPropertyRentLabel(company.id, owned)).toBe('R$ 150.000 × D6')
+    expect(getPropertyRentLabel(company.id, owned, company.id)).toBe('R$ 300.000 × D6')
   })
 
   it('exibe aluguel zero durante apagão e mantém a exceção de hotel', () => {

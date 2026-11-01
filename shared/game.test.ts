@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { boardSpaces } from './board.js'
-import { ANIMATION_SPEEDS, DEFAULT_ANIMATION_SPEED, DICE_ANIMATION_DURATION_MS, MATCH_DURATIONS, PAWN_STEP_ANIMATION_DURATION_MS, TURN_DECISION_SECONDS, areDiceDoubles, calculateCompanyRent, calculateNetWorth, calculateRent, forcedBuybackCost, getAnimationDuration, getMatchEndSummary, getMonopolyWinReason, hasWinningMonopoly, isAnimationSpeed, isMatchDuration, liquidatablePropertyIds } from './game.js'
+import { ANIMATION_SPEEDS, DEFAULT_ANIMATION_SPEED, DICE_ANIMATION_DURATION_MS, FESTIVAL_CITY_COUNT, MATCH_DURATIONS, PAWN_STEP_ANIMATION_DURATION_MS, TURN_DECISION_SECONDS, areDiceDoubles, calculateCompanyRent, calculateNetWorth, calculateRent, chooseFestivalCityIds, constructionCost, forcedBuybackCost, getAnimationDuration, getMatchEndSummary, getMonopolyWinReason, hasWinningMonopoly, isAnimationSpeed, isMatchDuration, liquidatablePropertyIds } from './game.js'
 
 describe('tentativas para sair da prisão', () => {
   it('reconhece dois dados iguais como duplas', () => {
@@ -54,14 +54,14 @@ describe('vitórias e companhias do tabuleiro regional', () => {
     companyTitles.forEach((space) => ownership.set(space.id, 'ana'))
     expect(hasWinningMonopoly(ownership, 'ana')).toBe(true)
     expect(getMonopolyWinReason(ownership, 'ana')).toBe('monopoly-line')
-    expect(calculateCompanyRent(ownership, 'ana')).toBe(450_000)
+    expect(calculateCompanyRent(ownership, 'ana', 3)).toBe(450_000)
   })
 
   it('vence ao possuir as quatro companhias', () => {
     const ownership = new Map(boardSpaces.filter((space) => space.company).map((space) => [space.id, 'ana']))
     expect(hasWinningMonopoly(ownership, 'ana')).toBe(true)
     expect(getMonopolyWinReason(ownership, 'ana')).toBe('all-companies')
-    expect(calculateCompanyRent(ownership, 'ana')).toBe(750_000)
+    expect(calculateCompanyRent(ownership, 'ana', 3)).toBe(600_000)
   })
 
   it('descreve a causa da partida no resultado final', () => {
@@ -73,12 +73,24 @@ describe('vitórias e companhias do tabuleiro regional', () => {
 })
 
 describe('aluguéis de cidades', () => {
-  it('preserva o valor exato de 70% sem perder um real por precisão decimal', () => {
+  it('soma os valores incrementais de terreno e casas observados na curva', () => {
     const belem = boardSpaces.find((space) => space.name === 'Belém')
     if (!belem) throw new Error('Belém não foi configurada no tabuleiro.')
 
     const ownership = new Map([[belem.id, 'ana']])
-    expect(calculateRent(belem.id, ownership, 3)).toBe(245_000)
+    expect(calculateRent(belem.id, ownership, 3)).toBe(belem.rentAdditions!.slice(0, 4).reduce((sum, addition) => sum + addition, 0))
+  })
+
+  it('sorteia três cidades de festival sem repetição e dobra seu aluguel', () => {
+    const festivals = chooseFestivalCityIds(() => 0)
+    const property = boardSpaces.find((space) => space.id === festivals[0])!
+    const ownership = new Map([[property.id, 'ana']])
+    const baseRent = calculateRent(property.id, ownership)
+    expect(FESTIVAL_CITY_COUNT).toBe(3)
+    expect(festivals).toHaveLength(3)
+    expect(new Set(festivals).size).toBe(3)
+    expect(festivals.every((id) => boardSpaces[id]?.buildable)).toBe(true)
+    expect(calculateRent(property.id, ownership, 0, -1, new Set([property.id]))).toBe(baseRent * 2)
   })
 })
 
@@ -89,13 +101,13 @@ describe('tempo para decisões', () => {
 })
 
 describe('recompra forçada', () => {
-  it('cobra 1,5× o preço do imóvel e das construções, mas não permite tomar hotel', () => {
+  it('cobra 2× o investimento no imóvel e nas construções, mas não permite tomar hotel', () => {
     const city = boardSpaces.find((space) => space.buildable)
     const company = boardSpaces.find((space) => space.company)
     if (!city || !company) throw new Error('Tabuleiro sem cidade ou companhia.')
-    expect(forcedBuybackCost(city.id)).toBe(Math.floor((city.price ?? 0) * 1.5))
-    expect(forcedBuybackCost(city.id, 2)).toBe(Math.floor(((city.price ?? 0) + 2 * (city.price ?? 0) * 0.5) * 1.5))
-    expect(forcedBuybackCost(company.id)).toBe(Math.floor((company.price ?? 0) * 1.5))
+    expect(forcedBuybackCost(city.id)).toBe((city.price ?? 0) * 2)
+    expect(forcedBuybackCost(city.id, 2)).toBe(((city.price ?? 0) + 2 * constructionCost(city.id)) * 2)
+    expect(forcedBuybackCost(company.id)).toBe((company.price ?? 0) * 2)
     expect(forcedBuybackCost(city.id, 4)).toBe(0)
     expect(forcedBuybackCost(0)).toBe(0)
   })
@@ -108,7 +120,7 @@ describe('patrimônio final', () => {
       [3, { ownerSessionId: 'bia', houses: 0 }],
     ])
 
-    expect(calculateNetWorth('ana', 500_000, holdings)).toBe(800_000)
+    expect(calculateNetWorth('ana', 500_000, holdings)).toBe(500_000 + (boardSpaces[1]?.price ?? 0) + 2 * (boardSpaces[1] ? Math.floor(constructionCost(1) / 2) : 0))
     expect(calculateNetWorth('bia', 500_000, holdings)).toBe(500_000 + (boardSpaces[3]?.price ?? 0))
   })
 

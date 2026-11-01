@@ -6,7 +6,7 @@ import type { LobbyState } from '../src/rooms/schema/LobbyState.js'
 import { PropertyState } from '../src/rooms/schema/LobbyState.js'
 import { boardSpaces, getLineTitleIds } from '../../shared/board.js'
 import { EVENT_CARDS, type EventCard } from '../../shared/cards.js'
-import { PROPERTY_HOTEL_LEVEL, START_BONUS, STARTING_CASH, TURN_DECISION_SECONDS, bankReturnValue, buildingSaleValue, calculateRent, constructionCost, forcedBuybackCost } from '../../shared/game.js'
+import { PROPERTY_HOTEL_LEVEL, START_BONUS, STARTING_CASH, TURN_DECISION_SECONDS, bankReturnValue, buildingSaleValue, calculateRent, constructionCost, forcedBuybackCost, taxForSpace } from '../../shared/game.js'
 
 async function waitFor(condition: () => boolean, timeout = 2500) {
   const start = Date.now()
@@ -310,6 +310,7 @@ describe('sala privada', () => {
     const started = new Promise<void>((resolve) => host.onMessage('game:started', () => resolve()))
     host.send('start')
     await started
+    room.state.festivalSpaceIds = ''
 
     const destination = boardSpaces.find((space) => space.kind === 'property' && space.buildable)!
     const unauthorized = new Promise<{ message: string }>((resolve) => guest.onMessage('room:error', resolve))
@@ -355,7 +356,7 @@ describe('sala privada', () => {
     await waitFor(() => room.state.turnPhase === 'resolve')
     expect(room.state.players.get(host.sessionId)?.cash).toBe(25_000)
     const rent = calculateRent(destination.id, new Map([[destination.id, guest.sessionId]]), holding.houses)
-    expect(room.state.players.get(guest.sessionId)?.cash).toBe(STARTING_CASH + rent)
+    expect(room.state.players.get(guest.sessionId)?.cash).toBe(STARTING_CASH + rent * (room.state.festivalSpaceIds.split(',').includes(String(destination.id)) ? 2 : 1))
   })
 
   it('sincroniza a reconexão e bloqueia o início enquanto alguém está offline', async () => {
@@ -931,6 +932,7 @@ describe('sala privada', () => {
     await colyseus.connectTo(room, { name: 'Bia' })
     host.send('start')
     await new Promise((resolve) => setTimeout(resolve, 30))
+    room.state.festivalSpaceIds = ''
 
     const first = boardSpaces.find((space) => space.kind === 'property' && space.buildable)!
     const group = boardSpaces.filter((space) => space.kind === 'property' && space.buildable && space.color === first.color)
@@ -943,7 +945,7 @@ describe('sala privada', () => {
     room.state.activePlayerSessionId = host.sessionId
     room.state.players.get(host.sessionId)!.position = first.id
     room.state.pendingPropertyId = first.id
-    const cost = Math.floor((first.price ?? 0) * 0.5)
+    const cost = constructionCost(first.id)
     const cashBefore = room.state.players.get(host.sessionId)!.cash
 
     host.send('build', { propertyId: first.id, targetHouses: 3 })
@@ -1177,13 +1179,14 @@ describe('sala privada', () => {
     expect(guest.sessionId).not.toBe(room.state.activePlayerSessionId)
   })
 
-  it('permite recompra forçada por 1,5× e paga o antigo proprietário', async () => {
+  it('permite recompra forçada por 2× e paga o antigo proprietário', async () => {
     const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
     const visitorClient = await colyseus.connectTo(room, { name: 'Ana' })
     const ownerClient = await colyseus.connectTo(room, { name: 'Bia' })
     const started = new Promise<void>((resolve) => visitorClient.onMessage('game:started', () => resolve()))
     visitorClient.send('start')
     await started
+    room.state.festivalSpaceIds = ''
 
     const propertySpace = boardSpaces.find((space) => space.kind === 'property' && space.buildable)!
     const title = new PropertyState()
@@ -1222,6 +1225,7 @@ describe('sala privada', () => {
     const started = new Promise<void>((resolve) => visitorClient.onMessage('game:started', () => resolve()))
     visitorClient.send('start')
     await started
+    room.state.festivalSpaceIds = ''
 
     const propertySpace = boardSpaces.find((space) => space.kind === 'property' && space.buildable)!
     const property = new PropertyState()
@@ -1252,6 +1256,7 @@ describe('sala privada', () => {
     const started = new Promise<void>((resolve) => visitorClient.onMessage('game:started', () => resolve()))
     visitorClient.send('start')
     await started
+    room.state.festivalSpaceIds = ''
 
     const propertySpace = boardSpaces.find((space) => space.kind === 'property' && space.buildable)!
     const property = new PropertyState()
@@ -1281,13 +1286,14 @@ describe('sala privada', () => {
     const started = new Promise<void>((resolve) => visitorClient.onMessage('game:started', () => resolve()))
     visitorClient.send('start')
     await started
+    room.state.festivalSpaceIds = ''
 
     const propertySpace = boardSpaces.find((space) => space.kind === 'property' && space.buildable)!
     const property = new PropertyState()
     property.ownerSessionId = ownerClient.sessionId
     property.houses = 1
     room.state.properties.set(String(propertySpace.id), property)
-    const debtorAsset = [...boardSpaces].reverse().find((space) => space.kind === 'property' && space.buildable && space.id !== propertySpace.id)!
+    const debtorAsset = boardSpaces.find((space) => space.company)!
     const debtorTitle = new PropertyState()
     debtorTitle.ownerSessionId = visitorClient.sessionId
     room.state.properties.set(String(debtorAsset.id), debtorTitle)
@@ -1337,7 +1343,8 @@ describe('sala privada', () => {
     const opponentTitle = new PropertyState()
     opponentTitle.ownerSessionId = guest.sessionId
     room.state.properties.set(String(opponentProperty.id), opponentTitle)
-    const normalRent = calculateRent(property.id, new Map([[property.id, host.sessionId]]))
+    const festivalIds = new Set(room.state.festivalSpaceIds.split(',').map(Number))
+    const normalRent = calculateRent(property.id, new Map([[property.id, host.sessionId]]), 0, property.id, festivalIds)
 
     room.state.activePlayerSessionId = host.sessionId
     room.state.turnPhase = 'world-cup'
@@ -1360,8 +1367,8 @@ describe('sala privada', () => {
     expect(room.state.turnPhase).toBe('buyback')
     guest.send('buyback', { accept: false })
     await waitFor(() => room.state.turnPhase === 'resolve' || room.state.turnPhase === 'debt')
-    expect(visitor.cash).toBe(STARTING_CASH - normalRent * 3)
-    expect(owner.cash).toBe(STARTING_CASH + normalRent * 3)
+    expect(visitor.cash).toBe(STARTING_CASH - normalRent)
+    expect(owner.cash).toBe(STARTING_CASH + normalRent)
 
     visitor.position = 10
     privateRoom.resolveSpace(guest.sessionId, visitor)
@@ -1374,12 +1381,62 @@ describe('sala privada', () => {
     await expect(invalidDestination).resolves.toMatchObject({ message: expect.stringContaining('propriedade sua, livre') })
 
     room.state.animationSpeed = 2
-    guest.send('chooseWorldTour', { spaceId: 0 })
+    guest.send('chooseWorldTour', { spaceId: 2 })
     await waitFor(() => room.state.turnPhase === 'resolve', 2_500)
-    expect(visitor.position).toBe(0)
-    expect(visitor.cash).toBe(STARTING_CASH - normalRent * 3 + START_BONUS)
+    expect(visitor.position).toBe(2)
+    expect(visitor.cash).toBe(STARTING_CASH - normalRent + START_BONUS - taxForSpace(2))
     expect(room.state.landingDescription).toContain('Passou pela Partida')
     expect(room.state.landingDescription).toContain('Volta ao Brasil')
+  })
+
+  it('oferece na Partida uma melhoria aleatória paga para uma cidade própria', async () => {
+    const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
+    const host = await colyseus.connectTo(room, { name: 'Ana' })
+    const guest = await colyseus.connectTo(room, { name: 'Bia' })
+    const started = new Promise<void>((resolve) => host.onMessage('game:started', () => resolve()))
+    host.send('start')
+    await started
+    const city = boardSpaces.find((space) => space.buildable)!
+    const title = new PropertyState()
+    title.ownerSessionId = host.sessionId
+    room.state.properties.set(String(city.id), title)
+    const player = room.state.players.get(host.sessionId)!
+    const cashBefore = player.cash
+    player.position = 0
+    room.state.activePlayerSessionId = host.sessionId
+    const privateRoom = room as unknown as { resolveSpace: (sessionId: string, player: typeof player) => void }
+    privateRoom.resolveSpace(host.sessionId, player)
+
+    expect(room.state.turnPhase).toBe('start-upgrade')
+    expect(room.state.pendingPropertyId).toBe(city.id)
+    host.send('startUpgrade', { accept: true })
+    await waitFor(() => room.state.turnPhase === 'resolve')
+    expect(player.cash).toBe(cashBefore - constructionCost(city.id))
+    expect(room.state.properties.get(String(city.id))?.houses).toBe(1)
+  })
+
+  it('rola um D6 novo para calcular o aluguel da companhia', async () => {
+    const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
+    const host = await colyseus.connectTo(room, { name: 'Ana' })
+    const guest = await colyseus.connectTo(room, { name: 'Bia' })
+    const started = new Promise<void>((resolve) => host.onMessage('game:started', () => resolve()))
+    host.send('start')
+    await started
+    const company = boardSpaces.find((space) => space.company)!
+    const title = new PropertyState()
+    title.ownerSessionId = host.sessionId
+    room.state.properties.set(String(company.id), title)
+    const visitor = room.state.players.get(guest.sessionId)!
+    const owner = room.state.players.get(host.sessionId)!
+    visitor.position = company.id
+    room.state.activePlayerSessionId = guest.sessionId
+    const privateRoom = room as unknown as { resolveSpace: (sessionId: string, player: typeof visitor) => void }
+    privateRoom.resolveSpace(guest.sessionId, visitor)
+    const dieRoll = Number(room.state.landingDescription.match(/dado da companhia marcou (\d+)/)?.[1])
+    expect(dieRoll).toBeGreaterThanOrEqual(1)
+    expect(dieRoll).toBeLessThanOrEqual(6)
+    expect(visitor.cash).toBe(STARTING_CASH - 50_000 * dieRoll)
+    expect(owner.cash).toBe(STARTING_CASH + 50_000 * dieRoll)
   })
 
   it('não oferece sede da Copa quando a pessoa da vez não possui propriedades', async () => {
@@ -1702,6 +1759,7 @@ describe('sala privada', () => {
     const guest = await colyseus.connectTo(room, { name: 'Bia' })
     host.send('start')
     await waitFor(() => room.state.status === 'playing')
+    room.state.festivalSpaceIds = ''
 
     const propertySpace = boardSpaces.find((space) => space.buildable)!
     const property = new PropertyState()
@@ -1907,7 +1965,7 @@ describe('sala privada', () => {
     await waitFor(() => room.state.status === 'ended')
     expect(room.state.winnerSessionId).toBe(host.sessionId)
     expect(room.state.matchEndReason).toBe('timeout')
-    expect(room.state.players.get(host.sessionId)).toMatchObject({ finalCash: 1_450_000, finalNetWorth: 1_650_000 })
+    expect(room.state.players.get(host.sessionId)).toMatchObject({ finalCash: 1_450_000, finalNetWorth: 1_510_000 })
     expect(room.state.players.get(host.sessionId)?.tieBreakRoll).toBe(0)
   })
 

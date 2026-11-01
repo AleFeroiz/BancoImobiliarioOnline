@@ -612,7 +612,7 @@ function FatecLandmark() {
   return <group position={[0, 0.045, 0]} scale={0.48} raycast={skipRaycast}><primitive object={model} /></group>
 }
 
-function Board({ players, propertyBuildings, thrownObjects, earthquakeEvents, worldCupSpaceId, highlightedSpaceIds, selectionMode, landingPulseSpaceId, landingPulseSequence, diceRollSequence, dice, diceVisible, diceResultVisible, presentationSpeed, reducedMotion, pawnMovementEnabled, pawnMoveMode, pawnStepSoundEnabled, onMovementComplete, onSelectSpace }: { players: PlayerToken[]; propertyBuildings: PropertyBuilding[]; thrownObjects: ThrowableEvent[]; earthquakeEvents: EarthquakeEvent[]; worldCupSpaceId: number; highlightedSpaceIds: readonly number[]; selectionMode: boolean; landingPulseSpaceId: number; landingPulseSequence: number; dice: [number, number]; diceVisible: boolean; diceResultVisible: boolean; diceRollSequence: number; presentationSpeed: AnimationSpeed; reducedMotion: boolean; pawnMovementEnabled: boolean; pawnMoveMode: 'walk' | 'teleport'; pawnStepSoundEnabled: boolean; onMovementComplete: () => void; onSelectSpace: (spaceId: number) => void }) {
+function Board({ players, propertyBuildings, thrownObjects, earthquakeEvents, worldCupSpaceId, festivalSpaceIds, highlightedSpaceIds, selectionMode, landingPulseSpaceId, landingPulseSequence, diceRollSequence, dice, diceVisible, diceResultVisible, presentationSpeed, reducedMotion, pawnMovementEnabled, pawnMoveMode, pawnStepSoundEnabled, onMovementComplete, onSelectSpace }: { players: PlayerToken[]; propertyBuildings: PropertyBuilding[]; thrownObjects: ThrowableEvent[]; earthquakeEvents: EarthquakeEvent[]; worldCupSpaceId: number; festivalSpaceIds: readonly number[]; highlightedSpaceIds: readonly number[]; selectionMode: boolean; landingPulseSpaceId: number; landingPulseSequence: number; dice: [number, number]; diceVisible: boolean; diceResultVisible: boolean; diceRollSequence: number; presentationSpeed: AnimationSpeed; reducedMotion: boolean; pawnMovementEnabled: boolean; pawnMoveMode: 'walk' | 'teleport'; pawnStepSoundEnabled: boolean; onMovementComplete: () => void; onSelectSpace: (spaceId: number) => void }) {
   const pawnGroups = useMemo(() => new Map<string, Group>(), [])
   const { scene: buildingScene } = useGLTF('/assets/board-models/board-models.glb')
   const propertyRentLabels = useMemo(() => boardSpaces
@@ -625,8 +625,8 @@ function Board({ players, propertyBuildings, thrownObjects, earthquakeEvents, wo
       const bounds = model ? new Box3().setFromObject(model) : null
       const { x, z } = positionOnBoard(space.id)
       const local = bounds ? getBuildingRentLabelPosition(space.id, bounds, 0.98, 1.25, 0.02, 0.2, BUILDING_GROUP_Y) : [0, 0.95, 0] as [number, number, number]
-      return { id: space.id, position: [x + local[0], local[1], z + local[2]] as [number, number, number], text: getPropertyRentLabel(space.id, propertyBuildings, worldCupSpaceId) ?? '' }
-    }), [buildingScene, propertyBuildings, worldCupSpaceId])
+      return { id: space.id, position: [x + local[0], local[1], z + local[2]] as [number, number, number], text: getPropertyRentLabel(space.id, propertyBuildings, worldCupSpaceId, new Set(festivalSpaceIds)) ?? '' }
+    }), [buildingScene, propertyBuildings, worldCupSpaceId, festivalSpaceIds])
 
   return (
     <group>
@@ -665,6 +665,7 @@ function Board({ players, propertyBuildings, thrownObjects, earthquakeEvents, wo
             {space.kind === 'world-cup' && <Suspense fallback={null}><CornerLandmark type="stadium" position={[0, 0.15, 0]} dimmed={selectionMode && !selectable} /></Suspense>}
             {space.kind === 'world-tour' && <Suspense fallback={null}><CornerLandmark type="airport" position={[0, 0.08, 0]} dimmed={selectionMode && !selectable} /></Suspense>}
             {space.kind === 'property' && space.id === worldCupSpaceId && <Html position={[size * 0.26, 0.62, size * 0.26]} center distanceFactor={10} zIndexRange={[6, 0]} style={{ pointerEvents: 'none' }}><span className="world-cup-host-flag"><b>🏆</b><small>SEDE</small></span></Html>}
+            {space.kind === 'property' && festivalSpaceIds.includes(space.id) && <Html position={[-size * 0.28, 0.62, size * 0.28]} center distanceFactor={10} zIndexRange={[6, 0]} style={{ pointerEvents: 'none' }}><span className="world-cup-host-flag"><b>🎉</b><small>×2</small></span></Html>}
             {space.kind === 'start' && <mesh position={[size * 0.31, 0.13, size * 0.3]} rotation={[0, Math.PI / 4, 0]} raycast={skipRaycast}><boxGeometry args={[0.14, 0.045, 0.14]} /><meshBasicMaterial color={theme.trim} /></mesh>}
             {shouldRenderSpaceLabel(space.kind) && <SpaceLabel name={space.name} size={size} ink={theme.ink} outline={theme.outline} outwardRotation={decoration.labelRotation} />}
             {highlightedSpaceIds.includes(space.id) && (
@@ -742,7 +743,7 @@ function CornerLandmark({ type, position, dimmed }: { type: 'stadium' | 'airport
   return <group position={position}><primitive object={model} scale={type === 'stadium' ? 0.64 : 0.36} /></group>
 }
 
-type BoardSceneProps = { nightMode: boolean; players: PlayerToken[]; propertyBuildings: PropertyBuilding[]; thrownObjects: ThrowableEvent[]; earthquakeEvents?: EarthquakeEvent[]; worldCupSpaceId?: number; highlightedSpaceIds?: readonly number[]; selectionMode?: boolean; landingPulseSpaceId?: number; landingPulseSequence?: number; diceRollSequence?: number; dice?: [number, number]; diceVisible?: boolean; diceResultVisible?: boolean; presentationSpeed?: AnimationSpeed; reducedMotion?: boolean; pawnMovementEnabled?: boolean; pawnMoveMode?: 'walk' | 'teleport'; pawnStepSoundEnabled?: boolean; cameraEnabled?: boolean; graphicsQuality?: GraphicsQuality; fpsMeterEnabled?: boolean; fpsSamples?: { current: FrameRateAccumulator }; onMovementComplete: () => void; onSelectSpace: (spaceId: number) => void }
+type BoardSceneProps = { nightMode: boolean; players: PlayerToken[]; propertyBuildings: PropertyBuilding[]; thrownObjects: ThrowableEvent[]; earthquakeEvents?: EarthquakeEvent[]; worldCupSpaceId?: number; festivalSpaceIds?: readonly number[]; highlightedSpaceIds?: readonly number[]; selectionMode?: boolean; landingPulseSpaceId?: number; landingPulseSequence?: number; diceRollSequence?: number; dice?: [number, number]; diceVisible?: boolean; diceResultVisible?: boolean; presentationSpeed?: AnimationSpeed; reducedMotion?: boolean; pawnMovementEnabled?: boolean; pawnMoveMode?: 'walk' | 'teleport'; pawnStepSoundEnabled?: boolean; cameraEnabled?: boolean; graphicsQuality?: GraphicsQuality; fpsMeterEnabled?: boolean; fpsSamples?: { current: FrameRateAccumulator }; onMovementComplete: () => void; onSelectSpace: (spaceId: number) => void }
 
 function FrameRateProbe({ samples }: { samples: { current: FrameRateAccumulator } }) {
   useFrame(() => {
@@ -751,7 +752,7 @@ function FrameRateProbe({ samples }: { samples: { current: FrameRateAccumulator 
   return null
 }
 
-function BoardSceneCanvas({ nightMode, players, propertyBuildings, thrownObjects, earthquakeEvents = [], worldCupSpaceId = 255, highlightedSpaceIds = [], selectionMode = false, landingPulseSpaceId = -1, landingPulseSequence = 0, diceRollSequence = 0, dice = [0, 0], diceVisible = false, diceResultVisible = false, presentationSpeed = 1, reducedMotion = false, pawnMovementEnabled = false, pawnMoveMode = 'walk', pawnStepSoundEnabled = false, cameraEnabled = true, graphicsQuality = 'high', fpsMeterEnabled = false, fpsSamples, onMovementComplete, onSelectSpace }: BoardSceneProps) {
+function BoardSceneCanvas({ nightMode, players, propertyBuildings, thrownObjects, earthquakeEvents = [], worldCupSpaceId = 255, festivalSpaceIds = [], highlightedSpaceIds = [], selectionMode = false, landingPulseSpaceId = -1, landingPulseSequence = 0, diceRollSequence = 0, dice = [0, 0], diceVisible = false, diceResultVisible = false, presentationSpeed = 1, reducedMotion = false, pawnMovementEnabled = false, pawnMoveMode = 'walk', pawnStepSoundEnabled = false, cameraEnabled = true, graphicsQuality = 'high', fpsMeterEnabled = false, fpsSamples, onMovementComplete, onSelectSpace }: BoardSceneProps) {
   return (
     <Canvas camera={{ position: [12.5, 15.5, 15.5], fov: 34 }} dpr={getGraphicsDprRange(graphicsQuality)} frameloop="demand" gl={{ antialias: false, powerPreference: 'high-performance', stencil: false }}>
       <color attach="background" args={[getGameBackgroundColor(nightMode)]} />
@@ -760,7 +761,7 @@ function BoardSceneCanvas({ nightMode, players, propertyBuildings, thrownObjects
       <CameraZoomBounds />
       <CameraDragAnywhere enabled={cameraEnabled} />
       {fpsMeterEnabled && fpsSamples && <FrameRateProbe samples={fpsSamples} />}
-      <Board players={players} propertyBuildings={propertyBuildings} thrownObjects={thrownObjects} earthquakeEvents={earthquakeEvents} worldCupSpaceId={worldCupSpaceId} highlightedSpaceIds={highlightedSpaceIds} selectionMode={selectionMode} landingPulseSpaceId={landingPulseSpaceId} landingPulseSequence={landingPulseSequence} diceRollSequence={diceRollSequence} dice={dice} diceVisible={diceVisible} diceResultVisible={diceResultVisible} presentationSpeed={presentationSpeed} reducedMotion={reducedMotion} pawnMovementEnabled={pawnMovementEnabled} pawnMoveMode={pawnMoveMode} pawnStepSoundEnabled={pawnStepSoundEnabled} onMovementComplete={onMovementComplete} onSelectSpace={onSelectSpace} />
+      <Board players={players} propertyBuildings={propertyBuildings} thrownObjects={thrownObjects} earthquakeEvents={earthquakeEvents} worldCupSpaceId={worldCupSpaceId} festivalSpaceIds={festivalSpaceIds} highlightedSpaceIds={highlightedSpaceIds} selectionMode={selectionMode} landingPulseSpaceId={landingPulseSpaceId} landingPulseSequence={landingPulseSequence} diceRollSequence={diceRollSequence} dice={dice} diceVisible={diceVisible} diceResultVisible={diceResultVisible} presentationSpeed={presentationSpeed} reducedMotion={reducedMotion} pawnMovementEnabled={pawnMovementEnabled} pawnMoveMode={pawnMoveMode} pawnStepSoundEnabled={pawnStepSoundEnabled} onMovementComplete={onMovementComplete} onSelectSpace={onSelectSpace} />
     </Canvas>
   )
 }
@@ -804,6 +805,7 @@ function areScenePropsEqual(first: BoardSceneProps, second: BoardSceneProps) {
     && sameEarthquakes(first.earthquakeEvents, second.earthquakeEvents)
     && sameBuildings(first.propertyBuildings, second.propertyBuildings)
     && first.worldCupSpaceId === second.worldCupSpaceId
+    && sameNumbers(first.festivalSpaceIds ?? [], second.festivalSpaceIds ?? [])
     && sameNumbers(first.highlightedSpaceIds ?? [], second.highlightedSpaceIds ?? [])
     && first.selectionMode === second.selectionMode
     && first.landingPulseSpaceId === second.landingPulseSpaceId

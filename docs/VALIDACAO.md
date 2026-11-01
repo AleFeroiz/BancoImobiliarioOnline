@@ -1,3 +1,10 @@
+# 2026-11-01 — Reforma econômica inspirada em Business Tour
+
+- `npm run verify` passou: 49 arquivos de teste, 262 testes, build do frontend e build do servidor. O build ainda aponta o chunk da cena 3D acima de 500 KB.
+- Na sala local Z9W3W com um bot, conferi os dois saldos iniciais de R$ 2.000.000, os três marcadores de festival ×2 no tabuleiro e a animação/continuação após tirar duplas. O console não mostrou falha que interrompesse a partida.
+- A integração do servidor verifica aluguel da companhia por novo D6, multiplicadores da Copa e festivais, recompra por 2× após aluguel, e oferta de melhoria paga quando o jogador para exatamente na Partida. O teste de partida não cobriu visualmente a oferta da Partida.
+- Não medi o balanço numa partida completa entre pessoas; a curva está implementada a partir das capturas de Business Tour e adaptada às 24 cidades do BANTEC. O estoque de casas permanece em 40.
+
 # 2026-11-01 — ajustes de cartas, movimento e duração
 
 - `npm run verify` passou: 49 arquivos de teste, 257 testes, build do frontend e build do servidor.

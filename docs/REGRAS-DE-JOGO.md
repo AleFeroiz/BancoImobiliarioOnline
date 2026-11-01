@@ -5,7 +5,7 @@ Este documento descreve somente as regras atuais do BANTEC. Referências ao Expr
 ## Sala e partida
 
 - Partidas privadas para 2–4 participantes, sem conta. A anfitriã pode preencher lugares vazios com bots antes de começar.
-- Há um modo de jogo. No lobby, a anfitriã escolhe 15 minutos, 30 minutos, 1 hora ou sem limite de tempo; cada participante começa com R$ 2.000.000 enquanto a economia aguarda nova decisão.
+- Há um modo de jogo. No lobby, a anfitriã escolhe 15 minutos, 30 minutos, 1 hora ou sem limite de tempo; cada participante começa com R$ 2.000.000.
 - A partida termina imediatamente se alguém completar um Monopólio em Linha, dois Monopólios Regionais ou possuir as quatro companhias. Se o relógio zerar, a resolução já iniciada termina e vence quem tiver maior patrimônio; dívidas continuam até serem quitadas ou levarem à falência.
 - Para o desempate pelo tempo, compara-se dinheiro disponível + preço de compra dos títulos ainda possuídos + valor de venda das construções (metade do custo pago por construção). Empates seguem para decisão nos dados; se os resultados continuarem iguais, o servidor escolhe aleatoriamente entre as pessoas empatadas.
 - O servidor controla ordem, dados, movimento, compras, pagamentos, cartas, trocas e encerramento. Dados repetidos numa rolagem normal permitem nova jogada depois da resolução; a terceira dupla consecutiva leva diretamente à Prisão sem avançar.
@@ -14,7 +14,7 @@ Este documento descreve somente as regras atuais do BANTEC. Referências ao Expr
 ## Tabuleiro e percurso
 
 - O tabuleiro tem 40 casas: 24 cidades brasileiras, quatro companhias, quatro taxas, quatro Sorte ou Revés e quatro cantos especiais. Não existem casas de descanso.
-- As cidades estão divididas nas cinco regiões e seguem a ordem econômica Norte → Centro-Oeste → Nordeste → Sul → Sudeste. São cinco cidades em cada região, exceto o Sul, com quatro. São Paulo encerra o percurso antes da Partida.
+- As cidades estão divididas nas cinco regiões e seguem a ordem econômica Norte → Centro-Oeste → Nordeste → Sul → Sudeste. São cinco cidades em cada região, exceto o Sul, com quatro. Na região Sudeste, Rio de Janeiro vem após São Paulo e encerra o percurso antes da Partida.
 - As regiões são grupos de monopólio. Completar uma região dobra o aluguel das suas cidades. Completar duas regiões diferentes vence imediatamente. As companhias não pertencem a uma região.
 - Cada lado do tabuleiro tem seis cidades e uma companhia. Possuir todos os sete títulos do mesmo lado completa um Monopólio em Linha e vence imediatamente; taxas e Sorte ou Revés não contam.
 - A paleta regional dos pisos é Norte turquesa `#00A6A6`, Centro-Oeste dourado `#E6B84B`, Nordeste rosa `#D45087`, Sul verde `#4A9D68` e Sudeste azul `#3B65CC`.
@@ -23,11 +23,11 @@ Este documento descreve somente as regras atuais do BANTEC. Referências ao Expr
 ## Compra, construções e rendas
 
 - Ao parar numa cidade livre, a pessoa escolhe comprar ou recusar. Recusada, ela permanece livre.
-- A compra oferece o terreno ou o terreno junto com uma, duas ou três casas. Cada casa custa metade do preço da cidade. Depois, novas casas só podem ser compradas quando a pessoa voltar ao imóvel. O hotel exige três casas e uma visita posterior; custa três vezes uma casa e substitui as três casas.
-- O aluguel de cidade é calculado sobre o preço P: terreno 10% de P, uma casa 20%, duas casas 40%, três casas 70% e hotel 100%. Monopólio Regional dobra o valor e a sede da Copa do Mundo triplica o aluguel calculado.
-- As companhias são AgroBrasil, Aviação Brasil, Energia Brasil e Mineração Brasil. Cada uma custa R$ 500.000. O aluguel total do dono escala por quantidade de companhias: uma R$ 100.000, duas R$ 250.000, três R$ 450.000 e quatro R$ 750.000. Possuir as quatro vence a partida.
+- A compra e os custos de melhoria seguem uma curva inspirada nas cidades observadas de Business Tour, interpolada pela ordem de preço para as 24 cidades do BANTEC. Cada nível de construção acrescenta ao aluguel o valor específico daquele nível; os valores não são percentuais uniformes do preço. Novas casas só podem ser compradas quando a pessoa voltar ao imóvel. O hotel exige três casas e visita posterior; seu custo é o valor configurado para a cidade e substitui as três casas.
+- Monopólio Regional, festival e sede da Copa do Mundo dobram cada um o aluguel calculado e seus multiplicadores se acumulam. Três cidades aleatórias são marcadas como festivais no início da partida.
+- As companhias são AgroBrasil, Aviação Brasil, Energia Brasil e Mineração Brasil. Cada uma custa R$ 500.000. Ao cair numa companhia, o servidor rola um novo D6; o aluguel é R$ 50.000 multiplicados pela quantidade de companhias do dono e pelo resultado do dado. A quantidade máxima é três, pois possuir as quatro encerra a partida com vitória.
 - As quatro taxas cobram por imóvel que a pessoa possui: R$ 10.000, R$ 15.000, R$ 20.000 e R$ 25.000. Cidades e companhias contam; construções não. Títulos já vendidos ou devolvidos ao banco não contam.
-- Ao cair num imóvel de outra pessoa, primeiro se paga o aluguel normal ao dono. Depois, se ainda houver saldo para pagar 1,5× o investimento total da propriedade e ela não tiver hotel, aparece a opção de recompra. O valor integral da recompra vai diretamente ao dono, sem depender da aceitação dele; a posse passa ao comprador. Hotel impede recompra. Se o aluguel entrar em dívida, a opção só aparece depois que a dívida for quitada e se restar saldo suficiente.
+- Ao cair num imóvel de outra pessoa, primeiro se paga o aluguel normal ao dono. Depois, se ainda houver saldo para pagar 2× o investimento total da propriedade e ela não tiver hotel, aparece a opção de recompra. O valor integral da recompra vai diretamente ao dono, sem depender da aceitação dele; a posse passa ao comprador. Hotel impede recompra. Se o aluguel entrar em dívida, a opção só aparece depois que a dívida for quitada e se restar saldo suficiente.
 
 ## Dívidas e falência
 
@@ -38,10 +38,10 @@ Este documento descreve somente as regras atuais do BANTEC. Referências ao Expr
 
 ## Cantos especiais
 
-- **Partida:** ao passar ou chegar, recebe R$ 200.000.
+- **Partida:** ao passar ou chegar, recebe R$ 300.000. Ao parar exatamente nela, uma cidade própria aleatória sem hotel é selecionada para oferecer uma melhoria de um nível pelo custo normal; aceitar debita o custo ao jogador, recusar não altera o imóvel. Apenas passar pela Partida não ativa essa oferta.
 - **Prisão:** pode aguardar um turno, tentar sair com duplas ou pagar R$ 200.000 e lançar no mesmo turno. Uma tentativa sem duplas consome o turno preso; depois de três turnos, sai automaticamente. Duplas tentadas para sair não concedem uma rolagem extra.
-- **Copa do Mundo:** escolhe uma propriedade própria para sediar a Copa; ela cobra três vezes o aluguel normal até a sede mudar. Sem propriedade própria elegível, não há nova sede. A escolha usa o tabuleiro e destaca as opções válidas.
-- **Volta ao Brasil:** ao chegar, escolhe no tabuleiro uma propriedade própria, uma propriedade livre ou uma casa especial para visitar; a chegada é resolvida normalmente. O bônus de R$ 200.000 só é pago se o trajeto escolhido passar pela Partida. A carta Volta ao Brasil paga o bônus apenas quando o caminho até o canto cruzar a Partida.
+- **Copa do Mundo:** escolhe uma propriedade própria para sediar a Copa; ela cobra duas vezes o aluguel normal até a sede mudar. Sem propriedade própria elegível, não há nova sede. A escolha usa o tabuleiro e destaca as opções válidas.
+- **Volta ao Brasil:** ao chegar, escolhe no tabuleiro uma propriedade própria, uma propriedade livre ou uma casa especial para visitar; a chegada é resolvida normalmente. O bônus de R$ 300.000 só é pago se o trajeto escolhido passar pela Partida. A carta Volta ao Brasil paga o bônus apenas quando o caminho até o canto cruzar a Partida.
 
 ## Cartas Sorte ou Revés
 
@@ -54,11 +54,11 @@ O servidor sorteia com reposição entre estas doze cartas autorais:
 5. **Ladrão:** escolha uma pessoa e roube R$ 200.000 dela.
 6. **Proteção:** escolha uma propriedade sua; por três turnos do dono, nenhum efeito de carta pode afetá-la.
 7. **Prisão:** vá para a Prisão e aplique as opções normais desse canto.
-8. **Volta ao Brasil:** vá para o canto Volta ao Brasil e escolha um destino válido. Receba R$ 200.000 se o caminho até o canto cruzar a Partida.
+8. **Volta ao Brasil:** vá para o canto Volta ao Brasil e escolha um destino válido. Receba R$ 300.000 se o caminho até o canto cruzar a Partida.
 9. **Sede da Copa:** vá para a Copa do Mundo e escolha uma propriedade própria elegível.
 10. **Troca-troca:** escolha duas pessoas, podendo incluir você; elas trocam de posição sem resolver as casas de chegada.
 11. **Cidade-sede:** vá para a cidade que sedia a Copa e resolva a casa de chegada. Sem sede ativa, descarte a carta sem mover.
-12. **Início:** vá para a Partida; receba R$ 200.000 somente se o trajeto cruzar a Partida.
+12. **Início:** vá para a Partida; receba R$ 300.000 somente se o trajeto cruzar a Partida. Parar na Partida também pode oferecer uma melhoria paga de cidade própria.
 
 Proteção bloqueia qualquer efeito de carta, inclusive Generoso. Apagão e Proteção duram os três próximos turnos do dono. Se um efeito cobrar dinheiro sem saldo suficiente, aplicam-se as regras de dívida. A seleção de qualquer propriedade-alvo acontece diretamente no tabuleiro com o padrão de opções iluminadas/apagadas; alvos que sejam pessoas são selecionados pelos controles de participantes.
 

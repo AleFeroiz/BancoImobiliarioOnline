@@ -32,6 +32,8 @@ describe('atividade do jogador da vez', () => {
     expect(shouldSuppressTurnCardForFeedback(true, 'jail')).toBe(false)
     expect(shouldSuppressTurnCardForFeedback(true, 'debt')).toBe(false)
     expect(shouldSuppressTurnCardForFeedback(true, 'roll')).toBe(true)
+    expect(shouldSuppressTurnCardForFeedback(true, 'start-upgrade')).toBe(false)
+    expect(shouldShowTurnCard(true, 'start-upgrade', true)).toBe(true)
   })
 
   it('não deixa uma inspeção antiga esconder o painel de compra, mesmo sem saldo suficiente', () => {

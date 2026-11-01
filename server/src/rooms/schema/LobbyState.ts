@@ -57,6 +57,7 @@ export const LobbyState = schema({
   activeCardDescription: t.string().default(''),
   activeCardId: t.string().default(''),
   pendingPropertyId: t.uint8().default(255),
+  festivalSpaceIds: t.string().default(''),
   worldCupSpaceId: t.uint8().default(255),
   debtAmount: t.int32().default(0),
   debtCreditorSessionId: t.string().default(''),

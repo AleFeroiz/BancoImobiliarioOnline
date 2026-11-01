@@ -3,7 +3,7 @@ import { PROPERTY_HOTEL_LEVEL, calculateCompanyRent, calculateRent } from '../..
 
 export type PropertyRentHolding = { spaceId: number; ownerSessionId: string; houses: number; blackoutTurns?: number }
 
-export function getPropertyRentLabel(spaceId: number, holdings: readonly PropertyRentHolding[], worldCupSpaceId = -1) {
+export function getPropertyRentLabel(spaceId: number, holdings: readonly PropertyRentHolding[], worldCupSpaceId = -1, festivalSpaceIds: ReadonlySet<number> = new Set()) {
   const space = boardSpaces[spaceId]
   if (space?.kind !== 'property') return null
   const holding = holdings.find((item) => item.spaceId === spaceId)
@@ -12,6 +12,6 @@ export function getPropertyRentLabel(spaceId: number, holdings: readonly Propert
   const ownership = new Map(boardSpaces
     .filter((candidate) => candidate.kind === 'property')
     .map((candidate) => [candidate.id, holdings.find((item) => item.spaceId === candidate.id)?.ownerSessionId || `banco:${candidate.id}`]))
-  if (space.company) return formatMoney(calculateCompanyRent(ownership, holding.ownerSessionId) * (spaceId === worldCupSpaceId ? 3 : 1))
-  return formatMoney(calculateRent(spaceId, ownership, holding?.houses ?? 0, worldCupSpaceId))
+  if (space.company) return `${formatMoney(calculateCompanyRent(ownership, holding.ownerSessionId) * (spaceId === worldCupSpaceId ? 2 : 1))} × D6`
+  return formatMoney(calculateRent(spaceId, ownership, holding?.houses ?? 0, worldCupSpaceId, festivalSpaceIds))
 }
