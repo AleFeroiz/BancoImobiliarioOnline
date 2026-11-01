@@ -1,3 +1,10 @@
+# 2026-11-01 — Elevação dos modelos de propriedade
+
+- A pedido do usuário, os modelos foram elevados em 0,08 unidade enquanto o recuo horizontal em direção à borda permaneceu igual.
+- Playtest desktop local com Modo DEV: comprei Belém com duas casas; as construções e o nome/aluguel da propriedade apareceram no tabuleiro. A câmera ficou no enquadramento geral durante a captura, então a revisão manual confirma a montagem do modelo, não uma medição visual precisa do espaço entre a base e o piso.
+- `npm run verify` passou com loopback local permitido: 53 arquivos / 287 testes, build web e build do servidor. O build manteve o aviso já existente de chunk 3D acima de 500 KB. A porta 2567 estava em conflito; o playtest foi executado no servidor temporário na 2569.
+- `npm run graphify -- update .` atualizou o grafo para 1.058 nós e 1.987 arestas.
+
 # 2026-11-01 — Modelos de propriedade no piso e rótulo de liquidação contextual
 
 - Em sala local com Modo DEV, levei a jogadora até Belém e comprei o terreno por R$ 120.000. Na revisão do tabuleiro, o modelo ficou assentado sobre o tile; o rótulo mostrou “Belém” na cor coral da dona e o aluguel abaixo. `LIQ.` não apareceu em jogo normal.

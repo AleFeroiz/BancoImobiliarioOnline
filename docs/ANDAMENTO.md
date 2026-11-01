@@ -1,12 +1,12 @@
 # Personalização de fichas, colocação no tabuleiro e reconexão — concluídas (2026-11-01)
 
-- Dez fichas low-poly adicionais estão no GLB, totalizando 14 opções; o seletor oferece 12 cores. “Salto” é um sapato de salto com a silhueta refinada e GLB reexportado pelo Blender 5.2.2 LTS. Propriedades permanecem na altura do piso e se deslocam à borda externa; os rótulos ficam à frente dos peões.
+- Dez fichas low-poly adicionais estão no GLB, totalizando 14 opções; o seletor oferece 12 cores. “Salto” é um sapato de salto com a silhueta refinada e GLB reexportado pelo Blender 5.2.2 LTS. Após revisão visual do usuário, as construções foram elevadas 0,08 unidade acima da superfície do piso; o deslocamento lateral rumo à borda e os rótulos à frente dos peões foram preservados.
 - Ajuste posterior do usuário na faixa da cartola foi preservado: salvei a fonte `.blend` e reexportei o GLB de runtime; a escala da faixa está 1,0718× no novo GLB.
 - Se uma pessoa sair durante a partida, o bot assume e o cartão exibe “BOT NO CONTROLE”. A cadeira preserva seus bens e a sala aceita retorno pelo mesmo código e nome. A partida desativa o descarte automático; se não houver humano conectado, a sala é mantida até 24 horas para reconexão e encerra antes caso a partida termine.
 - Regressão de servidor cobre sala com bot e sem outro cliente humano, controle automatizado, rejeição de nome diferente, reconexão exata, preservação dos bens e restauração do descarte automático. `npm run verify` passou com 53 arquivos / 287 testes e builds web/servidor; grafo atualizado.
 - Playtest desktop: o lobby mostrou as 12 cores e 14 fichas; partida com bot mostrou o selo no cartão. Em sala solo, sair e entrar de novo com o mesmo código e nome restaurou o controle humano e removeu o selo. Uma sala nova com código diferente não permite reentrada, como esperado.
 - Alterações locais anteriores em `assets/blender/special-corners.blend` e `.blend1` são externas a esta tarefa e devem ser preservadas.
-- Próximo passo: nenhuma pendência de implementação nesta frente; observar o encaixe das fichas em partidas com vários participantes como acompanhamento visual contínuo.
+- Próximo passo: observar o alinhamento das construções em partidas com outros níveis de melhoria e diferentes lados do tabuleiro; alterações locais da cartola seguem preservadas.
 
 # Recuperação visual da cena após piscada — implementada (2026-11-01)
 

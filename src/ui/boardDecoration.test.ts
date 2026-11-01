@@ -9,9 +9,10 @@ describe('orientação das casas do tabuleiro', () => {
     expect(getBoardSpaceDecoration(35).buildingOffset).toEqual([0, 0])
   })
 
-  it('apoia a base do modelo no topo do piso sem afundar', () => {
+  it('eleva a base das construções acima do topo do piso sem afundar', () => {
     const modelBaseY = BUILDING_GROUP_Y + BUILDING_MODEL_Y_OFFSET + 0.0005 * 1.16
-    expect(modelBaseY).toBeGreaterThanOrEqual(BOARD_SURFACE_Y)
+    expect(modelBaseY).toBeCloseTo(BOARD_SURFACE_Y + 0.08058)
+    expect(modelBaseY).toBeGreaterThan(BOARD_SURFACE_Y)
   })
 
   it('alinha rótulos e fachadas para fora e organiza o modelo pelo eixo da borda', () => {
