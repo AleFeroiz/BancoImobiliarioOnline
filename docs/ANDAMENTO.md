@@ -4,7 +4,7 @@
 - Causa encontrada na interface: a carta permanece como contexto em `activeCardTitle`; isso suprime o controle “Continuar” na fase `resolve`, inclusive quando a revelação já foi fechada para selecionar o alvo. O servidor já muda corretamente para `resolve`.
 - O controle de continuação agora depende da fase `resolve`, de a revelação estar fechada e de não haver chegada numa propriedade própria ou feedback pendente; a presença do título da carta não o suprime.
 - Regressão coberta em `turnActivity.test.ts`. `npm run verify` passou com 274 testes em 50 arquivos e builds web/servidor. Em partida descartável local, preparei Proteção no Modo DEV, ativei a carta e confirmei “Continuar” após o efeito. Graphify atualizado para 1.027 nós, 1.911 arestas e 69 comunidades.
-- Próximo passo: commit revisado e push em `main`.
+- Correção publicada em `main`. Próximo passo: observar se o controle também permanece claro após outras cartas com alvo e em partidas sem Modo DEV.
 
 # Bandeira de festival e rolagem dos dados — concluídas (2026-11-01)
 
