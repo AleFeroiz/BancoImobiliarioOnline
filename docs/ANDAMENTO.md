@@ -1,6 +1,7 @@
 # Personalização de fichas, colocação no tabuleiro e reconexão — concluídas (2026-11-01)
 
 - Dez fichas low-poly adicionais estão no GLB, totalizando 14 opções; o seletor oferece 12 cores. “Salto” é um sapato de salto com a silhueta refinada e GLB reexportado pelo Blender 5.2.2 LTS. Propriedades permanecem na altura do piso e se deslocam à borda externa; os rótulos ficam à frente dos peões.
+- Ajuste posterior do usuário na faixa da cartola foi preservado: salvei a fonte `.blend` e reexportei o GLB de runtime; a escala da faixa está 1,0718× no novo GLB.
 - Se uma pessoa sair durante a partida, o bot assume e o cartão exibe “BOT NO CONTROLE”. A cadeira preserva seus bens e a sala aceita retorno pelo mesmo código e nome. A partida desativa o descarte automático; se não houver humano conectado, a sala é mantida até 24 horas para reconexão e encerra antes caso a partida termine.
 - Regressão de servidor cobre sala com bot e sem outro cliente humano, controle automatizado, rejeição de nome diferente, reconexão exata, preservação dos bens e restauração do descarte automático. `npm run verify` passou com 53 arquivos / 287 testes e builds web/servidor; grafo atualizado.
 - Playtest desktop: o lobby mostrou as 12 cores e 14 fichas; partida com bot mostrou o selo no cartão. Em sala solo, sair e entrar de novo com o mesmo código e nome restaurou o controle humano e removeu o selo. Uma sala nova com código diferente não permite reentrada, como esperado.

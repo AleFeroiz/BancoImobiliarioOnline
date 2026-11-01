@@ -99,6 +99,12 @@
 - Graphify update não executou porque a CLI `graphify` não está instalada neste ambiente.
 # Validação visual e de navegador
 
+## 2026-11-01 — Ajuste final da cartola
+
+- Blender 5.2.2 LTS confirmou a cena `player-tokens.blend` como modificada; a faixa da cartola tem escala de 1,0718 em relação ao mesh original. Salvei a fonte e reexportei `public/assets/player-tokens.glb` com eixo Y-up; o GLB mantém a raiz `Token_TopHat` e inclui a escala nova no nó `Hat_Band`.
+- No navegador local, selecionei Cartola no lobby e iniciei uma partida; o Canvas 3D carregou e o console não registrou erros. A inspeção do modelo em detalhe foi feita também no Blender em três quartos e de frente.
+- O jogo carrega `public/assets/player-tokens.glb`; salvar somente o `.blend` não atualiza o modelo distribuído.
+
 ## 2026-11-01 — Fichas, cores, propriedades e reconexão
 
 - `npm run verify` passou: 53 arquivos de teste, 287 testes, build do frontend e build do servidor. `git diff --check` passou. O build mantém o aviso conhecido do chunk da cena 3D acima de 500 KB.
