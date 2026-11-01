@@ -5,7 +5,8 @@
 - Regressões: limpeza de efeitos/Festival na devolução e Terremoto, razão do bloqueio de leilão, cálculo do destino e avanço seguro da animação após frame longo.
 - `npm run verify`: 55 arquivos de teste, 290 testes passaram; builds web e servidor passaram. O build avisou somente sobre chunks acima de 500 kB.
 - Playtest manual: Vite e sala local foram abertos; a porta 2567 estava ocupada sem processo identificável, então usei a porta alternativa 2569. A partida com bot abriu, exibiu o tabuleiro e uma compra de cidade; o fluxo mostrou a terceira casa bloqueada antes da primeira volta. Revisei a cena após destacar as setas sobre os objetos, mas o enquadramento geral não permite validar seu tamanho em close; um segundo arremesso não foi observado em partida real. As regressões cobrem o progresso de voo em frame longo. Alterações locais em `assets/blender/special-corners.blend` e `.blend1` são anteriores e foram preservadas fora do commit.
-- Próximo passo: revisar diff, sincronizar `main`, passar pelo hook e publicar somente os arquivos desta tarefa.
+- Publicado em `main` e `origin/main`: `5ff5dff` (`Aprimora feedback visual e remove trocas`). O hook local refez a suíte completa e os builds antes do commit.
+- Próximo passo de observação: conferir o tamanho das setas com a câmera aproximada e observar um segundo arremesso de projétil numa partida entre pessoas.
 
 # Cartões destacam cidades e ajuste de construções — concluído (2026-11-01)
 
