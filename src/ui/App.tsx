@@ -733,6 +733,7 @@ function App() {
     }
 
     room.onStateChange(updateLobby)
+    const removeGameStartedMessage = room.onMessage<{ mode?: unknown }>('game:started', () => setScreen('game'))
     room.onMessage('room:error', handleRoomError)
     room.onLeave(handleLeave)
     room.onDrop(handleDrop)
@@ -741,6 +742,7 @@ function App() {
 
     return () => {
       room.onStateChange.remove(updateLobby)
+      removeGameStartedMessage()
       room.onLeave.remove(handleLeave)
       room.onDrop.remove(handleDrop)
       room.onReconnect.remove(handleReconnect)

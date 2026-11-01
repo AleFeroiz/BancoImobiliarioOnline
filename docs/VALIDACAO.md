@@ -99,6 +99,13 @@
 - Graphify update não executou porque a CLI `graphify` não está instalada neste ambiente.
 # Validação visual e de navegador
 
+## 2026-11-01 — Recuperação do tabuleiro após piscada
+
+- `npm run verify` passou: 51 arquivos de teste, 282 testes e builds do frontend e servidor. A execução inicial em sandbox falhou nas conexões locais Colyseus (`fetch failed`); a repetição com loopback aprovado passou completa.
+- Em sala local com bot, o cliente recebeu o início da partida sem aviso de listener ausente; o tabuleiro permaneceu visível em duas mudanças de turno. Comprei Rio Verde para conferir o modelo sobre o piso. O console do navegador ficou sem erros ou avisos; o navegador não pediu mais `/favicon.ico` porque agora usa `public/favicon.svg`.
+- Os modelos foram empurrados mais para dentro do piso, separando visualmente a área de propriedade do corredor externo de peões.
+- A captura da amiga não indicava erro explícito de contexto WebGL e não reproduzi a piscada. Playtest com dois clientes humanos continua pendente; a correção adiciona recuperação para a perda de contexto, mas não comprova a causa original.
+
 ## 2026-11-01 — Home BANTEC publicada e seletor de duração
 
 - Abri a home pública `https://banco-imobiliario-online.vercel.app/` no navegador e confirmei a identidade BANTEC, a rota Norte → Centro-Oeste → Nordeste → Sul → Sudeste, as 24 cidades/5 regiões e o formulário para criar ou entrar em sala.

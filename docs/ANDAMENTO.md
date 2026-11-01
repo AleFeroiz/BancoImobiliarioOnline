@@ -1,3 +1,12 @@
+# Recuperação visual da cena após piscada — implementada (2026-11-01)
+
+- Relato novo: na troca de turno, a tela piscou e o tabuleiro 3D desapareceu para uma participante; a captura do console mostra `game:started` sem listener e `favicon.ico` 404, mas não mostra erro de WebGL explícito. Os avisos de GPOS/GSUB também não comprovam relação com a cena.
+- A mensagem `game:started` agora muda a tela para a partida e tem listener registrado; a tela também declara um favicon SVG próprio.
+- A cena sob demanda agora invalida quadros ao voltar ao foco/visibilidade. Se WebGL perder o contexto e não restaurar em 1,8 s, o Canvas é recriado; se restaurar, a cena recebe nova invalidação.
+- Ajuste visual solicitado: o modelo de propriedade se desloca mais para o lado interno do tile, reservando o corredor externo para o caminho dos peões.
+- `npm run verify` passou com 51 arquivos / 282 testes e builds web/servidor. Na sala local com bot, o evento de início abriu a partida, o tabuleiro continuou visível depois das trocas de turno e o console não registrou avisos/erros; o modelo comprado ficou sobre o tile.
+- A piscada/desaparecimento reportados não foram reproduzidos nem confirmados com dois clientes humanos. A recuperação reduz o risco de tela vazia, mas a causa original ainda não foi provada. Próximo passo: observar a próxima partida online; se repetir, coletar logs do cliente e do servidor no momento exato.
+
 # Correção visual de propriedades e indicador de liquidação — implementada (2026-11-01)
 
 - Pedido confirmado: modelos de propriedade comprada ficam sobre o próprio piso, deslocados só o suficiente para abrir passagem aos peões; o rótulo 3D mostra o nome da cidade acima do aluguel e usa a cor de quem possui o terreno.

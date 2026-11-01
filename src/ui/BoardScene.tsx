@@ -23,7 +23,7 @@ import { applySelectionContrast, createTokenOutlineMaterial, createUnlitMaterial
 import { getBuildingInnerEdgeOffset, getBuildingRentLabelPosition, getCenteredModelPlacement, getModelFootprintDepth } from './modelPlacement'
 import { getPropertyBoardLabel } from './propertyRentLabel'
 import { playGameSound } from './gameAudio'
-import { scheduleSceneRenderWake } from './sceneRenderWake'
+import { scheduleSceneRenderWake, subscribeSceneContextRecovery, subscribeSceneResumeWake } from './sceneRenderWake'
 import { getGraphicsDprRange, type GraphicsQuality } from './graphicsQuality'
 import { getGameBackgroundColor } from './nightMode'
 import { getPlayerEmoteSymbol, type PlayerEmote } from '../../shared/playerEmotes'
@@ -561,7 +561,7 @@ function AnimatedBuilding({ spaceId, houses, ownerColor, ownerSessionId, reduced
     return { object: clone, footprintDepth }
   }, [blackoutTurns, dimmed, displayColor, ownerSessionId, scene, variantName])
   const modelScale = 1.25
-  const [offsetX, offsetZ] = modelData ? getBuildingInnerEdgeOffset(spaceId, 0.98, modelData.footprintDepth, modelScale, 0.08) : decoration.buildingOffset
+  const [offsetX, offsetZ] = modelData ? getBuildingInnerEdgeOffset(spaceId, 0.98, modelData.footprintDepth, modelScale, 0.02) : decoration.buildingOffset
   return (
     <group ref={group} position={[x + offsetX, BUILDING_GROUP_Y, z + offsetZ]} rotation={[0, buildingRotation, 0]}>
       {modelData && <primitive object={modelData.object} position={[0, BUILDING_MODEL_Y_OFFSET, 0]} scale={modelScale} />}
@@ -773,7 +773,7 @@ function FestivalBanner({ size, dimmed }: { size: number; dimmed: boolean }) {
 
 type BoardSceneProps = { nightMode: boolean; players: PlayerToken[]; propertyBuildings: PropertyBuilding[]; thrownObjects: ThrowableEvent[]; earthquakeEvents?: EarthquakeEvent[]; worldCupSpaceId?: number; festivalSpaceIds?: readonly number[]; highlightedSpaceIds?: readonly number[]; selectionMode?: boolean; showLiquidationValues?: boolean; landingPulseSpaceId?: number; landingPulseSequence?: number; diceRollSequence?: number; renderWakeSequence?: number; dice?: [number, number]; diceVisible?: boolean; diceResultVisible?: boolean; presentationSpeed?: AnimationSpeed; reducedMotion?: boolean; pawnMovementEnabled?: boolean; pawnMoveMode?: 'walk' | 'teleport'; pawnStepSoundEnabled?: boolean; cameraEnabled?: boolean; graphicsQuality?: GraphicsQuality; fpsMeterEnabled?: boolean; fpsSamples?: { current: FrameRateAccumulator }; onMovementComplete: () => void; onSelectSpace: (spaceId: number) => void }
 
-function SceneRenderWake({ sequence }: { sequence: number }) {
+function SceneRenderWake({ sequence, onUnrecoveredContextLoss }: { sequence: number; onUnrecoveredContextLoss: () => void }) {
   const { gl, invalidate } = useThree()
 
   useEffect(() => scheduleSceneRenderWake(
@@ -785,16 +785,19 @@ function SceneRenderWake({ sequence }: { sequence: number }) {
   ), [invalidate, sequence])
 
   useEffect(() => {
-    const canvas = gl.domElement
-    const onContextLost: EventListener = (event) => event.preventDefault()
-    const onContextRestored = () => invalidate(3)
-    canvas.addEventListener('webglcontextlost', onContextLost)
-    canvas.addEventListener('webglcontextrestored', onContextRestored)
+    const removeResumeListeners = subscribeSceneResumeWake(invalidate, window, document, () => document.visibilityState === 'visible')
+    const removeContextListeners = subscribeSceneContextRecovery(
+      gl.domElement,
+      invalidate,
+      onUnrecoveredContextLoss,
+      (callback, delayMs) => window.setTimeout(callback, delayMs),
+      (timer) => window.clearTimeout(timer),
+    )
     return () => {
-      canvas.removeEventListener('webglcontextlost', onContextLost)
-      canvas.removeEventListener('webglcontextrestored', onContextRestored)
+      removeResumeListeners()
+      removeContextListeners()
     }
-  }, [gl, invalidate])
+  }, [gl, invalidate, onUnrecoveredContextLoss])
 
   return null
 }
@@ -807,10 +810,12 @@ function FrameRateProbe({ samples }: { samples: { current: FrameRateAccumulator 
 }
 
 function BoardSceneCanvas({ nightMode, players, propertyBuildings, thrownObjects, earthquakeEvents = [], worldCupSpaceId = 255, festivalSpaceIds = [], highlightedSpaceIds = [], selectionMode = false, showLiquidationValues = false, landingPulseSpaceId = -1, landingPulseSequence = 0, diceRollSequence = 0, renderWakeSequence = 0, dice = [0, 0], diceVisible = false, diceResultVisible = false, presentationSpeed = 1, reducedMotion = false, pawnMovementEnabled = false, pawnMoveMode = 'walk', pawnStepSoundEnabled = false, cameraEnabled = true, graphicsQuality = 'high', fpsMeterEnabled = false, fpsSamples, onMovementComplete, onSelectSpace }: BoardSceneProps) {
+  const [canvasGeneration, setCanvasGeneration] = useState(0)
+  const recoverLostContext = useCallback(() => setCanvasGeneration((generation) => generation + 1), [])
   return (
-    <Canvas camera={{ position: [12.5, 15.5, 15.5], fov: 34 }} dpr={getGraphicsDprRange(graphicsQuality)} frameloop="demand" gl={{ antialias: false, powerPreference: 'high-performance', stencil: false }}>
+    <Canvas key={canvasGeneration} camera={{ position: [12.5, 15.5, 15.5], fov: 34 }} dpr={getGraphicsDprRange(graphicsQuality)} frameloop="demand" gl={{ antialias: false, powerPreference: 'high-performance', stencil: false }}>
       <color attach="background" args={[getGameBackgroundColor(nightMode)]} />
-      <SceneRenderWake sequence={renderWakeSequence} />
+      <SceneRenderWake sequence={renderWakeSequence} onUnrecoveredContextLoss={recoverLostContext} />
       <ResponsiveCamera tilt={16} horizontal={45} />
       <OrbitControls makeDefault enabled={cameraEnabled} enablePan={false} enableZoom enableRotate minPolarAngle={Math.PI / 12} maxPolarAngle={Math.PI / 2} rotateSpeed={0.72} zoomSpeed={0.75} enableDamping dampingFactor={0.1} />
       <CameraZoomBounds />
