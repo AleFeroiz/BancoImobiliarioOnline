@@ -1,5 +1,6 @@
 # Auditoria da reforma BANTEC — 2026-11-01
 
+- Velocidade-base do movimento ajustada: cada casa agora leva 375 ms em 1×, equivalente ao antigo 2×. Testes e builds passaram; partida local confirmou movimento e chegada a Belém. Próximo passo: revisar diff e publicar esta alteração em `main`, sem incluir os arquivos Blender locais.
 - O worktree está em `main`; as alterações do usuário em `assets/blender/special-corners.blend` e `.blend1` permanecem fora do escopo e sem staging.
 - Nova frente solicitada: corrigir Apagão e aluguel visível; destaque de duplas; animação persistente de projéteis; bolha 3D da Proteção; colapso e som do Terremoto; troca imediata das fichas; marcador da sede da Copa; bônus da Partida condicionado ao trajeto; liquidação automática ao cobrir dívida; teleportes de cartas animados; e opção sem limite de tempo.
 - A economia está deliberadamente pendente de decisão do usuário em outro chat. Manter preços e caixa inicial existentes (R$ 2.000.000) até receber orientação; não tratar playtest humano como bloqueio.

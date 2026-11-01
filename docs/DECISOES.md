@@ -10,6 +10,7 @@
 - Durante a partida, cada participante pode lançar tomate, ovo, lama ou farinha em outro participante. A sala valida um intervalo de cinco segundos por par lançador/alvo; o projétil é uma animação visual e o impacto temporário aparece apenas na tela do alvo, sem interceptar cliques.
 - Duplas numa rolagem normal são anunciadas em destaque; a terceira dupla consecutiva continua enviando a pessoa à Prisão.
 - Apagão escurece visualmente a propriedade e zera seu aluguel durante o efeito, exceto quando há hotel. Proteção é representada por uma bolha 3D. Terremoto anima a propriedade afundando e toca um efeito sonoro.
+- A velocidade-base do percurso das fichas usa 375 ms por casa em 1× (equivalente ao antigo 2×); 0,5× usa 750 ms e 2× usa 188 ms. Dados, teleportes e outras animações mantêm suas próprias durações.
 
 ## Cidades, regiões e cores
 

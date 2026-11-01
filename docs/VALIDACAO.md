@@ -778,3 +778,10 @@
 - Corrigi a âncora do projétil para usar os grupos 3D das fichas. A origem é capturada na posição exibida quando o lançamento começa; o destino acompanha a posição animada do alvo em cada frame.
 - Em sala local, durante o movimento do Bot 1, lancei um tomate e observei o projétil junto à ficha enquanto ela avançava pelo tabuleiro, sem saltar para a casa final.
 - `npm run verify`: 254 testes em 49 arquivos passaram; builds frontend e servidor passaram. O build ainda emite o aviso conhecido de chunk 3D acima de 500 kB. Graphify atualizado para 977 nós e 1.820 arestas.
+
+# 2026-11-01 — Velocidade-base do movimento das fichas
+
+- Ajustei a duração de cada passo de 750 ms para 375 ms em 1×. A escala resultante é 750 ms em 0,5×, 375 ms em 1× e 188 ms em 2×; os dados e teleportes mantêm suas durações separadas.
+- `npm run verify` passou: 258 testes em 49 arquivos, build web e build do servidor. O build mantém o aviso conhecido do chunk 3D acima de 500 kB.
+- Em partida local com Modo DEV e Bot 1, forcei uma rolagem de 7 casas em 1×; a ficha percorreu o tabuleiro e chegou a Belém, abrindo a compra da propriedade. A revisão confirmou o fluxo do movimento e o seletor em 1×; o tempo não foi medido com cronômetro quadro a quadro.
+- `npm run graphify -- update .` foi executado após a alteração de código. Servidores locais foram encerrados ao fim da revisão.

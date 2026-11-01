@@ -25,7 +25,10 @@ describe('velocidade da apresentação', () => {
     expect(getAnimationDuration(DICE_ANIMATION_DURATION_MS, 0.5)).toBe(5_600)
     expect(getAnimationDuration(DICE_ANIMATION_DURATION_MS, 1)).toBe(2_800)
     expect(getAnimationDuration(DICE_ANIMATION_DURATION_MS, 2)).toBe(1_400)
-    expect(getAnimationDuration(PAWN_STEP_ANIMATION_DURATION_MS, 2)).toBe(375)
+    expect(PAWN_STEP_ANIMATION_DURATION_MS).toBe(375)
+    expect(getAnimationDuration(PAWN_STEP_ANIMATION_DURATION_MS, 0.5)).toBe(750)
+    expect(getAnimationDuration(PAWN_STEP_ANIMATION_DURATION_MS, 1)).toBe(375)
+    expect(getAnimationDuration(PAWN_STEP_ANIMATION_DURATION_MS, 2)).toBe(188)
     expect(getAnimationDuration(DICE_ANIMATION_DURATION_MS, 0.75)).toBe(2_800)
   })
 
