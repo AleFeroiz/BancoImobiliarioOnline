@@ -41,14 +41,14 @@ describe('velocidade da apresentação', () => {
   it('começa em 1x e aplica 0,5x e 2x proporcionalmente', () => {
     expect(DEFAULT_ANIMATION_SPEED).toBe(1)
     expect(ANIMATION_SPEEDS).toEqual([0.5, 1, 2])
-    expect(getAnimationDuration(DICE_ANIMATION_DURATION_MS, 0.5)).toBe(2_800)
-    expect(getAnimationDuration(DICE_ANIMATION_DURATION_MS, 1)).toBe(1_400)
-    expect(getAnimationDuration(DICE_ANIMATION_DURATION_MS, 2)).toBe(700)
+    expect(getAnimationDuration(DICE_ANIMATION_DURATION_MS, 0.5)).toBe(3_600)
+    expect(getAnimationDuration(DICE_ANIMATION_DURATION_MS, 1)).toBe(1_800)
+    expect(getAnimationDuration(DICE_ANIMATION_DURATION_MS, 2)).toBe(900)
     expect(PAWN_STEP_ANIMATION_DURATION_MS).toBe(375)
     expect(getAnimationDuration(PAWN_STEP_ANIMATION_DURATION_MS, 0.5)).toBe(375)
     expect(getAnimationDuration(PAWN_STEP_ANIMATION_DURATION_MS, 1)).toBe(188)
     expect(getAnimationDuration(PAWN_STEP_ANIMATION_DURATION_MS, 2)).toBe(94)
-    expect(getAnimationDuration(DICE_ANIMATION_DURATION_MS, 0.75)).toBe(1_400)
+    expect(getAnimationDuration(DICE_ANIMATION_DURATION_MS, 0.75)).toBe(1_800)
   })
 
   it('aceita somente as três velocidades disponíveis', () => {

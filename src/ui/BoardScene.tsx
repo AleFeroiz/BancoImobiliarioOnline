@@ -1,7 +1,7 @@
 import { Canvas } from '@react-three/fiber'
 import { Billboard, Html, OrbitControls, Text } from '@react-three/drei'
 import { memo, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import { BackSide, Box3, CanvasTexture, DoubleSide, Path, PerspectiveCamera, Shape, ShapeGeometry, SRGBColorSpace, type Group, type Mesh, type Object3D } from 'three'
+import { BackSide, Box3, CanvasTexture, DoubleSide, Path, PerspectiveCamera, Shape, ShapeGeometry, SRGBColorSpace, Vector3, type Group, type Mesh, type Object3D } from 'three'
 import { useFrame, useThree } from '@react-three/fiber'
 import { useGLTF } from '@react-three/drei'
 import { boardSpaces, positionOnBoard } from '../game/board'
@@ -9,10 +9,11 @@ import { getCameraFraming } from './cameraFraming'
 import { getCameraZoomLimits } from './cameraZoom'
 import { BUILDING_GROUP_Y, BUILDING_MODEL_Y_OFFSET, getBoardSpaceDecoration } from './boardDecoration'
 import { getBoardTileTheme } from './boardTileTheme'
+import { getFestivalBannerPlacement } from './festivalBanner'
 import { fitSpaceLabel, shouldRenderSpaceLabel } from './spaceLabel'
 import { getPawnStepPath } from './pawnPath'
 import { getPropertyVisualChange } from './gameFeedback'
-import { DICE_PRESENTATION_POSITIONS, DICE_RESULT_BADGE_POSITION, DICE_ROLL_BOUNCE_HEIGHT, DICE_VISUAL_SCALE, getDiceRollRotation } from './dicePresentation'
+import { DICE_PRESENTATION_POSITIONS, DICE_RESULT_BADGE_POSITION, DICE_VISUAL_SCALE, getDiceRollBounce, getDiceRollRotation } from './dicePresentation'
 import { getRouletteFloorSectors } from './rouletteFloor'
 import { shouldStartCameraDrag } from './cameraDrag'
 import { BUILDING_ANIMATION_DURATION_MS, DICE_ANIMATION_DURATION_MS, LANDING_PULSE_DURATION_MS, PAWN_STEP_ANIMATION_DURATION_MS, PAWN_TELEPORT_ANIMATION_DURATION_MS, PROPERTY_HOTEL_LEVEL, getAnimationDuration, type AnimationSpeed } from '../../shared/game'
@@ -446,7 +447,7 @@ function AnimatedDie({ position, rotation, sequence, value, reducedMotion, visib
     elapsed.current = Math.min(duration, elapsed.current + delta)
     const progress = elapsed.current / duration
     die.rotation.set(...getDiceRollRotation(startRotation.current as [number, number, number], progress))
-    die.position.y = position[1] + Math.sin(progress * Math.PI) * DICE_ROLL_BOUNCE_HEIGHT
+    die.position.y = position[1] + getDiceRollBounce(progress)
     if (progress >= 1) {
       die.rotation.set(0, 0, 0)
       die.position.y = position[1]
@@ -665,7 +666,7 @@ function Board({ players, propertyBuildings, thrownObjects, earthquakeEvents, wo
             {space.kind === 'world-cup' && <Suspense fallback={null}><CornerLandmark type="stadium" position={[0, 0.15, 0]} dimmed={selectionMode && !selectable} /></Suspense>}
             {space.kind === 'world-tour' && <Suspense fallback={null}><CornerLandmark type="airport" position={[0, 0.08, 0]} dimmed={selectionMode && !selectable} /></Suspense>}
             {space.kind === 'property' && space.id === worldCupSpaceId && <Html position={[size * 0.26, 0.62, size * 0.26]} center distanceFactor={10} zIndexRange={[6, 0]} style={{ pointerEvents: 'none' }}><span className="world-cup-host-flag"><b>🏆</b><small>SEDE</small></span></Html>}
-            {space.kind === 'property' && festivalSpaceIds.includes(space.id) && <Html position={[-size * 0.28, 0.62, size * 0.28]} center distanceFactor={10} zIndexRange={[6, 0]} style={{ pointerEvents: 'none' }}><span className="world-cup-host-flag"><b>🎉</b><small>×2</small></span></Html>}
+            {space.kind === 'property' && festivalSpaceIds.includes(space.id) && <Suspense fallback={null}><FestivalBanner size={size} dimmed={selectionMode && !selectable} /></Suspense>}
             {space.kind === 'start' && <mesh position={[size * 0.31, 0.13, size * 0.3]} rotation={[0, Math.PI / 4, 0]} raycast={skipRaycast}><boxGeometry args={[0.14, 0.045, 0.14]} /><meshBasicMaterial color={theme.trim} /></mesh>}
             {shouldRenderSpaceLabel(space.kind) && <SpaceLabel name={space.name} size={size} ink={theme.ink} outline={theme.outline} outwardRotation={decoration.labelRotation} />}
             {highlightedSpaceIds.includes(space.id) && (
@@ -741,6 +742,25 @@ function CornerLandmark({ type, position, dimmed }: { type: 'stadium' | 'airport
     return clone
   }, [dimmed, scene, type])
   return <group position={position}><primitive object={model} scale={type === 'stadium' ? 0.64 : 0.36} /></group>
+}
+
+function FestivalBanner({ size, dimmed }: { size: number; dimmed: boolean }) {
+  const { scene } = useGLTF('/assets/festival-banner.glb')
+  const model = useMemo(() => {
+    const clone = scene.clone(true)
+    clone.userData.selectionContrastManaged = true
+    const bounds = new Box3().setFromObject(clone)
+    const center = bounds.getCenter(new Vector3())
+    clone.position.set(-center.x, -bounds.min.y, -center.z)
+    clone.traverse((object) => {
+      const mesh = object as Mesh
+      if (mesh.isMesh) mesh.raycast = skipRaycast
+    })
+    makeSceneMaterialsUnlit(clone, dimmed)
+    return clone
+  }, [dimmed, scene])
+  const placement = getFestivalBannerPlacement(size)
+  return <group position={placement.position} scale={placement.scale}><primitive object={model} /></group>
 }
 
 type BoardSceneProps = { nightMode: boolean; players: PlayerToken[]; propertyBuildings: PropertyBuilding[]; thrownObjects: ThrowableEvent[]; earthquakeEvents?: EarthquakeEvent[]; worldCupSpaceId?: number; festivalSpaceIds?: readonly number[]; highlightedSpaceIds?: readonly number[]; selectionMode?: boolean; landingPulseSpaceId?: number; landingPulseSequence?: number; diceRollSequence?: number; dice?: [number, number]; diceVisible?: boolean; diceResultVisible?: boolean; presentationSpeed?: AnimationSpeed; reducedMotion?: boolean; pawnMovementEnabled?: boolean; pawnMoveMode?: 'walk' | 'teleport'; pawnStepSoundEnabled?: boolean; cameraEnabled?: boolean; graphicsQuality?: GraphicsQuality; fpsMeterEnabled?: boolean; fpsSamples?: { current: FrameRateAccumulator }; onMovementComplete: () => void; onSelectSpace: (spaceId: number) => void }

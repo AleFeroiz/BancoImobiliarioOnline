@@ -11,6 +11,8 @@
 - Duplas numa rolagem normal são anunciadas em destaque; a terceira dupla consecutiva continua enviando a pessoa à Prisão.
 - Apagão escurece visualmente a propriedade e zera seu aluguel durante o efeito, exceto quando há hotel. Proteção é representada por uma bolha 3D. Terremoto anima a propriedade afundando e toca um efeito sonoro.
 - O seletor de velocidade mantém a escala linear 0,5×, 1× e 2×; 1× agora usa a duração que antes correspondia a 2×, reduzindo pela metade todas as durações base de animação. No movimento do peão, 0,5× usa 375 ms por casa, 1× usa 188 ms e 2× usa 94 ms. Dados e teleportes seguem os mesmos fatores.
+- A rolagem dos dados usa cambalhotas em três eixos com pequenas oscilações e três quicadas decrescentes; dura 1,8 s em 1×, assentando antes do movimento da ficha.
+- Cada uma das três cidades sorteadas para festival recebe uma bandeira 3D low-poly com duas estacas, corda arqueada e seis bandeirolas coloridas. O elemento substitui o emoji anterior e identifica visualmente o festival sem alterar o aluguel ×2.
 
 ## Cidades, regiões e cores
 

@@ -798,3 +798,10 @@
 - Teste de integração iniciou uma sala, começou a partida, forçou a primeira rolagem 1+2 e verificou a primeira chegada em Porto Velho. Comprar três casas foi rejeitado sem alterar saldo, propriedade ou fase; comprar duas casas foi aceito. O teste de regressão cobre o fluxo real desde o início, além da validação da ação final de compra na interface.
 - Na partida local pelo navegador, repeti o início, a rolagem 1+2 e confirmei visualmente o painel “Comprar Porto Velho”: “3 casas” desabilitada e aviso vermelho “3ª casa indisponível na primeira volta”. O botão de compra começa com terreno selecionado. A validação autoritativa do servidor impede a compra de três casas mesmo se um cliente enviar a ação diretamente.
 - Testes unitários verificaram as durações de animação em 0,5×/1×/2×; o peão usa 375/188/94 ms por casa. `npm run verify`: 270 testes em 49 arquivos passaram; build web e servidor passaram. O build web manteve o aviso conhecido do chunk de cena 3D acima de 500 kB. Graphify atualizado para 1.013 nós, 1.882 arestas e 73 comunidades.
+
+# 2026-11-01 — Bandeira de festival e animação de rolagem
+
+- Criei no Blender 5.2.2 LTS uma bandeira low-poly própria com duas estacas, corda arqueada e seis bandeirolas coloridas; exportei a fonte `assets/blender/festival-banner.blend` e o modelo `public/assets/festival-banner.glb`. A cena original do Blender foi mantida.
+- A cena 3D posiciona uma bandeira em cada cidade sorteada para festival, relativa ao tamanho do tile. Na partida local, os três pontos de festival ficaram visíveis. A revisão do modelo no Blender confirmou duas estacas e a leitura das bandeirolas.
+- Os dados agora rolam com cambalhotas nos três eixos, oscilação amortecida e três quicadas decrescentes. No navegador, observei a etapa “Girando os dados” seguida de “Movendo o peão”; movimento e resultado final não mudaram.
+- Testes: `npm run verify` passou com 273 testes em 50 arquivos, build web e build do servidor. O build mantém o aviso conhecido de chunk da cena 3D acima de 500 kB. `git diff --check` passou. Graphify atualizado para 1.024 nós, 1.905 arestas e 70 comunidades.

@@ -3,6 +3,7 @@ export type DiceRotation = [number, number, number]
 export type DicePosition = [number, number, number]
 
 export const DICE_ROLL_BOUNCE_HEIGHT = 0.065
+export const DICE_ROLL_BOUNCE_COUNT = 3
 export const DICE_VISUAL_SCALE = 0.55
 
 export const DICE_PRESENTATION_POSITIONS: DicePosition[] = [
@@ -17,7 +18,18 @@ export function shouldShowRolledDice(phase: DicePresentationPhase, belongsToPawn
 
 export function getDiceRollRotation(start: DiceRotation, progress: number): DiceRotation {
   const clamped = Math.min(1, Math.max(0, progress))
-  const eased = 1 - (1 - clamped) ** 3
-  const levelOrientation = Math.PI * 4
-  return start.map((angle) => angle + (levelOrientation - angle) * eased) as DiceRotation
+  const eased = 1 - (1 - clamped) ** 3.4
+  const finalTurns = [3, 4, 2]
+  const axisWobble = [1, -0.8, 0.62]
+  const wobble = Math.sin(clamped * Math.PI * 6) * (1 - clamped) * 0.28
+  return start.map((angle, axis) => {
+    const finalRotation = Math.PI * 2 * finalTurns[axis]!
+    return angle + (finalRotation - angle) * eased + wobble * axisWobble[axis]!
+  }) as DiceRotation
+}
+
+export function getDiceRollBounce(progress: number) {
+  const clamped = Math.min(1, Math.max(0, progress))
+  const bounceWave = Math.abs(Math.sin(clamped * Math.PI * DICE_ROLL_BOUNCE_COUNT))
+  return DICE_ROLL_BOUNCE_HEIGHT * bounceWave * (1 - clamped) ** 1.2
 }

@@ -97,6 +97,7 @@ Na galeria histórica, a interface também está separada por estados de produto
 
 - Usar uma paleta de papel marfim, feltro verde e madeira clara, com acentos por participante e cores de grupo nos títulos.
 - Criar arte low-poly original para casas, hotéis, peões, dados e espaços especiais. Os nomes, preços e ícones do tabuleiro são do projeto.
+- Identificar as cidades em festival com uma bandeira baixa de duas estacas e bandeirolas coloridas em corda arqueada, integrada ao piso da cidade sem cobrir seu nome ou construção.
 - Preferir superfícies claras levemente translúcidas, bordas suaves e sombras discretas para separar o HUD da cena sem transformar a partida num painel administrativo.
 - Usar animação curta para rolagem, deslocamento do peão, mudança de vez, compra e resultado de carta. Estados importantes também precisam de rótulos e contraste estáticos.
 - Manter botões e textos de ação em HTML/DOM, sincronizados ao estado da sala; a cena 3D apenas representa esse estado.
@@ -106,7 +107,7 @@ Na galeria histórica, a interface também está separada por estados de produto
 | Momento | Informação em primeiro plano | Tratamento |
 |---|---|---|
 | Espera e turno normal | Jogador ativo, saldo, modo/tempo e comando principal | HUD compacto nas bordas; centro livre |
-| Rolagem e movimento | Resultado dos dados e destino do peão | Animação sequencial e lenta; rolagem de 1,8 s e 0,42 s por casa percorrida |
+| Rolagem e movimento | Resultado dos dados e destino do peão | Cambalhotas em eixos variados e três quicadas que diminuem; rolagem de 1,8 s em 1×, seguida pelo movimento da ficha |
 | Compra ou recusa | Imóvel, preço, aluguel e escolha entre comprar ou deixar livre | Painel central com decisão clara e pacote de construção selecionável |
 | Aluguel, taxa ou carta | Valor transferido e motivo | Aviso breve perto do tabuleiro; saldo atualizado no cartão |
 | Dívida ou falência | Valor devido e formas válidas de liquidar | Painel contextual mais forte, com ações disponíveis explícitas |

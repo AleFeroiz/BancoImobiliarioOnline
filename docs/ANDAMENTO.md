@@ -1,3 +1,12 @@
+# Bandeira de festival e rolagem dos dados — concluídas (2026-11-01)
+
+- O usuário pediu uma bandeira inspirada em bandeirolas de festa, com duas estacas, nas cidades em festival, substituindo o emoji. Também pediu melhorar a rolagem dos dados.
+- Blender 5.2.2 LTS conectado: modelo low-poly criado e exportado em `assets/blender/festival-banner.blend` e `public/assets/festival-banner.glb`. A bandeira tem duas estacas, corda arqueada e seis bandeirolas coloridas; a cena Blender original foi preservada.
+- Animação atualizada para cambalhotas em três eixos, oscilação amortecida e três quicadas decrescentes; duração de 1,8 s em 1×. A sequência de turnos e o resultado final dos dados continuam iguais.
+- A cena do tabuleiro agora carrega o GLB nos três espaços sorteados para festivais, com posição e escala relativas ao tamanho do tile. Na partida local, os três locais foram vistos no tabuleiro; a rolagem percorreu a etapa de “Girando os dados” e seguiu para movimento do peão.
+- Blender `look` confirmou a silhueta 3D da peça com duas estacas e bandeirolas coloridas. A validação automatizada passou em 273 testes, build web e build do servidor; graphify foi atualizado para 1.024 nós, 1.905 arestas e 70 comunidades.
+- Próximo passo: commit revisado e push em `main`.
+
 # Reforma econômica inspirada em Business Tour — implementada (2026-11-01)
 
 ## Primeira volta e velocidade de animação — corrigidas (2026-11-01)

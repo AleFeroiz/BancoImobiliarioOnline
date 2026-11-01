@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { DICE_PRESENTATION_POSITIONS, DICE_RESULT_BADGE_POSITION, DICE_ROLL_BOUNCE_HEIGHT, DICE_VISUAL_SCALE, getDiceRollRotation, shouldShowRolledDice } from './dicePresentation'
+import { DICE_PRESENTATION_POSITIONS, DICE_RESULT_BADGE_POSITION, DICE_ROLL_BOUNCE_COUNT, DICE_ROLL_BOUNCE_HEIGHT, DICE_VISUAL_SCALE, getDiceRollBounce, getDiceRollRotation, shouldShowRolledDice } from './dicePresentation'
 
 const FATEC_MAIN_ROOF_TOP_Y = 0.845
 const FATEC_TOWER_CENTER = [-0.456, 0.648] as const
@@ -17,8 +17,22 @@ describe('apresentação minimalista dos dados', () => {
 
   it('termina a animação em uma orientação plana equivalente a dados alinhados', () => {
     const settled = getDiceRollRotation([0.12, -0.28, 0.31], 1)
-    expect(settled.map((angle) => angle % (Math.PI * 2))).toEqual([0, 0, 0])
+    settled.forEach((angle) => expect(angle % (Math.PI * 2)).toBeCloseTo(0))
     expect(getDiceRollRotation([0.12, -0.28, 0.31], 0)).toEqual([0.12, -0.28, 0.31])
+    expect(getDiceRollRotation([0, 0, 0], 0.5)).not.toEqual([0, 0, 0])
+  })
+
+  it('faz três quicadas progressivamente menores antes de assentar', () => {
+    expect(DICE_ROLL_BOUNCE_COUNT).toBe(3)
+    expect(getDiceRollBounce(0)).toBe(0)
+    expect(getDiceRollBounce(1)).toBe(0)
+    expect(getDiceRollBounce(0.15)).toBeGreaterThan(getDiceRollBounce(0.05))
+    expect(getDiceRollBounce(0.15)).toBeGreaterThan(getDiceRollBounce(0.25))
+    expect(getDiceRollBounce(0.5)).toBeGreaterThan(getDiceRollBounce(0.4))
+    expect(getDiceRollBounce(0.5)).toBeGreaterThan(getDiceRollBounce(0.6))
+    expect(getDiceRollBounce(0.8)).toBeGreaterThan(getDiceRollBounce(0.7))
+    expect(getDiceRollBounce(0.8)).toBeGreaterThan(getDiceRollBounce(0.9))
+    expect(getDiceRollBounce(0.5)).toBeLessThan(getDiceRollBounce(0.15))
   })
 
   it('mantém os dados mais baixos sobre os prédios da FATEC e fora do volume da torre durante o giro', () => {
