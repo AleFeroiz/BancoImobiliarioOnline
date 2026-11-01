@@ -1,3 +1,10 @@
+# 2026-11-01 — Modelos de propriedade no piso e rótulo de liquidação contextual
+
+- Em sala local com Modo DEV, levei a jogadora até Belém e comprei o terreno por R$ 120.000. Na revisão do tabuleiro, o modelo ficou assentado sobre o tile; o rótulo mostrou “Belém” na cor coral da dona e o aluguel abaixo. `LIQ.` não apareceu em jogo normal.
+- A visibilidade do valor de liquidação somente na fase de dívida é coberta por teste unitário do rótulo; não forcei visualmente uma dívida nesta sessão.
+- `npm run verify` passou com 51 arquivos de teste, 280 testes e builds web/servidor. `npm run graphify -- update .` atualizou o grafo para 1.043 nós, 1.948 arestas e 72 comunidades.
+- A porta 2567 apresentou `EADDRINUSE` sem listener identificável; executei o servidor local na 2569. Console do navegador não apresentou falha que interrompesse a partida.
+
 # 2026-11-01 — Redesenho do tabuleiro na troca de turno
 
 - Na partida local, a anfitriã e o Bot 1 jogaram alternadamente; o tabuleiro permaneceu visível antes e depois das trocas. A partida também atravessou as fases de prisão e compra sem erro visual no Canvas.

@@ -16,7 +16,7 @@ describe('posicionamento de modelos de canto', () => {
     expect(placement[2]).toBeCloseTo(0.1)
   })
 
-  it('apoia modelos de profundidades diferentes no limite interno do piso em qualquer lado', () => {
+  it('mantém os modelos sobre o piso e deslocados até a borda interna em qualquer lado', () => {
     const offsets = [5, 15, 25, 35].map((spaceId) => getBuildingInnerEdgeOffset(spaceId, 0.98, 0.6, 1.16, 0.02))
     expect(offsets[0]?.[1]).toBeLessThan(0)
     expect(offsets[1]?.[0]).toBeLessThan(0)
@@ -24,9 +24,9 @@ describe('posicionamento de modelos de canto', () => {
     expect(offsets[3]?.[0]).toBeGreaterThan(0)
     for (const [x, z] of offsets) {
       const centerOffset = Math.hypot(x, z)
-      expect(centerOffset - 0.6 * 1.16 / 2).toBeCloseTo(0.98 / 2 + 0.02)
+      expect(centerOffset + 0.6 * 1.16 / 2).toBeCloseTo(0.98 / 2 - 0.02)
     }
-    expect(getBuildingInnerEdgeOffset(15, 0.98, 0.8, 1.16)[0]).toBeLessThan(0)
+    expect(getBuildingInnerEdgeOffset(15, 0.98, 0.8, 1.16)[0]).toBeCloseTo(0)
   })
 
   it('posiciona o rótulo do aluguel acima da construção e no mesmo alinhamento da borda interna', () => {

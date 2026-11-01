@@ -36,7 +36,7 @@ Este documento descreve somente as regras atuais do BANTEC. Referências ao Expr
 - Devolver um título ao banco encerra a posse imediatamente: ele fica livre para ser comprado por qualquer pessoa. Não existe hipoteca, aluguel suspenso por hipoteca ou resgate de título. Construções do grupo precisam ser vendidas antes de devolver um título.
 - Quando houver saldo suficiente, a dívida integral é paga ao credor ou ao banco. Se não restarem ativos liquidáveis e o saldo não cobrir a dívida, a pessoa declara falência: o dinheiro restante e seus títulos passam ao credor jogador; se o credor for o banco, os títulos voltam ao banco sem construções. A partida termina quando sobra uma única pessoa solvente.
 - Toda escolha de imóvel durante uma dívida é feita no tabuleiro: opções válidas ficam iluminadas e as inválidas apagadas.
-- No painel de dívida aparecem em destaque o total cobrado, o saldo disponível e quanto ainda falta levantar. Sobre cada imóvel próprio, o marcador informa o aluguel atual e quanto rende liquidar o título ou vender o nível de construção atual.
+- No painel de dívida aparecem em destaque o total cobrado, o saldo disponível e quanto ainda falta levantar. Apenas durante essa fase, o rótulo de cada imóvel próprio informa também quanto rende liquidar o título ou vender o nível de construção atual. Fora da fase de dívida, o valor de liquidação fica oculto.
 
 ## Cantos especiais
 

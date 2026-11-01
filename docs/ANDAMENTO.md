@@ -1,3 +1,12 @@
+# Correção visual de propriedades e indicador de liquidação — implementada (2026-11-01)
+
+- Pedido confirmado: modelos de propriedade comprada ficam sobre o próprio piso, deslocados só o suficiente para abrir passagem aos peões; o rótulo 3D mostra o nome da cidade acima do aluguel e usa a cor de quem possui o terreno.
+- O valor de venda/liquidação fica oculto durante o jogo normal e aparece apenas enquanto a partida está na fase de dívida/liquidação.
+- Corrigido: o modelo ocupa o tile, junto ao lado interno; o nome da cidade fica acima do aluguel na cor do dono; o valor de liquidação só é montado no estado `debt`.
+- Testes específicos cobrem o posicionamento dentro do piso e a ausência do valor fora da dívida; `npm run verify` passou com 51 arquivos / 280 testes e builds web/servidor.
+- Playtest local com compra real de Belém confirmou visualmente o modelo sobre o piso, o nome na cor coral acima do aluguel e a ausência de `LIQ.` fora da fase de dívida. A fase de dívida foi verificada nos testes, não visualmente no navegador.
+- A porta 2567 estava ocupada sem processo identificável; o playtest usou 2569. Próximo passo: observar a leitura do rótulo em câmera mais próxima e durante uma dívida real.
+
 # Ajustes de regras, liquidação e apresentação — implementado (2026-11-01)
 
 - Implementados: cobranças de cartas limitadas ao saldo; escolhas expiradas aleatórias entre opções válidas; rolagem D6 visível nas companhias; dívida e liquidação destacadas; opções de compra/melhoria limitadas ao saldo; melhoria após recompra; dados ampliados; construções posicionadas mais para dentro do piso; preservação da vitória por monopólio durante a recompra.

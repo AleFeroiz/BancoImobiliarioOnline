@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { boardSpaces } from '../game/board'
-import { getPropertyLiquidationLabel, getPropertyRentLabel } from './propertyRentLabel'
+import { getPropertyBoardLabel, getPropertyLiquidationLabel, getPropertyRentLabel } from './propertyRentLabel'
 import { PROPERTY_HOTEL_LEVEL, bankReturnValue, buildingSaleValue } from '../../shared/game'
 
 describe('rótulos 3D de aluguel', () => {
@@ -35,5 +35,14 @@ describe('rótulos 3D de aluguel', () => {
     expect(getPropertyLiquidationLabel(property.id, [{ spaceId: property.id, ownerSessionId: 'ana', houses: 0 }])).toBe(`R$ ${bankReturnValue(property.id).toLocaleString('pt-BR')}`)
     expect(getPropertyLiquidationLabel(property.id, [{ spaceId: property.id, ownerSessionId: 'ana', houses: 2 }])).toBe(`R$ ${buildingSaleValue(property.id, 2).toLocaleString('pt-BR')}`)
     expect(getPropertyLiquidationLabel(property.id, [{ spaceId: property.id, ownerSessionId: 'ana', houses: PROPERTY_HOTEL_LEVEL }])).toBe(`R$ ${buildingSaleValue(property.id, PROPERTY_HOTEL_LEVEL).toLocaleString('pt-BR')}`)
+  })
+
+  it('mostra nome na cor do dono e só inclui liquidação durante a fase de dívida', () => {
+    const property = boardSpaces.find((space) => space.kind === 'property' && space.buildable)!
+    const holding = { spaceId: property.id, ownerSessionId: 'ana', houses: 1, ownerColor: '#ce7558' }
+    const normal = getPropertyBoardLabel(property.id, [holding])
+    expect(normal).toEqual({ name: property.name, ownerColor: '#ce7558', rent: getPropertyRentLabel(property.id, [holding]), liquidation: null })
+    const debt = getPropertyBoardLabel(property.id, [holding], -1, new Set(), true)
+    expect(debt?.liquidation).toBe(`R$ ${buildingSaleValue(property.id, 1).toLocaleString('pt-BR')}`)
   })
 })

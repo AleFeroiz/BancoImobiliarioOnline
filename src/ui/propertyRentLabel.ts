@@ -1,7 +1,7 @@
 import { boardSpaces, formatMoney } from '../game/board'
 import { PROPERTY_HOTEL_LEVEL, bankReturnValue, buildingSaleValue, calculateCompanyRent, calculateRent } from '../../shared/game'
 
-export type PropertyRentHolding = { spaceId: number; ownerSessionId: string; houses: number; blackoutTurns?: number }
+export type PropertyRentHolding = { spaceId: number; ownerSessionId: string; houses: number; blackoutTurns?: number; ownerColor?: string }
 
 export function getPropertyLiquidationLabel(spaceId: number, holdings: readonly PropertyRentHolding[]) {
   const space = boardSpaces[spaceId]
@@ -21,4 +21,17 @@ export function getPropertyRentLabel(spaceId: number, holdings: readonly Propert
     .map((candidate) => [candidate.id, holdings.find((item) => item.spaceId === candidate.id)?.ownerSessionId || `banco:${candidate.id}`]))
   if (space.company) return `${formatMoney(calculateCompanyRent(ownership, holding.ownerSessionId) * (spaceId === worldCupSpaceId ? 2 : 1))} × D6`
   return formatMoney(calculateRent(spaceId, ownership, holding?.houses ?? 0, worldCupSpaceId, festivalSpaceIds))
+}
+
+export function getPropertyBoardLabel(spaceId: number, holdings: readonly PropertyRentHolding[], worldCupSpaceId = -1, festivalSpaceIds: ReadonlySet<number> = new Set(), showLiquidation = false) {
+  const space = boardSpaces[spaceId]
+  const holding = holdings.find((item) => item.spaceId === spaceId)
+  const rent = getPropertyRentLabel(spaceId, holdings, worldCupSpaceId, festivalSpaceIds)
+  if (space?.kind !== 'property' || !holding?.ownerSessionId || !rent) return null
+  return {
+    name: space.name,
+    ownerColor: holding.ownerColor ?? '#243b2e',
+    rent,
+    liquidation: showLiquidation ? getPropertyLiquidationLabel(spaceId, holdings) : null,
+  }
 }
