@@ -26,12 +26,6 @@ describe('interação com casas do tabuleiro', () => {
     expect(getBoardSpaceInteraction('debt-property', false, 12, [12, 16])).toEqual({ type: 'ignore' })
   })
 
-  it('seleciona títulos de troca no tabuleiro mesmo fora da própria vez', () => {
-    expect(getBoardSpaceInteraction('trade-offer', false, 4, [4, 8])).toEqual({ type: 'toggle-trade-offer', spaceId: 4 })
-    expect(getBoardSpaceInteraction('trade-request', false, 8, [4, 8])).toEqual({ type: 'toggle-trade-request', spaceId: 8 })
-    expect(getBoardSpaceInteraction('trade-request', false, 12, [4, 8])).toEqual({ type: 'ignore' })
-  })
-
   it('abre o gerenciamento somente para propriedades próprias iluminadas', () => {
     expect(getBoardSpaceInteraction('manage-property', false, 6, [6, 9])).toEqual({ type: 'choose-managed-property', spaceId: 6 })
     expect(getBoardSpaceInteraction('manage-property', false, 10, [6, 9])).toEqual({ type: 'ignore' })

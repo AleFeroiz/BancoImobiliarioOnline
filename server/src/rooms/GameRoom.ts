@@ -18,17 +18,6 @@ const MAX_SCHEMA_CASH = 2_147_483_647
 const RECONNECTION_WINDOW_SECONDS = 24 * 60 * 60
 const BOT_TICK_MS = 1_000
 
-function parseTradePropertyIds(value: unknown): number[] | null {
-  if (value === undefined) return []
-  if (!Array.isArray(value) || value.length > boardSpaces.length) return null
-  const ids = value as unknown[]
-  if (ids.some((id) => typeof id !== 'number' || !Number.isSafeInteger(id) || id < 0 || id >= boardSpaces.length)) return null
-  const normalized = ids as number[]
-  if (new Set(normalized).size !== normalized.length) return null
-  if (normalized.some((id) => boardSpaces[id].kind !== 'property')) return null
-  return normalized
-}
-
 function createRoomCode() {
   return Array.from({ length: ROOM_CODE_LENGTH }, () => ROOM_CODE_ALPHABET[randomInt(ROOM_CODE_ALPHABET.length)]).join('')
 }
@@ -40,7 +29,6 @@ export class GameRoom extends Room<{ state: LobbyState }> {
   private matchClockInterval?: ReturnType<typeof setInterval>
   private botControllerInterval?: ReturnType<typeof setInterval>
   private reconnectRetentionTimer?: ReturnType<typeof setTimeout>
-  private tradeOfferSequence = 0
   private auctionSequence = 0
   private botSequence = 0
   private throwSequence = 0
@@ -562,10 +550,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       }
       const amount = bankReturnValue(propertyId)
       this.state.presentationSpeed = this.state.animationSpeed
-      property.ownerSessionId = ''
-      property.houses = 0
-      property.blackoutTurns = 0
-      property.protectionTurns = 0
+      this.returnTitleToBank(propertyId, property)
       this.creditCash(player, amount)
       this.state.landingDescription = `${boardSpaces[propertyId].name} devolvida ao banco. Você recebeu ${amount.toLocaleString('pt-BR')}; o imóvel voltou a ficar livre.`
       if (this.canSpend(player, this.state.debtAmount)) this.messages.payDebt(client)
@@ -602,15 +587,12 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       const creditorId = this.state.debtCreditorSessionId
       const creditor = this.state.players.get(creditorId)
       if (creditor && !creditor.isBankrupt) this.creditCash(creditor, debtor.cash)
-      for (const property of this.state.properties.values()) {
+      for (const [propertyId, property] of this.state.properties.entries()) {
         if (property.ownerSessionId !== this.getPlayerSessionId(client)) continue
         if (creditor && !creditor.isBankrupt) {
           property.ownerSessionId = creditorId
         } else {
-          property.ownerSessionId = ''
-          property.houses = 0
-          property.blackoutTurns = 0
-          property.protectionTurns = 0
+          this.returnTitleToBank(Number(propertyId), property)
         }
       }
       if (creditor && !creditor.isBankrupt) {
@@ -619,7 +601,6 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       debtor.cash = 0
       debtor.isBankrupt = true
       debtor.isJailed = false
-      if (this.state.tradeOfferFromSessionId === this.getPlayerSessionId(client) || this.state.tradeOfferToSessionId === this.getPlayerSessionId(client)) this.clearTradeOffer()
       const name = debtor.name
       this.clearDebt()
       const survivors = Array.from(this.state.players.entries()).filter(([, player]) => !player.isBankrupt)
@@ -686,125 +667,13 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       this.state.diceTwo = 0
       this.state.landingDescription = 'Você pagou R$ 200.000 para sair da prisão. Lance os dados para continuar.'
     },
-    tradeOffer: (client: Client, payload: {
-      toSessionId?: unknown
-      cashOffered?: unknown
-      cashRequested?: unknown
-      propertiesOffered?: unknown
-      propertiesRequested?: unknown
-    }) => {
-      if (!this.isTradeAvailable()) {
-        client.send('room:error', { message: 'Só é possível negociar durante uma partida ativa.' })
-        return
-      }
-      if (this.state.tradeOfferId > 0) {
-        client.send('room:error', { message: 'Já existe uma oferta de troca aguardando resposta.' })
-        return
-      }
-      if (this.state.auctionId > 0) {
-        client.send('room:error', { message: 'Aguarde o leilão atual terminar antes de propor uma troca.' })
-        return
-      }
-      const sender = this.state.players.get(this.getPlayerSessionId(client))
-      const targetId = typeof payload?.toSessionId === 'string' ? payload.toSessionId : ''
-      const target = this.state.players.get(targetId)
-      const cashOffered = payload?.cashOffered
-      const cashRequested = payload?.cashRequested
-      const propertiesOffered = parseTradePropertyIds(payload?.propertiesOffered)
-      const propertiesRequested = parseTradePropertyIds(payload?.propertiesRequested)
-      if (!sender || sender.isBankrupt || !target || targetId === this.getPlayerSessionId(client) || target.isBankrupt) {
-        client.send('room:error', { message: 'Escolha outra pessoa ativa da sala para negociar.' })
-        return
-      }
-      if (typeof cashOffered !== 'number' || !Number.isSafeInteger(cashOffered) || cashOffered < 0 || cashOffered > MAX_SCHEMA_CASH
-        || typeof cashRequested !== 'number' || !Number.isSafeInteger(cashRequested) || cashRequested < 0 || cashRequested > MAX_SCHEMA_CASH
-        || !propertiesOffered || !propertiesRequested) {
-        client.send('room:error', { message: 'A oferta contém valores ou imóveis inválidos.' })
-        return
-      }
-      if (cashOffered + cashRequested === 0 && propertiesOffered.length === 0 && propertiesRequested.length === 0) {
-        client.send('room:error', { message: 'Inclua dinheiro ou pelo menos um imóvel na proposta.' })
-        return
-      }
-      if (cashOffered > sender.cash || cashRequested > target.cash) {
-        client.send('room:error', { message: 'Uma das pessoas não tem saldo suficiente para essa proposta.' })
-        return
-      }
-      const validateTitles = (ids: number[], ownerSessionId: string) => ids.every((id) => {
-        return this.canTradeTitle(id, ownerSessionId)
-      })
-      if (!validateTitles(propertiesOffered, this.getPlayerSessionId(client)) || !validateTitles(propertiesRequested, targetId)) {
-        client.send('room:error', { message: 'Só é possível trocar imóveis próprios e sem casas ou hotéis. Venda as construções primeiro.' })
-        return
-      }
-      this.tradeOfferSequence = (this.tradeOfferSequence % MAX_SCHEMA_CASH) + 1
-      this.state.tradeOfferId = this.tradeOfferSequence
-      this.state.tradeOfferFromSessionId = this.getPlayerSessionId(client)
-      this.state.tradeOfferToSessionId = targetId
-      this.state.tradeOfferCashOffered = cashOffered
-      this.state.tradeOfferCashRequested = cashRequested
-      this.state.tradeOfferPropertiesOffered = propertiesOffered.join(',')
-      this.state.tradeOfferPropertiesRequested = propertiesRequested.join(',')
-      this.state.landingDescription = `${sender.name} enviou uma proposta de troca para ${target.name}.`
-    },
-    tradeAccept: (client: Client, payload: { offerId?: unknown }) => {
-      const offerId = payload?.offerId
-      if (!this.isTradeAvailable() || offerId !== this.state.tradeOfferId || this.getPlayerSessionId(client) !== this.state.tradeOfferToSessionId) {
-        client.send('room:error', { message: 'Essa oferta não está mais disponível para você.' })
-        return
-      }
-      const senderSessionId = this.state.tradeOfferFromSessionId
-      const recipientSessionId = this.state.tradeOfferToSessionId
-      const sender = this.state.players.get(senderSessionId)
-      const recipient = this.state.players.get(recipientSessionId)
-      const offeredIds = this.state.tradeOfferPropertiesOffered ? this.state.tradeOfferPropertiesOffered.split(',').map(Number) : []
-      const requestedIds = this.state.tradeOfferPropertiesRequested ? this.state.tradeOfferPropertiesRequested.split(',').map(Number) : []
-      const validTitles = (ids: number[], ownerSessionId: string) => ids.every((id) => {
-        return this.canTradeTitle(id, ownerSessionId)
-      })
-      const cashFromSender = this.state.tradeOfferCashOffered
-      const cashFromRecipient = this.state.tradeOfferCashRequested
-      if (!sender || !recipient || sender.isBankrupt || recipient.isBankrupt
-        || !this.canSpend(sender, cashFromSender) || !this.canSpend(recipient, cashFromRecipient)
-        || this.cashAfterTransfer(sender, cashFromSender, cashFromRecipient) > MAX_SCHEMA_CASH
-        || this.cashAfterTransfer(recipient, cashFromRecipient, cashFromSender) > MAX_SCHEMA_CASH
-        || !validTitles(offeredIds, senderSessionId) || !validTitles(requestedIds, recipientSessionId)) {
-        client.send('room:error', { message: 'A oferta mudou e não pode mais ser concluída. Confira saldos e imóveis.' })
-        return
-      }
-      sender.cash = this.cashAfterTransfer(sender, cashFromSender, cashFromRecipient)
-      recipient.cash = this.cashAfterTransfer(recipient, cashFromRecipient, cashFromSender)
-      for (const id of offeredIds) this.state.properties.get(String(id))!.ownerSessionId = recipientSessionId
-      for (const id of requestedIds) this.state.properties.get(String(id))!.ownerSessionId = senderSessionId
-      this.state.landingDescription = `${recipient.name} aceitou a troca proposta por ${sender.name}.`
-      if (this.checkMonopolyVictory(senderSessionId) || this.checkMonopolyVictory(recipientSessionId)) return
-      this.clearTradeOffer()
-    },
-    tradeReject: (client: Client, payload: { offerId?: unknown }) => {
-      if (payload?.offerId !== this.state.tradeOfferId || this.getPlayerSessionId(client) !== this.state.tradeOfferToSessionId) {
-        client.send('room:error', { message: 'Só a pessoa destinatária pode recusar essa oferta.' })
-        return
-      }
-      const sender = this.state.players.get(this.state.tradeOfferFromSessionId)
-      const recipient = this.state.players.get(this.getPlayerSessionId(client))
-      this.clearTradeOffer()
-      this.state.landingDescription = `${recipient?.name ?? 'A pessoa destinatária'} recusou a proposta${sender ? ` de ${sender.name}` : ''}.`
-    },
-    tradeCancel: (client: Client, payload: { offerId?: unknown }) => {
-      if (payload?.offerId !== this.state.tradeOfferId || this.getPlayerSessionId(client) !== this.state.tradeOfferFromSessionId) {
-        client.send('room:error', { message: 'Só quem enviou a oferta pode cancelá-la.' })
-        return
-      }
-      this.clearTradeOffer()
-      this.state.landingDescription = 'A proposta de troca foi cancelada.'
-    },
     auctionStart: (client: Client, payload: { propertyId?: unknown; startingBid?: unknown }) => {
       if (this.state.status !== 'playing' || this.getPlayerSessionId(client) !== this.state.activePlayerSessionId || !['roll', 'resolve', 'jail'].includes(this.state.turnPhase)) {
         client.send('room:error', { message: 'Leilões voluntários só podem começar durante seu turno, fora de compras e dívidas.' })
         return
       }
-      if (this.state.auctionId > 0 || this.state.tradeOfferId > 0) {
-        client.send('room:error', { message: 'Finalize a negociação atual antes de abrir um leilão.' })
+      if (this.state.auctionId > 0) {
+        client.send('room:error', { message: 'Já existe um leilão em andamento.' })
         return
       }
       const seller = this.state.players.get(this.getPlayerSessionId(client))
@@ -822,7 +691,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
         client.send('room:error', { message: 'Defina um lance inicial de pelo menos R$ 10.000 e dentro do limite de saldo.' })
         return
       }
-      if (!space || space.kind !== 'property' || !this.canTradeTitle(propertyId, this.getPlayerSessionId(client))) {
+      if (!space || space.kind !== 'property' || !this.canAuctionTitle(propertyId, this.getPlayerSessionId(client))) {
         client.send('room:error', { message: 'Venda as construções do grupo antes de leiloar esse imóvel.' })
         return
       }
@@ -1000,10 +869,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
           return
         }
         this.broadcast('game:earthquake', { id: ++this.throwSequence, spaceId: propertyId, houses: property.houses, ownerColor: this.state.players.get(property.ownerSessionId)?.color ?? '#536c7d' })
-        property.ownerSessionId = ''
-        property.houses = 0
-        property.blackoutTurns = 0
-        property.protectionTurns = 0
+        this.returnTitleToBank(propertyId, property)
         this.state.landingDescription = `${boardSpaces[propertyId].name} foi destruída pelo terremoto e voltou ao banco.`
       } else if (card.effect.kind === 'thief') {
         if (!validTarget) {
@@ -1075,7 +941,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
     this.state.debtReason = ''
   }
 
-  private canTradeTitle(propertyId: number, ownerSessionId: string) {
+  private canAuctionTitle(propertyId: number, ownerSessionId: string) {
     const space = boardSpaces[propertyId]
     const title = this.state.properties.get(String(propertyId))
     if (!space || space.kind !== 'property' || title?.ownerSessionId !== ownerSessionId) return false
@@ -1085,20 +951,12 @@ export class GameRoom extends Room<{ state: LobbyState }> {
     })
   }
 
-  private isTradeAvailable() {
-    return this.state.status === 'playing'
-      && Boolean(this.state.activePlayerSessionId)
-      && !this.state.players.get(this.state.activePlayerSessionId)?.isBankrupt
-  }
-
-  private clearTradeOffer() {
-    this.state.tradeOfferId = 0
-    this.state.tradeOfferFromSessionId = ''
-    this.state.tradeOfferToSessionId = ''
-    this.state.tradeOfferCashOffered = 0
-    this.state.tradeOfferCashRequested = 0
-    this.state.tradeOfferPropertiesOffered = ''
-    this.state.tradeOfferPropertiesRequested = ''
+  private returnTitleToBank(propertyId: number, property: PropertyState) {
+    property.ownerSessionId = ''
+    property.houses = 0
+    property.blackoutTurns = 0
+    property.protectionTurns = 0
+    if (this.state.worldCupSpaceId === propertyId) this.state.worldCupSpaceId = 255
   }
 
   private startMatchClock() {
@@ -1254,19 +1112,6 @@ export class GameRoom extends Room<{ state: LobbyState }> {
     if (this.state.turnPhase === 'rolling' || this.state.turnPhase === 'moving') return
     const fakeClient = (sessionId: string) => ({ sessionId, send: () => undefined }) as unknown as Client
 
-    if (this.state.tradeOfferId > 0) {
-      const sender = this.state.players.get(this.state.tradeOfferFromSessionId)
-      const recipient = this.state.players.get(this.state.tradeOfferToSessionId)
-      if (sender?.isBotControlled && !sender.isBot) {
-        this.messages.tradeCancel(fakeClient(this.state.tradeOfferFromSessionId), { offerId: this.state.tradeOfferId })
-        return
-      }
-      if (recipient?.isBot || recipient?.isBotControlled) {
-        this.messages.tradeReject(fakeClient(this.state.tradeOfferToSessionId), { offerId: this.state.tradeOfferId })
-        return
-      }
-    }
-
     if (this.state.auctionId > 0) {
       const propertyId = this.state.auctionPropertyId
       const space = boardSpaces[propertyId]
@@ -1362,7 +1207,6 @@ export class GameRoom extends Room<{ state: LobbyState }> {
   private finishMatch(reason: MatchEndReason, forcedWinnerSessionId?: string) {
     if (this.state.status === 'ended') return
     this.clearAuction(true)
-    this.clearTradeOffer()
     const activePlayers = Array.from(this.state.players.entries()).filter(([, player]) => !player.isBankrupt)
     const holdings = this.getHoldings()
     const ranked = activePlayers.map(([sessionId, player]) => ({
@@ -1684,10 +1528,6 @@ export class GameRoom extends Room<{ state: LobbyState }> {
 
   private spendCash(player: LobbyPlayerState, amount: number) {
     if (!player.devInfiniteCash) player.cash -= amount
-  }
-
-  private cashAfterTransfer(player: LobbyPlayerState, amountPaid: number, amountReceived: number) {
-    return player.cash - (player.devInfiniteCash ? 0 : amountPaid) + amountReceived
   }
 
   private creditCash(player: LobbyPlayerState, amount: number) {

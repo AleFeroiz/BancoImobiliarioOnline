@@ -80,7 +80,7 @@ button:disabled{opacity:.55;cursor:not-allowed}
 .screen-game .turn-card h2,.screen-game .space-inspector h2{font-size:clamp(22px,3vw,30px);margin:8px 28px 8px 0;color:#354b3e}
 .screen-game .turn-card p,.screen-game .space-inspector p{font-size:12px;line-height:1.55;color:#66776b}
 .screen-game .turn-card>.turn-label,.screen-game .space-inspector .turn-label{color:#91703a}
-.screen-game .space-inspector .trade-close,.screen-game .turn-card .trade-close{position:absolute;top:12px;right:12px}
+.screen-game .space-inspector .panel-close,.screen-game .turn-card .panel-close{position:absolute;top:12px;right:12px}
 .screen-game .game-feedback-toast{top:clamp(104px,13vh,142px);bottom:auto;z-index:5;transform:translateX(-50%)}
 .screen-game .game-bottom{position:fixed;right:4vw;bottom:14px;left:4vw;z-index:5}
 .property-build-levels{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;margin:12px 0}
@@ -125,7 +125,7 @@ button:disabled{opacity:.55;cursor:not-allowed}
 .screen-game .game-session-tools .icon-button{margin:0;width:25px;height:25px;border-color:rgba(57,83,68,.25);color:#526b4c;background:rgba(250,248,237,.92)}
 .screen-game .game-bottom .leave-button{justify-self:end}
 .corner-choice-actions{display:grid;gap:10px;width:100%}
-.corner-choice-actions .trade-label{display:grid;gap:6px}
+.corner-choice-actions .money-label{display:grid;gap:6px}
 @media(max-width:900px){
   .screen-game .game-overlay{padding:10px 12px 9px}
   .screen-game .player-card.seat-0,.screen-game .player-card.seat-1{top:61px}
@@ -236,7 +236,7 @@ button:disabled{opacity:.55;cursor:not-allowed}
 .asset-action:hover:not(:disabled){background:#edf0e2}
 .asset-action b{font-size:10px}
 .auction-start-label{display:grid;gap:3px;color:#829087;font-size:6px;font-weight:700;letter-spacing:.08em}
-.auction-start-label .trade-input{min-height:28px;padding:0 6px;font-size:8px}
+.auction-start-label .money-input{min-height:28px;padding:0 6px;font-size:8px}
 .auction-start-button{justify-items:center;min-height:27px;padding:3px 6px;background:#f5efd8;color:#776238}
 .asset-note,.asset-empty{color:#819087;font-size:8px;line-height:1.5}
 .asset-note{margin-top:8px}
@@ -391,25 +391,10 @@ button:disabled{opacity:.55;cursor:not-allowed}
 .debt-summary strong{color:#354c3a;font-size:clamp(16px,3vw,24px);font-variant-numeric:tabular-nums}
 .debt-summary .debt-shortfall{grid-column:1/-1;border-color:#c97d65;background:#fae7dd}
 .debt-summary .debt-shortfall strong{color:#9a392c;font-size:clamp(22px,4vw,32px)}
-.trade-panel{width:min(550px,calc(100vw - 36px));max-height:min(72vh,650px);overflow:auto;overscroll-behavior:contain}
-.trade-panel .asset-panel-heading{flex:none}
-.trade-panel h2{margin:8px 0 5px}
-.trade-panel>p{line-height:1.5}
-.trade-close{width:26px;height:26px;border:1px solid #d1d7c8;border-radius:50%;background:#fffef7;color:#516652;font-size:16px;line-height:1}
-.trade-label{display:grid;gap:5px;margin:9px 0;color:#7e8c78;font-size:7px;font-weight:700;letter-spacing:.1em}
-.trade-select,.trade-input{width:100%;min-height:34px;padding:0 9px;border:1px solid #d1d7c8;border-radius:8px;background:#fffef7;color:#33483a;font-size:10px;letter-spacing:normal}
-.trade-columns{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:4px}
-.trade-columns>div{min-width:0}
-.trade-property-list{display:grid;gap:3px;max-height:118px;overflow:auto;padding:3px;border:1px solid #e0e3d7;border-radius:8px;background:rgba(237,240,226,.52)}
-.trade-property{display:flex;align-items:center;gap:6px;min-width:0;color:#52654f;font-size:8px;line-height:1.3}
-.trade-property input{accent-color:#779675;flex:none}
-.trade-property span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.trade-property-list>small{padding:4px;color:#879285;font-size:8px}
-.trade-note{margin:8px 0!important;color:#859082!important;font-size:8px!important}
-.trade-actions{display:flex;gap:7px;margin-top:10px}
-.trade-actions>*{flex:1}
-.trade-full-button{width:100%;min-height:36px;margin:8px 0 0}
-.trade-panel .form-error{margin:5px 0;color:#a14f38}
+.panel-close{width:26px;height:26px;border:1px solid #d1d7c8;border-radius:50%;background:#fffef7;color:#516652;font-size:16px;line-height:1}
+.money-label{display:grid;gap:5px;margin:9px 0;color:#7e8c78;font-size:7px;font-weight:700;letter-spacing:.1em}
+.money-select,.money-input{width:100%;min-height:34px;padding:0 9px;border:1px solid #d1d7c8;border-radius:8px;background:#fffef7;color:#33483a;font-size:10px;letter-spacing:normal}
+.panel-full-button{width:100%;min-height:36px;margin:8px 0 0}
 .auction-current-bid{display:flex;justify-content:space-between;align-items:center;margin:10px 0;padding:9px 11px;border:1px solid #e0d6b6;border-radius:9px;background:#f7f1df;color:#7b704f;font-size:9px}
 .auction-current-bid strong{color:#405b43;font-size:13px;font-variant-numeric:tabular-nums}
 .auction-toggle-active{border-color:#bd9b45;background:#f5ebce;color:#725c2e}
@@ -417,11 +402,8 @@ button:disabled{opacity:.55;cursor:not-allowed}
   .game-topline{gap:4px}
   .game-tools{gap:4px}
   .game-tools .portfolio-toggle{padding:0 6px;font-size:6px}
-  .trade-panel{width:calc(100vw - 20px);max-height:62vh;padding:11px}
-  .trade-columns{gap:7px}
-  .trade-property-list{max-height:92px}
-  .trade-label{font-size:6px}
-  .trade-select,.trade-input{min-height:31px;font-size:9px}
+  .money-label{font-size:6px}
+  .money-select,.money-input{min-height:31px;font-size:9px}
 }
 .game-preference{width:27px;height:27px;padding:0;display:grid;place-items:center;border:1px solid rgba(57,83,68,.25);border-radius:50%;background:rgba(250,248,237,.92);color:#526b4c;font-size:14px;line-height:1}
 .game-preference[aria-pressed="true"]{border-color:#b8a269;background:#f7f0dc}
@@ -637,7 +619,7 @@ button:disabled{opacity:.55;cursor:not-allowed}
 .property-inspection-panel .inspection-level-options{margin:12px 0 2px}
 .property-inspection-panel .inspection-choice{min-height:82px;grid-template-rows:auto 20px auto auto;gap:3px;padding:7px 3px;border-radius:11px}
 .property-inspection-panel .inspection-choice.selected{border-color:#9da96e;background:#e8edd8;box-shadow:0 0 0 2px rgba(157,169,110,.18)}
-.space-inspector .trade-close{position:absolute;top:8px;right:8px}
+.space-inspector .panel-close{position:absolute;top:8px;right:8px}
 .game-feedback-toast{top:clamp(104px,13vh,142px);bottom:auto;z-index:5;display:grid;gap:3px;border-radius:12px}
 .feedback-queue-count{color:#778477;font-size:9px;font-weight:500}
 .space-inspector .turn-label{display:block;padding-right:22px;color:#92703a;font-size:8px;letter-spacing:.11em}
@@ -705,7 +687,7 @@ button:disabled{opacity:.55;cursor:not-allowed}
 .screen-game .turn-card h2,.screen-game .space-inspector h2{font-size:clamp(22px,3vw,30px);margin:8px 28px 8px 0;color:#354b3e}
 .screen-game .turn-card p,.screen-game .space-inspector p{font-size:12px;line-height:1.55;color:#66776b}
 .screen-game .turn-card>.turn-label,.screen-game .space-inspector .turn-label{color:#91703a}
-.screen-game .space-inspector .trade-close,.screen-game .turn-card .trade-close{position:absolute;top:12px;right:12px}
+.screen-game .space-inspector .panel-close,.screen-game .turn-card .panel-close{position:absolute;top:12px;right:12px}
 .screen-game .game-feedback-toast{top:clamp(104px,13vh,142px);bottom:auto;z-index:5;transform:translateX(-50%)}
 .screen-game .game-bottom{position:relative;z-index:5}
 .property-build-levels{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;margin:12px 0}
@@ -816,7 +798,8 @@ button:disabled{opacity:.55;cursor:not-allowed}
 .screen-game .corner-choice-panel .map-choice-hint{margin:3px 0 0!important;padding:7px 9px;font-size:8px!important}
 .inspector-auction-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid #e0e3d7}
 .inspector-auction-actions .auction-start-label{gap:4px;font-size:7px}
-.inspector-auction-actions .trade-input{min-height:36px;padding:0 9px;font-size:10px}
+.inspector-auction-actions .money-input{min-height:36px;padding:0 9px;font-size:10px}
+.auction-block-hint{grid-column:1/-1;margin:0!important;color:#a13d2f!important;font-size:8px!important;font-weight:700;line-height:1.35}
 .auction-inspector-button{align-self:end;justify-items:center;min-height:36px;padding:6px 10px;background:#f2eddc;color:#6e5a34;font-size:9px}
 .auction-bid-stepper{display:grid;grid-template-columns:42px minmax(0,1fr) 42px;align-items:center;gap:5px;margin-top:3px}
 .auction-bid-stepper button{min-width:42px;min-height:42px;border:1px solid #d5d9ca;border-radius:9px;background:#f1efdf;color:#47634a;font-size:21px;font-weight:700;line-height:1;touch-action:manipulation}
@@ -827,17 +810,9 @@ button:disabled{opacity:.55;cursor:not-allowed}
 .game-feedback-toast>strong{color:var(--feedback-player-color,#405a43);font-weight:800}
 .screen-game .player-card{appearance:none;-webkit-appearance:none;text-align:left;font:inherit}
 .screen-game .player-card.highlighted{outline:3px solid #fff3b3;outline-offset:3px;box-shadow:0 0 0 5px rgba(240,199,96,.38),0 0 24px rgba(255,230,151,.65)}
-.player-card-offer-badge{position:absolute;right:10px;bottom:-7px;padding:3px 7px;border:1px solid rgba(255,255,255,.8);border-radius:999px;background:#fff8e6;color:#6d5830;font-size:7px;font-weight:800;letter-spacing:.07em;box-shadow:0 2px 6px rgba(42,59,43,.14)}
-.player-profile-panel{position:fixed;top:50%;right:18px;z-index:9;display:flex;flex-direction:column;gap:13px;width:min(410px,calc(100vw - 32px));max-height:min(78dvh,780px);overflow-y:auto;overscroll-behavior:contain;padding:19px;border:1px solid #d5d8c8;border-top:5px solid var(--profile-player-color,#73946c);border-radius:17px;background:#f8f4e9;color:#354b3e;box-shadow:0 20px 54px rgba(27,45,38,.3);transform:translateY(-50%);animation:profile-panel-enter .24s cubic-bezier(.18,.75,.2,1) both;touch-action:pan-y}
-.player-profile-heading{position:relative;display:flex;justify-content:space-between;align-items:flex-start;padding:2px 36px 12px 2px;border-bottom:1px solid #dbe0d2}
-.player-profile-heading h2{margin:3px 0 2px;font-family:Georgia,serif;font-size:26px;line-height:1.1}
-.player-profile-heading>div>strong{font-size:19px;font-variant-numeric:tabular-nums}
-.player-profile-heading .trade-close{position:absolute;top:0;right:0}
-.profile-property-list{display:grid;gap:7px;max-height:32dvh;overflow-y:auto;padding-right:3px}
-.profile-property-list--single{max-height:none;overflow:visible;padding-right:0}
-.trade-value-field{display:grid;gap:4px;margin-bottom:7px}
-.trade-money-stepper{grid-template-columns:42px minmax(0,1fr) 42px;margin:0}
-.trade-money-stepper output{font-size:10px}
+.money-value-field{display:grid;gap:4px;margin-bottom:7px}
+.money-stepper{grid-template-columns:42px minmax(0,1fr) 42px;margin:0}
+.money-stepper output{font-size:10px}
 .game-options-wrap{position:relative}
 .game-options-panel{position:absolute;right:50%;bottom:calc(100% + 12px);z-index:30;width:min(320px,calc(100vw - 28px));padding:15px;border:1px solid #d5dacb;border-radius:14px;background:#f8f4e9;color:#354b3e;box-shadow:0 16px 42px rgba(27,45,38,.28);transform:translateX(50%)}
 .game-settings-backdrop{position:fixed;inset:0;z-index:40;display:grid;place-items:center;padding:22px;background:rgba(31,50,40,.58);backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px);animation:settings-fade-in .18s ease-out both}
@@ -882,30 +857,12 @@ button:disabled{opacity:.55;cursor:not-allowed}
 .graphics-quality-options{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}
 .graphics-quality-options button{min-height:36px;padding:4px;border:1px solid #d5dacb;border-radius:8px;background:#eeefe3;color:#50644f;font-size:8px;font-weight:700;touch-action:manipulation}
 .graphics-quality-options button.selected{border-color:#899a65;background:#dfe8cb;box-shadow:0 0 0 2px rgba(137,154,101,.15)}
-.profile-property-row{display:grid;grid-template-columns:40px minmax(0,1fr) auto;align-items:center;gap:9px;min-height:57px;padding:7px 9px;border:1px solid #e0e3d7;border-radius:11px;background:#fffcf3}
-.profile-property-icon{display:grid;place-items:center;width:37px;height:37px;border-radius:9px;background:#edf0e5;font-size:23px}
-.profile-property-copy{display:grid;gap:4px;min-width:0}
-.profile-property-copy strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px}
-.profile-property-copy small{color:#7c887a;font-size:9px;text-transform:uppercase;letter-spacing:.04em}
-.profile-property-rent{display:grid;justify-items:end;gap:4px;max-width:140px;text-align:right}
-.profile-property-rent small{color:#879082;font-size:8px;font-weight:700;letter-spacing:.08em}
-.profile-property-rent b{font-size:11px;white-space:nowrap}
-.profile-offer-card{display:grid;gap:5px;padding:12px;border:1px solid #d3bc75;border-radius:12px;background:#fff7df}
-.profile-offer-card h3{margin:0;font-size:14px}
-.profile-offer-card p{margin:0;color:#66776b;font-size:11px;line-height:1.45}
-.profile-trade-actions{display:flex;gap:8px}
-.profile-trade-composer{display:grid;gap:9px;padding-top:3px;border-top:1px solid #dbe0d2}
-.profile-trade-composer .trade-columns{max-height:260px;overflow-y:auto}
-.profile-trade-composer .trade-property-list{max-height:100px}
-.profile-trade-composer .trade-note{margin:0}
 .card-target-actions{display:grid;gap:10px;max-height:min(48vh,380px);overflow:auto;padding-right:4px}
 .card-target-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px}
 .card-target-option{min-height:42px;padding:10px 12px;border:1px solid rgba(255,255,255,.16);border-radius:12px;background:rgba(10,24,32,.78);color:inherit;text-align:left;font:inherit;font-weight:650;cursor:pointer}
 .card-target-option:hover:not(:disabled){border-color:var(--accent,#7ad6bb);background:rgba(37,75,77,.82)}
 .card-target-option:disabled{opacity:.5;cursor:not-allowed}
-@keyframes profile-panel-enter{from{opacity:0;translate:18px 0}to{opacity:1;translate:0 0}}
-@media(max-width:640px){.player-profile-panel{top:auto;right:10px;bottom:70px;left:10px;width:auto;max-height:min(68dvh,620px);padding:13px;border-radius:14px;transform:none}.player-profile-heading h2{font-size:22px}.profile-property-list{max-height:22dvh}.profile-trade-composer .trade-columns{grid-template-columns:1fr;max-height:30dvh}.profile-trade-composer .trade-property-list{max-height:80px}}
-@media(max-width:640px){.game-options-panel{right:-42px;transform:none}.space-inspector.property-inspection-panel{top:50%;left:50%;width:calc(100vw - 20px);max-height:76dvh;padding:14px 12px;transform:translate(-50%,-50%)}.property-inspection-panel .inspection-choice{min-height:69px;gap:2px;padding:5px 1px}.property-inspection-panel .inspection-choice span:first-child{font-size:8px}.property-inspection-panel .inspection-choice small{font-size:6px}.property-inspection-panel .inspection-choice b{font-size:7px}.profile-property-list.profile-property-list--single{max-height:none;overflow:visible;padding-right:0}}
+@media(max-width:640px){.game-options-panel{right:-42px;transform:none}.space-inspector.property-inspection-panel{top:50%;left:50%;width:calc(100vw - 20px);max-height:76dvh;padding:14px 12px;transform:translate(-50%,-50%)}.property-inspection-panel .inspection-choice{min-height:69px;gap:2px;padding:5px 1px}.property-inspection-panel .inspection-choice span:first-child{font-size:8px}.property-inspection-panel .inspection-choice small{font-size:6px}.property-inspection-panel .inspection-choice b{font-size:7px}}
 .screen-game .player-card{display:flex;flex-direction:column;justify-content:center;align-items:stretch;min-height:92px;padding:13px 15px;border:1px solid rgba(255,255,255,.52);border-left:5px solid rgba(35,45,36,.34);color:#251a15}
 .screen-game .player-card.seat-1{color:#13272a}
 .screen-game .player-card.seat-2{color:#fffaf0}
@@ -1046,22 +1003,7 @@ button:disabled{opacity:.55;cursor:not-allowed}
 .game-event-card>small{display:block;padding-top:10px;border-top:1px solid rgba(118,132,99,.2);color:#7b846e;font-size:8px;font-weight:700}
 @keyframes reveal-backdrop-in{from{opacity:0}to{opacity:1}}
 @keyframes reveal-card-in{from{opacity:0;transform:translateY(8px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
-.trade-partner-choices{display:flex;flex-wrap:wrap;gap:5px}
-.trade-partner-choices button{min-height:30px;padding:0 10px;border:1px solid #d7ddcf;border-radius:8px;background:#f7f6ec;color:#647463;font-size:9px;font-weight:700}
-.trade-partner-choices button[aria-pressed="true"]{border-color:#829a72;background:#e7eddd;color:#405b43;box-shadow:inset 0 0 0 1px #829a72}
-.trade-property-list{grid-template-columns:repeat(2,minmax(0,1fr));max-height:125px}
-.trade-property{display:grid;gap:3px;min-height:39px;padding:6px 7px;border:1px solid transparent;border-radius:7px;background:rgba(255,253,244,.86);text-align:left}
-.trade-property.selected{border-color:#829a72;background:#e7eddd}
-.trade-property:disabled{opacity:.44;filter:grayscale(.7)}
-.trade-property small{font-size:7px;color:#879184}
-.trade-board-select{width:100%;min-height:34px;margin:4px 0 6px;padding:7px 9px;border:1px solid #c9d1bd;border-radius:9px;background:#edf1e6;color:#49604d;font-size:8px;font-weight:800}
-.trade-board-select.selected{border-color:#c7ad5e;background:#e8efdf;color:#405b43}
-.trade-board-select:disabled{opacity:.45}
-.trade-property-summary{display:grid;gap:2px;padding:5px 7px;border:1px solid transparent;border-radius:7px;background:rgba(255,253,244,.76);color:#52654f;font-size:8px;line-height:1.3}
-.trade-property-summary.selected{border-color:#829a72;background:#e7eddd}
-.trade-property-summary.locked{opacity:.48;filter:grayscale(.65)}
-.trade-property-summary span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.trade-property-summary small{font-size:7px;color:#879184}
+.asset-board-select{width:100%;min-height:34px;margin:4px 0 6px;padding:7px 9px;border:1px solid #c9d1bd;border-radius:9px;background:#edf1e6;color:#49604d;font-size:8px;font-weight:800}
 .animation-speed-control>div{display:flex;gap:2px}
 .animation-speed-control button{min-height:23px;padding:0 6px;border:0;border-radius:999px;background:transparent;color:#647463;font-size:8px;font-weight:700}
 .animation-speed-control button[aria-pressed="true"]{background:#e1ead8;color:#3e5d42;box-shadow:inset 0 0 0 1px #a8ba99}
@@ -1090,6 +1032,5 @@ button:disabled{opacity:.55;cursor:not-allowed}
   .event-card-art{width:78px;height:66px;margin:8px auto;font-size:34px}
   .game-event-card h2{font-size:19px}
   .game-event-card p{font-size:10px}
-  .trade-property-list{grid-template-columns:1fr;max-height:96px}
 }
 @media(prefers-reduced-motion:reduce){.card-reveal-backdrop,.game-event-card{animation:none}}

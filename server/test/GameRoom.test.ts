@@ -588,160 +588,6 @@ describe('sala privada', () => {
     expect(otherBots.every(([sessionId]) => room.state.players.get(sessionId)?.position === 0)).toBe(true)
   })
 
-  it('troca dinheiro e títulos entre as duas pessoas após a aceitação da proposta', async () => {
-    const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
-    const host = await colyseus.connectTo(room, { name: 'Ana' })
-    const guest = await colyseus.connectTo(room, { name: 'Bia' })
-    const started = Promise.all([
-      new Promise<void>((resolve) => host.onMessage('game:started', () => resolve())),
-      new Promise<void>((resolve) => guest.onMessage('game:started', () => resolve())),
-    ])
-    host.send('start')
-    await started
-
-    const hostTitle = new PropertyState()
-    hostTitle.ownerSessionId = host.sessionId
-    room.state.properties.set('1', hostTitle)
-    const guestTitle = new PropertyState()
-    guestTitle.ownerSessionId = guest.sessionId
-    room.state.properties.set('3', guestTitle)
-    const hostCash = room.state.players.get(host.sessionId)!.cash
-    const guestCash = room.state.players.get(guest.sessionId)!.cash
-
-    host.send('tradeOffer', { toSessionId: guest.sessionId, cashOffered: 25_000, cashRequested: 10_000, propertiesOffered: [1], propertiesRequested: [3] })
-    await new Promise((resolve) => setTimeout(resolve, 30))
-    expect(room.state.tradeOfferId).toBeGreaterThan(0)
-    guest.send('tradeAccept', { offerId: room.state.tradeOfferId })
-    await new Promise((resolve) => setTimeout(resolve, 30))
-
-    expect(room.state.players.get(host.sessionId)!.cash).toBe(hostCash - 15_000)
-    expect(room.state.players.get(guest.sessionId)!.cash).toBe(guestCash + 15_000)
-    expect(room.state.properties.get('1')?.ownerSessionId).toBe(guest.sessionId)
-    expect(room.state.properties.get('3')?.ownerSessionId).toBe(host.sessionId)
-    expect(room.state.tradeOfferId).toBe(0)
-  })
-
-  it('mantém propostas até resposta mesmo após a vez mudar', async () => {
-    const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
-    const host = await colyseus.connectTo(room, { name: 'Eva' })
-    const guest = await colyseus.connectTo(room, { name: 'Fábio' })
-    const started = Promise.all([
-      new Promise<void>((resolve) => host.onMessage('game:started', () => resolve())),
-      new Promise<void>((resolve) => guest.onMessage('game:started', () => resolve())),
-    ])
-    host.send('start')
-    await started
-    const hostCash = room.state.players.get(host.sessionId)!.cash
-    const guestCash = room.state.players.get(guest.sessionId)!.cash
-    guest.send('tradeOffer', { toSessionId: host.sessionId, cashOffered: 1_000, cashRequested: 0 })
-    await new Promise((resolve) => setTimeout(resolve, 30))
-    const offerId = room.state.tradeOfferId
-    expect(offerId).toBeGreaterThan(0)
-    room.state.turnNumber += 1
-    room.state.activePlayerSessionId = host.sessionId
-    await new Promise((resolve) => setTimeout(resolve, 30))
-    expect(room.state.tradeOfferId).toBe(offerId)
-    host.send('tradeAccept', { offerId })
-    await new Promise((resolve) => setTimeout(resolve, 30))
-    expect(room.state.tradeOfferId).toBe(0)
-    expect(room.state.players.get(host.sessionId)!.cash).toBe(hostCash + 1_000)
-    expect(room.state.players.get(guest.sessionId)!.cash).toBe(guestCash - 1_000)
-  })
-
-  it('permite uma oferta pendente por sala e revalida o saldo antes de aceitar', async () => {
-    const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
-    const host = await colyseus.connectTo(room, { name: 'Joana' })
-    const guest = await colyseus.connectTo(room, { name: 'Kauã' })
-    const started = Promise.all([
-      new Promise<void>((resolve) => host.onMessage('game:started', () => resolve())),
-      new Promise<void>((resolve) => guest.onMessage('game:started', () => resolve())),
-    ])
-    host.send('start')
-    await started
-    host.send('tradeOffer', { toSessionId: guest.sessionId, cashOffered: 100_000, cashRequested: 0 })
-    await new Promise((resolve) => setTimeout(resolve, 30))
-    const offerId = room.state.tradeOfferId
-    expect(offerId).toBeGreaterThan(0)
-
-    const concurrentMessage = new Promise<{ message: string }>((resolve) => host.onMessage('room:error', resolve))
-    host.send('tradeOffer', { toSessionId: guest.sessionId, cashOffered: 1_000, cashRequested: 0 })
-    await expect(concurrentMessage).resolves.toMatchObject({ message: expect.stringContaining('Já existe uma oferta') })
-    expect(room.state.tradeOfferId).toBe(offerId)
-
-    const cashBefore = room.state.players.get(guest.sessionId)!.cash
-    room.state.players.get(host.sessionId)!.cash = 0
-    const changedBalanceMessage = new Promise<{ message: string }>((resolve) => guest.onMessage('room:error', resolve))
-    guest.send('tradeAccept', { offerId })
-    await expect(changedBalanceMessage).resolves.toMatchObject({ message: expect.stringContaining('não pode mais ser concluída') })
-    expect(room.state.players.get(guest.sessionId)!.cash).toBe(cashBefore)
-    expect(room.state.tradeOfferId).toBe(offerId)
-  })
-
-  it('permite propostas fora da vez e ainda rejeita imóveis sem dono ou com construções e aceite por terceiro', async () => {
-    const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
-    const host = await colyseus.connectTo(room, { name: 'Gabi' })
-    const guest = await colyseus.connectTo(room, { name: 'Hugo' })
-    const third = await colyseus.connectTo(room, { name: 'Iris' })
-    const started = Promise.all([
-      new Promise<void>((resolve) => host.onMessage('game:started', () => resolve())),
-      new Promise<void>((resolve) => guest.onMessage('game:started', () => resolve())),
-      new Promise<void>((resolve) => third.onMessage('game:started', () => resolve())),
-    ])
-    host.send('start')
-    await started
-
-    guest.send('tradeOffer', { toSessionId: host.sessionId, cashOffered: 1_000, cashRequested: 0 })
-    await new Promise((resolve) => setTimeout(resolve, 30))
-    expect(room.state.tradeOfferId).toBeGreaterThan(0)
-    guest.send('tradeCancel', { offerId: room.state.tradeOfferId })
-    await new Promise((resolve) => setTimeout(resolve, 30))
-    expect(room.state.tradeOfferId).toBe(0)
-
-    const builtTitle = new PropertyState()
-    builtTitle.ownerSessionId = host.sessionId
-    builtTitle.houses = 1
-    room.state.properties.set('1', builtTitle)
-    const builtTitleMessage = new Promise<{ message: string }>((resolve) => host.onMessage('room:error', resolve))
-    host.send('tradeOffer', { toSessionId: guest.sessionId, cashOffered: 0, cashRequested: 0, propertiesOffered: [1] })
-    await expect(builtTitleMessage).resolves.toMatchObject({ message: expect.stringContaining('Venda as construções') })
-    expect(room.state.tradeOfferId).toBe(0)
-
-    builtTitle.houses = 0
-    const siblingSpace = boardSpaces.find((space) => space.kind === 'property' && space.color === boardSpaces[1].color && space.id !== 1)!
-    const siblingTitle = new PropertyState()
-    siblingTitle.ownerSessionId = host.sessionId
-    siblingTitle.houses = 1
-    room.state.properties.set(String(siblingSpace.id), siblingTitle)
-    const groupBuildingsMessage = new Promise<{ message: string }>((resolve) => host.onMessage('room:error', resolve))
-    host.send('tradeOffer', { toSessionId: guest.sessionId, cashOffered: 0, cashRequested: 0, propertiesOffered: [1] })
-    await expect(groupBuildingsMessage).resolves.toMatchObject({ message: expect.stringContaining('Venda as construções') })
-    expect(room.state.tradeOfferId).toBe(0)
-    siblingTitle.houses = 0
-
-    const unownedTitleMessage = new Promise<{ message: string }>((resolve) => host.onMessage('room:error', resolve))
-    host.send('tradeOffer', { toSessionId: guest.sessionId, cashOffered: 0, cashRequested: 0, propertiesRequested: [3] })
-    await expect(unownedTitleMessage).resolves.toMatchObject({ message: expect.stringContaining('próprios') })
-
-    host.send('tradeOffer', { toSessionId: guest.sessionId, cashOffered: 10_000, cashRequested: 0 })
-    await new Promise((resolve) => setTimeout(resolve, 30))
-    const unauthorized = new Promise<{ message: string }>((resolve) => third.onMessage('room:error', resolve))
-    third.send('tradeAccept', { offerId: room.state.tradeOfferId })
-    await expect(unauthorized).resolves.toMatchObject({ message: expect.stringContaining('não está mais disponível') })
-    expect(room.state.tradeOfferId).toBeGreaterThan(0)
-    host.send('tradeCancel', { offerId: room.state.tradeOfferId })
-    await new Promise((resolve) => setTimeout(resolve, 30))
-    expect(room.state.tradeOfferId).toBe(0)
-
-    host.send('tradeOffer', { toSessionId: guest.sessionId, cashOffered: 20_000, cashRequested: 0 })
-    await new Promise((resolve) => setTimeout(resolve, 30))
-    const rejectionOfferId = room.state.tradeOfferId
-    const hostCashBeforeRejection = room.state.players.get(host.sessionId)!.cash
-    guest.send('tradeReject', { offerId: rejectionOfferId })
-    await new Promise((resolve) => setTimeout(resolve, 30))
-    expect(room.state.tradeOfferId).toBe(0)
-    expect(room.state.players.get(host.sessionId)!.cash).toBe(hostCashBeforeRejection)
-  })
-
   it('permite recusar uma propriedade sem dono e deixa o imóvel livre para a próxima vez', async () => {
     const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
     const host = await colyseus.connectTo(room, { name: 'Ana' })
@@ -1108,7 +954,11 @@ describe('sala privada', () => {
     const propertyId = 15
     const property = new PropertyState()
     property.ownerSessionId = host.sessionId
+    property.blackoutTurns = 2
+    property.protectionTurns = 3
     room.state.properties.set(String(propertyId), property)
+    room.state.worldCupSpaceId = propertyId
+    room.state.festivalSpaceIds = String(propertyId)
     room.state.turnPhase = 'debt'
     room.state.debtAmount = 180_000
     room.state.activePlayerSessionId = host.sessionId
@@ -1137,7 +987,9 @@ describe('sala privada', () => {
     room.state.turnPhase = 'debt'
     host.send('returnPropertyToBank', { propertyId })
     await new Promise((resolve) => setTimeout(resolve, 30))
-    expect(property).toMatchObject({ ownerSessionId: '', houses: 0 })
+    expect(property).toMatchObject({ ownerSessionId: '', houses: 0, blackoutTurns: 0, protectionTurns: 0 })
+    expect(room.state.worldCupSpaceId).toBe(255)
+    expect(room.state.festivalSpaceIds).toBe(String(propertyId))
     expect(hostPlayer.cash).toBe(100_000 + bankReturnValue(propertyId) - 180_000)
 
     const secondTitle = new PropertyState()
@@ -1997,7 +1849,10 @@ describe('sala privada', () => {
     const property = new PropertyState()
     property.ownerSessionId = guest.sessionId
     property.houses = 2
+    property.blackoutTurns = 2
     room.state.properties.set(String(propertySpace.id), property)
+    room.state.worldCupSpaceId = propertySpace.id
+    room.state.festivalSpaceIds = String(propertySpace.id)
     room.state.activePlayerSessionId = host.sessionId
     room.state.turnPhase = 'card-target'
     room.state.activeCardId = 'earthquake'
@@ -2007,7 +1862,9 @@ describe('sala privada', () => {
     await expect(collapse).resolves.toMatchObject({ spaceId: propertySpace.id, houses: 2, ownerColor: expect.any(String) })
     await waitFor(() => property.ownerSessionId === '')
 
-    expect(property.houses).toBe(0)
+    expect(property).toMatchObject({ houses: 0, blackoutTurns: 0, protectionTurns: 0 })
+    expect(room.state.worldCupSpaceId).toBe(255)
+    expect(room.state.festivalSpaceIds).toBe(String(propertySpace.id))
     expect(room.state.turnPhase).toBe('resolve')
     expect(room.state.landingDescription.toLowerCase()).toContain('terremoto')
     expect(room.state.players.get(guest.sessionId)?.cash).toBe(STARTING_CASH)

@@ -1,3 +1,12 @@
+# Efeitos de propriedades, leilão, setas e animação de projéteis — concluído (2026-11-01)
+
+- Pedido: manter o terreno apoiado no piso; limpar os efeitos de uma propriedade quando o título voltar ao banco, mantendo o Festival; impedir efeitos temporários em cidades livres; remover negociação entre jogadores; explicar o bloqueio do leilão; adicionar setas 3D de destino e vez; evitar que ovo, lama, tomate ou farinha pulem a animação em lançamentos repetidos.
+- Implementado: o terreno fica no nível da superfície enquanto casas/hotel mantêm sua altura; devolução por dívida, falência sem credor e Terremoto usam a mesma limpeza de efeitos e da sede da Copa. Festival permanece na cidade. A negociação de dinheiro e títulos saiu da interface, protocolo, schema e regras. O bloqueio de leilão informa que o grupo deve ficar sem construções. A seta dourada indica a casa de destino e uma seta na cor do jogador aponta para o peão da vez. O relógio de projéteis reinicia na montagem do novo evento e limita frames longos para não pular o voo.
+- Regressões: limpeza de efeitos/Festival na devolução e Terremoto, razão do bloqueio de leilão, cálculo do destino e avanço seguro da animação após frame longo.
+- `npm run verify`: 55 arquivos de teste, 290 testes passaram; builds web e servidor passaram. O build avisou somente sobre chunks acima de 500 kB.
+- Playtest manual: Vite e sala local foram abertos; a porta 2567 estava ocupada sem processo identificável, então usei a porta alternativa 2569. A partida com bot abriu, exibiu o tabuleiro e uma compra de cidade; o fluxo mostrou a terceira casa bloqueada antes da primeira volta. Revisei a cena após destacar as setas sobre os objetos, mas o enquadramento geral não permite validar seu tamanho em close; um segundo arremesso não foi observado em partida real. As regressões cobrem o progresso de voo em frame longo. Alterações locais em `assets/blender/special-corners.blend` e `.blend1` são anteriores e foram preservadas fora do commit.
+- Próximo passo: revisar diff, sincronizar `main`, passar pelo hook e publicar somente os arquivos desta tarefa.
+
 # Cartões destacam cidades e ajuste de construções — concluído (2026-11-01)
 
 - Pedido: elevar as construções até o modelo ficar todo acima do piso sem alterar o deslocamento lateral; remover o atalho Bens e trocar o clique do cartão por destaque das cidades da pessoa, escurecendo os demais espaços.

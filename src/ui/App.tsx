@@ -8,7 +8,7 @@ import { roomClient } from './roomClient'
 import { finalScoreMetrics, rankFinalScore, scoreCriteria } from './scoreCriteria'
 import { getLobbyPlayerEntries } from './lobbySnapshot'
 import { canAffordPurchase } from './purchaseActions'
-import { adjustAuctionStartingBid, normalizeAuctionBidInput } from './auctionActions'
+import { adjustAuctionStartingBid, getAuctionStartBlockReason, normalizeAuctionBidInput } from './auctionActions'
 import { boardSpaces, formatMoney } from '../game/board'
 import { ANIMATION_SPEEDS, AUCTION_MIN_BID_INCREMENT, DEFAULT_ANIMATION_SPEED, MATCH_DURATIONS, PROPERTY_BUILD_LEVELS, PROPERTY_HOTEL_LEVEL, START_BONUS, calculateCompanyRent, calculateRent, canBuildHotel, canBuildLevelAfterFirstLap, canBuildProperty, canSellBuilding, constructionCost, forcedBuybackCost, hasLiquidatableAssets, hotelConstructionCost, liquidatablePropertyIds, taxForSpace, type AnimationSpeed, type MatchDuration, type PropertyHolding } from '../../shared/game'
 import { PLAYER_COLORS } from './playerPalette'
@@ -17,13 +17,13 @@ import { getCashToastPlacement, getGameSound, getLandingSpecialSound, getPropert
 import { CashChangeToast } from './CashChangeToast'
 import { stepDieValue } from './forcedDice'
 import { getOwnedCitySpaceIds } from './playerOwnershipHighlight'
+import { getDiceDestinationSpaceId } from './arrowGuidance'
 import { appendGameFeedback, personalizePlayerFeedback, type GameFeedbackItem } from './feedbackQueue'
 import { playGameSound, startGameMusic, stopGameMusic, unlockGameAudio } from './gameAudio'
 import { getTurnActivityLabel, isBoardSelectionGuidanceActive, shouldShowResolvedTurnContinue, shouldShowTurnCard, shouldSuppressTurnCardForFeedback, shouldSuppressTurnCardForSpaceSelection } from './turnActivity'
 import { getBoardSpaceInteraction } from './boardInteraction'
 import { CashHudSymbols } from './CashHudSymbols'
 import { shouldShowRolledDice } from './dicePresentation'
-import { toggleSelection } from './multiSelect'
 import { areNumberPairsEqual, areRecordArraysEqual, areRecordMapsEqual } from './snapshotStability'
 import { FpsMeter } from './FpsMeterOverlay'
 import { createFrameRateAccumulator } from './fpsMeter'
@@ -40,13 +40,12 @@ type Mode = GameMode
 type Screen = 'home' | 'room' | 'game'
 type TurnPhase = 'roll' | 'rolling' | 'moving' | 'resolve' | 'purchase' | 'buyback' | 'start-upgrade' | 'jail' | 'world-cup' | 'world-tour' | 'card-target' | 'debt' | 'ended'
 type SyncedPlayer = LobbyPlayer & { sessionId: string; cash: number; devInfiniteCash: boolean; hasCompletedFirstLap: boolean; nextRentMultiplier: number; isJailed: boolean; jailTurns: number; isBankrupt: boolean; finalCash: number; finalNetWorth: number; tieBreakRoll: number }
-type TradeOfferView = { id: number; fromSessionId: string; toSessionId: string; cashOffered: number; cashRequested: number; propertiesOffered: number[]; propertiesRequested: number[] }
 type ThrowableEvent = { id: number; fromSessionId: string; toSessionId: string; object: ThrowableObject }
 type EarthquakeEvent = { id: number; spaceId: number; houses: number; ownerColor: string }
 const BoardScene = lazy(() => import('./BoardScene'))
 const CashHudOverlay = lazy(() => import('./CashHud').then(({ CashHudOverlay }) => ({ default: CashHudOverlay })))
 
-function parseTradeIds(value: string) {
+function parseSpaceIdList(value: string) {
   return value ? value.split(',').map(Number).filter(Number.isInteger) : []
 }
 
@@ -76,9 +75,9 @@ function MoneyStepper({ label, value, minimum = 0, maximum, step = 10_000, onCha
   const upperBound = Math.max(minimum, maximum)
   const displayedValue = Math.max(minimum, Math.min(upperBound, Number.isFinite(value) ? value : minimum))
   const isBelowMinimum = value < minimum
-  return <div className="trade-value-field">
-    <span className="trade-label">{label}</span>
-    <div className="auction-bid-stepper trade-money-stepper" role="group" aria-label={label}>
+  return <div className="money-value-field">
+    <span className="money-label">{label}</span>
+    <div className="auction-bid-stepper money-stepper" role="group" aria-label={label}>
       <button type="button" aria-label={`Diminuir ${label.toLocaleLowerCase('pt-BR')}`} disabled={displayedValue <= minimum} onClick={() => onChange(adjustMoneyValue(displayedValue, -1, step, minimum, upperBound))}>−</button>
       <output aria-live="polite">{formatMoney(displayedValue)}</output>
       <button type="button" aria-label={`Aumentar ${label.toLocaleLowerCase('pt-BR')}`} disabled={displayedValue >= upperBound} onClick={() => onChange(isBelowMinimum ? minimum : adjustMoneyValue(displayedValue, 1, step, minimum, upperBound))}>+</button>
@@ -156,9 +155,7 @@ function App() {
   const [matchEndReason, setMatchEndReason] = useState<MatchEndReason | ''>('')
   const [showPropertyPanel, setShowPropertyPanel] = useState(false)
   const [portfolioBoardSelection, setPortfolioBoardSelection] = useState(false)
-  const [profilePlayerSessionId, setProfilePlayerSessionId] = useState('')
   const [selectedPlayerSessionId, setSelectedPlayerSessionId] = useState('')
-  const [showTradePanel, setShowTradePanel] = useState(false)
   const [showAuctionPanel, setShowAuctionPanel] = useState(false)
   const [showHelp, setShowHelp] = useState(false)
   const [showOptions, setShowOptions] = useState(false)
@@ -181,13 +178,6 @@ function App() {
   const [auctionHighestBidderSessionId, setAuctionHighestBidderSessionId] = useState('')
   const [auctionBidAmount, setAuctionBidAmount] = useState('10000')
   const [auctionStartingBids, setAuctionStartingBids] = useState<Record<number, string>>({})
-  const [tradeOffer, setTradeOffer] = useState<TradeOfferView | null>(null)
-  const [tradeTargetSessionId, setTradeTargetSessionId] = useState('')
-  const [tradeCashOffered, setTradeCashOffered] = useState('0')
-  const [tradeCashRequested, setTradeCashRequested] = useState('0')
-  const [tradePropertiesOffered, setTradePropertiesOffered] = useState<number[]>([])
-  const [tradePropertiesRequested, setTradePropertiesRequested] = useState<number[]>([])
-  const [tradeBoardSelectionTarget, setTradeBoardSelectionTarget] = useState<'offer' | 'request' | null>(null)
   const [room, setRoom] = useState<Room | null>(null)
   const [roomPlayers, setRoomPlayers] = useState<SyncedPlayer[]>([])
   const localSessionId = roomPlayers.find((player) => player.controllerSessionId === room?.sessionId)?.sessionId ?? room?.sessionId ?? ''
@@ -215,10 +205,10 @@ function App() {
   const feedbackSequence = useRef(0)
   const soundEnabledRef = useRef(soundEnabled)
   soundEnabledRef.current = soundEnabled
-  const previousTradeOfferId = useRef<number | null>(null)
   const activePlayer = roomPlayers.find((player) => player.sessionId === activePlayerSessionId)
   const activeSpace = boardSpaces[activePlayer?.position ?? 0]
   const isMyTurn = localSessionId === activePlayerSessionId
+  const destinationSpaceId = getDiceDestinationSpaceId(turnPhase, activePlayer?.position ?? -1, dice, landingDescription) ?? -1
   const isPresentationAnimating = turnPhase === 'rolling' || turnPhase === 'moving'
   const turnActivityLabel = getTurnActivityLabel(turnPhase)
   const showTurnCard = shouldShowTurnCard(isMyTurn, turnPhase, Boolean(activeCardTitle), isPresentationAnimating)
@@ -228,26 +218,19 @@ function App() {
   const playerTokens = roomPlayers.length > 0
     ? roomPlayers.flatMap((player, seatIndex) => player.isBankrupt ? [] : [{ id: player.sessionId, position: player.position, color: player.color ?? PLAYER_COLORS[seatIndex] ?? PLAYER_COLORS[0], seatIndex, cash: player.cash, characterType: player.characterType, activity: player.sessionId === activePlayerSessionId && !isMyTurn ? turnActivityLabel : '', emote: playerEmotes[player.sessionId] }])
     : [0, 3, 6, 9].map((position, seatIndex) => ({ id: `preview-${seatIndex}`, position, color: PLAYER_COLORS[seatIndex] ?? PLAYER_COLORS[0], seatIndex, cash: 1_500_000, characterType: 'pawn' as CharacterType }))
-  const incomingTradeOffer = tradeOffer?.toSessionId === localSessionId
-  const outgoingTradeOffer = tradeOffer?.fromSessionId === localSessionId
-  const profilePlayer = roomPlayers.find((player) => player.sessionId === profilePlayerSessionId)
-  const selectedPlayer = roomPlayers.find((player) => player.sessionId === selectedPlayerSessionId)
   const auctionSeller = roomPlayers.find((player) => player.sessionId === auctionSellerSessionId)
   const auctionHighBidder = roomPlayers.find((player) => player.sessionId === auctionHighestBidderSessionId)
   const auctionMinimumBid = auctionHighestBid > 0 ? auctionHighestBid + AUCTION_MIN_BID_INCREMENT : auctionStartingBid
   const isAuctionSeller = auctionSellerSessionId === localSessionId
-  const tradeCounterparty = tradeOffer
-    ? roomPlayers.find((player) => player.sessionId === (incomingTradeOffer ? tradeOffer.fromSessionId : tradeOffer.toSessionId))
-    : undefined
   const holdingsById = new Map(Array.from(roomProperties.entries()).map(([id, holding]) => [Number(id), holding]))
-  const isTradePropertyLocked = (spaceId: number) => {
+  const hasBuildingsInPropertyGroup = (spaceId: number) => {
     const color = boardSpaces[spaceId]?.color
     return boardSpaces.some((space) => space.kind === 'property' && space.color === color && (holdingsById.get(space.id)?.houses ?? 0) > 0)
   }
   const localPlayer = roomPlayers.find((player) => player.sessionId === localSessionId)
   const devCashTarget = roomPlayers.find((player) => player.sessionId === devCashTargetSessionId) ?? activePlayer ?? localPlayer
   const availableCash = (player: SyncedPlayer | undefined) => player?.devInfiniteCash ? 2_147_483_647 : player?.cash ?? 0
-  const canAuctionNow = Boolean(localPlayer && isMyTurn && !localPlayer.isBankrupt && ['roll', 'resolve', 'jail'].includes(turnPhase) && presentationStage === 'idle' && auctionId === 0 && !tradeOffer)
+  const canAuctionNow = Boolean(localPlayer && isMyTurn && !localPlayer.isBankrupt && ['roll', 'resolve', 'jail'].includes(turnPhase) && presentationStage === 'idle' && auctionId === 0)
   const pendingPurchaseSpace = boardSpaces[pendingPropertyId]
   const pendingBuybackHolding = holdingsById.get(pendingPropertyId)
   const pendingBuybackPrice = pendingBuybackHolding ? forcedBuybackCost(pendingPropertyId, pendingBuybackHolding.houses) : 0
@@ -261,12 +244,6 @@ function App() {
     .map(([id, holding]) => ({ spaceId: Number(id), holding, space: boardSpaces[Number(id)] }))
     .filter((entry) => entry.space)
     .sort((first, second) => first.spaceId - second.spaceId)
-  const tradeTarget = roomPlayers.find((player) => player.sessionId === tradeTargetSessionId && player.sessionId !== localSessionId && !player.isBankrupt)
-  const targetProperties = Array.from(roomProperties.entries())
-    .filter(([_, holding]) => holding.ownerSessionId === tradeTarget?.sessionId)
-    .map(([id, holding]) => ({ spaceId: Number(id), holding, space: boardSpaces[Number(id)] }))
-    .filter((entry) => entry.space)
-    .sort((first, second) => first.spaceId - second.spaceId)
   const propertyTargetCard = ['generous', 'blackout', 'earthquake', 'protection'].includes(activeCardId)
   const cardPropertyChoices = Array.from(roomProperties.entries())
     .filter(([id, holding]) => {
@@ -276,8 +253,6 @@ function App() {
     })
     .map(([id]) => Number(id))
   const debtPropertyChoices = liquidatablePropertyIds(localSessionId ?? '', holdingsById)
-  const tradeOfferChoices = myProperties.filter(({ spaceId }) => !isTradePropertyLocked(spaceId)).map(({ spaceId }) => spaceId)
-  const tradeRequestChoices = targetProperties.filter(({ spaceId }) => !isTradePropertyLocked(spaceId)).map(({ spaceId }) => spaceId)
   const boardChoicePhase = turnPhase === 'world-cup' && isMyTurn
     ? 'world-cup'
     : turnPhase === 'world-tour' && isMyTurn
@@ -286,10 +261,8 @@ function App() {
         ? 'card-property'
         : turnPhase === 'debt' && isMyTurn
           ? 'debt-property'
-          : showTradePanel && tradeBoardSelectionTarget
-            ? tradeBoardSelectionTarget === 'offer' ? 'trade-offer' : 'trade-request'
-            : portfolioBoardSelection && turnPhase !== 'debt'
-              ? 'manage-property'
+          : portfolioBoardSelection && turnPhase !== 'debt'
+            ? 'manage-property'
             : null
   const boardChoiceSpaceIds = boardChoicePhase === 'world-cup'
     ? worldCupChoices.map((space) => space.id)
@@ -299,12 +272,8 @@ function App() {
         ? cardPropertyChoices
         : boardChoicePhase === 'debt-property'
           ? debtPropertyChoices
-          : boardChoicePhase === 'trade-offer'
-            ? tradeOfferChoices
-            : boardChoicePhase === 'trade-request'
-              ? tradeRequestChoices
-              : boardChoicePhase === 'manage-property'
-                ? myProperties.map(({ spaceId }) => spaceId)
+          : boardChoicePhase === 'manage-property'
+            ? myProperties.map(({ spaceId }) => spaceId)
               : []
   const selectedPlayerCitySpaceIds = getOwnedCitySpaceIds(selectedPlayerSessionId, Array.from(roomProperties.entries()).map(([id, holding]) => ({
     spaceId: Number(id),
@@ -364,6 +333,10 @@ function App() {
   const selectedRent = selectedSpace?.kind === 'property'
     ? selectedSpace.company ? calculateCompanyRent(rentOwnership, selectedHolding?.ownerSessionId || '__preview__') : selectedHolding?.blackoutTurns && selectedHolding.houses !== PROPERTY_HOTEL_LEVEL ? 0 : calculateRent(selectedSpace.id, rentOwnership, selectedHolding?.houses ?? 0, worldCupSpaceId, festivalSet)
     : 0
+  const selectedAuctionStartingBid = selectedSpace ? Number(auctionStartingBids[selectedSpace.id] ?? selectedSpace.price ?? 0) : 0
+  const auctionStartBlockReason = selectedSpace?.kind === 'property' && selectedOwner?.sessionId === localSessionId
+    ? getAuctionStartBlockReason(canAuctionNow, hasBuildingsInPropertyGroup(selectedSpace.id), selectedAuctionStartingBid)
+    : null
   function showGameFeedback(message: string, sound: GameSound, player?: { name: string; color: string }) {
     feedbackSequence.current += 1
     const item = { id: feedbackSequence.current, message: player ? personalizePlayerFeedback(message, player.name) : message, sound, playerName: player?.name, playerColor: player?.color }
@@ -412,23 +385,6 @@ function App() {
   }, [showHelp])
 
   useEffect(() => {
-    const currentId = tradeOffer?.id ?? null
-    if (previousTradeOfferId.current !== null && currentId === null) {
-      setShowTradePanel(false)
-      setTradePropertiesOffered([])
-      setTradePropertiesRequested([])
-    }
-    previousTradeOfferId.current = currentId
-  }, [tradeOffer?.id])
-
-  useEffect(() => {
-    if (incomingTradeOffer && localSessionId) {
-      setProfilePlayerSessionId(localSessionId)
-      setShowTradePanel(false)
-    }
-  }, [incomingTradeOffer, localSessionId, tradeOffer?.id])
-
-  useEffect(() => {
     setPendingPurchaseHouses(0)
   }, [pendingPropertyId])
 
@@ -436,7 +392,6 @@ function App() {
     if (turnPhase === 'world-cup' || turnPhase === 'world-tour') {
       setShowPropertyPanel(false)
       setShowAuctionPanel(false)
-      setShowTradePanel(false)
     }
   }, [turnPhase])
 
@@ -446,10 +401,7 @@ function App() {
     setFeedbackQueue([])
     setShowPropertyPanel(false)
     setPortfolioBoardSelection(false)
-    setProfilePlayerSessionId('')
     setSelectedPlayerSessionId('')
-    setShowTradePanel(false)
-    setTradeBoardSelectionTarget(null)
     setShowAuctionPanel(false)
     setShowHelp(false)
     setShowOptions(false)
@@ -528,13 +480,6 @@ function App() {
         debtCreditorSessionId: string
         winnerSessionId: string
         matchEndReason: MatchEndReason | ''
-        tradeOfferId: number
-        tradeOfferFromSessionId: string
-        tradeOfferToSessionId: string
-        tradeOfferCashOffered: number
-        tradeOfferCashRequested: number
-        tradeOfferPropertiesOffered: string
-        tradeOfferPropertiesRequested: string
         auctionId: number
         auctionPropertyId: number
         auctionSellerSessionId: string
@@ -631,22 +576,13 @@ function App() {
       setActiveCardDescription(snapshot.activeCardDescription)
       setActiveCardId(snapshot.activeCardId)
       setPendingPropertyId(snapshot.pendingPropertyId)
-      setFestivalSpaceIds(parseTradeIds(snapshot.festivalSpaceIds))
+      setFestivalSpaceIds(parseSpaceIdList(snapshot.festivalSpaceIds))
       setWorldCupSpaceId(snapshot.worldCupSpaceId)
       setDebtAmount(snapshot.debtAmount)
       setDebtReason(snapshot.debtReason)
       setDebtCreditorSessionId(snapshot.debtCreditorSessionId)
       setWinnerSessionId(snapshot.winnerSessionId)
       setMatchEndReason(snapshot.matchEndReason)
-      setTradeOffer(snapshot.tradeOfferId > 0 ? {
-        id: snapshot.tradeOfferId,
-        fromSessionId: snapshot.tradeOfferFromSessionId,
-        toSessionId: snapshot.tradeOfferToSessionId,
-        cashOffered: snapshot.tradeOfferCashOffered,
-        cashRequested: snapshot.tradeOfferCashRequested,
-        propertiesOffered: parseTradeIds(snapshot.tradeOfferPropertiesOffered),
-        propertiesRequested: parseTradeIds(snapshot.tradeOfferPropertiesRequested),
-      } : null)
       setAuctionId(snapshot.auctionId)
       setAuctionPropertyId(snapshot.auctionPropertyId)
       setAuctionSellerSessionId(snapshot.auctionSellerSessionId)
@@ -840,7 +776,6 @@ function App() {
     setIsHost(false)
     setActivePlayerSessionId('')
     setSelectedPlayerSessionId('')
-    setProfilePlayerSessionId('')
     setTurnNumber(0)
     setDice([0, 0])
     setLandingDescription('')
@@ -854,14 +789,7 @@ function App() {
     setWinnerSessionId('')
     setShowPropertyPanel(false)
     setPortfolioBoardSelection(false)
-    setShowTradePanel(false)
-    setTradeOffer(null)
     setIsReconnecting(false)
-    setTradeTargetSessionId('')
-    setTradeCashOffered('0')
-    setTradeCashRequested('0')
-    setTradePropertiesOffered([])
-    setTradePropertiesRequested([])
     setScreen('home')
     if (currentRoom) await currentRoom.leave()
   }
@@ -929,14 +857,6 @@ function App() {
       setShowPropertyPanel(false)
       return
     }
-    if (interaction.type === 'toggle-trade-offer') {
-      setTradePropertiesOffered((current) => toggleSelection(current, interaction.spaceId))
-      return
-    }
-    if (interaction.type === 'toggle-trade-request') {
-      setTradePropertiesRequested((current) => toggleSelection(current, interaction.spaceId))
-      return
-    }
     if (interaction.type === 'inspect') setSelectedSpaceId(interaction.spaceId)
   }
 
@@ -956,7 +876,7 @@ function App() {
       <div className="scene-backdrop">
         {sceneReady && (
           <Suspense fallback={<div className="scene-placeholder" aria-hidden="true" />}>
-            <BoardScene nightMode={nightMode} players={playerTokens} propertyBuildings={propertyBuildings} thrownObjects={thrownObjects} earthquakeEvents={earthquakeEvents} worldCupSpaceId={worldCupSpaceId} festivalSpaceIds={festivalSpaceIds} highlightedSpaceIds={highlightedSpaceIds} selectionMode={(Boolean(boardChoicePhase) || playerHighlightMode) && !isPresentationAnimating} showLiquidationValues={turnPhase === 'debt'} landingPulseSpaceId={landingPulseSpaceId} landingPulseSequence={landingPulseSequence} diceRollSequence={diceRollSequence} renderWakeSequence={turnNumber} dice={dice} diceVisible={showDice} diceResultVisible={(turnPhase === 'moving' && diceForPawnMovement) || (turnPhase === 'rolling' && dice[0] > 0 && dice[1] === 0)} presentationSpeed={presentationSpeed} reducedMotion={reducedMotion} pawnMovementEnabled={turnPhase === 'moving'} pawnMoveMode={pawnMoveMode} pawnStepSoundEnabled={soundEnabled} graphicsQuality={graphicsQuality} cameraEnabled={screen === 'game' && turnPhase !== 'ended'} fpsMeterEnabled={fpsMeterEnabled} fpsSamples={fpsSamples} onMovementComplete={() => setPresentationStage('idle')} onSelectSpace={handleSelectSpace} />
+            <BoardScene nightMode={nightMode} players={playerTokens} activePlayerSessionId={turnPhase === 'ended' ? '' : activePlayerSessionId} destinationSpaceId={destinationSpaceId} propertyBuildings={propertyBuildings} thrownObjects={thrownObjects} earthquakeEvents={earthquakeEvents} worldCupSpaceId={worldCupSpaceId} festivalSpaceIds={festivalSpaceIds} highlightedSpaceIds={highlightedSpaceIds} selectionMode={(Boolean(boardChoicePhase) || playerHighlightMode) && !isPresentationAnimating} showLiquidationValues={turnPhase === 'debt'} landingPulseSpaceId={landingPulseSpaceId} landingPulseSequence={landingPulseSequence} diceRollSequence={diceRollSequence} renderWakeSequence={turnNumber} dice={dice} diceVisible={showDice} diceResultVisible={(turnPhase === 'moving' && diceForPawnMovement) || (turnPhase === 'rolling' && dice[0] > 0 && dice[1] === 0)} presentationSpeed={presentationSpeed} reducedMotion={reducedMotion} pawnMovementEnabled={turnPhase === 'moving'} pawnMoveMode={pawnMoveMode} pawnStepSoundEnabled={soundEnabled} graphicsQuality={graphicsQuality} cameraEnabled={screen === 'game' && turnPhase !== 'ended'} fpsMeterEnabled={fpsMeterEnabled} fpsSamples={fpsSamples} onMovementComplete={() => setPresentationStage('idle')} onSelectSpace={handleSelectSpace} />
           </Suspense>
         )}
       </div>
@@ -1040,14 +960,14 @@ function App() {
 
       {screen === 'game' && (
         <section className="game-overlay">
-          <div className="game-topline"><button className="back-link" onClick={() => setScreen('room')}>← Sala {roomCode}</button><div className="game-status-cluster"><div className={`game-pill ${matchEnding || (matchDuration > 0 && matchSeconds <= 60) ? 'clock-warning' : ''}`}>{modeDetails[mode].title.toUpperCase()} <span>·</span> {matchDuration === 0 ? 'SEM TEMPO' : formatClock(matchSeconds)}</div>{turnPhase !== 'ended' && <div className={`turn-clock-pill ${turnSeconds > 0 && turnSeconds <= 5 ? 'clock-warning' : ''}`} role="timer" aria-label={`Relógio do turno de ${activePlayer?.name ?? 'jogador ativo'}: ${turnSeconds} segundos restantes`}><span aria-hidden="true">◷</span><small>VEZ · {activePlayer?.name ?? '—'}</small><strong>{formatClock(turnSeconds)}</strong></div>}{animationSpeedControl}</div><div className="game-tools">{auctionId > 0 && <button className="portfolio-toggle auction-toggle-active" aria-expanded={showAuctionPanel} onClick={() => { setShowAuctionPanel((open) => !open); setShowTradePanel(false); setShowPropertyPanel(false); setError('') }}>{`Leilão · ${auctionSeconds}s`}</button>}</div></div>
+          <div className="game-topline"><button className="back-link" onClick={() => setScreen('room')}>← Sala {roomCode}</button><div className="game-status-cluster"><div className={`game-pill ${matchEnding || (matchDuration > 0 && matchSeconds <= 60) ? 'clock-warning' : ''}`}>{modeDetails[mode].title.toUpperCase()} <span>·</span> {matchDuration === 0 ? 'SEM TEMPO' : formatClock(matchSeconds)}</div>{turnPhase !== 'ended' && <div className={`turn-clock-pill ${turnSeconds > 0 && turnSeconds <= 5 ? 'clock-warning' : ''}`} role="timer" aria-label={`Relógio do turno de ${activePlayer?.name ?? 'jogador ativo'}: ${turnSeconds} segundos restantes`}><span aria-hidden="true">◷</span><small>VEZ · {activePlayer?.name ?? '—'}</small><strong>{formatClock(turnSeconds)}</strong></div>}{animationSpeedControl}</div><div className="game-tools">{auctionId > 0 && <button className="portfolio-toggle auction-toggle-active" aria-expanded={showAuctionPanel} onClick={() => { setShowAuctionPanel((open) => !open);  setShowPropertyPanel(false); setError('') }}>{`Leilão · ${auctionSeconds}s`}</button>}</div></div>
           <div className="game-topline-camera-hint" aria-label="Controles da câmera">Arraste para girar · scroll ou pinça para zoom</div>
           {doublesAnnouncementVisible && <div className="doubles-announcement" role="status" aria-live="assertive"><span>✦</span><strong>TIROU DUPLAS!</strong><small>Você joga novamente</small></div>}
           <div className="player-hud">{roomPlayers.map((player, index) => {
             const remainingCooldown = Math.max(0, (throwCooldowns[player.sessionId] ?? 0) - throwCooldownNow)
             const canThrowAtPlayer = Boolean(localPlayer && player.sessionId !== localSessionId && !player.isBankrupt && !localPlayer.isBankrupt && turnPhase !== 'ended')
             return <div className={`player-card-slot seat-${index}`} key={player.sessionId}>
-              <button type="button" aria-label={`Destacar cidades de ${player.name}`} aria-pressed={selectedPlayerSessionId === player.sessionId} className={`player-card seat-${index} ${player.sessionId === activePlayerSessionId ? 'active' : ''} ${selectedPlayerSessionId === player.sessionId ? 'highlighted' : ''} ${player.isBankrupt ? 'bankrupt' : ''} ${player.isConnected === false ? 'disconnected' : ''} ${tradeOffer?.toSessionId === player.sessionId ? 'has-trade-offer' : ''}`} style={{ backgroundColor: player.color ?? PLAYER_COLORS[index] ?? PLAYER_COLORS[0] }} onClick={() => { setSelectedPlayerSessionId((current) => current === player.sessionId ? '' : player.sessionId); setShowPropertyPanel(false); setPortfolioBoardSelection(false); setShowAuctionPanel(false); setSelectedSpaceId(null); if (!incomingTradeOffer && !outgoingTradeOffer) { setProfilePlayerSessionId(''); setShowTradePanel(false); setTradeBoardSelectionTarget(null) } setError('') }}><div className="player-card-main"><strong>{player.name}</strong><b>{formatMoney(player.cash)}</b></div>{player.isBotControlled && <span className="player-bot-control-label">BOT NO CONTROLE</span>}<CashChangeToast cash={player.cash} playerName={player.name} placement={getCashToastPlacement(index)} /><span className="player-money-anchor" data-cash-anchor={player.sessionId} aria-hidden="true"><CashHudSymbols cash={player.cash} /></span>{tradeOffer?.toSessionId === player.sessionId && <span className="player-card-offer-badge">PROPOSTA</span>}</button>
+              <button type="button" aria-label={`Destacar cidades de ${player.name}`} aria-pressed={selectedPlayerSessionId === player.sessionId} className={`player-card seat-${index} ${player.sessionId === activePlayerSessionId ? 'active' : ''} ${selectedPlayerSessionId === player.sessionId ? 'highlighted' : ''} ${player.isBankrupt ? 'bankrupt' : ''} ${player.isConnected === false ? 'disconnected' : ''}`} style={{ backgroundColor: player.color ?? PLAYER_COLORS[index] ?? PLAYER_COLORS[0] }} onClick={() => { setSelectedPlayerSessionId((current) => current === player.sessionId ? '' : player.sessionId); setShowPropertyPanel(false); setPortfolioBoardSelection(false); setShowAuctionPanel(false); setSelectedSpaceId(null);  setError('') }}><div className="player-card-main"><strong>{player.name}</strong><b>{formatMoney(player.cash)}</b></div>{player.isBotControlled && <span className="player-bot-control-label">BOT NO CONTROLE</span>}<CashChangeToast cash={player.cash} playerName={player.name} placement={getCashToastPlacement(index)} /><span className="player-money-anchor" data-cash-anchor={player.sessionId} aria-hidden="true"><CashHudSymbols cash={player.cash} /></span></button>
               {canThrowAtPlayer && <div className={`player-throw-control${index % 2 === 1 ? ' toward-center-left' : ''}`} data-camera-drag="off">
                 <button type="button" className="player-throw-button" aria-label={`Lançar objeto em ${player.name}`} aria-expanded={throwPickerTargetSessionId === player.sessionId} disabled={remainingCooldown > 0} title={remainingCooldown > 0 ? `Aguarde ${Math.ceil(remainingCooldown / 1000)}s` : `Lançar objeto em ${player.name}`} onClick={() => { setShowEmotePicker(false); setThrowPickerTargetSessionId((target) => target === player.sessionId ? '' : player.sessionId) }}><span aria-hidden="true">➶</span>{remainingCooldown > 0 && <small>{Math.ceil(remainingCooldown / 1000)}s</small>}</button>
                 {throwPickerTargetSessionId === player.sessionId && <div className="throw-picker" role="group" aria-label={`Escolha o objeto para lançar em ${player.name}`}>{THROWABLES.map(({ id, label, symbol }) => <button key={id} type="button" onClick={() => { if (!room) return; const now = Date.now(); room.send('throwObject', { targetSessionId: player.sessionId, object: id }); setThrowCooldownNow(now); setThrowCooldowns((current) => ({ ...current, [player.sessionId]: now + THROW_COOLDOWN_MS })); setThrowPickerTargetSessionId('') }}><span aria-hidden="true">{symbol}</span><small>{label}</small></button>)}</div>}
@@ -1055,11 +975,11 @@ function App() {
             </div>
           })}</div>
           {throwImpacts.length > 0 && <div className={`throw-impact-screen impact-${throwImpacts[throwImpacts.length - 1].object}`} role="status" aria-live="polite" aria-label={`Você foi atingido com ${getThrowableLabel(throwImpacts[throwImpacts.length - 1].object)}`}><span key={throwImpacts[throwImpacts.length - 1].id}>{getThrowableSymbol(throwImpacts[throwImpacts.length - 1].object)}</span><small>{getThrowableLabel(throwImpacts[throwImpacts.length - 1].object)}</small></div>}
-          {localPlayer && turnPhase !== 'ended' && <div className={`game-quick-actions seat-${roomPlayers.findIndex((player) => player.sessionId === localPlayer.sessionId)}`} aria-label="Ações rápidas" data-camera-drag="off">{selectedPlayer && selectedPlayer.sessionId !== localSessionId && !selectedPlayer.isBankrupt && <button type="button" aria-label={`Propor troca para ${selectedPlayer.name}`} disabled={Boolean(tradeOffer) || auctionId > 0} onClick={() => { setTradeTargetSessionId(selectedPlayer.sessionId); setProfilePlayerSessionId(selectedPlayer.sessionId); setShowTradePanel(true); setTradeBoardSelectionTarget(null); setTradePropertiesOffered([]); setTradePropertiesRequested([]); setShowPropertyPanel(false); setShowAuctionPanel(false); setSelectedSpaceId(null); setError('') }}><span aria-hidden="true">⇄</span><small>Troca</small></button>}<button type="button" onClick={() => setShowOptions(true)} aria-label="Configurações da partida"><span aria-hidden="true">⚙</span><small>Config</small></button><div className="emote-control"><button type="button" onClick={() => setShowEmotePicker((open) => !open)} aria-label="Escolher emote" aria-expanded={showEmotePicker}><span aria-hidden="true">☺</span><small>Emote</small></button>{showEmotePicker && <div className="emote-picker" role="group" aria-label="Escolha um emote">{PLAYER_EMOTES.map(({ id, label, symbol }) => <button key={id} type="button" aria-label={label} title={label} onClick={() => { room?.send('emote', { emote: id }); setShowEmotePicker(false) }}>{symbol}</button>)}</div>}</div><button type="button" onClick={() => setShowHelp((open) => !open)} aria-label="Prévia das regras" aria-expanded={showHelp} aria-controls="game-help-dialog"><span aria-hidden="true">?</span><small>Regras</small></button></div>}
+          {localPlayer && turnPhase !== 'ended' && <div className={`game-quick-actions seat-${roomPlayers.findIndex((player) => player.sessionId === localPlayer.sessionId)}`} aria-label="Ações rápidas" data-camera-drag="off"><button type="button" onClick={() => setShowOptions(true)} aria-label="Configurações da partida"><span aria-hidden="true">⚙</span><small>Config</small></button><div className="emote-control"><button type="button" onClick={() => setShowEmotePicker((open) => !open)} aria-label="Escolher emote" aria-expanded={showEmotePicker}><span aria-hidden="true">☺</span><small>Emote</small></button>{showEmotePicker && <div className="emote-picker" role="group" aria-label="Escolha um emote">{PLAYER_EMOTES.map(({ id, label, symbol }) => <button key={id} type="button" aria-label={label} title={label} onClick={() => { room?.send('emote', { emote: id }); setShowEmotePicker(false) }}>{symbol}</button>)}</div>}</div><button type="button" onClick={() => setShowHelp((open) => !open)} aria-label="Prévia das regras" aria-expanded={showHelp} aria-controls="game-help-dialog"><span aria-hidden="true">?</span><small>Regras</small></button></div>}
           {modalVisible && !feedbackPending && <div className="game-modal-backdrop" aria-hidden="true" />}
-          {selectedSpace && turnPhase !== 'ended' && !boardChoicePhase && !ownPropertyLanding && !(isMyTurn && (turnPhase === 'purchase' || turnPhase === 'world-cup' || turnPhase === 'world-tour')) && !showTradePanel && !incomingTradeOffer && !showPropertyPanel && (
+          {selectedSpace && turnPhase !== 'ended' && !boardChoicePhase && !ownPropertyLanding && !(isMyTurn && (turnPhase === 'purchase' || turnPhase === 'world-cup' || turnPhase === 'world-tour')) && !showPropertyPanel && (
             <aside className={`space-inspector${selectedSpace.kind === 'property' ? ' property-inspection-panel' : ''}`} aria-label={`Detalhes de ${selectedSpace.name}`}>
-              <button className="trade-close" aria-label="Fechar detalhes" onClick={() => setSelectedSpaceId(null)}>×</button>
+              <button className="panel-close" aria-label="Fechar detalhes" onClick={() => setSelectedSpaceId(null)}>×</button>
               <span className="turn-label">CASA {String(selectedSpace.id + 1).padStart(2, '0')} · {selectedSpace.kind === 'property' ? 'PROPRIEDADE' : 'ESPAÇO ESPECIAL'}</span>
               <h2>{selectedSpace.name}</h2>
               {selectedSpace.kind === 'property' ? (
@@ -1075,7 +995,7 @@ function App() {
                     })}
                     {selectedHolding?.houses === PROPERTY_HOTEL_LEVEL && <div className="property-level-option purchase-choice inspection-choice selected" aria-current="true"><span>Hotel</span><span className="property-choice-houses" aria-hidden="true">🏨</span><small>Aluguel · {formatMoney(calculateRent(selectedSpace.id, rentOwnership, PROPERTY_HOTEL_LEVEL, worldCupSpaceId, festivalSet))}</small><b>{formatMoney(hotelConstructionCost(selectedSpace.id))}</b></div>}
                   </div>}
-                  {selectedOwner?.sessionId === localSessionId && <div className="inspector-auction-actions"><div className="auction-start-label">LANCE INICIAL<span className="auction-bid-stepper"><button type="button" aria-label="Diminuir lance inicial" disabled={Number(auctionStartingBids[selectedSpace.id] ?? selectedSpace.price ?? AUCTION_MIN_BID_INCREMENT) <= AUCTION_MIN_BID_INCREMENT} onClick={() => stepAuctionBid(selectedSpace.id, -1)}>−</button><output>{formatMoney(Number(auctionStartingBids[selectedSpace.id] ?? selectedSpace.price ?? AUCTION_MIN_BID_INCREMENT))}</output><button type="button" aria-label="Aumentar lance inicial" onClick={() => stepAuctionBid(selectedSpace.id, 1)}>+</button></span></div><button className="asset-action auction-inspector-button" disabled={!canAuctionNow || isTradePropertyLocked(selectedSpace.id) || Number(auctionStartingBids[selectedSpace.id] ?? selectedSpace.price ?? 0) < AUCTION_MIN_BID_INCREMENT} title={isTradePropertyLocked(selectedSpace.id) ? 'Venda primeiro as construções do grupo' : 'Leiloar este imóvel durante seu turno'} onClick={() => { room?.send('auctionStart', { propertyId: selectedSpace.id, startingBid: Number(auctionStartingBids[selectedSpace.id] ?? selectedSpace.price ?? 0) }); setError('') }}>Leiloar imóvel</button></div>}
+                  {selectedOwner?.sessionId === localSessionId && <div className="inspector-auction-actions"><div className="auction-start-label">LANCE INICIAL<span className="auction-bid-stepper"><button type="button" aria-label="Diminuir lance inicial" disabled={Number(auctionStartingBids[selectedSpace.id] ?? selectedSpace.price ?? AUCTION_MIN_BID_INCREMENT) <= AUCTION_MIN_BID_INCREMENT} onClick={() => stepAuctionBid(selectedSpace.id, -1)}>−</button><output>{formatMoney(selectedAuctionStartingBid)}</output><button type="button" aria-label="Aumentar lance inicial" onClick={() => stepAuctionBid(selectedSpace.id, 1)}>+</button></span></div><button className="asset-action auction-inspector-button" disabled={Boolean(auctionStartBlockReason)} title={auctionStartBlockReason ?? 'Leiloar este imóvel durante seu turno'} onClick={() => { room?.send('auctionStart', { propertyId: selectedSpace.id, startingBid: selectedAuctionStartingBid }); setError('') }}>Leiloar imóvel</button>{auctionStartBlockReason && <p className="auction-block-hint" role="status">{auctionStartBlockReason}</p>}</div>}
                 </>
               ) : <p>{selectedSpace.kind === 'tax' ? `Ao parar aqui, pague ${formatMoney(taxForSpace(selectedSpace.id))} ao banco.` : selectedSpace.kind === 'event' ? 'Ao parar aqui, compre uma carta Sorte ou Revés.' : selectedSpace.kind === 'start' ? `Receba ${formatMoney(START_BONUS)} ao passar. Parar exatamente aqui oferece uma melhoria paga em uma cidade sua aleatória.` : selectedSpace.kind === 'prison' ? 'Ao cair na prisão, você pode aguardar, tentar duplas para sair ou pagar R$ 200.000 e lançar os dados.' : selectedSpace.kind === 'world-cup' ? `Escolha uma propriedade sua para sediar a Copa. O aluguel dela fica dobrado até outra Copa ser escolhida.${worldCupSpaceId !== 255 ? ` Sede atual: ${boardSpaces[worldCupSpaceId]?.name ?? '—'}.` : ''}` : selectedSpace.kind === 'world-tour' ? `Escolha uma propriedade sua, livre ou uma casa especial. Receba ${formatMoney(START_BONUS)} se o trajeto até o destino passar pela Partida.` : 'Casa especial do tabuleiro.'}</p>}
             </aside>
@@ -1097,8 +1017,8 @@ function App() {
               {landedHolding?.houses === PROPERTY_HOTEL_LEVEL && <p className="purchase-hint">Este terreno já tem hotel.</p>}
             </aside>
           ) : !feedbackPending && showAuctionPanel && turnPhase !== 'ended' ? (
-            <aside className="turn-card trade-panel auction-panel" aria-label="Leilão voluntário de propriedade">
-              <div className="asset-panel-heading"><span className="turn-label">{auctionId > 0 ? `LEILÃO · ${auctionSeconds}s` : 'MERCADO ENTRE JOGADORES'}</span><button className="trade-close" onClick={() => setShowAuctionPanel(false)} aria-label="Fechar leilão">×</button></div>
+            <aside className="turn-card action-panel auction-panel" aria-label="Leilão voluntário de propriedade">
+              <div className="asset-panel-heading"><span className="turn-label">{auctionId > 0 ? `LEILÃO · ${auctionSeconds}s` : 'LEILÃO VOLUNTÁRIO'}</span><button className="panel-close" onClick={() => setShowAuctionPanel(false)} aria-label="Fechar leilão">×</button></div>
               {error && <p className="form-error" role="alert">{error}</p>}
               {auctionId > 0 ? (
                 <>
@@ -1106,11 +1026,11 @@ function App() {
                   <p>Venda voluntária aberta por {auctionSeller?.name ?? 'um jogador'}. O lance fica reservado até o fim; imóveis com construções exigem a venda delas antes da transferência.</p>
                   <div className="auction-current-bid"><span>{auctionHighestBid > 0 ? `Maior lance · ${auctionHighBidder?.name ?? 'jogador'}` : 'Lance inicial'}</span><strong>{formatMoney(auctionHighestBid || auctionStartingBid)}</strong></div>
                   {isAuctionSeller ? (
-                    auctionHighestBid === 0 && <button className="secondary-action trade-full-button" onClick={() => room?.send('auctionCancel', { auctionId })}>Cancelar leilão</button>
+                    auctionHighestBid === 0 && <button className="secondary-action panel-full-button" onClick={() => room?.send('auctionCancel', { auctionId })}>Cancelar leilão</button>
                   ) : (
                     <>
                       <MoneyStepper label={`SEU LANCE · MÍNIMO ${formatMoney(auctionMinimumBid)}`} value={Number(auctionBidAmount) || auctionMinimumBid} minimum={auctionMinimumBid} maximum={availableCash(localPlayer)} step={AUCTION_MIN_BID_INCREMENT} onChange={(value) => setAuctionBidAmount(String(value))} />
-                      <button className="roll-button trade-full-button" disabled={turnPhase === 'purchase' || turnPhase === 'debt' || Number(auctionBidAmount) < auctionMinimumBid || availableCash(localPlayer) < Number(auctionBidAmount)} onClick={() => { room?.send('auctionBid', { auctionId, amount: Number(auctionBidAmount) }); setError('') }}>Dar lance</button>
+                      <button className="roll-button panel-full-button" disabled={turnPhase === 'purchase' || turnPhase === 'debt' || Number(auctionBidAmount) < auctionMinimumBid || availableCash(localPlayer) < Number(auctionBidAmount)} onClick={() => { room?.send('auctionBid', { auctionId, amount: Number(auctionBidAmount) }); setError('') }}>Dar lance</button>
                     </>
                   )}
                 </>
@@ -1118,16 +1038,16 @@ function App() {
                 <>
                   <h2>Leilão voluntário</h2>
                   <p>Qualquer jogador pode vender um imóvel próprio, mesmo fora da vez. Abra a carteira para escolher o título e definir o lance inicial. Recusar uma propriedade livre não a coloca em leilão.</p>
-                  <button className="roll-button trade-full-button" onClick={() => { setShowAuctionPanel(false); setShowPropertyPanel(true) }}>Abrir minha carteira</button>
+                  <button className="roll-button panel-full-button" onClick={() => { setShowAuctionPanel(false); setShowPropertyPanel(true) }}>Abrir minha carteira</button>
                 </>
               )}
             </aside>
           ) : !feedbackPending && showPropertyPanel && turnPhase !== 'ended' && turnPhase !== 'debt' && turnPhase !== 'start-upgrade' ? (
             <aside className="turn-card asset-panel" aria-label="Minha carteira de imóveis">
-              <div className="asset-panel-heading"><span className="turn-label">CARTEIRA DA PARTIDA</span><div className="asset-panel-heading-actions"><span>{formatMoney(localPlayer?.cash ?? 0)}</span><button className="trade-close" onClick={() => { setShowPropertyPanel(false); setPortfolioBoardSelection(false) }} aria-label="Fechar carteira">×</button></div></div>
+              <div className="asset-panel-heading"><span className="turn-label">CARTEIRA DA PARTIDA</span><div className="asset-panel-heading-actions"><span>{formatMoney(localPlayer?.cash ?? 0)}</span><button className="panel-close" onClick={() => { setShowPropertyPanel(false); setPortfolioBoardSelection(false) }} aria-label="Fechar carteira">×</button></div></div>
               <h2>Meus imóveis</h2>
               <p>Toque num imóvel seu no tabuleiro para abrir as opções. A devolução ao banco fica disponível apenas para quitar uma dívida.</p>
-              <button type="button" className={`trade-board-select${portfolioBoardSelection ? ' selected' : ''}`} aria-pressed={portfolioBoardSelection} disabled={!myProperties.length} onClick={() => { setPortfolioBoardSelection((active) => !active); if (!portfolioBoardSelection) setShowPropertyPanel(false) }}>{portfolioBoardSelection ? 'Cancelar seleção' : 'Escolher imóvel no tabuleiro'}</button>
+              <button type="button" className={`asset-board-select${portfolioBoardSelection ? ' selected' : ''}`} aria-pressed={portfolioBoardSelection} disabled={!myProperties.length} onClick={() => { setPortfolioBoardSelection((active) => !active); if (!portfolioBoardSelection) setShowPropertyPanel(false) }}>{portfolioBoardSelection ? 'Cancelar seleção' : 'Escolher imóvel no tabuleiro'}</button>
               <div className="asset-list">
                 {myProperties.length === 0 ? <span className="asset-empty">Você ainda não tem propriedades.</span> : myProperties.map(({ spaceId, holding, space }) => {
                   const rent = space.company
@@ -1223,30 +1143,6 @@ function App() {
               )}
             </div>
           )}
-          {profilePlayer && turnPhase !== 'ended' && (showTradePanel || incomingTradeOffer || outgoingTradeOffer) && <aside className="player-profile-panel trade-interaction-panel" aria-label="Troca de propriedades" style={{ '--profile-player-color': profilePlayer.color ?? PLAYER_COLORS[Math.max(0, roomPlayers.findIndex((player) => player.sessionId === profilePlayer.sessionId))] ?? PLAYER_COLORS[0] } as CSSProperties}>
-            <div className="player-profile-heading"><div><span className="turn-label">{incomingTradeOffer ? 'PROPOSTA RECEBIDA' : outgoingTradeOffer ? 'PROPOSTA ENVIADA' : 'NOVA PROPOSTA'}</span><h2>{incomingTradeOffer || outgoingTradeOffer ? tradeCounterparty?.name ?? 'Jogador' : profilePlayer.name}</h2></div><button className="trade-close" aria-label="Fechar troca" onClick={() => { setProfilePlayerSessionId(''); setShowTradePanel(false); setTradeBoardSelectionTarget(null) }}>×</button></div>
-            {incomingTradeOffer && tradeOffer && <section className="profile-offer-card" aria-label="Proposta recebida"><span className="turn-label">PROPOSTA RECEBIDA</span><h3>{tradeCounterparty?.name ?? 'Jogador'} propõe uma troca</h3><p>Você entrega {formatMoney(tradeOffer.cashRequested)}{tradeOffer.propertiesRequested.length ? ` e ${tradeOffer.propertiesRequested.map((id) => boardSpaces[id].name).join(', ')}` : ''}. Você recebe {formatMoney(tradeOffer.cashOffered)}{tradeOffer.propertiesOffered.length ? ` e ${tradeOffer.propertiesOffered.map((id) => boardSpaces[id].name).join(', ')}` : ''}.</p><div className="trade-actions"><button className="roll-button" onClick={() => room?.send('tradeAccept', { offerId: tradeOffer.id })}>Aceitar</button><button className="secondary-action" onClick={() => room?.send('tradeReject', { offerId: tradeOffer.id })}>Recusar</button></div></section>}
-            {outgoingTradeOffer && tradeOffer && <section className="profile-offer-card" aria-label="Proposta enviada"><span className="turn-label">PROPOSTA PENDENTE</span><h3>Aguardando {tradeCounterparty?.name ?? 'jogador'}</h3><p>A proposta fica disponível até a outra pessoa responder. Você pode cancelá-la quando quiser.</p><button className="secondary-action trade-full-button" onClick={() => room?.send('tradeCancel', { offerId: tradeOffer.id })}>Cancelar proposta</button></section>}
-            {tradeOffer && !incomingTradeOffer && !outgoingTradeOffer && <p className="trade-note">Já existe outra proposta aguardando resposta.</p>}
-            {showTradePanel && !tradeOffer && profilePlayer.sessionId !== localSessionId && <section className="profile-trade-composer" aria-label={`Proposta para ${profilePlayer.name}`}>
-              <div className="trade-columns">
-                <div>
-                  <MoneyStepper label="VOCÊ OFERECE · DINHEIRO" value={Number(tradeCashOffered)} maximum={availableCash(localPlayer)} onChange={(value) => setTradeCashOffered(String(value))} />
-                  <label className="trade-label">IMÓVEIS QUE VOCÊ OFERECE</label>
-                  <button type="button" className={`secondary-action trade-board-select${tradeBoardSelectionTarget === 'offer' ? ' selected' : ''}`} aria-pressed={tradeBoardSelectionTarget === 'offer'} disabled={!tradeOfferChoices.length} onClick={() => setTradeBoardSelectionTarget((current) => current === 'offer' ? null : 'offer')}>{tradeBoardSelectionTarget === 'offer' ? 'Concluir seleção' : `Selecionar no tabuleiro · ${tradePropertiesOffered.length}`}</button>
-                  <div className="trade-property-list">{myProperties.length ? myProperties.map(({ spaceId, space }) => <div className={`trade-property-summary${tradePropertiesOffered.includes(spaceId) ? ' selected' : ''}${isTradePropertyLocked(spaceId) ? ' locked' : ''}`} key={`offer-${spaceId}`}><span>{space.name}</span><small>{isTradePropertyLocked(spaceId) ? 'Venda construções primeiro' : tradePropertiesOffered.includes(spaceId) ? 'Selecionado no tabuleiro' : 'Casa livre para oferecer'}</small></div>) : <small>Você não tem imóveis.</small>}</div>
-                </div>
-                <div>
-                  <MoneyStepper label="VOCÊ PEDE · DINHEIRO" value={Number(tradeCashRequested)} maximum={availableCash(tradeTarget)} onChange={(value) => setTradeCashRequested(String(value))} />
-                  <label className="trade-label">IMÓVEIS QUE VOCÊ PEDE</label>
-                  <button type="button" className={`secondary-action trade-board-select${tradeBoardSelectionTarget === 'request' ? ' selected' : ''}`} aria-pressed={tradeBoardSelectionTarget === 'request'} disabled={!tradeRequestChoices.length} onClick={() => setTradeBoardSelectionTarget((current) => current === 'request' ? null : 'request')}>{tradeBoardSelectionTarget === 'request' ? 'Concluir seleção' : `Selecionar no tabuleiro · ${tradePropertiesRequested.length}`}</button>
-                  <div className="trade-property-list">{targetProperties.length ? targetProperties.map(({ spaceId, space }) => <div className={`trade-property-summary${tradePropertiesRequested.includes(spaceId) ? ' selected' : ''}${isTradePropertyLocked(spaceId) ? ' locked' : ''}`} key={`request-${spaceId}`}><span>{space.name}</span><small>{isTradePropertyLocked(spaceId) ? 'Venda construções primeiro' : tradePropertiesRequested.includes(spaceId) ? 'Selecionado no tabuleiro' : 'Casa disponível para pedir'}</small></div>) : <small>Este jogador não tem imóveis.</small>}</div>
-                </div>
-              </div>
-              <p className="trade-note">Os títulos são transferidos sem construções. A troca só acontece se a outra pessoa aceitar.</p>{error && <p className="form-error" role="alert">{error}</p>}
-              <button className="roll-button trade-full-button" disabled={!tradeTarget || Boolean(tradeOffer) || auctionId > 0} onClick={() => { room?.send('tradeOffer', { toSessionId: tradeTarget?.sessionId, cashOffered: Number(tradeCashOffered), cashRequested: Number(tradeCashRequested), propertiesOffered: tradePropertiesOffered, propertiesRequested: tradePropertiesRequested }); setError('') }}>Enviar proposta</button>
-            </section>}
-          </aside>}
           {turnPhase !== 'ended' && !feedbackPending && ((turnPhase === 'roll' && isMyTurn) || (isHost && devModeEnabled)) && <div className={`roll-control${isHost && devModeEnabled ? ' roll-control-dev' : ''}`}>
             {turnPhase === 'roll' && isMyTurn && <button className="roll-control-button" type="button" onClick={() => room?.send('roll')}>Girar dados</button>}
             {isHost && devModeEnabled && turnPhase === 'roll' && <form className="dev-dice-controls" aria-label="Forçar resultado dos dados" onSubmit={(event) => { event.preventDefault(); room?.send('devRoll', { diceOne: forcedDice[0], diceTwo: forcedDice[1] }) }}>
@@ -1278,7 +1174,6 @@ function App() {
           {isMyTurn && !showTransientReveal && !feedbackPending && turnPhase === 'world-tour' && <div className="map-choice-prompt" role="status">Toque em uma casa iluminada para escolher o destino</div>}
           {isMyTurn && !showTransientReveal && !feedbackPending && turnPhase === 'card-target' && propertyTargetCard && selectedCardPropertyId === null && cardPropertyChoices.length > 0 && <div className="map-choice-prompt" role="status">Toque em uma propriedade iluminada para escolher o alvo da carta</div>}
           {isMyTurn && !showTransientReveal && !feedbackPending && turnPhase === 'debt' && debtPropertyChoices.length > 0 && <div className="map-choice-prompt" role="status">Toque em uma propriedade iluminada para liquidá-la</div>}
-          {tradeBoardSelectionTarget && showTradePanel && <div className="map-choice-prompt" role="status">Toque nas propriedades iluminadas para {tradeBoardSelectionTarget === 'offer' ? 'incluí-las na sua oferta' : 'incluí-las no pedido'}</div>}
           {portfolioBoardSelection && <div className="map-choice-prompt" role="status">Toque numa propriedade sua iluminada para abrir as opções <button type="button" onClick={() => setPortfolioBoardSelection(false)}>Cancelar</button></div>}
           {showTransientReveal && <div className="card-reveal-backdrop" role="button" tabIndex={0} aria-label="Fechar carta e continuar" onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') dismissTransientReveal() }}><article className="game-event-card" aria-live="polite"><span className="event-card-kicker">{getRevealKicker(revealKind!)}</span><div className="event-card-art" aria-hidden="true">{revealKind === 'world-cup' ? '✦' : revealKind === 'world-tour' ? '↗' : '◆'}</div><h2>{revealKind === 'event' ? activeCardTitle : revealKind === 'world-cup' ? 'Escolha a sede' : 'Escolha para onde viajar'}</h2><p>{revealKind === 'event' ? activeCardDescription : revealKind === 'world-cup' ? 'Toque em uma propriedade sua iluminada no tabuleiro. O aluguel dela vale duas vezes.' : 'Toque em uma casa iluminada. Propriedades de outras pessoas ficam indisponíveis.'}</p><small>Toque em qualquer lugar para continuar · {turnSeconds || 15}s</small></article></div>}
           <div className="game-bottom"><span className="game-sync-label">JOGADA SINCRONIZADA · {modeDetails[mode].title.toUpperCase()}</span><button className="leave-button" onClick={() => void leaveRoom()}>Sair da mesa</button></div>

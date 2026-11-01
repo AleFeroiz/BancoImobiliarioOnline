@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { getThrowableAimPoint, getThrowableFlightPoint } from './throwableTrajectory'
+import { advanceThrowableElapsed, getThrowableAimPoint, getThrowableFlightPoint } from './throwableTrajectory'
 
 describe('trajetória dos objetos arremessados', () => {
   it('parte e mira na posição visual atual das fichas em movimento', () => {
@@ -20,5 +20,11 @@ describe('trajetória dos objetos arremessados', () => {
   it('mantém a interpolação dentro do intervalo da animação', () => {
     expect(getThrowableFlightPoint([0, 1, 0], [4, 1, 0], -1)).toEqual([0, 1, 0])
     expect(getThrowableFlightPoint([0, 1, 0], [4, 1, 0], 2)).toEqual([4, 1, 0])
+  })
+
+  it('evita que uma pausa ou frame longo pule toda a animação do próximo projétil', () => {
+    expect(advanceThrowableElapsed(0, 0.9, 0.52)).toBeCloseTo(0.05)
+    expect(advanceThrowableElapsed(0.5, 0.05, 0.52)).toBeCloseTo(0.52)
+    expect(advanceThrowableElapsed(0, Number.NaN, 0.52)).toBe(0)
   })
 })

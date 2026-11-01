@@ -8,7 +8,7 @@ Este documento descreve somente as regras atuais do BANTEC. Referências ao Expr
 - Há um modo de jogo. No lobby, a anfitriã escolhe 15 minutos, 30 minutos, 1 hora ou sem limite de tempo; cada participante começa com R$ 2.000.000.
 - A partida termina imediatamente se alguém completar um Monopólio em Linha, dois Monopólios Regionais ou possuir as quatro companhias. Se o relógio zerar, a resolução já iniciada termina e vence quem tiver maior patrimônio; dívidas continuam até serem quitadas ou levarem à falência.
 - Para o desempate pelo tempo, compara-se dinheiro disponível + preço de compra dos títulos ainda possuídos + valor de venda das construções (metade do custo pago por construção). Empates seguem para decisão nos dados; se os resultados continuarem iguais, o servidor escolhe aleatoriamente entre as pessoas empatadas.
-- O servidor controla ordem, dados, movimento, compras, pagamentos, cartas, trocas e encerramento. Dados repetidos numa rolagem normal permitem nova jogada depois da resolução; a terceira dupla consecutiva leva diretamente à Prisão sem avançar.
+- O servidor controla ordem, dados, movimento, compras, pagamentos, cartas, leilões e encerramento. Dados repetidos numa rolagem normal permitem nova jogada depois da resolução; a terceira dupla consecutiva leva diretamente à Prisão sem avançar.
 - A tela final informa se a partida encerrou por tempo, falência, Monopólio em Linha, Monopólio Duplo Regional, posse das quatro companhias ou ausência de participantes solventes.
 
 ## Tabuleiro e percurso
@@ -28,6 +28,7 @@ Este documento descreve somente as regras atuais do BANTEC. Referências ao Expr
 - As companhias são AgroBrasil, Aviação Brasil, Energia Brasil e Mineração Brasil. Cada uma custa R$ 500.000. Ao cair numa companhia, o servidor rola um novo D6; o aluguel é R$ 50.000 multiplicados pela quantidade de companhias do dono e pelo resultado do dado. A quantidade máxima é três, pois possuir as quatro encerra a partida com vitória.
 - As quatro taxas cobram por imóvel que a pessoa possui: R$ 10.000, R$ 15.000, R$ 20.000 e R$ 25.000. Cidades e companhias contam; construções não. Títulos já vendidos ou devolvidos ao banco não contam.
 - Ao cair num imóvel de outra pessoa, primeiro se paga o aluguel normal ao dono. Depois, se ainda houver saldo para pagar 2× o investimento total da propriedade e ela não tiver hotel, aparece a opção de recompra. O valor integral da recompra vai diretamente ao dono, sem depender da aceitação dele; a posse passa ao comprador. Hotel impede recompra. Se o aluguel entrar em dívida, a opção só aparece depois que a dívida for quitada e se restar saldo suficiente. Após recomprar uma cidade residencial, o novo dono pode pagar para construir nela durante essa mesma chegada, respeitando a primeira volta, os limites do nível e o saldo.
+- Efeitos temporários de cartas só podem ficar em propriedades com dono. Se uma cidade voltar ao banco, todos os efeitos ligados a ela são removidos; o Festival é permanente e continua associado à cidade mesmo enquanto estiver livre.
 
 ## Dívidas e falência
 
@@ -66,12 +67,11 @@ O servidor sorteia com reposição entre estas quatorze cartas autorais:
 
 Proteção bloqueia qualquer efeito de carta, inclusive Generoso. Apagão e Proteção duram os três próximos turnos do dono. As cartas de dobro e desconto se acumulam multiplicativamente e são consumidas juntas no próximo aluguel devido; duas cartas pendentes de efeitos opostos se cancelam. Elas também modificam aluguéis de companhias e incidem sobre o valor final após os demais multiplicadores. Se o relógio expirar durante uma escolha de carta, o servidor sorteia uma das opções válidas; se não houver opção, encerra o efeito. A seleção manual de qualquer propriedade-alvo acontece diretamente no tabuleiro com o padrão de opções iluminadas/apagadas; alvos que sejam pessoas são selecionados pelos controles de participantes.
 
-## Ações e negociação
+## Ações durante a partida
 
 - Ao clicar numa cidade, qualquer pessoa pode inspecionar preço, construção, aluguel e dono, inclusive durante o turno de outra pessoa. Clicar no cartão de uma pessoa ilumina suas cidades próprias e escurece os demais espaços; clicar outra vez no mesmo cartão remove o destaque. A lateral não tem botão Bens.
 - Durante a partida, cada pessoa pode escolher tomate, ovo, lama ou farinha no controle ao lado do cartão de outro participante para lançar o objeto em sua ficha. O lançamento é cosmético: não altera saldo, turno ou regras; somente o alvo vê o efeito de impacto, que dura três segundos e não bloqueia controles. A sala impõe intervalo de cinco segundos entre lançamentos do mesmo remetente para o mesmo alvo.
 - Durante o próprio turno, fora de rolagem, movimento, compra ou dívida, a pessoa pode abrir um leilão voluntário de propriedade sua. O vendedor escolhe o lance inicial; lances devem aumentar pelo menos R$ 10.000 e ficam reservados por 20 segundos. A maior oferta compra o título; sem oferta, o dono o mantém. Construções do grupo precisam ser vendidas antes de leiloar um título.
-- Propostas de troca de dinheiro e títulos podem ser enviadas após destacar uma pessoa no cartão e usar a ação contextual Troca. Há uma proposta ativa por sala; ela fica aberta até ser aceita, recusada, cancelada pelo remetente, ou encerrada por falência/fim de partida. O servidor valida títulos, construções e saldos ao enviar e aceitar.
 - A anfitriã pode ativar o modo DEV no lobby. Quando ativo, apenas ela pode forçar os dados durante a rolagem válida; o servidor verifica anfitriã, jogador ativo e valores.
 - A velocidade visual compartilhada é 0,5×, 1× ou 2×. O turno dá 20 segundos para rolar e até 15 segundos para cada decisão. Se alguém não agir, a compra é recusada, a Prisão aguarda, ações obrigatórias são concluídas e a dívida avança pela próxima liquidação disponível.
 - Se uma pessoa desconectar ou sair durante a partida, a cadeira e os bens permanecem e um bot passa a controlá-la. O cartão do jogador informa “BOT NO CONTROLE”. Para recuperar o controle, a pessoa entra novamente no mesmo código de sala e usa exatamente o mesmo nome (a comparação distingue maiúsculas de minúsculas); a conexão assume a cadeira existente e preserva o estado da partida.
@@ -84,7 +84,7 @@ Proteção bloqueia qualquer efeito de carta, inclusive Generoso. Apagão e Prot
 - O lobby oferece 12 cores e 14 fichas cosméticas (peão, carrinho, moto, avião, sapato de salto, trem, cartola, cofrinho, navio, patinho de borracha, cachorro, gato, vaca e pinguim). A escolha visual não afeta as regras.
 - A FATEC Itapetininga fica no centro como modelo visual dos três blocos e da torre mostrados nas imagens de referência. Não ocupa casa de jogo. Os dados ficam suspensos pouco acima dos prédios durante a rolagem.
 - O modo noturno escurece a home e o lobby. Na partida, altera somente o fundo externo, sem escurecer o tabuleiro. A preferência é local e pode ser alterada durante o jogo.
-- Config, Emote e Regras ficam em botões quadrados na lateral; a ação contextual Troca aparece quando uma pessoa está selecionada. A interface adapta-se ao celular. Movimento reduzido, áudio e qualidade gráfica são controles locais.
+- Config, Emote e Regras ficam em botões quadrados na lateral. Uma seta 3D animada marca o destino após a rolagem e uma seta menor, na cor da pessoa ativa, aponta para o peão da vez. A interface adapta-se ao celular. Movimento reduzido, áudio e qualidade gráfica são controles locais.
 - A câmera gira por mouse/toque na área do tabuleiro e usa a roda/pinça para zoom; botões e painéis interativos não devem iniciar rotação.
 
 ## Escopo removido e referências

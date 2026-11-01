@@ -14,3 +14,10 @@ export function adjustAuctionStartingBid(currentValue: string, direction: -1 | 1
   const current = Number.isFinite(parsed) ? parsed : minimumBid
   return String(Math.max(minimumBid, current + direction * step))
 }
+
+export function getAuctionStartBlockReason(canAuctionNow: boolean, groupHasBuildings: boolean, startingBid: number, minimumBid = AUCTION_MIN_BID_INCREMENT) {
+  if (groupHasBuildings) return 'Venda todas as casas e hotéis do grupo antes de leiloar uma cidade dele.'
+  if (!canAuctionNow) return 'O leilão só pode começar durante seu turno, depois da animação e fora de outra ação.'
+  if (!Number.isSafeInteger(startingBid) || startingBid < minimumBid) return `O lance inicial mínimo é ${minimumBid.toLocaleString('pt-BR')}.`
+  return null
+}

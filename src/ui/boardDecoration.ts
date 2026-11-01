@@ -2,6 +2,10 @@ export const BOARD_SURFACE_Y = 0.16
 export const BUILDING_GROUP_Y = BOARD_SURFACE_Y
 export const BUILDING_MODEL_Y_OFFSET = 0.2
 
+export function getPropertyModelYOffset(houses: number) {
+  return houses === 0 ? 0 : BUILDING_MODEL_Y_OFFSET
+}
+
 export type BoardSpaceDecoration = {
   tileRotation: number
   labelRotation: number

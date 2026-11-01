@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { BOARD_SURFACE_Y, BUILDING_GROUP_Y, BUILDING_MODEL_Y_OFFSET, getBoardSpaceDecoration } from './boardDecoration'
+import { BOARD_SURFACE_Y, BUILDING_GROUP_Y, BUILDING_MODEL_Y_OFFSET, getBoardSpaceDecoration, getPropertyModelYOffset } from './boardDecoration'
 
 describe('orientação das casas do tabuleiro', () => {
   it('coloca construções na borda interna em cada lado', () => {
@@ -13,6 +13,14 @@ describe('orientação das casas do tabuleiro', () => {
     const modelBaseY = BUILDING_GROUP_Y + BUILDING_MODEL_Y_OFFSET + 0.0005 * 1.16
     expect(modelBaseY).toBeCloseTo(BOARD_SURFACE_Y + 0.20058)
     expect(modelBaseY).toBeGreaterThan(BOARD_SURFACE_Y)
+  })
+
+  it('assenta o terreno no piso e mantém casas e hotel elevados', () => {
+    const terrainBaseY = BUILDING_GROUP_Y + getPropertyModelYOffset(0) + 0.0005 * 1.16
+    expect(terrainBaseY).toBeCloseTo(BOARD_SURFACE_Y + 0.00058)
+    expect(terrainBaseY).toBeLessThan(BOARD_SURFACE_Y + 0.01)
+    expect(getPropertyModelYOffset(1)).toBe(BUILDING_MODEL_Y_OFFSET)
+    expect(getPropertyModelYOffset(4)).toBe(BUILDING_MODEL_Y_OFFSET)
   })
 
   it('alinha rótulos e fachadas para fora e organiza o modelo pelo eixo da borda', () => {

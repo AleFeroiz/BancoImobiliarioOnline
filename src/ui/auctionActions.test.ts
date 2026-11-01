@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { adjustAuctionStartingBid, normalizeAuctionBidInput } from './auctionActions'
+import { adjustAuctionStartingBid, getAuctionStartBlockReason, normalizeAuctionBidInput } from './auctionActions'
 
 describe('lance de leilão', () => {
   it('avança o valor sugerido quando outro lance eleva o mínimo', () => {
@@ -18,5 +18,12 @@ describe('lance de leilão', () => {
     expect(adjustAuctionStartingBid('400000', 1, 10_000)).toBe('410000')
     expect(adjustAuctionStartingBid('400000', -1, 10_000)).toBe('390000')
     expect(adjustAuctionStartingBid('10000', -1, 10_000)).toBe('10000')
+  })
+
+  it('explica por que um leilão não pode começar', () => {
+    expect(getAuctionStartBlockReason(true, true, 500_000)).toContain('Venda todas as casas e hotéis')
+    expect(getAuctionStartBlockReason(false, false, 500_000)).toContain('durante seu turno')
+    expect(getAuctionStartBlockReason(true, false, 0)).toContain('lance inicial mínimo')
+    expect(getAuctionStartBlockReason(true, false, 500_000)).toBeNull()
   })
 })
