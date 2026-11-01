@@ -1,11 +1,30 @@
 import { describe, expect, it } from 'vitest'
 import { boardSpaces } from './board.js'
-import { ANIMATION_SPEEDS, DEFAULT_ANIMATION_SPEED, DICE_ANIMATION_DURATION_MS, FESTIVAL_CITY_COUNT, MATCH_DURATIONS, PAWN_STEP_ANIMATION_DURATION_MS, TURN_DECISION_SECONDS, areDiceDoubles, calculateCompanyRent, calculateNetWorth, calculateRent, chooseFestivalCityIds, constructionCost, forcedBuybackCost, getAnimationDuration, getMatchEndSummary, getMonopolyWinReason, hasWinningMonopoly, isAnimationSpeed, isMatchDuration, liquidatablePropertyIds } from './game.js'
+import { ANIMATION_SPEEDS, DEFAULT_ANIMATION_SPEED, DICE_ANIMATION_DURATION_MS, FESTIVAL_CITY_COUNT, MATCH_DURATIONS, PAWN_STEP_ANIMATION_DURATION_MS, TURN_DECISION_SECONDS, applyRentMultiplier, areDiceDoubles, calculateCompanyRent, calculateNetWorth, calculateRent, canBuildLevelAfterFirstLap, chooseFestivalCityIds, constructionCost, forcedBuybackCost, getAnimationDuration, getMatchEndSummary, getMonopolyWinReason, hasWinningMonopoly, isAnimationSpeed, isMatchDuration, liquidatablePropertyIds } from './game.js'
 
 describe('tentativas para sair da prisão', () => {
   it('reconhece dois dados iguais como duplas', () => {
     expect(areDiceDoubles([4, 4])).toBe(true)
     expect(areDiceDoubles([4, 5])).toBe(false)
+  })
+})
+
+describe('limite de construção da primeira volta', () => {
+  it('libera a terceira casa e o hotel somente após a primeira volta', () => {
+    expect(canBuildLevelAfterFirstLap(false, 2)).toBe(true)
+    expect(canBuildLevelAfterFirstLap(false, 3)).toBe(false)
+    expect(canBuildLevelAfterFirstLap(false, 4)).toBe(false)
+    expect(canBuildLevelAfterFirstLap(true, 3)).toBe(true)
+    expect(canBuildLevelAfterFirstLap(true, 4)).toBe(true)
+  })
+})
+
+describe('multiplicadores do próximo aluguel', () => {
+  it('aplica os efeitos acumulados ao aluguel final e arredonda para baixo', () => {
+    expect(applyRentMultiplier(125_000, 2)).toBe(250_000)
+    expect(applyRentMultiplier(125_000, 0.5)).toBe(62_500)
+    expect(applyRentMultiplier(125_000, 2 * 0.5)).toBe(125_000)
+    expect(applyRentMultiplier(1, 0.5)).toBe(0)
   })
 })
 
@@ -22,14 +41,14 @@ describe('velocidade da apresentação', () => {
   it('começa em 1x e aplica 0,5x e 2x proporcionalmente', () => {
     expect(DEFAULT_ANIMATION_SPEED).toBe(1)
     expect(ANIMATION_SPEEDS).toEqual([0.5, 1, 2])
-    expect(getAnimationDuration(DICE_ANIMATION_DURATION_MS, 0.5)).toBe(5_600)
-    expect(getAnimationDuration(DICE_ANIMATION_DURATION_MS, 1)).toBe(2_800)
-    expect(getAnimationDuration(DICE_ANIMATION_DURATION_MS, 2)).toBe(1_400)
+    expect(getAnimationDuration(DICE_ANIMATION_DURATION_MS, 0.5)).toBe(2_800)
+    expect(getAnimationDuration(DICE_ANIMATION_DURATION_MS, 1)).toBe(1_400)
+    expect(getAnimationDuration(DICE_ANIMATION_DURATION_MS, 2)).toBe(700)
     expect(PAWN_STEP_ANIMATION_DURATION_MS).toBe(375)
-    expect(getAnimationDuration(PAWN_STEP_ANIMATION_DURATION_MS, 0.5)).toBe(750)
-    expect(getAnimationDuration(PAWN_STEP_ANIMATION_DURATION_MS, 1)).toBe(375)
-    expect(getAnimationDuration(PAWN_STEP_ANIMATION_DURATION_MS, 2)).toBe(188)
-    expect(getAnimationDuration(DICE_ANIMATION_DURATION_MS, 0.75)).toBe(2_800)
+    expect(getAnimationDuration(PAWN_STEP_ANIMATION_DURATION_MS, 0.5)).toBe(375)
+    expect(getAnimationDuration(PAWN_STEP_ANIMATION_DURATION_MS, 1)).toBe(188)
+    expect(getAnimationDuration(PAWN_STEP_ANIMATION_DURATION_MS, 2)).toBe(94)
+    expect(getAnimationDuration(DICE_ANIMATION_DURATION_MS, 0.75)).toBe(1_400)
   })
 
   it('aceita somente as três velocidades disponíveis', () => {

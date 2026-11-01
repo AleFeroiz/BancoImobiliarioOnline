@@ -792,3 +792,9 @@
 - `npm run verify` passou: 258 testes em 49 arquivos, build web e build do servidor. O build mantém o aviso conhecido do chunk 3D acima de 500 kB.
 - Em partida local com Modo DEV e Bot 1, forcei uma rolagem de 7 casas em 1×; a ficha percorreu o tabuleiro e chegou a Belém, abrindo a compra da propriedade. A revisão confirmou o fluxo do movimento e o seletor em 1×; o tempo não foi medido com cronômetro quadro a quadro.
 - `npm run graphify -- update .` foi executado após a alteração de código. Servidores locais foram encerrados ao fim da revisão.
+
+# 2026-11-01 — Trava de terceira casa na primeira chegada e escala de velocidade
+
+- Teste de integração iniciou uma sala, começou a partida, forçou a primeira rolagem 1+2 e verificou a primeira chegada em Porto Velho. Comprar três casas foi rejeitado sem alterar saldo, propriedade ou fase; comprar duas casas foi aceito. O teste de regressão cobre o fluxo real desde o início, além da validação da ação final de compra na interface.
+- Na partida local pelo navegador, repeti o início, a rolagem 1+2 e confirmei visualmente o painel “Comprar Porto Velho”: “3 casas” desabilitada e aviso vermelho “3ª casa indisponível na primeira volta”. O botão de compra começa com terreno selecionado. A validação autoritativa do servidor impede a compra de três casas mesmo se um cliente enviar a ação diretamente.
+- Testes unitários verificaram as durações de animação em 0,5×/1×/2×; o peão usa 375/188/94 ms por casa. `npm run verify`: 270 testes em 49 arquivos passaram; build web e servidor passaram. O build web manteve o aviso conhecido do chunk de cena 3D acima de 500 kB. Graphify atualizado para 1.013 nós, 1.882 arestas e 73 comunidades.

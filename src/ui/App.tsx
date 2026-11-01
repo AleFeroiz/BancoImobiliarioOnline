@@ -10,7 +10,7 @@ import { getLobbyPlayerEntries } from './lobbySnapshot'
 import { canAffordPurchase } from './purchaseActions'
 import { adjustAuctionStartingBid, normalizeAuctionBidInput } from './auctionActions'
 import { boardSpaces, formatMoney } from '../game/board'
-import { ANIMATION_SPEEDS, AUCTION_MIN_BID_INCREMENT, DEFAULT_ANIMATION_SPEED, MATCH_DURATIONS, PROPERTY_BUILD_LEVELS, PROPERTY_HOTEL_LEVEL, START_BONUS, calculateCompanyRent, calculateRent, canBuildHotel, canBuildProperty, canSellBuilding, constructionCost, forcedBuybackCost, hasLiquidatableAssets, hotelConstructionCost, liquidatablePropertyIds, taxForSpace, type AnimationSpeed, type MatchDuration, type PropertyHolding } from '../../shared/game'
+import { ANIMATION_SPEEDS, AUCTION_MIN_BID_INCREMENT, DEFAULT_ANIMATION_SPEED, MATCH_DURATIONS, PROPERTY_BUILD_LEVELS, PROPERTY_HOTEL_LEVEL, START_BONUS, calculateCompanyRent, calculateRent, canBuildHotel, canBuildLevelAfterFirstLap, canBuildProperty, canSellBuilding, constructionCost, forcedBuybackCost, hasLiquidatableAssets, hotelConstructionCost, liquidatablePropertyIds, taxForSpace, type AnimationSpeed, type MatchDuration, type PropertyHolding } from '../../shared/game'
 import { PLAYER_COLORS } from './playerPalette'
 import { PLAYER_COLOR_NAMES } from '../../shared/playerColors'
 import { getCashToastPlacement, getGameSound, getLandingSpecialSound, getPropertyChangeSound, getPropertyVisualChange, formatCashDelta, type GameSound } from './gameFeedback'
@@ -39,7 +39,7 @@ import { HOME_REGION_ROUTE } from './homeRegionRoute'
 type Mode = GameMode
 type Screen = 'home' | 'room' | 'game'
 type TurnPhase = 'roll' | 'rolling' | 'moving' | 'resolve' | 'purchase' | 'buyback' | 'start-upgrade' | 'jail' | 'world-cup' | 'world-tour' | 'card-target' | 'debt' | 'ended'
-type SyncedPlayer = LobbyPlayer & { sessionId: string; cash: number; devInfiniteCash: boolean; isJailed: boolean; jailTurns: number; isBankrupt: boolean; finalCash: number; finalNetWorth: number; tieBreakRoll: number }
+type SyncedPlayer = LobbyPlayer & { sessionId: string; cash: number; devInfiniteCash: boolean; hasCompletedFirstLap: boolean; nextRentMultiplier: number; isJailed: boolean; jailTurns: number; isBankrupt: boolean; finalCash: number; finalNetWorth: number; tieBreakRoll: number }
 type TradeOfferView = { id: number; fromSessionId: string; toSessionId: string; cashOffered: number; cashRequested: number; propertiesOffered: number[]; propertiesRequested: number[] }
 type ThrowableEvent = { id: number; fromSessionId: string; toSessionId: string; object: ThrowableObject }
 type EarthquakeEvent = { id: number; spaceId: number; houses: number; ownerColor: string }
@@ -318,8 +318,8 @@ function App() {
     .sort((first, second) => first.spaceId - second.spaceId)
   const landedHolding = activePlayer && activeSpace.kind === 'property' ? holdingsById.get(activeSpace.id) : undefined
   const ownPropertyLanding = turnPhase === 'resolve' && activeSpace.kind === 'property' && pendingPropertyId === activeSpace.id && landedHolding?.ownerSessionId === activePlayerSessionId
-  const canBuildSelected = activePlayer && ownPropertyLanding ? canBuildProperty(activeSpace.id, activePlayerSessionId, holdingsById, availableCash(activePlayer), targetBuildHouses) : false
-  const canBuildHotelHere = activePlayer && ownPropertyLanding ? canBuildHotel(activeSpace.id, activePlayerSessionId, holdingsById, availableCash(activePlayer)) : false
+  const canBuildSelected = activePlayer && ownPropertyLanding ? canBuildLevelAfterFirstLap(Boolean(activePlayer.hasCompletedFirstLap), targetBuildHouses) && canBuildProperty(activeSpace.id, activePlayerSessionId, holdingsById, availableCash(activePlayer), targetBuildHouses) : false
+  const canBuildHotelHere = activePlayer && ownPropertyLanding ? Boolean(activePlayer.hasCompletedFirstLap) && canBuildHotel(activeSpace.id, activePlayerSessionId, holdingsById, availableCash(activePlayer)) : false
   const festivalSet = new Set(festivalSpaceIds)
   const purchaseRentOwnership = new Map(Array.from(roomProperties.entries()).map(([id, holding]) => [Number(id), holding.ownerSessionId]))
   if (pendingPurchaseSpace?.kind === 'property') purchaseRentOwnership.set(pendingPurchaseSpace.id, '__preview__')
@@ -1070,9 +1070,10 @@ function App() {
               <h2>{activeSpace.name}</h2>
               <p>Você caiu no seu terreno. Escolha até três casas para construir agora. Hotel só fica disponível numa próxima visita, depois das três casas.</p>
               <div className="property-build-levels" role="group" aria-label="Nível de construção desejado">
-                {[1, 2, 3].filter((level) => level > (landedHolding?.houses ?? 0)).map((level) => <button key={level} className={`property-level-option ${targetBuildHouses === level ? 'selected' : ''}`} onClick={() => setTargetBuildHouses(level)}><span>{level === 1 ? '1 casa' : `${level} casas`}</span><small>+{formatMoney((level - (landedHolding?.houses ?? 0)) * constructionCost(activeSpace.id))}</small></button>)}
+                {[1, 2, 3].filter((level) => level > (landedHolding?.houses ?? 0)).map((level) => <button key={level} className={`property-level-option ${targetBuildHouses === level ? 'selected' : ''}`} disabled={!canBuildLevelAfterFirstLap(Boolean(localPlayer?.hasCompletedFirstLap), level)} onClick={() => setTargetBuildHouses(level)}><span>{level === 1 ? '1 casa' : `${level} casas`}</span><small>+{formatMoney((level - (landedHolding?.houses ?? 0)) * constructionCost(activeSpace.id))}</small></button>)}
                 {(landedHolding?.houses ?? 0) === 3 && <button className="property-level-option hotel-level-option" onClick={() => room?.send('build', { propertyId: activeSpace.id, hotel: true })} disabled={!isMyTurn || !canBuildHotelHere}><span>Hotel</span><small>{formatMoney(hotelConstructionCost(activeSpace.id))}</small></button>}
               </div>
+              {!localPlayer?.hasCompletedFirstLap && <p className="purchase-lap-warning" role="status">3ª casa e hotel indisponíveis na primeira volta. Complete uma volta pela Partida para liberar.</p>}
               <div className="space-facts"><div><small>ALUGUEL POR PARADA</small><strong>{activeSpace.company ? formatMoney(calculateCompanyRent(rentOwnership, landedHolding?.ownerSessionId ?? '')) : landedHolding?.blackoutTurns && landedHolding.houses !== PROPERTY_HOTEL_LEVEL ? formatMoney(0) : formatMoney(calculateRent(activeSpace.id, rentOwnership, landedHolding?.houses ?? 0, worldCupSpaceId, festivalSet))}</strong></div><div><small>PRÓXIMA CONSTRUÇÃO</small><strong>{landedHolding?.houses === PROPERTY_HOTEL_LEVEL ? 'Hotel' : formatMoney(constructionCost(activeSpace.id))}</strong></div></div>
               <div className="purchase-actions property-decision-actions"><button className="roll-button" onClick={() => room?.send('build', { propertyId: activeSpace.id, targetHouses: targetBuildHouses })} disabled={!isMyTurn || !canBuildSelected}>Construir <span>{formatMoney(Math.max(0, targetBuildHouses - (landedHolding?.houses ?? 0)) * constructionCost(activeSpace.id))}</span></button><button className="secondary-action" onClick={() => room?.send('finishTurn')} disabled={!isMyTurn}>Concluir vez</button></div>
               {landedHolding?.houses === PROPERTY_HOTEL_LEVEL && <p className="purchase-hint">Este terreno já tem hotel.</p>}
@@ -1133,8 +1134,10 @@ function App() {
                 {pendingPurchaseSpace.buildable && <div className="property-build-levels purchase-level-options" role="group" aria-label="Pacotes de terreno e casas">{Array.from({ length: PROPERTY_BUILD_LEVELS + 1 }, (_, houses) => {
                   const total = (pendingPurchaseSpace.price ?? 0) + houses * constructionCost(pendingPurchaseSpace.id)
                   const rent = calculateRent(pendingPurchaseSpace.id, purchaseRentOwnership, houses, worldCupSpaceId, festivalSet)
-                  return <button key={houses} className={`property-level-option purchase-choice ${pendingPurchaseHouses === houses ? 'selected' : ''}`} aria-pressed={pendingPurchaseHouses === houses} disabled={!canAffordPurchase(availableCash(localPlayer), total)} onClick={() => setPendingPurchaseHouses(houses)}><span>{houses === 0 ? 'Terreno' : houses === 1 ? '1 casa' : `${houses} casas`}</span><span className="property-choice-houses" aria-hidden="true">{houses === 0 ? <i className="property-choice-flag" /> : Array.from({ length: houses }, (_, index) => <i key={index} />)}</span><small>Aluguel · {formatMoney(rent)}</small><b>{formatMoney(total)}</b></button>
+                  const firstLapLocked = !canBuildLevelAfterFirstLap(Boolean(localPlayer?.hasCompletedFirstLap), houses)
+                  return <button key={houses} className={`property-level-option purchase-choice ${pendingPurchaseHouses === houses ? 'selected' : ''}`} aria-pressed={pendingPurchaseHouses === houses} disabled={firstLapLocked || !canAffordPurchase(availableCash(localPlayer), total)} onClick={() => setPendingPurchaseHouses(houses)}><span>{houses === 0 ? 'Terreno' : houses === 1 ? '1 casa' : `${houses} casas`}</span><span className="property-choice-houses" aria-hidden="true">{houses === 0 ? <i className="property-choice-flag" /> : Array.from({ length: houses }, (_, index) => <i key={index} />)}</span><small>Aluguel · {formatMoney(rent)}</small><b>{formatMoney(total)}</b></button>
                 })}</div>}
+                {!localPlayer?.hasCompletedFirstLap && pendingPurchaseSpace.buildable && <p className="purchase-lap-warning" role="status">3ª casa indisponível na primeira volta. Complete uma volta pela Partida para liberar a construção.</p>}
                 <div className="purchase-rent-preview"><span>ALUGUEL COM ESTA ESCOLHA</span><strong>{formatMoney(pendingPurchaseRent)} <small>/ parada</small></strong></div>
               </>}
               {presentationStage !== 'idle' && turnPhase !== 'ended' ? (
@@ -1170,7 +1173,8 @@ function App() {
               ) : turnPhase === 'start-upgrade' ? (
                 <div className="purchase-actions">
                   <p>{pendingBuybackHolding ? `Parar exatamente na Partida permite melhorar ${boardSpaces[pendingPropertyId]?.name}. A melhoria é opcional e custa ${formatMoney(pendingBuybackHolding.houses === PROPERTY_BUILD_LEVELS ? hotelConstructionCost(pendingPropertyId) : constructionCost(pendingPropertyId))}.` : 'Não há cidade disponível para melhorar.'}</p>
-                  <button className="roll-button" onClick={() => room?.send('startUpgrade', { accept: true })} disabled={!isMyTurn || !pendingBuybackHolding || availableCash(localPlayer) < (pendingBuybackHolding.houses === PROPERTY_BUILD_LEVELS ? hotelConstructionCost(pendingPropertyId) : constructionCost(pendingPropertyId))}>Melhorar <span>{pendingBuybackHolding ? formatMoney(pendingBuybackHolding.houses === PROPERTY_BUILD_LEVELS ? hotelConstructionCost(pendingPropertyId) : constructionCost(pendingPropertyId)) : '—'}</span></button>
+                  {!localPlayer?.hasCompletedFirstLap && pendingBuybackHolding && pendingBuybackHolding.houses >= 2 && <p className="purchase-lap-warning" role="status">3ª casa e hotel indisponíveis na primeira volta. Complete uma volta pela Partida para liberar.</p>}
+                  <button className="roll-button" onClick={() => room?.send('startUpgrade', { accept: true })} disabled={!isMyTurn || !pendingBuybackHolding || !canBuildLevelAfterFirstLap(Boolean(localPlayer?.hasCompletedFirstLap), pendingBuybackHolding.houses + 1) || availableCash(localPlayer) < (pendingBuybackHolding.houses === PROPERTY_BUILD_LEVELS ? hotelConstructionCost(pendingPropertyId) : constructionCost(pendingPropertyId))}>Melhorar <span>{pendingBuybackHolding ? formatMoney(pendingBuybackHolding.houses === PROPERTY_BUILD_LEVELS ? hotelConstructionCost(pendingPropertyId) : constructionCost(pendingPropertyId)) : '—'}</span></button>
                   <button className="secondary-action" onClick={() => room?.send('startUpgrade', { accept: false })} disabled={!isMyTurn}>Recusar melhoria</button>
                 </div>
               ) : turnPhase === 'debt' ? (
@@ -1189,7 +1193,7 @@ function App() {
                       <button className="roll-button" onClick={() => room?.send('roll')} disabled={!isMyTurn}>Lançar dados <span>↗</span></button>
                     ) : turnPhase === 'purchase' ? (
                       <div className="purchase-actions">
-                        <button className="roll-button" onClick={() => room?.send('buy', { houses: pendingPurchaseHouses })} disabled={!isMyTurn || !canAffordPendingPurchase}>Comprar <span>{formatMoney(pendingPurchasePrice)}</span></button>
+                        <button className="roll-button" onClick={() => room?.send('buy', { houses: pendingPurchaseHouses })} disabled={!isMyTurn || !canBuildLevelAfterFirstLap(Boolean(localPlayer?.hasCompletedFirstLap), pendingPurchaseHouses) || !canAffordPendingPurchase}>Comprar <span>{formatMoney(pendingPurchasePrice)}</span></button>
                         <button className="secondary-action" onClick={() => room?.send('declinePurchase')} disabled={!isMyTurn}>Não comprar</button>
                       </div>
                     ) : (

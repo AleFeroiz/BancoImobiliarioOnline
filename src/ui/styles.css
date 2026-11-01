@@ -783,6 +783,7 @@ button:disabled{opacity:.55;cursor:not-allowed}
 .screen-game .purchase-panel h2{margin-bottom:4px}
 .screen-game .purchase-panel>p{margin-bottom:7px}
 .purchase-panel .purchase-level-options{gap:7px;margin:9px 0 10px}
+.purchase-lap-warning{margin:4px 0 8px!important;color:#b42318!important;font-size:10px!important;font-weight:700;line-height:1.35!important}
 .purchase-panel .purchase-choice{min-height:92px;grid-template-rows:auto 20px auto auto;gap:3px;padding:7px 3px;border-radius:11px;transition:background .16s,border-color .16s,transform .16s}
 .purchase-panel .purchase-choice:hover:not(:disabled){transform:translateY(-2px);border-color:#a7b38e;background:#f4f4e8}
 .purchase-panel .purchase-choice:disabled{cursor:not-allowed;opacity:.4;filter:grayscale(.75)}

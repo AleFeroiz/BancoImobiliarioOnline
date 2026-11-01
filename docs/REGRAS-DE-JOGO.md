@@ -23,7 +23,7 @@ Este documento descreve somente as regras atuais do BANTEC. Referências ao Expr
 ## Compra, construções e rendas
 
 - Ao parar numa cidade livre, a pessoa escolhe comprar ou recusar. Recusada, ela permanece livre.
-- A compra e os custos de melhoria seguem uma curva inspirada nas cidades observadas de Business Tour, interpolada pela ordem de preço para as 24 cidades do BANTEC. Cada nível de construção acrescenta ao aluguel o valor específico daquele nível; os valores não são percentuais uniformes do preço. Novas casas só podem ser compradas quando a pessoa voltar ao imóvel. O hotel exige três casas e visita posterior; seu custo é o valor configurado para a cidade e substitui as três casas.
+- A compra e os custos de melhoria seguem uma curva inspirada nas cidades observadas de Business Tour, interpolada pela ordem de preço para as 24 cidades do BANTEC. Cada nível de construção acrescenta ao aluguel o valor específico daquele nível; os valores não são percentuais uniformes do preço. Novas casas só podem ser compradas quando a pessoa voltar ao imóvel. Na primeira volta individual, cada pessoa pode construir até duas casas; a terceira casa e o hotel ficam liberados depois que ela completar uma volta por movimento normal e cruzar a Partida. Teletransportes ou cartas que levem a pessoa através da Partida não contam como volta completa. A tentativa de comprar a terceira casa antes disso é bloqueada com aviso no painel. O hotel exige três casas e visita posterior; seu custo é o valor configurado para a cidade e substitui as três casas.
 - Monopólio Regional, festival e sede da Copa do Mundo dobram cada um o aluguel calculado e seus multiplicadores se acumulam. Três cidades aleatórias são marcadas como festivais no início da partida.
 - As companhias são AgroBrasil, Aviação Brasil, Energia Brasil e Mineração Brasil. Cada uma custa R$ 500.000. Ao cair numa companhia, o servidor rola um novo D6; o aluguel é R$ 50.000 multiplicados pela quantidade de companhias do dono e pelo resultado do dado. A quantidade máxima é três, pois possuir as quatro encerra a partida com vitória.
 - As quatro taxas cobram por imóvel que a pessoa possui: R$ 10.000, R$ 15.000, R$ 20.000 e R$ 25.000. Cidades e companhias contam; construções não. Títulos já vendidos ou devolvidos ao banco não contam.
@@ -45,7 +45,7 @@ Este documento descreve somente as regras atuais do BANTEC. Referências ao Expr
 
 ## Cartas Sorte ou Revés
 
-O servidor sorteia com reposição entre estas doze cartas autorais:
+O servidor sorteia com reposição entre estas quatorze cartas autorais:
 
 1. **Generoso:** transfira uma propriedade sua para outra pessoa à sua escolha.
 2. **Aniversário:** receba R$ 50.000 de cada outro participante.
@@ -59,8 +59,10 @@ O servidor sorteia com reposição entre estas doze cartas autorais:
 10. **Troca-troca:** escolha duas pessoas, podendo incluir você; elas trocam de posição sem resolver as casas de chegada.
 11. **Cidade-sede:** vá para a cidade que sedia a Copa e resolva a casa de chegada. Sem sede ativa, descarte a carta sem mover.
 12. **Início:** vá para a Partida; receba R$ 300.000 somente se o trajeto cruzar a Partida. Parar na Partida também pode oferecer uma melhoria paga de cidade própria.
+13. **Aluguel em dobro:** pague duas vezes o próximo aluguel devido, seja de cidade ou companhia.
+14. **Desconto no aluguel:** pague metade do próximo aluguel devido, seja de cidade ou companhia.
 
-Proteção bloqueia qualquer efeito de carta, inclusive Generoso. Apagão e Proteção duram os três próximos turnos do dono. Se um efeito cobrar dinheiro sem saldo suficiente, aplicam-se as regras de dívida. A seleção de qualquer propriedade-alvo acontece diretamente no tabuleiro com o padrão de opções iluminadas/apagadas; alvos que sejam pessoas são selecionados pelos controles de participantes.
+Proteção bloqueia qualquer efeito de carta, inclusive Generoso. Apagão e Proteção duram os três próximos turnos do dono. As cartas de dobro e desconto se acumulam multiplicativamente e são consumidas juntas no próximo aluguel devido; duas cartas pendentes de efeitos opostos se cancelam. Elas também modificam aluguéis de companhias e incidem sobre o valor final após os demais multiplicadores. Se um efeito cobrar dinheiro sem saldo suficiente, aplicam-se as regras de dívida. A seleção de qualquer propriedade-alvo acontece diretamente no tabuleiro com o padrão de opções iluminadas/apagadas; alvos que sejam pessoas são selecionados pelos controles de participantes.
 
 ## Ações e negociação
 

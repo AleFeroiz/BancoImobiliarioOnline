@@ -1,5 +1,19 @@
 # Reforma econômica inspirada em Business Tour — implementada (2026-11-01)
 
+## Primeira volta e velocidade de animação — corrigidas (2026-11-01)
+
+- O usuário esclareceu a reprodução: partida recém-iniciada, primeira rolagem, e a primeira cidade já oferecia três casas. O teste ponta a ponta repete essa sequência em Porto Velho (soma 3 nos dados) e confirma que o servidor rejeita três casas sem alterar saldo/fase, mas permite comprar com duas. Na revisão visual local, a opção “3 casas” apareceu desabilitada e o aviso vermelho foi exibido nessa primeira chegada.
+- O estado do botão final de compra agora também valida o limite da primeira volta, além das opções de construção e da validação autoritativa do servidor. Um caso separado foi coberto: teletransportes de cartas e Volta ao Brasil não contam como volta completa, embora mantenham o bônus de cruzar a Partida.
+- A velocidade pedida foi aplicada à escala inteira das animações: 1× usa a duração antiga de 2×; 0,5× dura o dobro de 1× e 2× a metade. Para cada passo do peão, isso resulta em 375 ms, 188 ms e 94 ms, respectivamente.
+- `npm run verify`: 270 testes em 49 arquivos passaram; build web e build do servidor passaram. A revisão no navegador local confirmou o fluxo da primeira rolagem; as opções de 3 casas e hotel ficaram bloqueadas com o aviso vermelho. Graphify foi atualizado para 1.013 nós, 1.882 arestas e 73 comunidades. Servidores locais foram encerrados.
+- Próximo passo: commit revisado e push em `main`.
+
+## Restrições de primeira volta e cartas de aluguel — em implementação (2026-11-01)
+
+- O usuário confirmou duas regras: não construir a terceira casa antes de completar uma volta; e adicionar cartas de dobro e desconto de 50% no próximo aluguel, inclusive companhia. Quando ambas estiverem pendentes, os efeitos acumulam multiplicativamente no próximo aluguel.
+- A regra da primeira volta é individual. A terceira casa (e hotel) fica indisponível até o jogador cruzar a Partida pela primeira vez; compra inicial de imóvel com nível 3+ também deve respeitar o bloqueio.
+- Próximo passo: implementar estado autoritativo, mensagem visual de bloqueio, cartas, regressões, validar e publicar em `main`.
+
 - O usuário aprovou manter R$ 2.000.000 iniciais e R$ 300.000 ao passar pela Partida; três cidades aleatórias recebem festival ×2 no início; Copa passa de ×3 para ×2; multiplicadores regionais/festival/Copa acumulam.
 - As 24 cidades mantêm nomes, regiões e cores do BANTEC; compra, custos de construção e aluguéis incrementais foram interpolados pela posição na curva de 20 cidades de Business Tour observadas em capturas. As taxas permanecem como estavam. O estoque do tabuleiro segue com 40 casas.
 - Companhias continuam a R$ 500.000 e quatro dão vitória. Aluguel usa um novo D6 ao cair: R$ 50.000 × companhias do dono (1–3) × resultado. Recompra forçada: 2× investimento, depois do aluguel; hotel continua inelegível.

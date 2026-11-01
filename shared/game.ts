@@ -25,7 +25,7 @@ export function isAnimationSpeed(value: unknown): value is AnimationSpeed {
 
 export function getAnimationDuration(durationMs: number, speed: number) {
   const validSpeed = isAnimationSpeed(speed) ? speed : DEFAULT_ANIMATION_SPEED
-  return Math.max(1, Math.round(durationMs * DEFAULT_ANIMATION_SPEED / validSpeed))
+  return Math.max(1, Math.round(durationMs * DEFAULT_ANIMATION_SPEED / (validSpeed * 2)))
 }
 
 export const LANDING_PULSE_DURATION_MS = 2_200
@@ -59,6 +59,15 @@ export function calculateNetWorth(ownerSessionId: string, cash: number, holdings
 export function movePosition(position: number, dice: DiceRoll) {
   const spaces = boardSpaces.length
   return (position + dice[0] + dice[1]) % spaces
+}
+
+export function canBuildLevelAfterFirstLap(hasCompletedFirstLap: boolean, targetHouses: number) {
+  return hasCompletedFirstLap || targetHouses < PROPERTY_BUILD_LEVELS
+}
+
+export function applyRentMultiplier(amount: number, multiplier: number) {
+  if (!Number.isFinite(amount) || !Number.isFinite(multiplier) || amount <= 0 || multiplier <= 0) return 0
+  return Math.floor(amount * multiplier)
 }
 
 export function chooseFestivalCityIds(random: () => number = Math.random) {

@@ -2,7 +2,7 @@ import { randomInt } from 'node:crypto'
 import { CloseCode, Client, Room } from '@colyseus/core'
 import type { GameMode } from '../../../shared/lobby.js'
 import { isCharacterType, isGameMode, normalizePlayerName } from '../../../shared/lobby.js'
-import { AUCTION_DURATION_SECONDS, AUCTION_MIN_BID_INCREMENT, CLASSIC_MATCH_SECONDS, DEFAULT_ANIMATION_SPEED, DICE_ANIMATION_DURATION_MS, JAIL_TURNS, MATCH_DURATIONS, PAWN_STEP_ANIMATION_DURATION_MS, PAWN_TELEPORT_ANIMATION_DURATION_MS, PROPERTY_BUILD_LEVELS, PROPERTY_HOTEL_LEVEL, START_BONUS, STARTING_CASH, TURN_DECISION_SECONDS, TURN_ROLL_SECONDS, areDiceDoubles, bankReturnValue, buildingSaleValue, calculateCompanyRent, calculateNetWorth, calculateRent, canBuildHotel, canBuildProperty, canReturnPropertyToBank, canSellBuilding, chooseFestivalCityIds, constructionCost, describeLanding, forcedBuybackCost, getAnimationDuration, getMonopolyWinReason, hasLiquidatableAssets, hotelConstructionCost, isAnimationSpeed, isMatchDuration, movePosition, taxForSpace, type MatchEndReason } from '../../../shared/game.js'
+import { AUCTION_DURATION_SECONDS, AUCTION_MIN_BID_INCREMENT, CLASSIC_MATCH_SECONDS, DEFAULT_ANIMATION_SPEED, DICE_ANIMATION_DURATION_MS, JAIL_TURNS, MATCH_DURATIONS, PAWN_STEP_ANIMATION_DURATION_MS, PAWN_TELEPORT_ANIMATION_DURATION_MS, PROPERTY_BUILD_LEVELS, PROPERTY_HOTEL_LEVEL, START_BONUS, STARTING_CASH, TURN_DECISION_SECONDS, TURN_ROLL_SECONDS, applyRentMultiplier, areDiceDoubles, bankReturnValue, buildingSaleValue, calculateCompanyRent, calculateNetWorth, calculateRent, canBuildHotel, canBuildLevelAfterFirstLap, canBuildProperty, canReturnPropertyToBank, canSellBuilding, chooseFestivalCityIds, constructionCost, describeLanding, forcedBuybackCost, getAnimationDuration, getMonopolyWinReason, hasLiquidatableAssets, hotelConstructionCost, isAnimationSpeed, isMatchDuration, movePosition, taxForSpace, type MatchEndReason } from '../../../shared/game.js'
 import { boardSpaces } from '../../../shared/board.js'
 import { PLAYER_COLORS, isPlayerColor } from '../../../shared/playerColors.js'
 import { isPlayerEmote } from '../../../shared/playerEmotes.js'
@@ -219,7 +219,9 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       this.state.festivalSpaceIds = chooseFestivalCityIds().join(',')
       for (const player of this.state.players.values()) {
         player.position = 0
+        player.hasCompletedFirstLap = false
         player.cash = STARTING_CASH
+        player.nextRentMultiplier = 1
         player.devInfiniteCash = false
         player.isJailed = false
         player.jailTurns = 0
@@ -363,6 +365,10 @@ export class GameRoom extends Room<{ state: LobbyState }> {
         client.send('room:error', { message: 'Escolha terreno ou até três casas para um imóvel residencial.' })
         return
       }
+      if (!canBuildLevelAfterFirstLap(player.hasCompletedFirstLap, houses)) {
+        client.send('room:error', { message: 'A terceira casa fica indisponível até você completar uma volta pela Partida.' })
+        return
+      }
       const totalCost = space.price + houses * constructionCost(space.id)
       if (!this.canSpend(player, totalCost)) {
         client.send('room:error', { message: 'Seu saldo não cobre o terreno e as construções selecionadas.' })
@@ -433,6 +439,10 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       const space = boardSpaces[propertyId]
       if (!player || !property || !space?.buildable || property.ownerSessionId !== client.sessionId || property.houses >= PROPERTY_HOTEL_LEVEL) return
       if (payload.accept) {
+        if (!canBuildLevelAfterFirstLap(player.hasCompletedFirstLap, property.houses + 1)) {
+          client.send('room:error', { message: 'A terceira casa fica indisponível até você completar uma volta pela Partida.' })
+          return
+        }
         const cost = property.houses === PROPERTY_BUILD_LEVELS ? hotelConstructionCost(propertyId) : constructionCost(propertyId)
         if (!this.canSpend(player, cost)) {
           client.send('room:error', { message: `A melhoria custa ${cost.toLocaleString('pt-BR')}; seu saldo é insuficiente.` })
@@ -457,6 +467,11 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       const landedHere = this.state.pendingPropertyId === propertyId && player?.position === propertyId
       if (!player || !property || property.ownerSessionId !== client.sessionId || !landedHere) {
         client.send('room:error', { message: 'Só é possível construir ao cair no próprio terreno.' })
+        return
+      }
+      const targetLevel = payload.hotel === true ? PROPERTY_HOTEL_LEVEL : payload.targetHouses
+      if (typeof targetLevel === 'number' && !canBuildLevelAfterFirstLap(player.hasCompletedFirstLap, targetLevel)) {
+        client.send('room:error', { message: 'A terceira casa e o hotel ficam indisponíveis até você completar uma volta pela Partida.' })
         return
       }
       const space = boardSpaces[propertyId]
@@ -1274,8 +1289,9 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       const completesGroup = groupSpaces.length > 0 && groupSpaces.every((candidate) => candidate.id === this.state.pendingPropertyId || this.state.properties.get(String(candidate.id))?.ownerSessionId === sessionId)
       if (space?.kind === 'property' && shouldBotBuyProperty(space.price ?? 0, botCash, completesGroup, this.state.mode as GameMode)) {
         const reserve = completesGroup ? 50_000 : 150_000
+        const maxHouses = player.hasCompletedFirstLap ? PROPERTY_BUILD_LEVELS : PROPERTY_BUILD_LEVELS - 1
         const houses = space.buildable
-          ? [PROPERTY_BUILD_LEVELS, PROPERTY_BUILD_LEVELS - 1, PROPERTY_BUILD_LEVELS - 2, 0].find((count) => botCash - (space.price ?? 0) - count * constructionCost(space.id) >= reserve) ?? 0
+          ? [maxHouses, maxHouses - 1, maxHouses - 2, 0].filter((count) => count >= 0).find((count) => botCash - (space.price ?? 0) - count * constructionCost(space.id) >= reserve) ?? 0
           : 0
         this.messages.buy(client, { houses })
       } else this.messages.declinePurchase(client)
@@ -1600,6 +1616,10 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       this.startCardTeleport(sessionId, player, venueId, `Carta Cidade-sede: chegada a ${boardSpaces[venueId].name}.`)
     } else if (card.effect.kind === 'start') {
       this.startCardTeleport(sessionId, player, 0, card.description)
+    } else if (card.effect.kind === 'double-next-rent') {
+      player.nextRentMultiplier *= 2
+    } else if (card.effect.kind === 'half-next-rent') {
+      player.nextRentMultiplier *= 0.5
     }
   }
 
@@ -1693,6 +1713,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
     const previousPosition = player.position
     player.position = movePosition(player.position, [spaces, 0])
     if (player.position < previousPosition) {
+      player.hasCompletedFirstLap = true
       this.creditCash(player, START_BONUS)
     }
   }
@@ -1771,9 +1792,11 @@ export class GameRoom extends Room<{ state: LobbyState }> {
           this.state.landingDescription += ` ${space.name} está em apagão; não há aluguel por ${property.blackoutTurns} turno(s) do dono.`
         } else if (owner) {
           const companyDieRoll = space.company ? randomInt(1, 7) : 0
-          const amount = space.company
+          const baseAmount = space.company
             ? calculateCompanyRent(ownership, property.ownerSessionId, companyDieRoll) * (space.id === this.state.worldCupSpaceId ? 2 : 1)
             : rent
+          const amount = applyRentMultiplier(baseAmount, player.nextRentMultiplier)
+          player.nextRentMultiplier = 1
           const reason = space.company ? 'Aluguel da companhia' : 'Aluguel'
           if (space.company) this.state.landingDescription += ` O dado da companhia marcou ${companyDieRoll}.`
           if (property.houses !== PROPERTY_HOTEL_LEVEL) this.state.pendingPropertyId = space.id
