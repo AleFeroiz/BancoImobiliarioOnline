@@ -71,6 +71,13 @@
 - Graphify update não executou porque a CLI `graphify` não está instalada neste ambiente.
 # Validação visual e de navegador
 
+## 2026-11-01 — Home BANTEC publicada e seletor de duração
+
+- Abri a home pública `https://banco-imobiliario-online.vercel.app/` no navegador e confirmei a identidade BANTEC, a rota Norte → Centro-Oeste → Nordeste → Sul → Sudeste, as 24 cidades/5 regiões e o formulário para criar ou entrar em sala.
+- Selecionei 15 minutos, depois 1 hora e por fim restaurei 30 minutos. Em cada etapa a opção selecionada ficou marcada e as demais desmarcadas.
+- O status Vercel do commit `1c6ce18` está `success`; o workflow do mesmo commit passou em `npm run verify` e o passo `Trigger Render deploy` terminou com sucesso. Isso não revela o SHA efetivamente ativo no serviço Render.
+- A conferência foi somente da home e dos controles de duração; não criei sala nem iniciei partida. O equilíbrio humano de partidas completas continua pendente.
+
 ## 2026-10-31 — Dados mais baixos sem entrar na FATEC
 
 - Novo ajuste: posição-base Y=1,065 e escala 0,55. O limite inferior do volume da caixa durante o giro preserva pelo menos 0,01 unidade sobre o telhado principal (Y=0,845); a posição horizontal continua fora da torre.
