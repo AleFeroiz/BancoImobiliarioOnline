@@ -9,6 +9,13 @@
 - Alterações locais preexistentes em `assets/blender/special-corners.blend` e `.blend1` permanecem fora do escopo.
 - Próximo passo: revisar o diff seletivo e publicar somente o escopo desta tarefa em `main`.
 
+# Posicionamento de propriedades e bandeiras de festival — concluído (2026-11-02)
+
+- Corrigido o recuo radial dos modelos e rótulos nas laterais: largura local agora é usada após rotação de 90 graus. Ajustadas também as mudanças simultâneas de dono/nível e a normalização do modelo de terremoto para não deixar os modelos ou as transformações da animação defasados.
+- Bandeiras de festival agora se posicionam voltadas para dentro conforme o lado do tabuleiro. O cartão do participante destaca títulos de cidade e companhia; seu rótulo acessível foi atualizado.
+- Ver detalhes, origem/normalização dos modelos Blender e limites do playtest em [docs/trabalho/posicionamento-propriedades-festival.md](trabalho/posicionamento-propriedades-festival.md).
+- Próximo passo: observar liquidação e recompra ao vivo com câmera próxima, incluindo companhia.
+
 # Cronômetro de turno no modo sem limite — concluído (2026-11-01)
 
 - Corrigido: o relógio do turno agora tem intervalo próprio e continua ativo quando a partida não tem limite total; a contagem total permanece em zero e sem encerramento por tempo.

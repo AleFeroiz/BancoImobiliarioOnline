@@ -1,20 +1,21 @@
 import { describe, expect, it } from 'vitest'
-import { getOwnedCitySpaceIds } from './playerOwnershipHighlight'
+import { getOwnedPropertySpaceIds } from './playerOwnershipHighlight'
 
-describe('destaque das cidades por jogador', () => {
+describe('destaque dos títulos por jogador', () => {
   const holdings = [
-    { spaceId: 18, ownerSessionId: 'player-a', isCity: true },
-    { spaceId: 4, ownerSessionId: 'player-a', isCity: true },
-    { spaceId: 24, ownerSessionId: 'player-a', isCity: false },
-    { spaceId: 7, ownerSessionId: 'player-b', isCity: true },
-    { spaceId: 9, ownerSessionId: '', isCity: true },
+    { spaceId: 18, ownerSessionId: 'player-a', isProperty: true },
+    { spaceId: 4, ownerSessionId: 'player-a', isProperty: true },
+    { spaceId: 14, ownerSessionId: 'player-a', isProperty: true },
+    { spaceId: 24, ownerSessionId: 'player-a', isProperty: false },
+    { spaceId: 7, ownerSessionId: 'player-b', isProperty: true },
+    { spaceId: 9, ownerSessionId: '', isProperty: true },
   ]
 
-  it('retorna em ordem somente as cidades do jogador selecionado', () => {
-    expect(getOwnedCitySpaceIds('player-a', holdings)).toEqual([4, 18])
+  it('retorna cidades e companhias do jogador selecionado, em ordem', () => {
+    expect(getOwnedPropertySpaceIds('player-a', holdings)).toEqual([4, 14, 18])
   })
 
-  it('não destaca cidades sem dono selecionado', () => {
-    expect(getOwnedCitySpaceIds('', holdings)).toEqual([])
+  it('não destaca títulos sem dono selecionado', () => {
+    expect(getOwnedPropertySpaceIds('', holdings)).toEqual([])
   })
 })

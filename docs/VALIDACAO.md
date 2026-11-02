@@ -1,3 +1,11 @@
+# 2026-11-02 — Posicionamento de títulos e festivais
+
+- `npm run verify`: 55 arquivos, 296 testes aprovados; build Vite e build do servidor passaram. A primeira execução após renomear o controle de destaque apontou uma expectativa textual antiga; foi atualizada e a suíte completa repetida. Permanece o aviso de chunk 3D acima de 500 kB.
+- Regressões direcionadas: 18 testes aprovados para destaque de cidade/companhia, direção da bandeira nos quatro lados, dimensão radial do modelo após rotação e sincronização de níveis em transferência. O clone de terremoto também foi revisado para zerar a transformação raiz antes de calcular os limites e compartilhar a mesma posição radial; o caminho específico de colisão não foi forçado manualmente.
+- Playtest desktop local com bot: partida iniciada, Porto Velho comprado, modelo e rótulo apareceram sobre o piso; seleção do cartão destacou o imóvel e escureceu os demais pisos.
+- A inspeção do Blender 5.2.2 LTS confirmou que os GLBs têm variações nomeadas dispostas como uma faixa no arquivo. A cena clona cada raiz, remove a transformação raiz de origem, centraliza os limites e apoia a base sobre Y=0; isso explica modelos afastados de (0,0,0) no arquivo sem transferir esse arranjo para a mesa. Nenhum arquivo Blender ou GLB foi salvo.
+- Não reproduzi manualmente uma liquidação/recompra nem uma companhia possuída por outro jogador nesta sala. A transição simultânea e a inclusão das companhias estão cobertas por regressões unitárias.
+
 # 2026-11-02 — Prontidão individual no lobby
 
 - `npm run verify` passou com loopback local permitido: 55 arquivos de teste, 295 testes, build Vite e build do servidor. O aviso existente de chunk 3D acima de 500 kB continua.

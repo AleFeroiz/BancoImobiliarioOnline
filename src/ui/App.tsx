@@ -16,7 +16,7 @@ import { PLAYER_COLOR_NAMES } from '../../shared/playerColors'
 import { getCashToastPlacement, getGameSound, getLandingSpecialSound, getPropertyChangeSound, getPropertyVisualChange, formatCashDelta, type GameSound } from './gameFeedback'
 import { CashChangeToast } from './CashChangeToast'
 import { stepDieValue } from './forcedDice'
-import { getOwnedCitySpaceIds } from './playerOwnershipHighlight'
+import { getOwnedPropertySpaceIds } from './playerOwnershipHighlight'
 import { getDiceDestinationSpaceId } from './arrowGuidance'
 import { appendGameFeedback, personalizePlayerFeedback, type GameFeedbackItem } from './feedbackQueue'
 import { playGameSound, startGameMusic, stopGameMusic, unlockGameAudio } from './gameAudio'
@@ -272,10 +272,10 @@ function App() {
           : boardChoicePhase === 'manage-property'
             ? myProperties.map(({ spaceId }) => spaceId)
               : []
-  const selectedPlayerCitySpaceIds = getOwnedCitySpaceIds(selectedPlayerSessionId, Array.from(roomProperties.entries()).map(([id, holding]) => ({
+  const selectedPlayerPropertySpaceIds = getOwnedPropertySpaceIds(selectedPlayerSessionId, Array.from(roomProperties.entries()).map(([id, holding]) => ({
     spaceId: Number(id),
     ownerSessionId: holding.ownerSessionId,
-    isCity: Boolean(boardSpaces[Number(id)]?.buildable),
+    isProperty: boardSpaces[Number(id)]?.kind === 'property',
   })))
   const playerHighlightMode = Boolean(selectedPlayerSessionId) && turnPhase !== 'ended' && !boardChoicePhase
   const highlightedSpaceIds = boardChoicePhase
@@ -285,7 +285,7 @@ function App() {
       : turnPhase === 'card-target' && activeCardId === 'generous' && selectedCardPropertyId !== null
         ? [selectedCardPropertyId]
         : playerHighlightMode
-          ? selectedPlayerCitySpaceIds
+          ? selectedPlayerPropertySpaceIds
           : selectedSpaceId === null ? [] : [selectedSpaceId]
   useEffect(() => {
     if (boardChoicePhase) setSelectedSpaceId(null)
@@ -967,7 +967,7 @@ function App() {
             const remainingCooldown = Math.max(0, (throwCooldowns[player.sessionId] ?? 0) - throwCooldownNow)
             const canThrowAtPlayer = Boolean(localPlayer && player.sessionId !== localSessionId && !player.isBankrupt && !localPlayer.isBankrupt && turnPhase !== 'ended')
             return <div className={`player-card-slot seat-${index}`} key={player.sessionId}>
-              <button type="button" aria-label={`Destacar cidades de ${player.name}`} aria-pressed={selectedPlayerSessionId === player.sessionId} className={`player-card seat-${index} ${player.sessionId === activePlayerSessionId ? 'active' : ''} ${selectedPlayerSessionId === player.sessionId ? 'highlighted' : ''} ${player.isBankrupt ? 'bankrupt' : ''} ${player.isConnected === false ? 'disconnected' : ''}`} style={{ backgroundColor: player.color ?? PLAYER_COLORS[index] ?? PLAYER_COLORS[0] }} onClick={() => { setSelectedPlayerSessionId((current) => current === player.sessionId ? '' : player.sessionId); setShowPropertyPanel(false); setPortfolioBoardSelection(false); setShowAuctionPanel(false); setSelectedSpaceId(null);  setError('') }}><div className="player-card-main"><strong>{player.name}</strong><b>{formatMoney(player.cash)}</b></div>{player.isBotControlled && <span className="player-bot-control-label">BOT NO CONTROLE</span>}<CashChangeToast cash={player.cash} playerName={player.name} placement={getCashToastPlacement(index)} /><span className="player-money-anchor" data-cash-anchor={player.sessionId} aria-hidden="true"><CashHudSymbols cash={player.cash} /></span></button>
+              <button type="button" aria-label={`Destacar títulos de ${player.name}`} aria-pressed={selectedPlayerSessionId === player.sessionId} className={`player-card seat-${index} ${player.sessionId === activePlayerSessionId ? 'active' : ''} ${selectedPlayerSessionId === player.sessionId ? 'highlighted' : ''} ${player.isBankrupt ? 'bankrupt' : ''} ${player.isConnected === false ? 'disconnected' : ''}`} style={{ backgroundColor: player.color ?? PLAYER_COLORS[index] ?? PLAYER_COLORS[0] }} onClick={() => { setSelectedPlayerSessionId((current) => current === player.sessionId ? '' : player.sessionId); setShowPropertyPanel(false); setPortfolioBoardSelection(false); setShowAuctionPanel(false); setSelectedSpaceId(null);  setError('') }}><div className="player-card-main"><strong>{player.name}</strong><b>{formatMoney(player.cash)}</b></div>{player.isBotControlled && <span className="player-bot-control-label">BOT NO CONTROLE</span>}<CashChangeToast cash={player.cash} playerName={player.name} placement={getCashToastPlacement(index)} /><span className="player-money-anchor" data-cash-anchor={player.sessionId} aria-hidden="true"><CashHudSymbols cash={player.cash} /></span></button>
               {canThrowAtPlayer && <div className={`player-throw-control${index % 2 === 1 ? ' toward-center-left' : ''}`} data-camera-drag="off">
                 <button type="button" className="player-throw-button" aria-label={`Lançar objeto em ${player.name}`} aria-expanded={throwPickerTargetSessionId === player.sessionId} disabled={remainingCooldown > 0} title={remainingCooldown > 0 ? `Aguarde ${Math.ceil(remainingCooldown / 1000)}s` : `Lançar objeto em ${player.name}`} onClick={() => { setShowEmotePicker(false); setThrowPickerTargetSessionId((target) => target === player.sessionId ? '' : player.sessionId) }}><span aria-hidden="true">➶</span>{remainingCooldown > 0 && <small>{Math.ceil(remainingCooldown / 1000)}s</small>}</button>
                 {throwPickerTargetSessionId === player.sessionId && <div className="throw-picker" role="group" aria-label={`Escolha o objeto para lançar em ${player.name}`}>{THROWABLES.map(({ id, label, symbol }) => <button key={id} type="button" onClick={() => { if (!room) return; const now = Date.now(); room.send('throwObject', { targetSessionId: player.sessionId, object: id }); setThrowCooldownNow(now); setThrowCooldowns((current) => ({ ...current, [player.sessionId]: now + THROW_COOLDOWN_MS })); setThrowPickerTargetSessionId('') }}><span aria-hidden="true">{symbol}</span><small>{label}</small></button>)}</div>}

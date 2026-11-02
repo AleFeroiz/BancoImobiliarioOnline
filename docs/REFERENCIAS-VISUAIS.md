@@ -99,7 +99,7 @@ Na galeria histórica, a interface também está separada por estados de produto
 
 - Usar uma paleta de papel marfim, feltro verde e madeira clara, com acentos por participante e cores de grupo nos títulos.
 - Criar arte low-poly original para casas, hotéis, peões, dados e espaços especiais. Os nomes, preços e ícones do tabuleiro são do projeto.
-- Identificar as cidades em festival com uma bandeira baixa de duas estacas e bandeirolas coloridas em corda arqueada, integrada ao piso da cidade sem cobrir seu nome ou construção.
+- Identificar as cidades em festival com uma bandeira baixa de duas estacas e bandeirolas coloridas em corda arqueada, colocada na borda externa e voltada para dentro conforme o lado do tabuleiro, sem cobrir seu nome ou construção.
 - Preferir superfícies claras levemente translúcidas, bordas suaves e sombras discretas para separar o HUD da cena sem transformar a partida num painel administrativo.
 - Usar animação curta para rolagem, deslocamento do peão, mudança de vez, compra e resultado de carta. Estados importantes também precisam de rótulos e contraste estáticos.
 - Manter botões e textos de ação em HTML/DOM, sincronizados ao estado da sala; a cena 3D apenas representa esse estado.

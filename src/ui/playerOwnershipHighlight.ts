@@ -1,9 +1,9 @@
-type OwnedCity = { spaceId: number; ownerSessionId: string; isCity: boolean }
+type OwnedProperty = { spaceId: number; ownerSessionId: string; isProperty: boolean }
 
-export function getOwnedCitySpaceIds(playerSessionId: string, holdings: readonly OwnedCity[]) {
+export function getOwnedPropertySpaceIds(playerSessionId: string, holdings: readonly OwnedProperty[]) {
   if (!playerSessionId) return []
   return holdings
-    .filter((holding) => holding.ownerSessionId === playerSessionId && holding.isCity)
+    .filter((holding) => holding.ownerSessionId === playerSessionId && holding.isProperty)
     .map((holding) => holding.spaceId)
     .sort((first, second) => first - second)
 }

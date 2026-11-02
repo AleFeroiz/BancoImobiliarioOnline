@@ -14,6 +14,10 @@ export function getPropertyVisualChange(previous: PropertyVisualState | undefine
   return null
 }
 
+export function getPropertyDisplayHouses(change: PropertyVisualChange | null, currentHouses: number, nextHouses: number) {
+  return change === 'placed' || change === 'ownership' ? nextHouses : currentHouses
+}
+
 export function getPropertyChangeSound(change: PropertyVisualChange): GameSound {
   switch (change) {
     case 'placed': return 'purchase'

@@ -12,7 +12,7 @@ import { getBoardTileTheme } from './boardTileTheme'
 import { getFestivalBannerPlacement } from './festivalBanner'
 import { fitSpaceLabel, shouldRenderSpaceLabel } from './spaceLabel'
 import { getPawnStepPath } from './pawnPath'
-import { getPropertyVisualChange } from './gameFeedback'
+import { getPropertyDisplayHouses, getPropertyVisualChange } from './gameFeedback'
 import { DICE_PRESENTATION_POSITIONS, DICE_RESULT_BADGE_POSITION, DICE_VISUAL_SCALE, getDiceRollBounce, getDiceRollRotation } from './dicePresentation'
 import { getRouletteFloorSectors } from './rouletteFloor'
 import { shouldStartCameraDrag } from './cameraDrag'
@@ -20,7 +20,7 @@ import { BUILDING_ANIMATION_DURATION_MS, DICE_ANIMATION_DURATION_MS, LANDING_PUL
 import type { FrameRateAccumulator } from './fpsMeter'
 import { recordRenderedFrame } from './fpsMeter'
 import { applySelectionContrast, createTokenOutlineMaterial, createUnlitMaterial, getOwnerTintOverride } from './sceneMaterials'
-import { getBuildingEdgeOffset, getBuildingRentLabelPosition, getCenteredModelPlacement, getModelFootprintDepth } from './modelPlacement'
+import { getBuildingEdgeOffset, getBuildingRentLabelPosition, getCenteredModelPlacement, getModelEdgeFootprint } from './modelPlacement'
 import { getPropertyBoardLabel } from './propertyRentLabel'
 import { playGameSound } from './gameAudio'
 import { scheduleSceneRenderWake, subscribeSceneContextRecovery, subscribeSceneResumeWake } from './sceneRenderWake'
@@ -508,6 +508,12 @@ function AnimatedBuilding({ spaceId, houses, ownerColor, ownerSessionId, reduced
       building?.scale.setScalar(1)
       if (building) building.position.y = 0
     } else if (change === 'ownership') {
+      setDisplayHouses((currentHouses) => getPropertyDisplayHouses(change, currentHouses, houses))
+      if (building) {
+        building.scale.setScalar(1)
+        building.position.y = 0
+        building.rotation.set(0, buildingRotationRef.current, 0)
+      }
       transition.current = 'ownership'
       elapsed.current = 0
     } else if (change === 'built') {
@@ -574,7 +580,7 @@ function AnimatedBuilding({ spaceId, houses, ownerColor, ownerSessionId, reduced
     clone.rotation.set(0, 0, 0)
     clone.scale.set(1, 1, 1)
     const bounds = new Box3().setFromObject(clone)
-    const footprintDepth = getModelFootprintDepth(bounds)
+    const footprintDepth = getModelEdgeFootprint(bounds, spaceId)
     clone.position.set(...getCenteredModelPlacement(bounds))
     clone.traverse((object) => {
       const mesh = object as Mesh
@@ -604,12 +610,16 @@ function EarthquakeCollapse({ event, scene }: { event: EarthquakeEvent; scene: O
     const source = scene.getObjectByName(variantName)
     if (!source) return null
     const clone = source.clone(true)
+    clone.position.set(0, 0, 0)
+    clone.rotation.set(0, 0, 0)
+    clone.scale.set(1, 1, 1)
     const bounds = new Box3().setFromObject(clone)
+    const edgeFootprint = getModelEdgeFootprint(bounds, event.spaceId)
     clone.position.set(...getCenteredModelPlacement(bounds))
     makeSceneMaterialsUnlit(clone, false, event.ownerColor)
     clone.traverse((object) => { const mesh = object as Mesh; if (mesh.isMesh) mesh.raycast = skipRaycast })
-    return clone
-  }, [event.ownerColor, scene, variantName])
+    return { object: clone, edgeFootprint }
+  }, [event.ownerColor, event.spaceId, scene, variantName])
   useFrame((_, delta) => {
     if (!ref.current) return
     invalidate()
@@ -621,7 +631,8 @@ function EarthquakeCollapse({ event, scene }: { event: EarthquakeEvent; scene: O
   })
   const { x, z } = positionOnBoard(event.spaceId)
   const decoration = getBoardSpaceDecoration(event.spaceId)
-  return <group ref={ref} position={[x + decoration.buildingOffset[0], BUILDING_GROUP_Y + getPropertyModelYOffset(event.houses), z + decoration.buildingOffset[1]]} rotation={[0, decoration.buildingRotation, 0]} scale={1.25}>{model && <primitive object={model} />}</group>
+  const [offsetX, offsetZ] = model ? getBuildingEdgeOffset(event.spaceId, 0.98, model.edgeFootprint, 1.25, 0.04) : decoration.buildingOffset
+  return <group ref={ref} position={[x + offsetX, BUILDING_GROUP_Y + getPropertyModelYOffset(event.houses), z + offsetZ]} rotation={[0, decoration.buildingRotation, 0]} scale={1.25}>{model && <primitive object={model.object} />}</group>
 }
 
 function FatecLandmark() {
@@ -693,7 +704,7 @@ function Board({ players, activePlayerSessionId, destinationSpaceId, propertyBui
             {space.kind === 'world-cup' && <Suspense fallback={null}><CornerLandmark type="stadium" position={[0, 0.15, 0]} dimmed={selectionMode && !selectable} /></Suspense>}
             {space.kind === 'world-tour' && <Suspense fallback={null}><CornerLandmark type="airport" position={[0, 0.08, 0]} dimmed={selectionMode && !selectable} /></Suspense>}
             {space.kind === 'property' && space.id === worldCupSpaceId && <Html position={[size * 0.26, 0.62, size * 0.26]} center distanceFactor={10} zIndexRange={[6, 0]} style={{ pointerEvents: 'none' }}><span className="world-cup-host-flag"><b>🏆</b><small>SEDE</small></span></Html>}
-            {space.kind === 'property' && festivalSpaceIds.includes(space.id) && <Suspense fallback={null}><FestivalBanner size={size} dimmed={selectionMode && !selectable} /></Suspense>}
+            {space.kind === 'property' && festivalSpaceIds.includes(space.id) && <Suspense fallback={null}><FestivalBanner spaceId={space.id} size={size} dimmed={selectionMode && !selectable} /></Suspense>}
             {space.kind === 'start' && <mesh position={[size * 0.31, 0.13, size * 0.3]} rotation={[0, Math.PI / 4, 0]} raycast={skipRaycast}><boxGeometry args={[0.14, 0.045, 0.14]} /><meshBasicMaterial color={theme.trim} /></mesh>}
             {shouldRenderSpaceLabel(space.kind) && <SpaceLabel name={space.name} size={size} ink={theme.ink} outline={theme.outline} outwardRotation={decoration.labelRotation} />}
             {highlightedSpaceIds.includes(space.id) && (
@@ -778,7 +789,7 @@ function CornerLandmark({ type, position, dimmed }: { type: 'stadium' | 'airport
   return <group position={position}><primitive object={model} scale={type === 'stadium' ? 0.64 : 0.36} /></group>
 }
 
-function FestivalBanner({ size, dimmed }: { size: number; dimmed: boolean }) {
+function FestivalBanner({ spaceId, size, dimmed }: { spaceId: number; size: number; dimmed: boolean }) {
   const { scene } = useGLTF('/assets/festival-banner.glb')
   const model = useMemo(() => {
     const clone = scene.clone(true)
@@ -793,7 +804,7 @@ function FestivalBanner({ size, dimmed }: { size: number; dimmed: boolean }) {
     makeSceneMaterialsUnlit(clone, dimmed)
     return clone
   }, [dimmed, scene])
-  const placement = getFestivalBannerPlacement(size)
+  const placement = getFestivalBannerPlacement(spaceId, size)
   return <group position={placement.position} scale={placement.scale}><primitive object={model} /></group>
 }
 

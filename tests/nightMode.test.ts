@@ -58,7 +58,7 @@ describe('modo noturno BANTEC', () => {
   it('usa o cartão para destacar as cidades do participante sem abrir o perfil nem Bens', () => {
     const app = readFileSync(new URL('../src/ui/App.tsx', import.meta.url), 'utf8')
 
-    expect(app).toContain('aria-label={`Destacar cidades de ${player.name}`}')
+    expect(app).toContain('aria-label={`Destacar títulos de ${player.name}`}')
     expect(app).toContain('setSelectedPlayerSessionId((current) => current === player.sessionId ? \'\' : player.sessionId)')
     expect(app).not.toContain('PERFIL DO JOGADOR')
     expect(app).not.toContain('aria-label="Abrir meus bens"')

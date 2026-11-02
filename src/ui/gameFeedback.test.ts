@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatCashDelta, getCashChangeTone, getCashToastPlacement, getGameSound, getLandingSpecialSound, getPropertyChangeSound, getPropertyVisualChange } from './gameFeedback'
+import { formatCashDelta, getCashChangeTone, getCashToastPlacement, getGameSound, getLandingSpecialSound, getPropertyChangeSound, getPropertyDisplayHouses, getPropertyVisualChange } from './gameFeedback'
 
 describe('feedback da partida', () => {
   it('associa efeitos de chegada à Volta ao Brasil, Prisão e Copa', () => {
@@ -44,6 +44,16 @@ describe('feedback da partida', () => {
     expect(getPropertyChangeSound(getPropertyVisualChange({ ...ownerA, houses: 1 }, ownerA)!)).toBe('demolition')
     expect(getPropertyVisualChange(ownerA, { ...ownerA, ownerSessionId: 'b' })).toBe('ownership')
     expect(getPropertyChangeSound('ownership')).toBe('ownership')
+  })
+
+  it('sincroniza o modelo com o nível atual quando a posse muda junto com a construção', () => {
+    const previous = { ownerSessionId: 'player-a', houses: 2 }
+    const next = { ownerSessionId: 'player-b', houses: 0 }
+    const change = getPropertyVisualChange(previous, next)
+
+    expect(change).toBe('ownership')
+    expect(getPropertyDisplayHouses(change, previous.houses, next.houses)).toBe(0)
+    expect(getPropertyDisplayHouses('demolished', 2, 0)).toBe(2)
   })
 
   it('mapeia o texto sincronizado de venda e transferência aos efeitos adequados', () => {
