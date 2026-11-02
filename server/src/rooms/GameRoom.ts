@@ -149,6 +149,14 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       }
       player.color = payload.color
     },
+    setReady: (client: Client, payload: { ready?: unknown }) => {
+      const player = this.state.players.get(this.getPlayerSessionId(client))
+      if (this.state.status !== 'waiting' || !player || player.isBot || typeof payload?.ready !== 'boolean') {
+        client.send('room:error', { message: 'Só participantes no lobby podem alterar o estado de prontidão.' })
+        return
+      }
+      player.isReady = payload.ready
+    },
     setMatchDuration: (client: Client, payload: { duration?: unknown }) => {
       const requester = this.state.players.get(this.getPlayerSessionId(client))
       if (this.state.status !== 'waiting' || !requester?.isHost || !isMatchDuration(payload?.duration)) {
@@ -193,6 +201,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       bot.name = `Bot ${this.botSequence}`
       bot.isBot = true
       bot.isBotControlled = true
+      bot.isReady = true
       bot.isConnected = true
       bot.color = this.getAvailablePlayerColor()
       this.state.players.set(sessionId, bot)
@@ -220,6 +229,10 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       }
       if (Array.from(this.state.players.values()).some((candidate) => !candidate.isBot && !candidate.isConnected)) {
         client.send('room:error', { message: 'Aguarde a reconexão de todas as pessoas antes de iniciar.' })
+        return
+      }
+      if (Array.from(this.state.players.values()).some((candidate) => !candidate.isBot && !candidate.isReady)) {
+        client.send('room:error', { message: 'Aguarde todas as pessoas confirmarem que estão prontas.' })
         return
       }
 

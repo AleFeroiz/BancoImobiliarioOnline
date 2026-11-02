@@ -1,3 +1,14 @@
+# Prontidão de participantes no lobby — concluído (2026-11-02)
+
+- Pedido: exigir que cada pessoa confirme que está pronta antes de a anfitriã iniciar a partida.
+- Decisão aplicada à implementação: cada participante humano marca pronto no lobby; bots contam como prontos e o servidor impede início enquanto faltar confirmação ou conexão.
+- Implementado: botão de prontidão individual, estado visível para a sala, bots prontos automaticamente e validação autoritativa para iniciar somente quando todas as pessoas estiverem prontas/conectadas.
+- `npm run verify` passou com loopback permitido: 55 arquivos e 295 testes; build web e servidor concluídos. O aviso existente de chunk 3D acima de 500 kB permanece.
+- Playtest desktop com dois clientes humanos confirmou estado sincronizado, bloqueio até ambos confirmarem, botão habilitado após todos ficarem prontos e início da partida. Revisão móvel confirmou o layout do lobby e o fluxo com bot.
+- Graphify foi atualizado localmente. Os artefatos gerados incorporaram também alterações simultâneas e não relacionadas no tabuleiro, então ficam fora deste commit junto com essas alterações.
+- Alterações locais preexistentes em `assets/blender/special-corners.blend` e `.blend1` permanecem fora do escopo.
+- Próximo passo: revisar o diff seletivo e publicar somente o escopo desta tarefa em `main`.
+
 # Cronômetro de turno no modo sem limite — concluído (2026-11-01)
 
 - Corrigido: o relógio do turno agora tem intervalo próprio e continua ativo quando a partida não tem limite total; a contagem total permanece em zero e sem encerramento por tempo.

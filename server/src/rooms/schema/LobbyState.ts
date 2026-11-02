@@ -4,6 +4,7 @@ import { DEFAULT_ANIMATION_SPEED } from '../../../../shared/game.js'
 export const LobbyPlayerState = schema({
   name: t.string().default(''),
   isHost: t.boolean().default(false),
+  isReady: t.boolean().default(false),
   isConnected: t.boolean().default(true),
   reconnectionExpired: t.boolean().default(false),
   isBot: t.boolean().default(false),

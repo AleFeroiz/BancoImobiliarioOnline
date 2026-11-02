@@ -24,6 +24,7 @@ export const CHARACTER_OPTIONS: ReadonlyArray<{ id: CharacterType; label: string
 export type LobbyPlayer = {
   name: string
   isHost: boolean
+  isReady?: boolean
   isConnected?: boolean
   reconnectionExpired?: boolean
   isBot?: boolean

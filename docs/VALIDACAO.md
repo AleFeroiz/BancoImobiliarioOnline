@@ -1,3 +1,11 @@
+# 2026-11-02 — Prontidão individual no lobby
+
+- `npm run verify` passou com loopback local permitido: 55 arquivos de teste, 295 testes, build Vite e build do servidor. O aviso existente de chunk 3D acima de 500 kB continua.
+- Regressão Colyseus confirmou que o anfitrião não inicia se faltar confirmação, que uma pessoa pronta não substitui as demais e que a partida começa depois de todos os humanos confirmarem. O teste existente de bots confirma que entram prontos automaticamente.
+- Playtest local com dois clientes humanos: antes de ambas confirmações, a lista mostrou “AGUARDANDO” e o botão da anfitriã ficou desabilitado; após os dois marcarem “Pronto”, os estados sincronizaram e “Iniciar partida” habilitou. Clique iniciou a partida.
+- Revisão em viewport de celular: o botão individual ficou visível, tocável e com estado “Pronto · cancelar”; a presença de um bot pronto não habilitou início até a anfitriã também confirmar. A interface manteve rolagem vertical utilizável.
+- `npm run graphify -- update .` foi executado. Os artefatos locais incorporaram alterações simultâneas e não relacionadas no tabuleiro, por isso não são incluídos neste commit.
+
 # 2026-11-01 — Cronômetro de turno sem limite total
 
 - Regressão direcionada `server/test/GameRoom.test.ts -t "sem cronômetro total"`: passou; o modo mantém a partida ativa com `matchSeconds: 0` enquanto o relógio de turno diminui.

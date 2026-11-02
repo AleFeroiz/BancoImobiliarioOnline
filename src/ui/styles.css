@@ -656,6 +656,7 @@ button:disabled{opacity:.55;cursor:not-allowed}
 }
 @media(prefers-reduced-motion:reduce){.space-inspector{animation:none}}
 .seat-bot{color:#8bc8a3!important}.seat-remove-bot{margin-left:3px;width:22px;height:22px;border:1px solid rgba(255,255,255,.18);border-radius:50%;background:transparent;color:#d7b867}.add-bot-button{margin-top:9px;padding:8px 10px;width:100%;border:1px dashed rgba(213,184,101,.45);background:rgba(213,184,101,.07);color:#e5c979;text-align:left;font-size:10px}.add-bot-button:hover{background:rgba(213,184,101,.13)}
+.seat-ready{color:#43885e!important}.seat-not-ready{color:#9b7447!important}.lobby-ready-button{width:100%;min-height:42px;margin-top:10px;border:1px solid #c7ad5e;border-radius:8px;background:#f7f0d9;color:#495d43;font-size:11px;font-weight:700;touch-action:manipulation}.lobby-ready-button.is-ready{background:#e5f0df;color:#367348}.screen-room[data-night-mode="true"] .lobby-ready-button{background:#273b34;color:#e8dbab}.screen-room[data-night-mode="true"] .lobby-ready-button.is-ready{background:#294735;color:#b7e1b7}
 
 .character-selector{margin:11px 0 12px;padding:10px 11px 11px;border:1px solid #e1e5d5;border-radius:11px;background:#f5f5e9}
 .player-color-selector{margin:11px 0 0;padding:10px 11px 11px;border:1px solid #e1e5d5;border-radius:11px;background:#f5f5e9}

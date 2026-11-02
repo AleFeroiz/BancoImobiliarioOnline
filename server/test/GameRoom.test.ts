@@ -16,6 +16,12 @@ async function waitFor(condition: () => boolean, timeout = 2500) {
   }
 }
 
+function markPlayersReady(room: ColyseusTestServer<typeof appConfig>) {
+  for (const player of room.state.players.values()) {
+    if (!player.isBot) player.isReady = true
+  }
+}
+
 async function getAvailablePort() {
   return new Promise<number>((resolve, reject) => {
     const probe = createServer()
@@ -59,11 +65,36 @@ describe('sala privada', () => {
     expect(room.state.players.get(guest.sessionId)).toMatchObject({ name: 'Bia', isHost: false })
   })
 
+  it('só inicia quando cada participante humano confirmou que está pronto', async () => {
+    const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
+    const host = await colyseus.connectTo(room, { name: 'Ana' })
+    const guest = await colyseus.connectTo(room, { name: 'Bia' })
+
+    const notReady = new Promise<{ message: string }>((resolve) => host.onMessage('room:error', resolve))
+    host.send('start')
+    await expect(notReady).resolves.toMatchObject({ message: 'Aguarde todas as pessoas confirmarem que estão prontas.' })
+    expect(room.state.status).toBe('waiting')
+
+    host.send('setReady', { ready: true })
+    await waitFor(() => room.state.players.get(host.sessionId)?.isReady === true)
+    const guestNotReady = new Promise<{ message: string }>((resolve) => host.onMessage('room:error', resolve))
+    host.send('start')
+    await expect(guestNotReady).resolves.toMatchObject({ message: 'Aguarde todas as pessoas confirmarem que estão prontas.' })
+
+    guest.send('setReady', { ready: true })
+    await waitFor(() => room.state.players.get(guest.sessionId)?.isReady === true)
+    const started = new Promise<void>((resolve) => host.onMessage('game:started', () => resolve()))
+    host.send('start')
+    await started
+    expect(room.state.status).toBe('playing')
+  })
+
   it('mantém a partida sem cronômetro total e continua contando o turno', async () => {
     const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic', matchDuration: 0 })
     const host = await colyseus.connectTo(room, { name: 'Ana' })
     await colyseus.connectTo(room, { name: 'Bia' })
     const started = new Promise<void>((resolve) => host.onMessage('game:started', () => resolve()))
+    markPlayersReady(room)
     host.send('start')
     await started
     await new Promise((resolve) => setTimeout(resolve, 1_100))
@@ -77,6 +108,7 @@ describe('sala privada', () => {
     const host = await colyseus.connectTo(room, { name: 'Ana' })
     const guest = await colyseus.connectTo(room, { name: 'Bia' })
     const started = new Promise<void>((resolve) => host.onMessage('game:started', () => resolve()))
+    markPlayersReady(room)
     host.send('start')
     await started
 
@@ -95,6 +127,7 @@ describe('sala privada', () => {
     const guest = await colyseus.connectTo(room, { name: 'Bia' })
     const third = await colyseus.connectTo(room, { name: 'Caio' })
     const started = new Promise<void>((resolve) => host.onMessage('game:started', () => resolve()))
+    markPlayersReady(room)
     host.send('start')
     await started
 
@@ -134,6 +167,7 @@ describe('sala privada', () => {
     expect(room.state.players.get(host.sessionId)?.characterType).toBe('car')
 
     const started = new Promise<void>((resolve) => host.onMessage('game:started', () => resolve()))
+    markPlayersReady(room)
     host.send('start')
     await started
     expect(room.state.players.get(host.sessionId)?.characterType).toBe('car')
@@ -174,6 +208,7 @@ describe('sala privada', () => {
     const host = await colyseus.connectTo(room, { name: 'Caio' })
     const onePlayerMessage = new Promise<{ message: string }>((resolve) => host.onMessage('room:error', resolve))
 
+    markPlayersReady(room)
     host.send('start')
     await onePlayerMessage
     expect(room.state.status).toBe('waiting')
@@ -188,6 +223,7 @@ describe('sala privada', () => {
 
     const hostStarted = new Promise<{ mode: string }>((resolve) => host.onMessage('game:started', resolve))
     const guestStarted = new Promise<{ mode: string }>((resolve) => guest.onMessage('game:started', resolve))
+    markPlayersReady(room)
     host.send('start')
     await expect(hostStarted).resolves.toEqual({ mode: 'classic' })
     await guestStarted
@@ -208,6 +244,7 @@ describe('sala privada', () => {
       new Promise<void>((resolve) => host.onMessage('game:started', () => resolve())),
       new Promise<void>((resolve) => guest.onMessage('game:started', () => resolve())),
     ])
+    markPlayersReady(room)
     host.send('start')
     await started
 
@@ -237,6 +274,7 @@ describe('sala privada', () => {
     host.send('setDevToolsEnabled', { enabled: true })
     await waitFor(() => room.state.devToolsEnabled)
     const started = new Promise<void>((resolve) => host.onMessage('game:started', () => resolve()))
+    markPlayersReady(room)
     host.send('start')
     await started
 
@@ -270,6 +308,7 @@ describe('sala privada', () => {
     host.send('setDevToolsEnabled', { enabled: true })
     await waitFor(() => room.state.devToolsEnabled)
     const started = new Promise<void>((resolve) => host.onMessage('game:started', () => resolve()))
+    markPlayersReady(room)
     host.send('start')
     await started
 
@@ -310,6 +349,7 @@ describe('sala privada', () => {
     host.send('setDevToolsEnabled', { enabled: true })
     await waitFor(() => room.state.devToolsEnabled)
     const started = new Promise<void>((resolve) => host.onMessage('game:started', () => resolve()))
+    markPlayersReady(room)
     host.send('start')
     await started
     room.state.festivalSpaceIds = ''
@@ -379,6 +419,7 @@ describe('sala privada', () => {
     await waitFor(() => host.state.players.get(guest.sessionId)?.isConnected === false)
     expect(room.state.players.get(guest.sessionId)?.reconnectionExpired).toBe(false)
     const offlineStartMessage = new Promise<{ message: string }>((resolve) => host.onMessage('room:error', resolve))
+    markPlayersReady(room)
     host.send('start')
     await expect(offlineStartMessage).resolves.toMatchObject({ message: expect.stringContaining('Aguarde a reconexão') })
     expect(room.state.status).toBe('waiting')
@@ -391,6 +432,7 @@ describe('sala privada', () => {
       new Promise<void>((resolve) => host.onMessage('game:started', () => resolve())),
       new Promise<void>((resolve) => guest.onMessage('game:started', () => resolve())),
     ])
+    markPlayersReady(room)
     host.send('start')
     await started
 
@@ -403,6 +445,7 @@ describe('sala privada', () => {
     const host = await colyseus.connectTo(room, { name: 'Lia' })
     const guest = await colyseus.connectTo(room, { name: 'Nina' })
     const started = new Promise<void>((resolve) => host.onMessage('game:started', () => resolve()))
+    markPlayersReady(room)
     host.send('start')
     await started
 
@@ -435,6 +478,7 @@ describe('sala privada', () => {
     host.send('addBot')
     await waitFor(() => room.state.players.size === 2)
     const started = new Promise<void>((resolve) => host.onMessage('game:started', () => resolve()))
+    markPlayersReady(room)
     host.send('start')
     await started
 
@@ -469,6 +513,7 @@ describe('sala privada', () => {
     const host = await colyseus.connectTo(room, { name: 'Lia' })
     await colyseus.connectTo(room, { name: 'Nina' })
     const started = new Promise<void>((resolve) => host.onMessage('game:started', () => resolve()))
+    markPlayersReady(room)
     host.send('start')
     await started
     const player = room.state.players.get(host.sessionId)!
@@ -495,6 +540,7 @@ describe('sala privada', () => {
     const host = await colyseus.connectTo(room, { name: 'Lia' })
     const guest = await colyseus.connectTo(room, { name: 'Nina' })
     const started = new Promise<void>((resolve) => host.onMessage('game:started', () => resolve()))
+    markPlayersReady(room)
     host.send('start')
     await started
 
@@ -519,6 +565,7 @@ describe('sala privada', () => {
     const host = await colyseus.connectTo(room, { name: 'Lia' })
     const guest = await colyseus.connectTo(room, { name: 'Nina' })
     const started = new Promise<void>((resolve) => host.onMessage('game:started', () => resolve()))
+    markPlayersReady(room)
     host.send('start')
     await started
     room.state.turnPhase = 'purchase'
@@ -543,12 +590,13 @@ describe('sala privada', () => {
     host.send('addBot')
     await waitFor(() => room.state.players.size === 2)
     const bot = [...room.state.players.entries()].find(([, player]) => player.isBot)
-    expect(bot?.[1]).toMatchObject({ name: 'Bot 1', isBot: true, isBotControlled: true, isConnected: true, characterType: 'pawn' })
+    expect(bot?.[1]).toMatchObject({ name: 'Bot 1', isBot: true, isBotControlled: true, isConnected: true, isReady: true, characterType: 'pawn' })
     host.send('removeBot', { sessionId: bot?.[0] })
     await waitFor(() => room.state.players.size === 1)
     host.send('addBot')
     await waitFor(() => room.state.players.size === 2)
     const started = new Promise<void>((resolve) => host.onMessage('game:started', () => resolve()))
+    markPlayersReady(room)
     host.send('start')
     await started
     expect(room.state.status).toBe('playing')
@@ -564,6 +612,7 @@ describe('sala privada', () => {
     host.send('addBot')
     await waitFor(() => room.state.players.size === 4)
     const started = new Promise<void>((resolve) => host.onMessage('game:started', () => resolve()))
+    markPlayersReady(room)
     host.send('start')
     await started
 
@@ -598,6 +647,7 @@ describe('sala privada', () => {
       new Promise<void>((resolve) => host.onMessage('game:started', () => resolve())),
       new Promise<void>((resolve) => guest.onMessage('game:started', () => resolve())),
     ])
+    markPlayersReady(room)
     host.send('start')
     await started
 
@@ -629,6 +679,7 @@ describe('sala privada', () => {
       new Promise<void>((resolve) => seller.onMessage('game:started', () => resolve())),
       new Promise<void>((resolve) => bidder.onMessage('game:started', () => resolve())),
     ])
+    markPlayersReady(room)
     host.send('start')
     await started
 
@@ -686,6 +737,7 @@ describe('sala privada', () => {
       new Promise<void>((resolve) => host.onMessage('game:started', () => resolve())),
       new Promise<void>((resolve) => guest.onMessage('game:started', () => resolve())),
     ])
+    markPlayersReady(room)
     host.send('start')
     await started
     const unownedMessage = new Promise<{ message: string }>((resolve) => host.onMessage('room:error', resolve))
@@ -714,6 +766,7 @@ describe('sala privada', () => {
     const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
     const host = await colyseus.connectTo(room, { name: 'Ana' })
     await colyseus.connectTo(room, { name: 'Bia' })
+    markPlayersReady(room)
     host.send('start')
     await waitFor(() => room.state.status === 'playing')
     const propertySpace = boardSpaces.find((space) => space.kind === 'property')!
@@ -734,6 +787,7 @@ describe('sala privada', () => {
     const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
     const host = await colyseus.connectTo(room, { name: 'Ana' })
     await colyseus.connectTo(room, { name: 'Bia' })
+    markPlayersReady(room)
     host.send('start')
     await waitFor(() => room.state.status === 'playing')
 
@@ -761,6 +815,7 @@ describe('sala privada', () => {
     await colyseus.connectTo(room, { name: 'Bia' })
     host.send('setDevToolsEnabled', { enabled: true })
     await waitFor(() => room.state.devToolsEnabled)
+    markPlayersReady(room)
     host.send('start')
     await waitFor(() => room.state.status === 'playing')
     room.state.animationSpeed = 2
@@ -789,6 +844,7 @@ describe('sala privada', () => {
     const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
     const host = await colyseus.connectTo(room, { name: 'Ana' })
     await colyseus.connectTo(room, { name: 'Bia' })
+    markPlayersReady(room)
     host.send('start')
     await waitFor(() => room.state.status === 'playing')
     const player = room.state.players.get(host.sessionId)!
@@ -805,6 +861,7 @@ describe('sala privada', () => {
     const guest = await colyseus.connectTo(room, { name: 'Bia' })
     host.send('setDevToolsEnabled', { enabled: true })
     await waitFor(() => room.state.devToolsEnabled)
+    markPlayersReady(room)
     host.send('start')
     await waitFor(() => room.state.status === 'playing')
 
@@ -854,7 +911,8 @@ describe('sala privada', () => {
       const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
       const host = await colyseus.connectTo(room, { name: 'Ana' })
       await colyseus.connectTo(room, { name: 'Bia' })
-      host.send('start')
+      markPlayersReady(room)
+    host.send('start')
       await waitFor(() => room.state.status === 'playing')
 
       for (const propertyId of condition.propertyIds) {
@@ -882,7 +940,8 @@ describe('sala privada', () => {
       const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
       const host = await colyseus.connectTo(room, { name: 'Ana' })
       const guest = await colyseus.connectTo(room, { name: 'Bia' })
-      host.send('start')
+      markPlayersReady(room)
+    host.send('start')
       await waitFor(() => room.state.status === 'playing')
       const propertyId = condition.propertyIds.at(-1)!
       for (const id of condition.propertyIds) {
@@ -906,6 +965,7 @@ describe('sala privada', () => {
     const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
     const host = await colyseus.connectTo(room, { name: 'Ana' })
     const guest = await colyseus.connectTo(room, { name: 'Bia' })
+    markPlayersReady(room)
     host.send('start')
     await waitFor(() => room.state.status === 'playing')
     room.state.activePlayerSessionId = host.sessionId
@@ -927,6 +987,7 @@ describe('sala privada', () => {
     const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
     const host = await colyseus.connectTo(room, { name: 'Ana' })
     await colyseus.connectTo(room, { name: 'Bia' })
+    markPlayersReady(room)
     host.send('start')
     await new Promise((resolve) => setTimeout(resolve, 30))
     room.state.festivalSpaceIds = ''
@@ -985,6 +1046,7 @@ describe('sala privada', () => {
       new Promise<void>((resolve) => host.onMessage('game:started', () => resolve())),
       new Promise<void>((resolve) => guest.onMessage('game:started', () => resolve())),
     ])
+    markPlayersReady(room)
     host.send('start')
     await started
 
@@ -1042,6 +1104,7 @@ describe('sala privada', () => {
     const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
     const host = await colyseus.connectTo(room, { name: 'Ana' })
     await colyseus.connectTo(room, { name: 'Bia' })
+    markPlayersReady(room)
     host.send('start')
     await new Promise((resolve) => setTimeout(resolve, 30))
 
@@ -1080,6 +1143,7 @@ describe('sala privada', () => {
     const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
     const host = await colyseus.connectTo(room, { name: 'Ana' })
     const guest = await colyseus.connectTo(room, { name: 'Bia' })
+    markPlayersReady(room)
     host.send('start')
     await new Promise((resolve) => setTimeout(resolve, 30))
 
@@ -1104,6 +1168,7 @@ describe('sala privada', () => {
     const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
     const host = await colyseus.connectTo(room, { name: 'Ana' })
     const guest = await colyseus.connectTo(room, { name: 'Bia' })
+    markPlayersReady(room)
     host.send('start')
     await new Promise((resolve) => setTimeout(resolve, 30))
 
@@ -1140,6 +1205,7 @@ describe('sala privada', () => {
     const host = await colyseus.connectTo(room, { name: 'Ana' })
     const guest = await colyseus.connectTo(room, { name: 'Bia' })
     const started = new Promise<void>((resolve) => host.onMessage('game:started', () => resolve()))
+    markPlayersReady(room)
     host.send('start')
     await started
 
@@ -1167,6 +1233,7 @@ describe('sala privada', () => {
     const host = await colyseus.connectTo(room, { name: 'Ana' })
     const guest = await colyseus.connectTo(room, { name: 'Bia' })
     const started = new Promise<void>((resolve) => host.onMessage('game:started', () => resolve()))
+    markPlayersReady(room)
     host.send('start')
     await started
     const player = room.state.players.get(host.sessionId)!
@@ -1198,6 +1265,7 @@ describe('sala privada', () => {
     const visitorClient = await colyseus.connectTo(room, { name: 'Ana' })
     const ownerClient = await colyseus.connectTo(room, { name: 'Bia' })
     const started = new Promise<void>((resolve) => visitorClient.onMessage('game:started', () => resolve()))
+    markPlayersReady(room)
     visitorClient.send('start')
     await started
     room.state.festivalSpaceIds = ''
@@ -1237,6 +1305,7 @@ describe('sala privada', () => {
     const visitorClient = await colyseus.connectTo(room, { name: 'Ana' })
     const ownerClient = await colyseus.connectTo(room, { name: 'Bia' })
     const started = new Promise<void>((resolve) => visitorClient.onMessage('game:started', () => resolve()))
+    markPlayersReady(room)
     visitorClient.send('start')
     await started
     room.state.festivalSpaceIds = ''
@@ -1268,6 +1337,7 @@ describe('sala privada', () => {
     const visitorClient = await colyseus.connectTo(room, { name: 'Ana' })
     const ownerClient = await colyseus.connectTo(room, { name: 'Bia' })
     const started = new Promise<void>((resolve) => visitorClient.onMessage('game:started', () => resolve()))
+    markPlayersReady(room)
     visitorClient.send('start')
     await started
     room.state.festivalSpaceIds = ''
@@ -1298,6 +1368,7 @@ describe('sala privada', () => {
     const visitorClient = await colyseus.connectTo(room, { name: 'Ana' })
     const ownerClient = await colyseus.connectTo(room, { name: 'Bia' })
     const started = new Promise<void>((resolve) => visitorClient.onMessage('game:started', () => resolve()))
+    markPlayersReady(room)
     visitorClient.send('start')
     await started
     room.state.festivalSpaceIds = ''
@@ -1344,6 +1415,7 @@ describe('sala privada', () => {
     const host = await colyseus.connectTo(room, { name: 'Ana' })
     const guest = await colyseus.connectTo(room, { name: 'Bia' })
     const started = new Promise<void>((resolve) => host.onMessage('game:started', () => resolve()))
+    markPlayersReady(room)
     host.send('start')
     await started
     const owner = room.state.players.get(host.sessionId)!
@@ -1408,6 +1480,7 @@ describe('sala privada', () => {
     const host = await colyseus.connectTo(room, { name: 'Ana' })
     const guest = await colyseus.connectTo(room, { name: 'Bia' })
     const started = new Promise<void>((resolve) => host.onMessage('game:started', () => resolve()))
+    markPlayersReady(room)
     host.send('start')
     await started
     const city = boardSpaces.find((space) => space.buildable)!
@@ -1433,6 +1506,7 @@ describe('sala privada', () => {
     const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
     const host = await colyseus.connectTo(room, { name: 'Ana' })
     await colyseus.connectTo(room, { name: 'Bia' })
+    markPlayersReady(room)
     host.send('start')
     await waitFor(() => room.state.status === 'playing')
     const city = boardSpaces.find((space) => space.buildable)!
@@ -1465,6 +1539,7 @@ describe('sala privada', () => {
     const host = await colyseus.connectTo(room, { name: 'Ana' })
     const guest = await colyseus.connectTo(room, { name: 'Bia' })
     const started = new Promise<void>((resolve) => host.onMessage('game:started', () => resolve()))
+    markPlayersReady(room)
     host.send('start')
     await started
     const company = boardSpaces.find((space) => space.company)!
@@ -1498,6 +1573,7 @@ describe('sala privada', () => {
     const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
     const host = await colyseus.connectTo(room, { name: 'Ana' })
     const guest = await colyseus.connectTo(room, { name: 'Bia' })
+    markPlayersReady(room)
     host.send('start')
     await waitFor(() => room.state.status === 'playing')
 
@@ -1540,6 +1616,7 @@ describe('sala privada', () => {
     const host = await colyseus.connectTo(room, { name: 'Ana' })
     const guest = await colyseus.connectTo(room, { name: 'Bia' })
     const started = new Promise<void>((resolve) => host.onMessage('game:started', () => resolve()))
+    markPlayersReady(room)
     host.send('start')
     await started
     const player = room.state.players.get(host.sessionId)!
@@ -1561,6 +1638,7 @@ describe('sala privada', () => {
     const guest = await colyseus.connectTo(room, { name: 'Bia' })
     host.send('setDevToolsEnabled', { enabled: true })
     await waitFor(() => room.state.devToolsEnabled)
+    markPlayersReady(room)
     host.send('start')
     await new Promise((resolve) => setTimeout(resolve, 50))
 
@@ -1616,6 +1694,7 @@ describe('sala privada', () => {
     const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
     const host = await colyseus.connectTo(room, { name: 'Ana' })
     const guest = await colyseus.connectTo(room, { name: 'Bia' })
+    markPlayersReady(room)
     host.send('start')
     await new Promise((resolve) => setTimeout(resolve, 30))
 
@@ -1643,6 +1722,7 @@ describe('sala privada', () => {
     const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
     const host = await colyseus.connectTo(room, { name: 'Ana' })
     await colyseus.connectTo(room, { name: 'Bia' })
+    markPlayersReady(room)
     host.send('start')
     await waitFor(() => room.state.status === 'playing')
 
@@ -1686,6 +1766,7 @@ describe('sala privada', () => {
     const host = await colyseus.connectTo(room, { name: 'Ana' })
     const guest = await colyseus.connectTo(room, { name: 'Bia' })
     const third = await colyseus.connectTo(room, { name: 'Caio' })
+    markPlayersReady(room)
     host.send('start')
     await waitFor(() => room.state.status === 'playing')
 
@@ -1713,6 +1794,7 @@ describe('sala privada', () => {
     const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
     const host = await colyseus.connectTo(room, { name: 'Ana' })
     await colyseus.connectTo(room, { name: 'Bia' })
+    markPlayersReady(room)
     host.send('start')
     await waitFor(() => room.state.status === 'playing')
 
@@ -1739,6 +1821,7 @@ describe('sala privada', () => {
     const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
     const host = await colyseus.connectTo(room, { name: 'Ana' })
     await colyseus.connectTo(room, { name: 'Bia' })
+    markPlayersReady(room)
     host.send('start')
     await waitFor(() => room.state.status === 'playing')
 
@@ -1764,6 +1847,7 @@ describe('sala privada', () => {
     const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
     const host = await colyseus.connectTo(room, { name: 'Ana' })
     const guest = await colyseus.connectTo(room, { name: 'Bia' })
+    markPlayersReady(room)
     host.send('start')
     await waitFor(() => room.state.status === 'playing')
 
@@ -1833,6 +1917,7 @@ describe('sala privada', () => {
     const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
     const host = await colyseus.connectTo(room, { name: 'Ana' })
     const guest = await colyseus.connectTo(room, { name: 'Bia' })
+    markPlayersReady(room)
     host.send('start')
     await waitFor(() => room.state.status === 'playing')
     room.state.festivalSpaceIds = ''
@@ -1882,6 +1967,7 @@ describe('sala privada', () => {
     const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
     const host = await colyseus.connectTo(room, { name: 'Ana' })
     const guest = await colyseus.connectTo(room, { name: 'Bia' })
+    markPlayersReady(room)
     host.send('start')
     await waitFor(() => room.state.status === 'playing')
     room.state.festivalSpaceIds = ''
@@ -1915,6 +2001,7 @@ describe('sala privada', () => {
     const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
     const host = await colyseus.connectTo(room, { name: 'Ana' })
     const guest = await colyseus.connectTo(room, { name: 'Bia' })
+    markPlayersReady(room)
     host.send('start')
     await waitFor(() => room.state.status === 'playing')
 
@@ -1950,6 +2037,7 @@ describe('sala privada', () => {
     const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
     const host = await colyseus.connectTo(room, { name: 'Ana' })
     const guest = await colyseus.connectTo(room, { name: 'Bia' })
+    markPlayersReady(room)
     host.send('start')
     await waitFor(() => room.state.status === 'playing')
 
@@ -1976,6 +2064,7 @@ describe('sala privada', () => {
     const host = await colyseus.connectTo(room, { name: 'Ana' })
     const guest = await colyseus.connectTo(room, { name: 'Bia' })
     const third = await colyseus.connectTo(room, { name: 'Caio' })
+    markPlayersReady(room)
     host.send('start')
     await waitFor(() => room.state.status === 'playing')
 
@@ -2016,6 +2105,7 @@ describe('sala privada', () => {
     const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
     const host = await colyseus.connectTo(room, { name: 'Ana' })
     const guest = await colyseus.connectTo(room, { name: 'Bia' })
+    markPlayersReady(room)
     host.send('start')
     await waitFor(() => room.state.status === 'playing')
 
@@ -2117,6 +2207,7 @@ describe('sala privada', () => {
     const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
     const host = await colyseus.connectTo(room, { name: 'Ana' })
     const guest = await colyseus.connectTo(room, { name: 'Bia' })
+    markPlayersReady(room)
     host.send('start')
     await new Promise((resolve) => setTimeout(resolve, 30))
 
@@ -2145,6 +2236,7 @@ describe('sala privada', () => {
     const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
     const host = await colyseus.connectTo(room, { name: 'Ana' })
     const guest = await colyseus.connectTo(room, { name: 'Bia' })
+    markPlayersReady(room)
     host.send('start')
     await new Promise((resolve) => setTimeout(resolve, 30))
     room.state.matchSeconds = 1
@@ -2164,6 +2256,7 @@ describe('sala privada', () => {
     const host = await colyseus.connectTo(room, { name: 'Ana' })
     const guest = await colyseus.connectTo(room, { name: 'Bia' })
     await colyseus.connectTo(room, { name: 'Caio' })
+    markPlayersReady(room)
     host.send('start')
     await new Promise((resolve) => setTimeout(resolve, 30))
 
