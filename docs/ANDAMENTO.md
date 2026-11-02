@@ -1,3 +1,12 @@
+# Salas e interface responsivas para seis participantes — concluído (2026-11-02)
+
+- Pedido: permitir partidas com até seis pessoas e revisar a responsividade geral, com atenção aos cartões de jogadores e às telas desktop, tablet e celular.
+- Estado verificado: servidor e lobby limitavam salas a quatro; o HUD de partida usava quatro posições fixas e a prévia de lugares no lobby tinha quatro assentos.
+- Direção: usar um limite compartilhado de seis; cartões em uma fileira em telas largas e grade de três por duas em telas menores; preservar cena 3D, escolhas no tabuleiro e o conteúdo compacto dos painéis.
+- Implementado: o limite `MAX_ROOM_PLAYERS` é compartilhado entre lobby e servidor; seis conexões são aceitas, a sétima é recusada e o preenchimento por bots respeita o mesmo limite. O lobby mostra seis vagas e a mesa de assentos em grade 3×2. O HUD mostra seis cartões numa fileira em telas largas e em grade 3×2 em larguras compactas, com um arranjo específico para celular em paisagem. As regras de turno, economia, tempo e ordem foram preservadas.
+- Validação: `npm run verify` passou com loopback local permitido (57 arquivos, 308 testes e builds web/servidor). Playtest local real com anfitriã e cinco bots chegou a 6/6, iniciou a partida e renderizou os seis cartões, seis fichas empilhadas e o painel de compra em viewport 789×860; não encontrei falha visual nesse tamanho. Testes verificam as regras CSS para desktop, tablet/celular e paisagem. O navegador interno não ofereceu emulação/ajuste de viewport nesta sessão, então não capturei uma revisão visual independente em tela larga e celular.
+- Próximo passo: revisar manualmente em um monitor e em um celular físicos, especialmente a leitura dos saldos nos cartões estreitos.
+
 # Falha ao carregar a partida após início — concluída (2026-11-02)
 
 - Captura pública mostra o módulo dinâmico `CashHud-….js` retornando 404 ao iniciar a partida, seguido por exceção de importação e tela vazia. `CashHud` é lazy-loaded quando a tela de jogo é montada; o app não tinha recuperação para falha de chunk nem Error Boundary na raiz.

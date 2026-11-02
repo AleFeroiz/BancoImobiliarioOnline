@@ -1,3 +1,10 @@
+# 2026-11-02 — Salas e HUD responsivos para seis participantes
+
+- `npm run verify` passou com loopback local permitido: 57 arquivos de teste, 308 testes, build Vite e build do servidor. Permanece o aviso conhecido do chunk 3D acima de 500 kB.
+- Regressões Colyseus permitem seis conexões, rejeitam a sétima, e completam a sala com cinco bots sem exceder a capacidade. Teste responsivo confere seis cartões em fileira larga, três colunas em telas compactas e seis posições no lobby.
+- Playtest local em viewport 789×860: uma anfitriã completou seis lugares com bots, iniciou a partida e viu os seis cartões, as fichas empilhadas na Partida e um painel real de compra. Nenhum problema de sobreposição entre o painel de compra e o HUD foi observado nesse tamanho.
+- Não foi possível trocar o viewport do navegador interno nesta sessão; a apresentação em monitor largo, celular retrato e celular paisagem permanece sem captura manual. As regras CSS desses breakpoints passaram pelo teste estático e pelo build.
+
 # 2026-11-02 — Recuperação de falha de chunk ao iniciar partida
 
 - `npm run verify` passou com loopback permitido: 57 arquivos de teste, 305 testes, TypeScript, build Vite e build do servidor. Aviso de bundle 3D acima de 500 kB continua presente.

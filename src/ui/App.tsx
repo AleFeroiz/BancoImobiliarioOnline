@@ -1,6 +1,6 @@
 import { lazy, Suspense, useEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react'
 import type { Room } from '@colyseus/sdk'
-import { CHARACTER_OPTIONS, type CharacterType, type GameMode, type LobbyPlayer } from '../../shared/lobby'
+import { CHARACTER_OPTIONS, MAX_ROOM_PLAYERS, type CharacterType, type GameMode, type LobbyPlayer } from '../../shared/lobby'
 import { getMatchEndSummary, type MatchEndReason } from '../../shared/game'
 import { EVENT_CARDS } from '../../shared/cards'
 import { scheduleSceneLoad } from './sceneLoading'
@@ -56,7 +56,7 @@ function formatClock(seconds: number) {
 }
 
 const modeDetails: Record<Mode, { title: string; duration: string; detail: string }> = {
-  classic: { title: 'BANTEC', duration: '30 min', detail: 'Partida por patrimônio • 2 a 4 jogadores' },
+  classic: { title: 'BANTEC', duration: '30 min', detail: `Partida por patrimônio • 2 a ${MAX_ROOM_PLAYERS} jogadores` },
 }
 
 function durationLabel(seconds: number) {
@@ -901,7 +901,7 @@ function App() {
             <div className="mode-switch match-duration-selector" role="group" aria-label="Duração da partida">
               {MATCH_DURATIONS.map((duration) => <button key={duration} type="button" aria-pressed={matchDuration === duration} className={`mode-tab${matchDuration === duration ? ' selected' : ''}`} onClick={() => setMatchDuration(duration)}><span>{durationLabel(duration)}</span><small>{duration === 0 ? 'Sem limite' : duration === 900 ? 'Partida rápida' : duration === 1800 ? 'Clássica' : 'Partida longa'}</small></button>)}
             </div>
-            <div className="mode-note"><span className="note-icon">✦</span><span>Complete regiões, monopolize linhas e vença.</span><span className="player-limit">2–4 JOGADORES</span></div>
+            <div className="mode-note"><span className="note-icon">✦</span><span>Complete regiões, monopolize linhas e vença.</span><span className="player-limit">2–{MAX_ROOM_PLAYERS} JOGADORES</span></div>
           </div>
 
           <section className="entry-card" aria-label="Criar ou entrar em uma sala">
@@ -940,20 +940,20 @@ function App() {
                 </button>
               })}</div>
             </div>}
-            <div className="seat-list">{roomPlayers.map((player, index) => <div className="seat" key={player.sessionId}><span className={`seat-avatar avatar-${index}`}>{player.name.slice(0, 1).toUpperCase()}</span><span>{player.name}</span>{player.isBot ? <small className="seat-bot">BOT · PRONTO</small> : player.isBotControlled ? <small className="seat-bot">BOT NO CONTROLE</small> : player.isConnected === false ? <small className="seat-reconnecting">{player.reconnectionExpired ? 'OFFLINE' : 'RECONECTANDO'}</small> : player.isReady ? <small className="seat-ready">PRONTO</small> : <small className="seat-not-ready">AGUARDANDO</small>}{isHost && player.isBot && <button className="seat-remove-bot" onClick={() => removeBot(player.sessionId)} aria-label={`Remover ${player.name}`}>×</button>}</div>)}{Array.from({ length: Math.max(0, 4 - roomPlayers.length) }, (_, index) => <div className="seat waiting" key={`waiting-${index}`}><span className="seat-avatar">+</span><span>Aguardando jogador</span></div>)}</div>
+            <div className="seat-list">{roomPlayers.map((player, index) => <div className="seat" key={player.sessionId}><span className={`seat-avatar avatar-${index}`}>{player.name.slice(0, 1).toUpperCase()}</span><span>{player.name}</span>{player.isBot ? <small className="seat-bot">BOT · PRONTO</small> : player.isBotControlled ? <small className="seat-bot">BOT NO CONTROLE</small> : player.isConnected === false ? <small className="seat-reconnecting">{player.reconnectionExpired ? 'OFFLINE' : 'RECONECTANDO'}</small> : player.isReady ? <small className="seat-ready">PRONTO</small> : <small className="seat-not-ready">AGUARDANDO</small>}{isHost && player.isBot && <button className="seat-remove-bot" onClick={() => removeBot(player.sessionId)} aria-label={`Remover ${player.name}`}>×</button>}</div>)}{Array.from({ length: Math.max(0, MAX_ROOM_PLAYERS - roomPlayers.length) }, (_, index) => <div className="seat waiting" key={`waiting-${index}`}><span className="seat-avatar">+</span><span>Aguardando jogador</span></div>)}</div>
             {roomPlayers.some((player) => player.sessionId === localSessionId && !player.isBot) && <button type="button" className={`lobby-ready-button${roomPlayers.find((player) => player.sessionId === localSessionId)?.isReady ? ' is-ready' : ''}`} aria-pressed={Boolean(roomPlayers.find((player) => player.sessionId === localSessionId)?.isReady)} onClick={() => room?.send('setReady', { ready: !roomPlayers.find((player) => player.sessionId === localSessionId)?.isReady })}>{roomPlayers.find((player) => player.sessionId === localSessionId)?.isReady ? '✓ Pronto · cancelar' : 'Estou pronto'}</button>}
-            {isHost && roomPlayers.length < 4 && <button className="add-bot-button" onClick={addBot}>＋ Adicionar bot</button>}
-            <div className="prototype-note">{roomPlayers.length}/4 lugares ocupados · sala temporária para sua turma.</div>
+            {isHost && roomPlayers.length < MAX_ROOM_PLAYERS && <button className="add-bot-button" onClick={addBot}>＋ Adicionar bot</button>}
+            <div className="prototype-note">{roomPlayers.length}/{MAX_ROOM_PLAYERS} lugares ocupados · sala temporária para sua turma.</div>
             {error && <p className="form-error" role="alert">{error}</p>}
             <button className="primary-button" onClick={startGame} disabled={!isHost || roomPlayers.length < 2 || roomPlayers.some((player) => !player.isBot && player.isConnected === false) || roomPlayers.some((player) => !player.isBot && !player.isReady)}><span>{isHost ? (roomPlayers.length < 2 ? 'Aguardando jogadores ou bots' : roomPlayers.some((player) => !player.isBot && player.isConnected === false) ? 'Aguardando reconexão' : roomPlayers.some((player) => !player.isBot && !player.isReady) ? 'Aguardando todos ficarem prontos' : 'Iniciar partida') : 'Aguardando anfitrião'}</span><span className="button-arrow">↗</span></button>
           </div>
           <div className="room-aside" aria-label="Lugares da sala">
             <div className="aside-top">LUGARES À MESA</div>
-            <div className="seat-orbit"><div className="orbit-center">MESA</div>{Array.from({ length: 4 }, (_, index) => {
+            <div className="seat-orbit"><div className="orbit-center">MESA</div>{Array.from({ length: MAX_ROOM_PLAYERS }, (_, index) => {
               const player = roomPlayers[index]
               return <div className={`seat-orb seat-orb-${index} ${player ? 'occupied' : 'empty'}`} key={player?.sessionId ?? `empty-${index}`}><span>{player?.name.slice(0, 1).toUpperCase() ?? '+'}</span><small>{player?.name ?? 'Livre'}</small></div>
             })}</div>
-            <div className="aside-bottom">{roomPlayers.length < 4 ? 'COMPARTILHE O CÓDIGO E COMPLETE A MESA.' : 'A MESA ESTÁ COMPLETA.'}</div>
+            <div className="aside-bottom">{roomPlayers.length < MAX_ROOM_PLAYERS ? 'COMPARTILHE O CÓDIGO E COMPLETE A MESA.' : 'A MESA ESTÁ COMPLETA.'}</div>
           </div>
         </section>
       )}

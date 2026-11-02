@@ -190,17 +190,17 @@ describe('sala privada', () => {
     expect(host.state.players.size).toBe(2)
   })
 
-  it('permite quatro participantes e rejeita a quinta conexão', async () => {
+  it('permite seis participantes e rejeita a sétima conexão', async () => {
     const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
 
-    for (const name of ['Ana', 'Bia', 'Caio', 'Duda']) {
+    for (const name of ['Ana', 'Bia', 'Caio', 'Duda', 'Eva', 'Fábio']) {
       await colyseus.connectTo(room, { name })
     }
 
-    expect(room.state.players.size).toBe(4)
-    await expect(colyseus.connectTo(room, { name: 'Eva' })).rejects.toThrow()
-    expect(room.state.players.size).toBe(4)
-    expect(Array.from(room.state.players.values()).map((player) => player.name)).toEqual(['Ana', 'Bia', 'Caio', 'Duda'])
+    expect(room.state.players.size).toBe(6)
+    await expect(colyseus.connectTo(room, { name: 'Gabi' })).rejects.toThrow()
+    expect(room.state.players.size).toBe(6)
+    expect(Array.from(room.state.players.values()).map((player) => player.name)).toEqual(['Ana', 'Bia', 'Caio', 'Duda', 'Eva', 'Fábio'])
   })
 
   it('só permite ao anfitrião iniciar com pelo menos duas pessoas', async () => {
@@ -600,6 +600,21 @@ describe('sala privada', () => {
     host.send('start')
     await started
     expect(room.state.status).toBe('playing')
+  })
+
+  it('permite completar os seis lugares com bots e bloqueia um sétimo', async () => {
+    const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
+    const host = await colyseus.connectTo(room, { name: 'Lia' })
+
+    for (let count = 2; count <= 6; count += 1) {
+      host.send('addBot')
+      await waitFor(() => room.state.players.size === count)
+    }
+
+    host.send('addBot')
+    await new Promise((resolve) => setTimeout(resolve, 30))
+    expect(room.state.players.size).toBe(6)
+    expect([...room.state.players.values()].filter((player) => player.isBot)).toHaveLength(5)
   })
 
   it('serializa as ações quando há vários bots e impede nova jogada durante animação', async () => {
@@ -2192,15 +2207,12 @@ describe('sala privada', () => {
     expect(room.state.players.size).toBe(0)
   })
 
-  it('limita a sala a quatro jogadores', async () => {
+  it('limita a sala a seis jogadores', async () => {
     const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
-    await colyseus.connectTo(room, { name: 'Ana' })
-    await colyseus.connectTo(room, { name: 'Bia' })
-    await colyseus.connectTo(room, { name: 'Caio' })
-    await colyseus.connectTo(room, { name: 'Duda' })
+    for (const name of ['Ana', 'Bia', 'Caio', 'Duda', 'Eva', 'Fábio']) await colyseus.connectTo(room, { name })
 
-    await expect(colyseus.connectTo(room, { name: 'Extra' })).rejects.toThrow()
-    expect(room.state.players.size).toBe(4)
+    await expect(colyseus.connectTo(room, { name: 'Gabi' })).rejects.toThrow()
+    expect(room.state.players.size).toBe(6)
   })
 
   it('mantém o relógio Clássico durante a dívida e encerra ao liquidar a cobrança pelo patrimônio de cada pessoa', async () => {

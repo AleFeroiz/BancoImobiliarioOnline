@@ -2,7 +2,8 @@
 
 ## Confirmadas e vigentes
 
-- O produto é **BANTEC**: jogo de tabuleiro privado para navegador, sem contas, para 2–4 participantes, com tabuleiro 3D original e interface responsiva.
+- O produto é **BANTEC**: jogo de tabuleiro privado para navegador, sem contas, para 2–6 participantes, com tabuleiro 3D original e interface responsiva. As seis cadeiras ocupam a mesma sala e a mesma ordem de turnos; a capacidade não altera regras, valores nem duração.
+- A interface da partida acomoda seis cartões sem ampliar painéis: em telas largas, mostra uma fileira; em tablet e celular, reorganiza os cartões em três colunas por duas fileiras. O HUD mantém ações de alvo nos cartões e prioriza o tabuleiro e os painéis contextuais.
 - No lobby, cada participante humano precisa marcar “Estou pronto”; somente depois que todas as pessoas estiverem prontas e conectadas a anfitriã pode iniciar. Bots adicionados pela anfitriã contam como prontos automaticamente.
 - Existe um modo. A anfitriã escolhe no lobby partidas de 15 minutos, 30 minutos, 1 hora ou sem limite de tempo. A economia inspirada em Business Tour mantém R$ 2.000.000 iniciais e bônus de R$ 300.000 ao passar pela Partida.
 - “Sem limite de tempo” remove apenas o cronômetro total da partida; relógios de turno e de decisões continuam ativos para evitar que uma pessoa ausente bloqueie a sala.

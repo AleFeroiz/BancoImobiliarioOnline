@@ -53,3 +53,19 @@ describe('home regional responsiva', () => {
     expect(app).not.toContain('01 <i>/</i> 03')
   })
 })
+
+describe('HUD para seis participantes', () => {
+  it('reorganiza os seis cartões em uma fileira larga ou três colunas em telas compactas', () => {
+    const compactHudBlocks = [...styles.matchAll(/@media\s*\(max-width:\s*(?:1320|640)px\)\s*\{/g)]
+      .map((match) => readBlock(styles, match.index! + match[0].lastIndexOf('{')))
+
+    expect(styles).toMatch(/\.screen-game \.player-hud\s*\{[^}]*grid-template-columns:\s*repeat\(6,minmax\(0,1fr\)\)/)
+    expect(compactHudBlocks.some((block) => /\.screen-game \.player-hud\s*\{[^}]*grid-template-columns:\s*repeat\(3,minmax\(0,1fr\)\)/.test(block))).toBe(true)
+    expect(app).toContain('MAX_ROOM_PLAYERS')
+    expect(app).toContain('length: MAX_ROOM_PLAYERS')
+  })
+
+  it('comprime o HUD quando o celular é usado em paisagem', () => {
+    expect(styles).toMatch(/@media\s*\(max-width:\s*640px\)\s+and\s+\(orientation:\s*landscape\)[\s\S]*?\.screen-game \.player-hud\s*\{[^}]*top:60px/)
+  })
+})
