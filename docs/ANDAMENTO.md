@@ -1,3 +1,12 @@
+# Falha ao carregar a partida após início — concluída (2026-11-02)
+
+- Captura pública mostra o módulo dinâmico `CashHud-….js` retornando 404 ao iniciar a partida, seguido por exceção de importação e tela vazia. `CashHud` é lazy-loaded quando a tela de jogo é montada; o app não tinha recuperação para falha de chunk nem Error Boundary na raiz.
+- Implementado: uma falha de preload do Vite provoca uma única recarga da página por janela de 30 segundos; se o app continuar falhando, Error Boundary mostra uma instrução e botão “Atualizar página”. Regressões cobrem o limite de repetição, nova tentativa após 30 segundos e indisponibilidade do session storage. Sem mudança de regras ou arquitetura do servidor.
+- `npm run verify` passou com loopback local permitido: 57 arquivos de teste, 305 testes e builds web/servidor. Graphify atualizado para 1.115 nós, 2.096 arestas e 79 comunidades.
+- Playtest local com anfitriã e três bots: início da partida renderizou tabuleiro 3D e HUD de saldo; console sem erros ou avisos. Não reproduzi a falha do chunk em produção nem forcei a tela do Error Boundary no navegador.
+- Causa inicial provável: referência de bundle antiga em cache após publicação, mas a captura sozinha não identifica a origem do 404. A publicação da correção permite observar se a tela pública volta a carregar.
+- Próximo passo: publicar os arquivos desta correção em `main` e confirmar o push.
+
 # Empilhamento de fichas no tabuleiro — concluído (2026-11-02)
 
 - Todas as fichas agora compartilham a posição voltada para dentro de cada piso e ocupantes da mesma casa formam uma torre vertical em ordem estável de assento. Nas quatro casas de canto, a pilha fica centralizada.

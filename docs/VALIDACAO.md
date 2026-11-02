@@ -1,3 +1,10 @@
+# 2026-11-02 — Recuperação de falha de chunk ao iniciar partida
+
+- `npm run verify` passou com loopback permitido: 57 arquivos de teste, 305 testes, TypeScript, build Vite e build do servidor. Aviso de bundle 3D acima de 500 kB continua presente.
+- Três regressões verificam que a recuperação recarrega uma vez, permite nova tentativa após 30 segundos e não cria recarga repetida quando session storage falha.
+- Playtest local no navegador: criei sala, adicionei três bots, marquei prontidão e iniciei. Tabuleiro 3D e HUD com quatro saldos ficaram visíveis; console sem erros ou avisos.
+- Limite: não reproduzi o 404 do chunk em produção nem forcei o Error Boundary no navegador. A origem do arquivo ausente permanece incerta; a incompatibilidade entre bundle em cache e publicação atual é hipótese.
+
 # 2026-11-02 — Empilhamento de fichas
 
 - Regressões direcionadas: 12 testes passaram para orientação das fichas nos quatro lados, centralização nos quatro cantos, pilha determinística de seis participantes, pilhas independentes por piso e índices inválidos.
