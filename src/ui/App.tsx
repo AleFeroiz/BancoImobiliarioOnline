@@ -970,15 +970,20 @@ function App() {
       {screen === 'room' && (
         <section className="room-layout">
           <div className="room-card">
+            <div className="room-intro">
             <button className="back-link" onClick={() => void leaveRoom()}>← Início</button>
             <span className="eyebrow">SALA PRIVADA</span>
-            <h1>Chame a<br /><em>sua turma.</em></h1>
+            <h1>Chame sua turma.</h1>
             <p>Envie um link de convite; seus amigos só precisam informar o nome para entrar.</p>
             <div className="room-code-label">CÓDIGO DA SALA</div><button className="room-code" onClick={() => navigator.clipboard?.writeText(roomCode)}>{roomCode}<span>▣</span></button>
             <div className="room-invite-tools"><button type="button" className="room-invite-button" onClick={() => void copyRoomInvite()}>{roomInviteCopied ? '✓ Link copiado' : 'Copiar link de convite'}</button>{roomInviteUrl && <label className="room-invite-link"><span>LINK DE CONVITE</span><input aria-label="Link de convite da sala" readOnly value={roomInviteUrl} onFocus={(event) => event.currentTarget.select()} /></label>}</div>
+            </div>
+            <div className="room-settings">
             <div className="room-mode"><span className="mode-icon">✦</span><div><strong>BANTEC · {durationLabel(matchDuration)}</strong><small>{matchDuration === 0 ? 'Sem limite para a partida; turnos e decisões continuam cronometrados.' : 'Vence quem completar um monopólio ou tiver o maior patrimônio ao fim do tempo.'}</small></div></div>
             {isHost && <div className="lobby-duration-selector" role="group" aria-label="Duração da partida"><span>DURAÇÃO DA PARTIDA</span>{MATCH_DURATIONS.map((duration) => <button key={duration} type="button" className="lobby-duration-option" aria-pressed={matchDuration === duration} onClick={() => room?.send('setMatchDuration', { duration })}>{durationLabel(duration)}</button>)}</div>}
             <div className={`dev-tools-setting${devModeEnabled ? ' enabled' : ''}`} aria-live="polite"><span><strong>Modo DEV · dados forçados</strong><small>{devModeEnabled ? 'Ativado para esta partida' : 'Desativado para esta partida'}</small></span>{isHost && <button type="button" aria-pressed={devModeEnabled} onClick={() => room?.send('setDevToolsEnabled', { enabled: !devModeEnabled })}>{devModeEnabled ? 'Desativar' : 'Ativar'}</button>}</div>
+            </div>
+            <div className="room-appearance">
             {roomPlayers.some((player) => player.sessionId === localSessionId) && <div className="player-color-selector" aria-label="Escolha sua cor"><span className="character-selector-label">ESCOLHA SUA COR</span><div className="player-color-options">{PLAYER_COLORS.map((color, index) => { const selectedColor = roomPlayers.find((player) => player.sessionId === localSessionId)?.color; const taken = roomPlayers.some((player) => player.sessionId !== localSessionId && player.color === color); return <button key={color} type="button" aria-label={`Cor ${PLAYER_COLOR_NAMES[index]}`} aria-pressed={selectedColor === color} disabled={taken} className={`player-color-option${selectedColor === color ? ' selected' : ''}`} style={{ '--player-option-color': color } as CSSProperties} onClick={() => selectPlayerColor(color)}><i />{PLAYER_COLOR_NAMES[index]}{taken ? ' · ocupada' : ''}</button> })}</div></div>}
             {roomPlayers.some((player) => player.sessionId === localSessionId) && <div className="character-selector" aria-label="Escolha sua ficha para a partida">
               <span className="character-selector-label">ESCOLHA SUA FICHA</span>
@@ -990,20 +995,15 @@ function App() {
                 </button>
               })}</div>
             </div>}
+            </div>
+            <div className="room-roster">
             <div className="seat-list">{roomPlayers.map((player, index) => <div className="seat" key={player.sessionId}><span className={`seat-avatar avatar-${index}`}>{player.name.slice(0, 1).toUpperCase()}</span><span>{player.name}</span>{player.isBot ? <small className="seat-bot">BOT · PRONTO</small> : player.isBotControlled ? <small className="seat-bot">BOT NO CONTROLE</small> : player.isConnected === false ? <small className="seat-reconnecting">{player.reconnectionExpired ? 'OFFLINE' : 'RECONECTANDO'}</small> : player.isReady ? <small className="seat-ready">PRONTO</small> : <small className="seat-not-ready">AGUARDANDO</small>}{isHost && player.isBot && <button className="seat-remove-bot" onClick={() => removeBot(player.sessionId)} aria-label={`Remover ${player.name}`}>×</button>}</div>)}{Array.from({ length: Math.max(0, MAX_ROOM_PLAYERS - roomPlayers.length) }, (_, index) => <div className="seat waiting" key={`waiting-${index}`}><span className="seat-avatar">+</span><span>Aguardando jogador</span></div>)}</div>
             {roomPlayers.some((player) => player.sessionId === localSessionId && !player.isBot) && <button type="button" className={`lobby-ready-button${roomPlayers.find((player) => player.sessionId === localSessionId)?.isReady ? ' is-ready' : ''}`} aria-pressed={Boolean(roomPlayers.find((player) => player.sessionId === localSessionId)?.isReady)} onClick={() => room?.send('setReady', { ready: !roomPlayers.find((player) => player.sessionId === localSessionId)?.isReady })}>{roomPlayers.find((player) => player.sessionId === localSessionId)?.isReady ? '✓ Pronto · cancelar' : 'Estou pronto'}</button>}
             {isHost && roomPlayers.length < MAX_ROOM_PLAYERS && <button className="add-bot-button" onClick={addBot}>＋ Adicionar bot</button>}
             <div className="prototype-note">{roomPlayers.length}/{MAX_ROOM_PLAYERS} lugares ocupados · sala temporária para sua turma.</div>
             {error && <p className="form-error" role="alert">{error}</p>}
             <button className="primary-button" onClick={startGame} disabled={!isHost || roomPlayers.length < 2 || roomPlayers.some((player) => !player.isBot && player.isConnected === false) || roomPlayers.some((player) => !player.isBot && !player.isReady)}><span>{isHost ? (roomPlayers.length < 2 ? 'Aguardando jogadores ou bots' : roomPlayers.some((player) => !player.isBot && player.isConnected === false) ? 'Aguardando reconexão' : roomPlayers.some((player) => !player.isBot && !player.isReady) ? 'Aguardando todos ficarem prontos' : 'Iniciar partida') : 'Aguardando anfitrião'}</span><span className="button-arrow">↗</span></button>
-          </div>
-          <div className="room-aside" aria-label="Lugares da sala">
-            <div className="aside-top">LUGARES À MESA</div>
-            <div className="seat-orbit"><div className="orbit-center">MESA</div>{Array.from({ length: MAX_ROOM_PLAYERS }, (_, index) => {
-              const player = roomPlayers[index]
-              return <div className={`seat-orb seat-orb-${index} ${player ? 'occupied' : 'empty'}`} key={player?.sessionId ?? `empty-${index}`}><span>{player?.name.slice(0, 1).toUpperCase() ?? '+'}</span><small>{player?.name ?? 'Livre'}</small></div>
-            })}</div>
-            <div className="aside-bottom">{roomPlayers.length < MAX_ROOM_PLAYERS ? 'COMPARTILHE O CÓDIGO E COMPLETE A MESA.' : 'A MESA ESTÁ COMPLETA.'}</div>
+            </div>
           </div>
         </section>
       )}

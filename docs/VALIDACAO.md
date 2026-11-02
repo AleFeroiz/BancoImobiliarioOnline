@@ -46,6 +46,14 @@
 - `npm run verify` passou após liberar loopback local: 59 arquivos de teste, 317 testes, build Vite e build do servidor. O build mantém o aviso conhecido de bundle de cena 3D acima de 500 kB.
 - Regressões cobrem aceitação de recompra pelo bot com caixa suficiente, reservas e conclusão de grupo; valores de liquidação só para a sessão devedora; mensagens de transferência, Apagão, Proteção, Terremoto e Copa.
 - Playtest local com pessoa e bot: comprei Canaã dos Carajás, escolhi a sede da Copa e depois apliquei Proteção por carta DEV. O HUD mostrou a sede e o selo temporário `PROTEÇÃO!` sobre a cidade protegida, além da bolha persistente. A conexão da sala de QA encerrou quando o servidor reiniciou durante o build; o selo da Copa com confetes não foi capturado manualmente.
+
+# 2026-11-02 — Home e lobby compactos
+
+- Playtest manual local no navegador: home mostra somente o título “BANTEC.” com os cinco marcadores regionais imediatamente abaixo; removida a frase de destaque anterior. Em desktop (1920×1080) e celular (390×844), a chamada, percurso, duração, acesso à sala e rodapé ficaram visíveis sem rolagem.
+- Lobby testado em viewport de tablet e em celular (390×844) com seis participantes. Convite, configurações, escolha entre 12 cores e 14 fichas, seis lugares, botão de prontidão e ação de início couberam na tela; a barra de rolagem residual observada inicialmente no tablet foi eliminada após corrigir a altura mínima para descontar o cabeçalho. O painel “LUGARES À MESA” foi removido.
+- A home não exibe login ou informação extra; o lobby mantém os estados de prontidão e bot. O teste de seis lugares foi local e temporário.
+- Regressões em `tests/interfaceLayout.test.ts` e `tests/responsiveResults.test.ts` cobrem hierarquia e regras CSS responsivas. `npm run verify` passou: 59 arquivos de teste, 317 testes, build Vite e build do servidor. Continua o aviso conhecido de chunk acima de 500 kB.
+
 # 2026-11-02 — Recuperação após perda do contexto WebGL
 
 - Regressões direcionadas: 7 testes passaram; verificam redução de qualidade de `alta` para `equilibrada` e depois `desempenho`, além dos eventos de perda/restauração que comandam a mensagem e a recuperação do Canvas.

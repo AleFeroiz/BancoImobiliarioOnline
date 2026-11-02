@@ -5,6 +5,16 @@
 - Implementado: recompra pelo bot com reserva de caixa e menor reserva quando completa grupo; valores de liquidação somente para a sessão ativa que resolve dívida; mensagens sincronizadas e selos/aneis temporários para transferência, apagão, proteção, terremoto e Copa, com confetes na sede. Terremoto mantém também o colapso 3D.
 - Validação: `npm run verify` passou com 59 arquivos e 317 testes, build Vite e build do servidor. Playtest local confirmou o selo de Proteção sobre a cidade e a bandeira da sede; a conexão temporária caiu quando o servidor reiniciou durante o build.
 - Próximo passo: observar em partidas reais se as decisões de recompra e os avisos temporários das cidades ficam claros para o grupo.
+
+# Ajuste da home e do lobby — concluído (2026-11-02)
+
+- Pedido: remover o destaque “Seu Brasil, seu negócio.”, aproximar os marcadores regionais de BANTEC, reorganizar o lobby para caber numa tela e remover o painel decorativo “LUGARES À MESA”.
+- Implementado: a home mostra BANTEC com os cinco marcadores regionais logo abaixo. O lobby usa colunas para convite/configurações e escolhas visuais/participantes; o painel lateral decorativo foi removido. O layout compacto foi ajustado para desktop, tablet e celular, mantendo as escolhas de 12 cores, 14 fichas, seis lugares, prontidão, bots e início da partida.
+- Validação visual manual em navegador local: home no desktop e celular; lobby com seis participantes em viewport 390×844 e painel completo em viewport de tablet. Não houve rolagem nas capturas finais; a altura de tablet foi ajustada depois da primeira revisão.
+- `npm run verify` passou: 59 arquivos de teste, 317 testes, build Vite e build do servidor. O aviso conhecido de chunk acima de 500 kB permanece.
+- `npm run graphify -- update .` concluiu: 1.139 nós, 2.149 arestas e 79 comunidades.
+- Próximo passo: acompanhar a leitura do lobby em celulares físicos.
+
 # Link de convite direto para a sala — concluído (2026-11-02)
 
 - Pedido: gerar um link de sala que leve a pessoa diretamente ao convite; antes de entrar, ela informa o nome de usuário.

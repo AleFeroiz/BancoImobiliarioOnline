@@ -62,7 +62,7 @@ describe('HUD para seis participantes', () => {
     expect(styles).toMatch(/\.screen-game \.player-hud\s*\{[^}]*grid-template-columns:\s*repeat\(6,minmax\(0,1fr\)\)/)
     expect(compactHudBlocks.some((block) => /\.screen-game \.player-hud\s*\{[^}]*grid-template-columns:\s*repeat\(3,minmax\(0,1fr\)\)/.test(block))).toBe(true)
     expect(app).toContain('MAX_ROOM_PLAYERS')
-    expect(app).toContain('length: MAX_ROOM_PLAYERS')
+    expect(app).toContain('Math.max(0, MAX_ROOM_PLAYERS - roomPlayers.length)')
   })
 
   it('comprime o HUD quando o celular é usado em paisagem', () => {

@@ -111,6 +111,102 @@ button:disabled{opacity:.55;cursor:not-allowed}
 }
 @media(prefers-reduced-motion:reduce){.screen-game .turn-card,.screen-game .space-inspector{animation:none}}
 
+/* Home e lobby compactos: conteúdo prioritário visível sem rolagem no desktop. */
+.screen-home .hero-copy h1{margin:18px 0 7px}
+.screen-home .home-region-route{margin:5px 0 18px;max-width:440px}
+.screen-home .region-route-heading{margin-bottom:9px}
+.screen-home .region-route-stop{gap:6px}
+.screen-room .room-layout{display:flex;align-items:center;justify-content:center;min-height:calc(100dvh - 82px);padding:12px 4vw}
+.screen-room .room-card{display:grid;grid-template-columns:minmax(250px,.82fr) minmax(0,1.18fr);grid-template-areas:"intro appearance" "settings roster";align-items:start;gap:10px 24px;width:min(1200px,100%);max-height:calc(100dvh - 102px);overflow:visible;padding:19px 22px;border-radius:16px}
+.screen-room .room-intro{grid-area:intro;min-width:0}
+.screen-room .room-settings{grid-area:settings;min-width:0}
+.screen-room .room-appearance{grid-area:appearance;min-width:0}
+.screen-room .room-roster{grid-area:roster;min-width:0;display:flex;flex-direction:column;gap:6px}
+.screen-room .room-card .back-link{margin-bottom:9px}
+.screen-room .room-card h1{font-size:clamp(34px,3.2vw,46px);margin:6px 0 7px}
+.screen-room .room-card .room-intro>p{font-size:11px;line-height:1.45}
+.screen-room .room-code-label{margin:13px 0 5px}
+.screen-room .room-code{height:46px;font-size:21px}
+.screen-room .room-invite-tools{margin:8px 0 0}
+.screen-room .room-invite-button{min-height:38px}
+.screen-room .room-mode{margin:0 0 8px;padding:9px 10px}
+.screen-room .room-mode small{font-size:8px;line-height:1.35}
+.screen-room .lobby-duration-selector{gap:5px;margin:7px 0;padding:8px}
+.screen-room .lobby-duration-selector>span{flex:1 0 100%;font-size:7px}
+.screen-room .lobby-duration-option{min-height:30px;padding:4px 9px;font-size:8px}
+.screen-room .dev-tools-setting{margin-top:7px;padding:8px 10px}
+.screen-room .player-color-selector,.screen-room .character-selector{margin:0 0 8px;padding:8px}
+.screen-room .character-selector-label{margin-bottom:6px;font-size:7px}
+.screen-room .player-color-options{grid-template-columns:repeat(6,minmax(0,1fr));gap:4px}
+.screen-room .player-color-option{min-height:29px;gap:4px;padding:3px;font-size:7px}
+.screen-room .player-color-option i{width:9px;height:9px}
+.screen-room .character-option-list{grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+.screen-room .character-option{min-height:49px;gap:1px;font-size:7px}
+.screen-room .character-option-icon,.screen-room .character-option-emoji{width:27px;height:25px}
+.screen-room .character-option-emoji{font-size:18px}
+.screen-room .seat-list{grid-template-columns:repeat(2,minmax(0,1fr));gap:3px 9px}
+.screen-room .seat{height:31px;gap:6px;font-size:9px}
+.screen-room .seat-avatar{width:23px;height:23px;flex:none}
+.screen-room .seat small{font-size:6px;letter-spacing:.06em}
+.screen-room .lobby-ready-button{min-height:36px;margin-top:3px}
+.screen-room .add-bot-button{margin-top:0;padding:7px 9px;font-size:9px}
+.screen-room .prototype-note{padding-top:2px;font-size:8px}
+.screen-room .room-card .primary-button{height:41px;margin-top:2px;font-size:10px}
+.screen-home[data-night-mode="true"] .home-region-route{color:#e0e5d7}
+@media(max-height:800px) and (min-width:701px){
+  .screen-room .room-card{gap:6px 18px;padding:13px 17px}
+  .screen-room .room-card h1{font-size:36px}
+  .screen-room .room-mode{padding:7px 9px}
+  .screen-room .character-option{min-height:43px}
+  .screen-room .seat{height:27px}
+}
+@media(max-width:900px){
+  .screen-room .room-layout{min-height:calc(100dvh - 82px);padding:8px 12px}
+  .screen-room .room-card{grid-template-columns:minmax(220px,.8fr) minmax(0,1.2fr);gap:9px 14px;max-height:calc(100dvh - 90px);padding:14px}
+  .screen-room .player-color-options{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .screen-room .character-option-list{grid-template-columns:repeat(5,minmax(0,1fr))}
+}
+@media(max-width:640px){
+  .screen-home .hero-copy h1{font-size:50px;margin:13px 0 5px}
+  .screen-home .home-region-route{margin:4px 0 12px}
+  .screen-home .region-route-stop{gap:7px;font-size:clamp(5px,1.9vw,7px)}
+  .screen-room .room-layout{min-height:calc(100dvh - 66px);padding:7px;overflow:hidden}
+  .screen-room .room-card{grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);grid-template-areas:"intro appearance" "settings roster";gap:6px 8px;width:100%;max-height:calc(100dvh - 80px);padding:9px;border-radius:12px}
+  .screen-room .room-card .back-link{margin-bottom:5px;font-size:8px}
+  .screen-room .room-card h1{font-size:clamp(22px,7.5vw,30px);margin:4px 0 5px}
+  .screen-room .room-card .room-intro>p{font-size:8px;line-height:1.3}
+  .screen-room .room-code-label{margin:8px 0 4px;font-size:6px}
+  .screen-room .room-code{height:35px;padding:0 8px;font-size:15px}
+  .screen-room .room-invite-tools{margin:5px 0 0}
+  .screen-room .room-invite-button{min-height:31px;padding:0 5px;font-size:8px}
+  .screen-room .room-mode{margin:0 0 5px;padding:6px;gap:5px}
+  .screen-room .room-mode strong{font-size:8px}
+  .screen-room .room-mode small{font-size:6px;line-height:1.25}
+  .screen-room .lobby-duration-selector{gap:3px;margin:5px 0;padding:5px}
+  .screen-room .lobby-duration-option{min-height:26px;padding:3px 5px;font-size:7px}
+  .screen-room .dev-tools-setting{gap:4px;margin-top:5px;padding:5px}
+  .screen-room .dev-tools-setting strong{font-size:7px}
+  .screen-room .dev-tools-setting small{font-size:6px}
+  .screen-room .dev-tools-setting button{min-width:48px;padding:5px;font-size:7px}
+  .screen-room .player-color-selector,.screen-room .character-selector{margin:0 0 5px;padding:5px}
+  .screen-room .character-selector-label{margin-bottom:4px;font-size:6px}
+  .screen-room .player-color-options{grid-template-columns:repeat(3,minmax(0,1fr));gap:3px}
+  .screen-room .player-color-option{min-height:23px;gap:3px;padding:2px;font-size:6px}
+  .screen-room .player-color-option i{width:7px;height:7px}
+  .screen-room .character-option-list{grid-template-columns:repeat(4,minmax(0,1fr));gap:3px}
+  .screen-room .character-option{min-height:36px;gap:0;font-size:6px}
+  .screen-room .character-option-icon,.screen-room .character-option-emoji{width:20px;height:19px}
+  .screen-room .character-option-emoji{font-size:14px}
+  .screen-room .seat-list{gap:1px 4px}
+  .screen-room .seat{height:23px;gap:3px;font-size:7px}
+  .screen-room .seat-avatar{width:18px;height:18px;font-size:8px}
+  .screen-room .seat small{font-size:5px;letter-spacing:0}
+  .screen-room .lobby-ready-button{min-height:29px;margin-top:2px;font-size:8px}
+  .screen-room .add-bot-button{padding:5px;font-size:7px}
+  .screen-room .prototype-note{font-size:6px}
+  .screen-room .room-card .primary-button{height:33px;font-size:8px}
+}
+
 /* A partida usa a altura total da janela; os controles gerais ficam no rodapé compacto. */
 .screen-game .game-overlay{padding:12px 16px 10px;min-height:100dvh}
 .screen-game .game-topline{min-height:36px;gap:8px;flex-wrap:wrap}
