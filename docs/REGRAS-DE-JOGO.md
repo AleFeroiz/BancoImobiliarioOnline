@@ -9,6 +9,7 @@ Este documento descreve somente as regras atuais do BANTEC. Referências ao Expr
 - A partida termina imediatamente se alguém completar um Monopólio em Linha, dois Monopólios Regionais ou possuir as quatro companhias. Se o relógio zerar, a resolução já iniciada termina e vence quem tiver maior patrimônio; dívidas continuam até serem quitadas ou levarem à falência.
 - Para o desempate pelo tempo, compara-se dinheiro disponível + preço de compra dos títulos ainda possuídos + valor de venda das construções (metade do custo pago por construção). Empates seguem para decisão nos dados; se os resultados continuarem iguais, o servidor escolhe aleatoriamente entre as pessoas empatadas.
 - O servidor controla ordem, dados, movimento, compras, pagamentos, cartas, leilões e encerramento. Dados repetidos numa rolagem normal permitem nova jogada depois da resolução; a terceira dupla consecutiva leva diretamente à Prisão sem avançar.
+- “Sem tempo” desativa somente o cronômetro total da partida. O relógio de turno continua ativo em todas as opções: 20 segundos para rolar e até 15 segundos para cada decisão, com resolução automática quando o tempo acaba.
 - A tela final informa se a partida encerrou por tempo, falência, Monopólio em Linha, Monopólio Duplo Regional, posse das quatro companhias ou ausência de participantes solventes.
 
 ## Tabuleiro e percurso

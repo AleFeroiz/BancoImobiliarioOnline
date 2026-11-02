@@ -6,7 +6,7 @@ import type { LobbyState } from '../src/rooms/schema/LobbyState.js'
 import { PropertyState } from '../src/rooms/schema/LobbyState.js'
 import { boardSpaces, getLineTitleIds } from '../../shared/board.js'
 import { EVENT_CARDS, type EventCard } from '../../shared/cards.js'
-import { PROPERTY_HOTEL_LEVEL, START_BONUS, STARTING_CASH, TURN_DECISION_SECONDS, bankReturnValue, buildingSaleValue, calculateRent, constructionCost, forcedBuybackCost, taxForSpace } from '../../shared/game.js'
+import { PROPERTY_HOTEL_LEVEL, START_BONUS, STARTING_CASH, TURN_DECISION_SECONDS, TURN_ROLL_SECONDS, bankReturnValue, buildingSaleValue, calculateRent, constructionCost, forcedBuybackCost, taxForSpace } from '../../shared/game.js'
 
 async function waitFor(condition: () => boolean, timeout = 2500) {
   const start = Date.now()
@@ -59,7 +59,7 @@ describe('sala privada', () => {
     expect(room.state.players.get(guest.sessionId)).toMatchObject({ name: 'Bia', isHost: false })
   })
 
-  it('mantém a partida ativa quando a anfitriã escolhe sem limite de tempo', async () => {
+  it('mantém a partida sem cronômetro total e continua contando o turno', async () => {
     const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic', matchDuration: 0 })
     const host = await colyseus.connectTo(room, { name: 'Ana' })
     await colyseus.connectTo(room, { name: 'Bia' })
@@ -68,6 +68,8 @@ describe('sala privada', () => {
     await started
     await new Promise((resolve) => setTimeout(resolve, 1_100))
     expect(room.state).toMatchObject({ status: 'playing', matchDuration: 0, matchSeconds: 0, matchEnding: false })
+    expect(room.state.turnSeconds).toBeGreaterThan(0)
+    expect(room.state.turnSeconds).toBeLessThan(TURN_ROLL_SECONDS)
   })
 
   it('transmite emotes escolhidos por qualquer participante e rejeita valores inválidos', async () => {

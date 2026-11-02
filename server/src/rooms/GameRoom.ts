@@ -27,6 +27,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
   state = new LobbyState()
   private auctionInterval?: ReturnType<typeof setInterval>
   private matchClockInterval?: ReturnType<typeof setInterval>
+  private turnClockInterval?: ReturnType<typeof setInterval>
   private botControllerInterval?: ReturnType<typeof setInterval>
   private reconnectRetentionTimer?: ReturnType<typeof setTimeout>
   private auctionSequence = 0
@@ -962,6 +963,11 @@ export class GameRoom extends Room<{ state: LobbyState }> {
 
   private startMatchClock() {
     this.stopMatchClock()
+    this.stopTurnClock()
+    this.turnClockInterval = setInterval(() => {
+      if (this.state.status !== 'playing') return this.stopTurnClock()
+      this.updateTurnClock()
+    }, 1000)
     if (this.state.matchDuration === 0) {
       this.state.matchSeconds = 0
       this.state.matchEnding = false
@@ -969,7 +975,6 @@ export class GameRoom extends Room<{ state: LobbyState }> {
     }
     this.matchClockInterval = setInterval(() => {
       if (this.state.status !== 'playing') return this.stopMatchClock()
-      this.updateTurnClock()
       if (this.state.matchSeconds > 0) this.state.matchSeconds -= 1
       if (this.state.matchSeconds === 0) {
         this.state.matchEnding = true
@@ -981,6 +986,11 @@ export class GameRoom extends Room<{ state: LobbyState }> {
   private stopMatchClock() {
     if (this.matchClockInterval) clearInterval(this.matchClockInterval)
     this.matchClockInterval = undefined
+  }
+
+  private stopTurnClock() {
+    if (this.turnClockInterval) clearInterval(this.turnClockInterval)
+    this.turnClockInterval = undefined
   }
 
   private updateTurnClock() {
@@ -1090,6 +1100,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
 
   private stopClocks() {
     this.stopMatchClock()
+    this.stopTurnClock()
     this.clearAuction(true)
     this.stopBotController()
     for (const timer of this.presentationTimers) clearTimeout(timer)

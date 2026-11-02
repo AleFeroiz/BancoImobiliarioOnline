@@ -1,3 +1,12 @@
+# 2026-11-01 — Cronômetro de turno sem limite total
+
+- Regressão direcionada `server/test/GameRoom.test.ts -t "sem cronômetro total"`: passou; o modo mantém a partida ativa com `matchSeconds: 0` enquanto o relógio de turno diminui.
+- A revisão do servidor confirmou que o tick independente continua chamando a mesma resolução automática para rolagens e decisões; o tick do relógio total continua responsável somente por expiração da partida.
+- `npm run graphify -- update .` concluiu: 1.073 nós, 2.020 arestas e 77 comunidades.
+- `npm run verify`: 55 arquivos de teste e 292 testes passaram; TypeScript, build Vite e build do servidor concluíram. O build conserva o aviso existente de chunk acima de 500 kB.
+- A mudança é de relógio do servidor e texto do lobby; não exige revisão visual em navegador. Alterações locais em `assets/blender/special-corners.blend` e `.blend1` permanecem fora do escopo.
+- A correção ainda será publicada após o hook de pré-commit.
+
 # 2026-11-01 — Cancelamento de leilão em imóvel devolvido ao banco
 
 - Em partida local com bot, abri o inspetor de Canaã dos Carajás. O leilão ficou desabilitado porque outra cidade do mesmo grupo tinha construções; a interface mostrou “Venda todas as casas e hotéis do grupo antes de leiloar uma cidade dele.” Isso explica o bloqueio da captura de Curitiba, que mostrava duas casas.

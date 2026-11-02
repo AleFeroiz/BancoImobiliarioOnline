@@ -4,6 +4,7 @@
 
 - O produto é **BANTEC**: jogo de tabuleiro privado para navegador, sem contas, para 2–4 participantes, com tabuleiro 3D original e interface responsiva.
 - Existe um modo. A anfitriã escolhe no lobby partidas de 15 minutos, 30 minutos, 1 hora ou sem limite de tempo. A economia inspirada em Business Tour mantém R$ 2.000.000 iniciais e bônus de R$ 300.000 ao passar pela Partida.
+- “Sem limite de tempo” remove apenas o cronômetro total da partida; relógios de turno e de decisões continuam ativos para evitar que uma pessoa ausente bloqueie a sala.
 - O percurso tem 40 casas: 24 cidades, quatro companhias, quatro taxas, quatro Sorte ou Revés e quatro cantos especiais. Não existem casas de descanso nem o modo Express.
 - As cidades, regiões e cores abaixo definem o percurso. Os preços seguem uma curva econômica inspirada em Business Tour e adaptada às 24 cidades; não são conversão de PIB para reais.
 - Regras atuais de aluguel, construções, dívida, vitória, cartas e cantos estão especificadas em [REGRAS-DE-JOGO.md](REGRAS-DE-JOGO.md). Essa especificação substitui as regras antigas registradas no histórico.

@@ -1,3 +1,11 @@
+# Cronômetro de turno no modo sem limite — concluído (2026-11-01)
+
+- Corrigido: o relógio do turno agora tem intervalo próprio e continua ativo quando a partida não tem limite total; a contagem total permanece em zero e sem encerramento por tempo.
+- O lobby explica que “Sem tempo” remove só o limite da partida. Regras e decisão confirmada registram que turnos e decisões continuam cronometrados.
+- Regressão de servidor verifica que, após iniciar sem limite, o turno cai abaixo de 20 segundos enquanto a partida segue ativa com `matchSeconds: 0`.
+- `npm run verify` passou: 55 arquivos de teste, 292 testes, build web e build do servidor. O build web mantém o aviso conhecido de chunk 3D acima de 500 kB.
+- Graphify atualizado: 1.073 nós, 2.020 arestas e 77 comunidades. Próximo passo: acompanhar turnos sem limite em uma partida online.
+
 # Leilão voluntário com aceite e disputa — concluído (2026-11-01)
 
 - O dono anuncia uma propriedade em qualquer fase e fora do próprio turno; pode manter construções no grupo, e melhorias seguem com o imóvel. Outra pessoa tem 10 segundos para aceitar; o aceite abre uma janela de 10 segundos para lances. Cada oferta válida reinicia essa contagem. Sem aceite ou sem lances, o anúncio termina sem venda.
