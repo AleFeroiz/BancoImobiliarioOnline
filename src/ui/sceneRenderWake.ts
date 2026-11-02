@@ -53,16 +53,20 @@ export function subscribeSceneContextRecovery(
   setDelay: ScheduleDelay,
   clearDelay: CancelDelay,
   recoveryDelayMs = 1800,
+  notifyContextLost: () => void = () => {},
+  notifyContextRestored: () => void = () => {},
 ) {
   let recoveryTimer: number | undefined
   const onContextLost: EventListener = (event) => {
     event.preventDefault()
+    notifyContextLost()
     if (recoveryTimer !== undefined) clearDelay(recoveryTimer)
     recoveryTimer = setDelay(onUnrecoveredContextLoss, recoveryDelayMs)
   }
   const onContextRestored = () => {
     if (recoveryTimer !== undefined) clearDelay(recoveryTimer)
     recoveryTimer = undefined
+    notifyContextRestored()
     invalidate(3)
   }
   canvas.addEventListener('webglcontextlost', onContextLost)

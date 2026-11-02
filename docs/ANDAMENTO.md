@@ -1,3 +1,11 @@
+# Recuperação do tabuleiro após perda de WebGL — concluído (2026-11-02)
+
+- Relato: após comprar duas casas, o navegador do anfitrião piscou e continuou mostrando HUD/turno; para a amiga, somente o tabuleiro desapareceu. Reabrir a página recuperou a cena. Isso isola o sintoma no Canvas local; a captura não mostrou erro JavaScript nem uma mensagem explícita de contexto WebGL.
+- A recuperação anterior reconstruía o Canvas com a mesma qualidade gráfica. Agora, se o navegador não restaurar o contexto em 1,8 s, a cena é recriada uma vez com qualidade inferior e preferência de GPU padrão, preservando a conexão/sala. Se o contexto falhar novamente, aparece uma mensagem persistente com botão para tentar recuperar o tabuleiro; trocar a qualidade gráfica também reinicia a cena.
+- Os avisos `Permissions-Policy` e `unsupported GPOS/GSUB LookupType` da captura não são exceções JavaScript e não identificam a origem da piscada.
+- Regressões cobrem eventos de perda/restauração e redução de qualidade. `npm run verify` passou: 55 arquivos, 298 testes, build Vite e build do servidor. Playtest local iniciou partida com bot, manteve Canvas visível e não encontrou erros/avisos de console; não forcei uma perda real da GPU no navegador.
+- Próximo passo: observar a restauração em um cliente afetado. Se voltar a ocorrer sem a mensagem de recuperação, capturar o console depois que o tabuleiro sumir para localizar o erro de renderização alternativo.
+
 # Paleta de cores de participantes — concluída (2026-11-02)
 
 - Pedido: substituir cores próximas entre si por uma seleção inspirada nas cores de personagens de Among Us.

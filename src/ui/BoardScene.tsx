@@ -24,7 +24,7 @@ import { getBuildingEdgeOffset, getBuildingRentLabelPosition, getCenteredModelPl
 import { getPropertyBoardLabel } from './propertyRentLabel'
 import { playGameSound } from './gameAudio'
 import { scheduleSceneRenderWake, subscribeSceneContextRecovery, subscribeSceneResumeWake } from './sceneRenderWake'
-import { getGraphicsDprRange, type GraphicsQuality } from './graphicsQuality'
+import { getGraphicsDprRange, getLowerGraphicsQuality, type GraphicsQuality } from './graphicsQuality'
 import { getGameBackgroundColor } from './nightMode'
 import { getPlayerEmoteSymbol, type PlayerEmote } from '../../shared/playerEmotes'
 import { THROW_PROJECTILE_DURATION_MS, type ThrowableObject } from '../../shared/throwables'
@@ -810,7 +810,7 @@ function FestivalBanner({ spaceId, size, dimmed }: { spaceId: number; size: numb
 
 type BoardSceneProps = { nightMode: boolean; players: PlayerToken[]; activePlayerSessionId?: string; destinationSpaceId?: number; propertyBuildings: PropertyBuilding[]; thrownObjects: ThrowableEvent[]; earthquakeEvents?: EarthquakeEvent[]; worldCupSpaceId?: number; festivalSpaceIds?: readonly number[]; highlightedSpaceIds?: readonly number[]; selectionMode?: boolean; showLiquidationValues?: boolean; landingPulseSpaceId?: number; landingPulseSequence?: number; diceRollSequence?: number; renderWakeSequence?: number; dice?: [number, number]; diceVisible?: boolean; diceResultVisible?: boolean; presentationSpeed?: AnimationSpeed; reducedMotion?: boolean; pawnMovementEnabled?: boolean; pawnMoveMode?: 'walk' | 'teleport'; pawnStepSoundEnabled?: boolean; cameraEnabled?: boolean; graphicsQuality?: GraphicsQuality; fpsMeterEnabled?: boolean; fpsSamples?: { current: FrameRateAccumulator }; onMovementComplete: () => void; onSelectSpace: (spaceId: number) => void }
 
-function SceneRenderWake({ sequence, onUnrecoveredContextLoss }: { sequence: number; onUnrecoveredContextLoss: () => void }) {
+function SceneRenderWake({ sequence, onUnrecoveredContextLoss, onContextLost, onContextRestored }: { sequence: number; onUnrecoveredContextLoss: () => void; onContextLost: () => void; onContextRestored: () => void }) {
   const { gl, invalidate } = useThree()
 
   useEffect(() => scheduleSceneRenderWake(
@@ -829,12 +829,15 @@ function SceneRenderWake({ sequence, onUnrecoveredContextLoss }: { sequence: num
       onUnrecoveredContextLoss,
       (callback, delayMs) => window.setTimeout(callback, delayMs),
       (timer) => window.clearTimeout(timer),
+      1800,
+      onContextLost,
+      onContextRestored,
     )
     return () => {
       removeResumeListeners()
       removeContextListeners()
     }
-  }, [gl, invalidate, onUnrecoveredContextLoss])
+  }, [gl, invalidate, onContextLost, onContextRestored, onUnrecoveredContextLoss])
 
   return null
 }
@@ -848,11 +851,57 @@ function FrameRateProbe({ samples }: { samples: { current: FrameRateAccumulator 
 
 function BoardSceneCanvas({ nightMode, players, activePlayerSessionId = '', destinationSpaceId = -1, propertyBuildings, thrownObjects, earthquakeEvents = [], worldCupSpaceId = 255, festivalSpaceIds = [], highlightedSpaceIds = [], selectionMode = false, showLiquidationValues = false, landingPulseSpaceId = -1, landingPulseSequence = 0, diceRollSequence = 0, renderWakeSequence = 0, dice = [0, 0], diceVisible = false, diceResultVisible = false, presentationSpeed = 1, reducedMotion = false, pawnMovementEnabled = false, pawnMoveMode = 'walk', pawnStepSoundEnabled = false, cameraEnabled = true, graphicsQuality = 'high', fpsMeterEnabled = false, fpsSamples, onMovementComplete, onSelectSpace }: BoardSceneProps) {
   const [canvasGeneration, setCanvasGeneration] = useState(0)
-  const recoverLostContext = useCallback(() => setCanvasGeneration((generation) => generation + 1), [])
+  const [recoveryQuality, setRecoveryQuality] = useState<GraphicsQuality | null>(null)
+  const [contextStatus, setContextStatus] = useState<'ready' | 'lost' | 'recovering' | 'failed'>('ready')
+  const recoveryAttempts = useRef(0)
+  const recoveryResetTimer = useRef<number | undefined>(undefined)
+  const requestedQuality = useRef(graphicsQuality)
+  const effectiveQuality = recoveryQuality ?? graphicsQuality
+  const markCanvasStable = useCallback(() => {
+    setContextStatus('ready')
+    if (recoveryResetTimer.current !== undefined) window.clearTimeout(recoveryResetTimer.current)
+    recoveryResetTimer.current = window.setTimeout(() => {
+      recoveryAttempts.current = 0
+      recoveryResetTimer.current = undefined
+    }, 10_000)
+  }, [])
+  const markContextLost = useCallback(() => {
+    if (recoveryResetTimer.current !== undefined) window.clearTimeout(recoveryResetTimer.current)
+    recoveryResetTimer.current = undefined
+    setContextStatus('lost')
+  }, [])
+  const markContextRestored = useCallback(() => markCanvasStable(), [markCanvasStable])
+  const recoverLostContext = useCallback(() => {
+    if (recoveryAttempts.current >= 1) {
+      setContextStatus('failed')
+      return
+    }
+    recoveryAttempts.current += 1
+    setRecoveryQuality((current) => getLowerGraphicsQuality(current ?? graphicsQuality))
+    setContextStatus('recovering')
+    setCanvasGeneration((generation) => generation + 1)
+  }, [graphicsQuality])
+  const retryCanvas = useCallback(() => {
+    recoveryAttempts.current = 0
+    setContextStatus('recovering')
+    setCanvasGeneration((generation) => generation + 1)
+  }, [])
+  useEffect(() => () => {
+    if (recoveryResetTimer.current !== undefined) window.clearTimeout(recoveryResetTimer.current)
+  }, [])
+  useEffect(() => {
+    if (requestedQuality.current === graphicsQuality) return
+    requestedQuality.current = graphicsQuality
+    recoveryAttempts.current = 0
+    setRecoveryQuality(null)
+    setContextStatus('recovering')
+    setCanvasGeneration((generation) => generation + 1)
+  }, [graphicsQuality])
   return (
-    <Canvas key={canvasGeneration} camera={{ position: [12.5, 15.5, 15.5], fov: 34 }} dpr={getGraphicsDprRange(graphicsQuality)} frameloop="demand" gl={{ antialias: false, powerPreference: 'high-performance', stencil: false }}>
+    <>
+    <Canvas key={canvasGeneration} onCreated={markCanvasStable} camera={{ position: [12.5, 15.5, 15.5], fov: 34 }} dpr={getGraphicsDprRange(effectiveQuality)} frameloop="demand" gl={{ antialias: false, powerPreference: recoveryQuality ? 'default' : 'high-performance', stencil: false }}>
       <color attach="background" args={[getGameBackgroundColor(nightMode)]} />
-      <SceneRenderWake sequence={renderWakeSequence} onUnrecoveredContextLoss={recoverLostContext} />
+      <SceneRenderWake sequence={renderWakeSequence} onUnrecoveredContextLoss={recoverLostContext} onContextLost={markContextLost} onContextRestored={markContextRestored} />
       <ResponsiveCamera tilt={16} horizontal={45} />
       <OrbitControls makeDefault enabled={cameraEnabled} enablePan={false} enableZoom enableRotate minPolarAngle={Math.PI / 12} maxPolarAngle={Math.PI / 2} rotateSpeed={0.72} zoomSpeed={0.75} enableDamping dampingFactor={0.1} />
       <CameraZoomBounds />
@@ -860,6 +909,12 @@ function BoardSceneCanvas({ nightMode, players, activePlayerSessionId = '', dest
       {fpsMeterEnabled && fpsSamples && <FrameRateProbe samples={fpsSamples} />}
       <Board players={players} activePlayerSessionId={activePlayerSessionId} destinationSpaceId={destinationSpaceId} propertyBuildings={propertyBuildings} thrownObjects={thrownObjects} earthquakeEvents={earthquakeEvents} worldCupSpaceId={worldCupSpaceId} festivalSpaceIds={festivalSpaceIds} highlightedSpaceIds={highlightedSpaceIds} selectionMode={selectionMode} showLiquidationValues={showLiquidationValues} landingPulseSpaceId={landingPulseSpaceId} landingPulseSequence={landingPulseSequence} diceRollSequence={diceRollSequence} dice={dice} diceVisible={diceVisible} diceResultVisible={diceResultVisible} presentationSpeed={presentationSpeed} reducedMotion={reducedMotion} pawnMovementEnabled={pawnMovementEnabled} pawnMoveMode={pawnMoveMode} pawnStepSoundEnabled={pawnStepSoundEnabled} onMovementComplete={onMovementComplete} onSelectSpace={onSelectSpace} />
     </Canvas>
+    {contextStatus !== 'ready' && <div className="scene-context-recovery" role="status" aria-live="polite">
+      <strong>{contextStatus === 'failed' ? 'O tabuleiro perdeu a conexão gráfica' : contextStatus === 'recovering' ? 'Restaurando o tabuleiro…' : 'Reconectando o tabuleiro…'}</strong>
+      <span>{contextStatus === 'failed' ? 'A partida continua ativa. Tente restaurar a visualização para continuar acompanhando.' : 'A sala e o turno continuam ativos enquanto a cena 3D é recuperada.'}</span>
+      {contextStatus === 'failed' && <button type="button" onClick={retryCanvas}>Tentar restaurar</button>}
+    </div>}
+    </>
   )
 }
 

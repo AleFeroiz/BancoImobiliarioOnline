@@ -6,3 +6,8 @@ export function getGraphicsDprRange(quality: GraphicsQuality): [number, number] 
   if (quality === 'balanced') return [1, 1.4]
   return [1, 2]
 }
+
+export function getLowerGraphicsQuality(quality: GraphicsQuality): GraphicsQuality {
+  if (quality === 'high') return 'balanced'
+  return 'performance'
+}

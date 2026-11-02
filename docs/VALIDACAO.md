@@ -13,6 +13,13 @@
 - A inspeção do Blender 5.2.2 LTS confirmou que os GLBs têm variações nomeadas dispostas como uma faixa no arquivo. A cena clona cada raiz, remove a transformação raiz de origem, centraliza os limites e apoia a base sobre Y=0; isso explica modelos afastados de (0,0,0) no arquivo sem transferir esse arranjo para a mesa. Nenhum arquivo Blender ou GLB foi salvo.
 - Não reproduzi manualmente uma liquidação/recompra nem uma companhia possuída por outro jogador nesta sala. A transição simultânea e a inclusão das companhias estão cobertas por regressões unitárias.
 
+# 2026-11-02 — Recuperação após perda do contexto WebGL
+
+- Regressões direcionadas: 7 testes passaram; verificam redução de qualidade de `alta` para `equilibrada` e depois `desempenho`, além dos eventos de perda/restauração que comandam a mensagem e a recuperação do Canvas.
+- `npm run verify` passou com loopback local permitido: 55 arquivos de teste, 298 testes, build do Vite e build do servidor. O chunk de cena 3D continua acima de 500 kB.
+- Playtest local em Chrome: sala com Bot 1 iniciada, tabuleiro 3D e HUD visíveis. O navegador não registrou erros nem avisos nesta captura de logs. Não forcei a perda real do contexto gráfico; a tela de estado persistente ainda não foi observada manualmente.
+- A captura original mostrava avisos de cabeçalho Permissions-Policy e de tabelas GPOS/GSUB, mas nenhum erro JavaScript. Isso não prova se o contexto WebGL foi perdido; o cliente agora reduz a qualidade ao refazer um Canvas não restaurado e deixa um aviso acionável se a perda persistir.
+
 # 2026-11-02 — Prontidão individual no lobby
 
 - `npm run verify` passou com loopback local permitido: 55 arquivos de teste, 295 testes, build Vite e build do servidor. O aviso existente de chunk 3D acima de 500 kB continua.

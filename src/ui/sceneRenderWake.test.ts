@@ -97,4 +97,18 @@ describe('demand-rendered board wake', () => {
     expect(onReset).toHaveBeenCalledOnce()
     removeSecondListeners()
   })
+
+  it('notifies the view when WebGL is lost and restored so recovery feedback follows the canvas', () => {
+    const canvas = new EventTarget()
+    const onLost = vi.fn()
+    const onRestored = vi.fn()
+    const clearDelay = vi.fn()
+    const cleanup = subscribeSceneContextRecovery(canvas as HTMLCanvasElement, vi.fn(), vi.fn(), () => 41, clearDelay, 1800, onLost, onRestored)
+
+    canvas.dispatchEvent(new Event('webglcontextlost', { cancelable: true }))
+    expect(onLost).toHaveBeenCalledOnce()
+    canvas.dispatchEvent(new Event('webglcontextrestored'))
+    expect(onRestored).toHaveBeenCalledOnce()
+    cleanup()
+  })
 })
