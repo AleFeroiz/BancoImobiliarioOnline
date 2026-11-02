@@ -96,3 +96,10 @@ Proteção bloqueia qualquer efeito de carta, inclusive Generoso. Apagão e Prot
 - Express, seus objetivos e suas rodadas foram removidos do produto. Volta ao Mundo, estações, aluguéis por dado e hipotecas resgatáveis foram substituídos pelas regras deste documento.
 - *Business Tour* é referência de ritmo econômico e clareza visual, não de nomes, arte, textos ou interface copiados. O nome, as cidades, as cartas, regras e assets do BANTEC são originais.
 - Para contexto histórico de regras comerciais, consulte a [página oficial do Banco Imobiliário Express](https://www.estrela.com.br/produto/banco-imobiliario-express-150394) e o [manual oficial do Super Banco Imobiliário](https://estrela.vteximg.com.br/arquivos/Manual-Super-Banco-Imobili%C3%A1rio.pdf). Essas fontes não definem as regras atuais do BANTEC.
+
+## Fluxo visual e avanço da vez
+
+- A pessoa lança os dados pelo botão destacado. Ao cair em uma companhia alheia com aluguel ativo, ela deve acionar um D6 adicional; o servidor sorteia o resultado, mostra o dado durante a cobrança e calcula o aluguel pela regra de companhias abaixo. Se a escolha expirar, o servidor lança automaticamente.
+- Após resolver uma chegada sem compra, melhoria, recompra, dívida ou outra escolha disponível, a vez termina automaticamente. Uma cidade própria só abre opções de construção quando há uma melhoria permitida e pagável. Enquanto houver uma decisão opcional válida, a pessoa pode escolhê-la ou encerrar a vez.
+- Cartas que exigem escolher participante usam os cartões dos jogadores. Em Troca-troca, selecionam-se dois cartões distintos. Cartões de pessoas falidas ou inelegíveis não podem ser escolhidos. A expiração segue a regra de escolhas expiradas.
+- Durante dívida, o painel mostra cobrança integral, saldo disponível e quanto ainda falta. A liquidação permanece autoritativa no servidor.

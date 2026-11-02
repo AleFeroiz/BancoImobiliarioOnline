@@ -725,6 +725,19 @@ function FatecLandmark() {
   return <group position={[0, 0.045, 0]} scale={0.48} raycast={skipRaycast}><primitive object={model} /></group>
 }
 
+function SpecialCornerModel({ kind, dimmed }: { kind: 'prison' | 'start'; dimmed: boolean }) {
+  const { scene } = useGLTF('/assets/corner-signs.glb')
+  const model = useMemo(() => {
+    const source = scene.getObjectByName(kind === 'prison' ? 'Corner_Prison_Cage' : 'Corner_Start_Sign')
+    if (!source) return null
+    const clone = source.clone(true)
+    makeSceneMaterialsUnlit(clone, dimmed)
+    return clone
+  }, [scene, kind, dimmed])
+  if (!model) return null
+  return <group position={[0.22, 0.16, 0.22]} raycast={skipRaycast}><primitive object={model} /></group>
+}
+
 function Board({ players, pawnGroups, activePlayerSessionId, destinationSpaceId, propertyBuildings, thrownObjects, earthquakeEvents, cityEffectEvents, worldCupSpaceId, festivalSpaceIds, highlightedSpaceIds, selectionMode, showLiquidationValues, landingPulseSpaceId, landingPulseSequence, diceRollSequence, dice, diceVisible, diceResultVisible, presentationSpeed, reducedMotion, pawnMovementEnabled, pawnMoveMode, pawnStepSoundEnabled, onMovementComplete, onSelectSpace }: { players: PlayerToken[]; pawnGroups: Map<string, Group>; activePlayerSessionId: string; destinationSpaceId: number; propertyBuildings: PropertyBuilding[]; thrownObjects: ThrowableEvent[]; earthquakeEvents: EarthquakeEvent[]; cityEffectEvents: CityEffectEvent[]; worldCupSpaceId: number; festivalSpaceIds: readonly number[]; highlightedSpaceIds: readonly number[]; selectionMode: boolean; showLiquidationValues: boolean; landingPulseSpaceId: number; landingPulseSequence: number; dice: [number, number]; diceVisible: boolean; diceResultVisible: boolean; diceRollSequence: number; presentationSpeed: AnimationSpeed; reducedMotion: boolean; pawnMovementEnabled: boolean; pawnMoveMode: 'walk' | 'teleport'; pawnStepSoundEnabled: boolean; onMovementComplete: () => void; onSelectSpace: (spaceId: number) => void }) {
   const pawnStackIndices = useMemo(() => getPawnStackIndices(players), [players])
   const { scene: buildingScene } = useGLTF('/assets/board-models/board-models.glb')
@@ -776,12 +789,12 @@ function Board({ players, pawnGroups, activePlayerSessionId, destinationSpaceId,
             <mesh position={[0, 0.095, 0]} rotation={[-Math.PI / 2, 0, 0]} geometry={getTileTrimGeometry(size)} raycast={skipRaycast} dispose={null}><meshBasicMaterial color={theme.trim} /></mesh>
             {space.kind === 'tax' && <mesh position={[size * 0.31, 0.112, size * 0.3]} raycast={skipRaycast}><cylinderGeometry args={[0.075, 0.075, 0.025, 8]} /><meshBasicMaterial color={theme.trim} /></mesh>}
             {space.kind === 'event' && <ChanceRoulette size={size} trim={theme.trim} />}
-            {space.kind === 'prison' && <group position={[size * 0.3, 0.11, size * 0.3]}><mesh position={[0, 0, 0]} raycast={skipRaycast}><boxGeometry args={[0.25, 0.025, 0.22]} /><meshBasicMaterial color="#536c7d" /></mesh>{[-1, 0, 1].map((offset) => <mesh key={offset} position={[offset * 0.085, 0.12, 0.105]} raycast={skipRaycast}><boxGeometry args={[0.025, 0.22, 0.025]} /><meshBasicMaterial color={theme.trim} /></mesh>)}{[-1, 1].map((offset) => <mesh key={`bar-${offset}`} position={[0, offset * 0.07, 0.105]} raycast={skipRaycast}><boxGeometry args={[0.2, 0.025, 0.025]} /><meshBasicMaterial color={theme.trim} /></mesh>)}</group>}
+            {space.kind === 'prison' && <Suspense fallback={null}><SpecialCornerModel kind="prison" dimmed={selectionMode && !selectable} /></Suspense>}
             {space.kind === 'world-cup' && <Suspense fallback={null}><CornerLandmark type="stadium" position={[0, 0.15, 0]} dimmed={selectionMode && !selectable} /></Suspense>}
             {space.kind === 'world-tour' && <Suspense fallback={null}><CornerLandmark type="airport" position={[0, 0.08, 0]} dimmed={selectionMode && !selectable} /></Suspense>}
             {space.kind === 'property' && space.id === worldCupSpaceId && <Html position={[size * 0.26, 0.62, size * 0.26]} center distanceFactor={10} zIndexRange={[6, 0]} style={{ pointerEvents: 'none' }}><span className="world-cup-host-flag"><b>🏆</b><small>SEDE</small></span></Html>}
             {space.kind === 'property' && festivalSpaceIds.includes(space.id) && <Suspense fallback={null}><FestivalBanner spaceId={space.id} size={size} dimmed={selectionMode && !selectable} /></Suspense>}
-            {space.kind === 'start' && <mesh position={[size * 0.31, 0.13, size * 0.3]} rotation={[0, Math.PI / 4, 0]} raycast={skipRaycast}><boxGeometry args={[0.14, 0.045, 0.14]} /><meshBasicMaterial color={theme.trim} /></mesh>}
+            {space.kind === 'start' && <Suspense fallback={null}><SpecialCornerModel kind="start" dimmed={selectionMode && !selectable} /></Suspense>}
             {shouldRenderSpaceLabel(space.kind) && <SpaceLabel name={space.name} size={size} ink={theme.ink} outline={theme.outline} outwardRotation={decoration.labelRotation} />}
             {highlightedSpaceIds.includes(space.id) && (
               <mesh position={[0, 0.092, 0]} rotation={[-Math.PI / 2, 0, 0]} raycast={skipRaycast}>

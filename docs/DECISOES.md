@@ -2,6 +2,11 @@
 
 ## Confirmadas e vigentes
 
+- A partida não exibe fila de avisos textuais de acontecimentos. O estado segue visível no tabuleiro, nos cartões e nas escolhas necessárias. Quando a chegada ou a resolução não oferece ação disponível, o servidor passa a vez automaticamente após uma pausa curta; construir num imóvel próprio ainda é uma escolha enquanto for possível. O botão de rolagem normal e o D6 da companhia ficam destacados no HUD.
+- Cartas que pedem um participante usam os próprios cartões como alvos: a tela escurece, os cartões válidos ficam iluminados, os indisponíveis ficam apagados e a instrução aparece no centro. Troca-troca pede primeiro um cartão e depois outro. O painel de dívida aparece no centro com cobrança, saldo atual e valor que falta, atualizados durante a liquidação.
+- Ao parar numa companhia de outra pessoa que cobra aluguel, a pessoa da vez aciona o D6; o servidor sorteia o valor, mostra um dado no tabuleiro e aplica a cobrança após a animação. O dado permanece visível até a resolução do pagamento ou o fim da vez. O aluguel continua seguindo a fórmula vigente.
+- Prisão usa uma jaula low-poly própria e Partida usa uma placa 3D com “INICIO”. Ambos são elementos visuais sobre os pisos, sem alterar a mecânica.
+
 - O produto é **BANTEC**: jogo de tabuleiro privado para navegador, sem contas, para 2–6 participantes, com tabuleiro 3D original e interface responsiva. As seis cadeiras ocupam a mesma sala e a mesma ordem de turnos; a capacidade não altera regras, valores nem duração.
 - A anfitriã pode copiar um link com o código da sala. Quem abrir o link informa o nome e entra diretamente na sala, sem preencher o código manualmente; o link não reserva uma vaga nem substitui a validação do servidor.
 - A interface da partida acomoda seis cartões sem ampliar painéis: em telas largas, mostra uma fileira; em tablet e celular, reorganiza os cartões em três colunas por duas fileiras. O HUD mantém ações de alvo nos cartões e prioriza o tabuleiro e os painéis contextuais.

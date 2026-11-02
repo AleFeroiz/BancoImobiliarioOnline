@@ -1206,3 +1206,21 @@ button:disabled{opacity:.55;cursor:not-allowed}
   .screen-game .game-quick-actions>button,.screen-game .game-quick-actions .emote-control>button{width:var(--quick-action-size);height:var(--quick-action-size);min-width:var(--quick-action-size);min-height:var(--quick-action-size)}
   .screen-game .game-quick-actions>button>small,.screen-game .game-quick-actions .emote-control>button>small{font-size:5px}
 }
+.screen-game .roll-control-button{min-height:64px;min-width:220px;padding:0 30px;border:3px solid #ffe39a;background:linear-gradient(145deg,#d68b2c,#9b4f19);color:#fffdf1;box-shadow:0 0 0 5px rgba(255,217,124,.23),0 14px 34px rgba(24,38,26,.42);font-size:clamp(16px,1.5vw,21px);font-weight:900;letter-spacing:.045em;text-transform:uppercase}
+.screen-game .roll-control-button:focus-visible{outline:4px solid #fff;outline-offset:5px}
+.screen-game .player-target-backdrop{z-index:6;background:rgba(5,15,18,.82);backdrop-filter:blur(2px)}
+.screen-game:has(.player-target-prompt) .player-hud{z-index:8}
+.screen-game .player-card.target-choice{opacity:1;filter:none;box-shadow:0 0 0 3px #ffe7a1,0 0 28px 9px rgba(255,220,124,.42);transform:scale(1.035);cursor:pointer}
+.screen-game .player-card.target-choice.target-unavailable{opacity:.3;filter:grayscale(.9) brightness(.55);box-shadow:none;transform:none;cursor:not-allowed}
+.screen-game .player-card.target-choice.target-selected{box-shadow:0 0 0 4px #fff,0 0 34px 13px rgba(255,228,145,.68)}
+.player-target-prompt{position:fixed;z-index:9;top:50%;left:50%;transform:translate(-50%,-50%);display:grid;gap:8px;text-align:center;pointer-events:none;color:#fff9e8;text-shadow:0 3px 14px #000}
+.player-target-prompt strong{font-size:clamp(21px,3vw,42px);letter-spacing:.09em;white-space:nowrap}
+.player-target-prompt small{font-size:clamp(12px,1.3vw,17px)}
+.screen-game .turn-card.debt-panel{position:fixed;z-index:7;top:50%;left:50%;right:auto;bottom:auto;transform:translate(-50%,-50%);width:min(440px,calc(100vw - 28px));max-height:calc(100dvh - 180px);overflow:auto;margin:0;padding:24px;text-align:center;box-shadow:0 24px 70px rgba(5,18,14,.4)}
+.screen-game .debt-panel h2{font-size:clamp(26px,3vw,38px);text-transform:uppercase}
+.screen-game .debt-panel .debt-summary{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.screen-game .debt-panel .debt-summary>div{padding:13px}
+.screen-game .debt-panel .debt-summary small{font-size:11px}
+.screen-game .debt-panel .debt-summary strong{font-size:clamp(19px,2vw,28px)}
+.screen-game .debt-panel .debt-summary .debt-shortfall strong{font-size:clamp(27px,3vw,39px)}
+@media(max-width:640px){.screen-game .roll-control-button{min-height:56px;min-width:190px;font-size:15px}.player-target-prompt{top:57%}.player-target-prompt strong{font-size:20px}.screen-game .turn-card.debt-panel{top:56%;max-height:calc(100dvh - 245px);padding:15px}.screen-game .debt-panel .debt-summary>div{padding:8px}}

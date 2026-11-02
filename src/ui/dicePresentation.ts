@@ -1,4 +1,4 @@
-export type DicePresentationPhase = 'roll' | 'rolling' | 'moving' | 'resolve' | 'purchase' | 'buyback' | 'jail' | 'world-cup' | 'world-tour' | 'card-target' | 'start-upgrade' | 'debt' | 'ended'
+export type DicePresentationPhase = 'roll' | 'company-roll' | 'rolling' | 'moving' | 'resolve' | 'purchase' | 'buyback' | 'jail' | 'world-cup' | 'world-tour' | 'card-target' | 'start-upgrade' | 'debt' | 'ended'
 export type DiceRotation = [number, number, number]
 export type DicePosition = [number, number, number]
 

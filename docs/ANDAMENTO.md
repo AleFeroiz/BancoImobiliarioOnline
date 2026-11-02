@@ -1,3 +1,11 @@
+# Fluxo de turnos e clareza da partida — concluído (2026-11-02)
+
+- Pedido: retirar avisos sequenciais, avançar automaticamente quando não há ação, destacar rolagem, selecionar alvos pelos cartões, explicitar dívida, pedir D6 na companhia e criar modelos para Prisão e Partida.
+- Estado inicial: `main` em `3dc09d4`, alinhada com `origin/main`; há edições locais anteriores em `assets/blender/special-corners.blend` e `.blend1`, fora deste trabalho. Blender 5.2.2 LTS com add-on 1.8 conectado.
+- Implementado: retirada da fila de avisos textuais; avanço automático de fases sem decisão, inclusive imóveis próprios sem melhoria viável; D6 de companhia acionado pela pessoa e sorteado no servidor; seleção de alvos nos cartões; painel central de dívida; botão de dados destacado; jaula e placa 3D próprias em arquivo separado. Regras e decisões documentadas.
+- Validação: `npm run verify` passou (62 arquivos, 337 testes, builds web/servidor). Playtests desktop e celular confirmaram rolagem destacada, avanço em imposto, seleção Troca-troca e compra real com uma casa; console sem erros. Blender 5.2.2 LTS conectado e modelos revisados. Detalhes e limites em `docs/VALIDACAO.md`.
+- Próximo passo: observar em partida humana se o ritmo do avanço automático está confortável e capturar aproximações do D6 da companhia, dívida e modelos de canto.
+
 # Escala maior no lobby — concluído (2026-11-02)
 
 - Pedido: ampliar os controles e textos do lobby, mantendo todos os dados visíveis sem rolagem.

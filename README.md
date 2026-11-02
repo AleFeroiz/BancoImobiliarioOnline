@@ -4,7 +4,7 @@ Jogo de tabuleiro 3D para navegador, para partidas privadas entre amigos. Sem co
 
 ## Estado atual
 
-Cada pessoa tem 20 segundos para lançar os dados e 15 segundos para cada decisão; expirações seguem o padrão automático das regras. O botão “?” abre um guia rápido, e mudanças no saldo local tocam efeitos distintos para dinheiro recebido e pago.
+Cada pessoa tem 20 segundos para lançar os dados e 15 segundos para cada decisão; expirações seguem o padrão automático das regras. A vez avança sozinha quando não há mais decisão disponível. Ao pagar aluguel de companhia, a pessoa aciona um D6 separado. O botão “?” abre um guia rápido, e mudanças no saldo local tocam efeitos distintos para dinheiro recebido e pago.
 
 O cartão de cada participante exibe brevemente ganhos em verde ou perdas em vermelho sempre que o saldo muda. Clicar num cartão destaca no tabuleiro todos os títulos daquela pessoa (cidades e companhias); clicar de novo limpa o destaque.
 
@@ -12,7 +12,7 @@ Cada cartão de outra pessoa também tem um controle para lançar tomate, ovo, l
 
 As fichas ficam junto à borda interna de cada piso e formam uma torre quando várias pessoas param na mesma casa. Nos quatro cantos, a torre fica no centro do piso.
 
-Os modelos 3D de cédulas e maços de ouro e prata acompanham o saldo de cada participante. Na partida, o tabuleiro e o HUD 3D usam materiais sem luzes ou sombras; avisos aparecem em sequência e aguardam antes de mostrar a próxima decisão. A tela ocupa toda a janela, com inclinação inicial discreta e câmera orbitável pelo arraste do mouse ou toque no tabuleiro. Durante escolhas de destino ou destaque de participantes, espaços não selecionados ficam escurecidos, enquanto as cidades próprias em foco preservam as cores e os rótulos. Copa do Mundo e Volta ao Brasil usam um estádio e um aeroporto com avião low-poly originais. Os quatro pisos Sorte formam roletas completas, e a rolagem usa dados 3D nivelados com o total legível durante o movimento do peão. Cartas informativas são temporárias; os saldos 3D aparecem ligados aos cartões dos participantes na interface.
+Os modelos 3D de cédulas e maços de ouro e prata acompanham o saldo de cada participante. Na partida, o tabuleiro e o HUD 3D usam materiais sem luzes ou sombras; acontecimentos aparecem no estado do jogo sem uma fila de avisos textuais. A tela ocupa toda a janela, com inclinação inicial discreta e câmera orbitável pelo arraste do mouse ou toque no tabuleiro. Durante escolhas de destino ou destaque de participantes, espaços não selecionados ficam escurecidos, enquanto as cidades próprias em foco preservam as cores e os rótulos. Copa do Mundo e Volta ao Brasil usam um estádio e um aeroporto com avião low-poly originais. Os quatro pisos Sorte formam roletas completas, e a rolagem usa dados 3D nivelados com o total legível durante o movimento do peão. Cartas informativas são temporárias; os saldos 3D aparecem ligados aos cartões dos participantes na interface.
 
 Somente propriedades que já têm dono mostram o aluguel em texto 3D maior e reforçado, voltado para a câmera; o valor acompanha o monopólio regional, as construções e a sede da Copa. Durante uma dívida, apenas a pessoa responsável por liquidá-la vê os valores de liquidação no tabuleiro. Apagão e proteção destacam brevemente a cidade ao serem aplicados; escolher a sede da Copa solta confetes sobre ela. Clicar numa propriedade abre uma inspeção visual dos níveis do terreno e respectivos aluguéis, destacando o nível já construído.
 
