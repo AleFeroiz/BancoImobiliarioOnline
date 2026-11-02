@@ -954,3 +954,9 @@
 - O teste de regressão confirma o caso resolvido e verifica que o controle não aparece na vez de outra pessoa, durante a revelação, durante feedback nem ao cair em imóvel próprio.
 - Playtest local em sala descartável: preparei a carta Proteção com Modo DEV, disparei o evento e confirmei o botão “Continuar” após o efeito aparecer no tabuleiro.
 - A primeira execução de `npm run verify` foi bloqueada por falta de loopback (`MatchMakeError: fetch failed`) nos testes Colyseus. Repeti com loopback habilitado: 274 testes em 50 arquivos passaram; build web e servidor passaram. Permanece o aviso conhecido do chunk 3D acima de 500 kB. Graphify foi atualizado para 1.027 nós, 1.911 arestas e 69 comunidades.
+# Câmera orbital e orientação dos tokens — 2026-11-02
+
+- Verificação automatizada: `npm run verify` passou com 61 arquivos e 332 testes; TypeScript/Vite e build do servidor passaram. O Vite manteve o aviso conhecido de chunk maior que 500 kB.
+- Playtest local: sala K4GK4, partida iniciada com uma ficha Salto e um bot. O novo botão ficou acima de Config no HUD. Em modo Seguir, a ficha ficou centralizada enquanto o tabuleiro se deslocou; ao clicar novamente, a vista voltou a orbitar o tabuleiro. O estado acessível alternou de “Seguir meu personagem” para “Orbitar tabuleiro” e voltou.
+- Revisão visual: a disposição vertical dos quatro atalhos ficou legível no viewport desktop do navegador interno. A correção de yaw foi validada por regressões para os nove tokens e preservação da orientação dos outros cinco; não inspecionei cada modelo individualmente em alta ampliação.
+- Limitação: o navegador interno não disponibilizou controle de viewport nesta sessão; a adaptação do botão para celular foi coberta pelos seletores CSS compartilhados e pelo teste de responsividade existente, sem revisão visual manual em tamanho mobile.

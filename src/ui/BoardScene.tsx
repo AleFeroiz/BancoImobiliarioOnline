@@ -7,6 +7,8 @@ import { useGLTF } from '@react-three/drei'
 import { boardSpaces, positionOnBoard } from '../game/board'
 import { getCameraFraming } from './cameraFraming'
 import { getCameraZoomLimits } from './cameraZoom'
+import { getCameraTargetShift } from './cameraTarget'
+import { getTokenForwardCorrection } from './tokenOrientation'
 import { BUILDING_GROUP_Y, getBoardSpaceDecoration, getPropertyModelYOffset } from './boardDecoration'
 import { getBoardTileTheme } from './boardTileTheme'
 import { getFestivalBannerPlacement } from './festivalBanner'
@@ -42,6 +44,7 @@ type CameraOrbitControls = {
   enabled: boolean
   minDistance: number
   maxDistance: number
+  target: Vector3
   getAzimuthalAngle: () => number
   getPolarAngle: () => number
   setAzimuthalAngle: (angle: number) => void
@@ -168,6 +171,33 @@ function CameraZoomBounds() {
   return null
 }
 
+function CameraFollowTarget({ mode, localPlayerSessionId, pawnGroups }: { mode: 'board' | 'player'; localPlayerSessionId: string; pawnGroups: Map<string, Group> }) {
+  const { camera, controls, invalidate } = useThree((state) => ({ camera: state.camera, controls: state.controls, invalidate: state.invalidate }))
+  const lastMode = useRef(mode)
+
+  useFrame(() => {
+    const orbit = controls as CameraOrbitControls | null
+    if (!orbit) return
+    const pawn = mode === 'player' ? pawnGroups.get(localPlayerSessionId) : null
+    const target = pawn ? [pawn.position.x, pawn.position.y + 0.35, pawn.position.z] as const : mode === 'board' ? [0, 0, 0] as const : null
+    if (!target) return
+    if (mode === 'player' || lastMode.current !== mode) {
+      const shift = getCameraTargetShift([orbit.target.x, orbit.target.y, orbit.target.z], target)
+      if (Math.abs(shift[0]) + Math.abs(shift[1]) + Math.abs(shift[2]) > 0.0001) {
+        camera.position.x += shift[0]
+        camera.position.y += shift[1]
+        camera.position.z += shift[2]
+        orbit.target.set(...target)
+        orbit.update()
+        invalidate()
+      }
+    }
+    lastMode.current = mode
+  })
+
+  return null
+}
+
 function TokenHighlight({ color, baseY }: { color: string; baseY: number }) {
   return (
     <group position={[0, 0.025 - baseY, 0]} rotation={[Math.PI / 2, 0, 0]} raycast={skipRaycast}>
@@ -251,6 +281,7 @@ function AnimatedPawn({ player, stackIndex, pawnGroups, reducedMotion, movementE
     const source = sourceName ? tokenScene.getObjectByName(sourceName) : null
     if (!source) return null
     const clone = source.clone(true)
+    clone.rotation.y += getTokenForwardCorrection(player.characterType)
     const bounds = new Box3().setFromObject(clone)
     const placement = getCenteredModelPlacement(bounds)
     clone.position.x += placement[0]
@@ -694,8 +725,7 @@ function FatecLandmark() {
   return <group position={[0, 0.045, 0]} scale={0.48} raycast={skipRaycast}><primitive object={model} /></group>
 }
 
-function Board({ players, activePlayerSessionId, destinationSpaceId, propertyBuildings, thrownObjects, earthquakeEvents, cityEffectEvents, worldCupSpaceId, festivalSpaceIds, highlightedSpaceIds, selectionMode, showLiquidationValues, landingPulseSpaceId, landingPulseSequence, diceRollSequence, dice, diceVisible, diceResultVisible, presentationSpeed, reducedMotion, pawnMovementEnabled, pawnMoveMode, pawnStepSoundEnabled, onMovementComplete, onSelectSpace }: { players: PlayerToken[]; activePlayerSessionId: string; destinationSpaceId: number; propertyBuildings: PropertyBuilding[]; thrownObjects: ThrowableEvent[]; earthquakeEvents: EarthquakeEvent[]; cityEffectEvents: CityEffectEvent[]; worldCupSpaceId: number; festivalSpaceIds: readonly number[]; highlightedSpaceIds: readonly number[]; selectionMode: boolean; showLiquidationValues: boolean; landingPulseSpaceId: number; landingPulseSequence: number; dice: [number, number]; diceVisible: boolean; diceResultVisible: boolean; diceRollSequence: number; presentationSpeed: AnimationSpeed; reducedMotion: boolean; pawnMovementEnabled: boolean; pawnMoveMode: 'walk' | 'teleport'; pawnStepSoundEnabled: boolean; onMovementComplete: () => void; onSelectSpace: (spaceId: number) => void }) {
-  const pawnGroups = useMemo(() => new Map<string, Group>(), [])
+function Board({ players, pawnGroups, activePlayerSessionId, destinationSpaceId, propertyBuildings, thrownObjects, earthquakeEvents, cityEffectEvents, worldCupSpaceId, festivalSpaceIds, highlightedSpaceIds, selectionMode, showLiquidationValues, landingPulseSpaceId, landingPulseSequence, diceRollSequence, dice, diceVisible, diceResultVisible, presentationSpeed, reducedMotion, pawnMovementEnabled, pawnMoveMode, pawnStepSoundEnabled, onMovementComplete, onSelectSpace }: { players: PlayerToken[]; pawnGroups: Map<string, Group>; activePlayerSessionId: string; destinationSpaceId: number; propertyBuildings: PropertyBuilding[]; thrownObjects: ThrowableEvent[]; earthquakeEvents: EarthquakeEvent[]; cityEffectEvents: CityEffectEvent[]; worldCupSpaceId: number; festivalSpaceIds: readonly number[]; highlightedSpaceIds: readonly number[]; selectionMode: boolean; showLiquidationValues: boolean; landingPulseSpaceId: number; landingPulseSequence: number; dice: [number, number]; diceVisible: boolean; diceResultVisible: boolean; diceRollSequence: number; presentationSpeed: AnimationSpeed; reducedMotion: boolean; pawnMovementEnabled: boolean; pawnMoveMode: 'walk' | 'teleport'; pawnStepSoundEnabled: boolean; onMovementComplete: () => void; onSelectSpace: (spaceId: number) => void }) {
   const pawnStackIndices = useMemo(() => getPawnStackIndices(players), [players])
   const { scene: buildingScene } = useGLTF('/assets/board-models/board-models.glb')
   const propertyRentLabels = useMemo(() => boardSpaces
@@ -855,7 +885,7 @@ function FestivalBanner({ spaceId, size, dimmed }: { spaceId: number; size: numb
   return <group position={placement.position} scale={placement.scale}><primitive object={model} /></group>
 }
 
-type BoardSceneProps = { nightMode: boolean; players: PlayerToken[]; activePlayerSessionId?: string; destinationSpaceId?: number; propertyBuildings: PropertyBuilding[]; thrownObjects: ThrowableEvent[]; earthquakeEvents?: EarthquakeEvent[]; cityEffectEvents?: CityEffectEvent[]; worldCupSpaceId?: number; festivalSpaceIds?: readonly number[]; highlightedSpaceIds?: readonly number[]; selectionMode?: boolean; showLiquidationValues?: boolean; landingPulseSpaceId?: number; landingPulseSequence?: number; diceRollSequence?: number; renderWakeSequence?: number; dice?: [number, number]; diceVisible?: boolean; diceResultVisible?: boolean; presentationSpeed?: AnimationSpeed; reducedMotion?: boolean; pawnMovementEnabled?: boolean; pawnMoveMode?: 'walk' | 'teleport'; pawnStepSoundEnabled?: boolean; cameraEnabled?: boolean; graphicsQuality?: GraphicsQuality; fpsMeterEnabled?: boolean; fpsSamples?: { current: FrameRateAccumulator }; onMovementComplete: () => void; onSelectSpace: (spaceId: number) => void }
+type BoardSceneProps = { nightMode: boolean; players: PlayerToken[]; activePlayerSessionId?: string; localPlayerSessionId?: string; cameraMode?: 'board' | 'player'; destinationSpaceId?: number; propertyBuildings: PropertyBuilding[]; thrownObjects: ThrowableEvent[]; earthquakeEvents?: EarthquakeEvent[]; cityEffectEvents?: CityEffectEvent[]; worldCupSpaceId?: number; festivalSpaceIds?: readonly number[]; highlightedSpaceIds?: readonly number[]; selectionMode?: boolean; showLiquidationValues?: boolean; landingPulseSpaceId?: number; landingPulseSequence?: number; diceRollSequence?: number; renderWakeSequence?: number; dice?: [number, number]; diceVisible?: boolean; diceResultVisible?: boolean; presentationSpeed?: AnimationSpeed; reducedMotion?: boolean; pawnMovementEnabled?: boolean; pawnMoveMode?: 'walk' | 'teleport'; pawnStepSoundEnabled?: boolean; cameraEnabled?: boolean; graphicsQuality?: GraphicsQuality; fpsMeterEnabled?: boolean; fpsSamples?: { current: FrameRateAccumulator }; onMovementComplete: () => void; onSelectSpace: (spaceId: number) => void }
 
 function SceneRenderWake({ sequence, onUnrecoveredContextLoss, onContextLost, onContextRestored }: { sequence: number; onUnrecoveredContextLoss: () => void; onContextLost: () => void; onContextRestored: () => void }) {
   const { gl, invalidate } = useThree()
@@ -896,7 +926,8 @@ function FrameRateProbe({ samples }: { samples: { current: FrameRateAccumulator 
   return null
 }
 
-function BoardSceneCanvas({ nightMode, players, activePlayerSessionId = '', destinationSpaceId = -1, propertyBuildings, thrownObjects, earthquakeEvents = [], cityEffectEvents = [], worldCupSpaceId = 255, festivalSpaceIds = [], highlightedSpaceIds = [], selectionMode = false, showLiquidationValues = false, landingPulseSpaceId = -1, landingPulseSequence = 0, diceRollSequence = 0, renderWakeSequence = 0, dice = [0, 0], diceVisible = false, diceResultVisible = false, presentationSpeed = 1, reducedMotion = false, pawnMovementEnabled = false, pawnMoveMode = 'walk', pawnStepSoundEnabled = false, cameraEnabled = true, graphicsQuality = 'high', fpsMeterEnabled = false, fpsSamples, onMovementComplete, onSelectSpace }: BoardSceneProps) {
+function BoardSceneCanvas({ nightMode, players, activePlayerSessionId = '', localPlayerSessionId = '', cameraMode = 'board', destinationSpaceId = -1, propertyBuildings, thrownObjects, earthquakeEvents = [], cityEffectEvents = [], worldCupSpaceId = 255, festivalSpaceIds = [], highlightedSpaceIds = [], selectionMode = false, showLiquidationValues = false, landingPulseSpaceId = -1, landingPulseSequence = 0, diceRollSequence = 0, renderWakeSequence = 0, dice = [0, 0], diceVisible = false, diceResultVisible = false, presentationSpeed = 1, reducedMotion = false, pawnMovementEnabled = false, pawnMoveMode = 'walk', pawnStepSoundEnabled = false, cameraEnabled = true, graphicsQuality = 'high', fpsMeterEnabled = false, fpsSamples, onMovementComplete, onSelectSpace }: BoardSceneProps) {
+  const pawnGroups = useMemo(() => new Map<string, Group>(), [])
   const [canvasGeneration, setCanvasGeneration] = useState(0)
   const [recoveryQuality, setRecoveryQuality] = useState<GraphicsQuality | null>(null)
   const [contextStatus, setContextStatus] = useState<'ready' | 'lost' | 'recovering' | 'failed'>('ready')
@@ -951,10 +982,11 @@ function BoardSceneCanvas({ nightMode, players, activePlayerSessionId = '', dest
       <SceneRenderWake sequence={renderWakeSequence} onUnrecoveredContextLoss={recoverLostContext} onContextLost={markContextLost} onContextRestored={markContextRestored} />
       <ResponsiveCamera tilt={16} horizontal={45} />
       <OrbitControls makeDefault enabled={cameraEnabled} enablePan={false} enableZoom enableRotate minPolarAngle={Math.PI / 12} maxPolarAngle={Math.PI / 2} rotateSpeed={0.72} zoomSpeed={0.75} enableDamping dampingFactor={0.1} />
+      <CameraFollowTarget mode={cameraMode} localPlayerSessionId={localPlayerSessionId} pawnGroups={pawnGroups} />
       <CameraZoomBounds />
       <CameraDragAnywhere enabled={cameraEnabled} />
       {fpsMeterEnabled && fpsSamples && <FrameRateProbe samples={fpsSamples} />}
-      <Board players={players} activePlayerSessionId={activePlayerSessionId} destinationSpaceId={destinationSpaceId} propertyBuildings={propertyBuildings} thrownObjects={thrownObjects} earthquakeEvents={earthquakeEvents} cityEffectEvents={cityEffectEvents} worldCupSpaceId={worldCupSpaceId} festivalSpaceIds={festivalSpaceIds} highlightedSpaceIds={highlightedSpaceIds} selectionMode={selectionMode} showLiquidationValues={showLiquidationValues} landingPulseSpaceId={landingPulseSpaceId} landingPulseSequence={landingPulseSequence} diceRollSequence={diceRollSequence} dice={dice} diceVisible={diceVisible} diceResultVisible={diceResultVisible} presentationSpeed={presentationSpeed} reducedMotion={reducedMotion} pawnMovementEnabled={pawnMovementEnabled} pawnMoveMode={pawnMoveMode} pawnStepSoundEnabled={pawnStepSoundEnabled} onMovementComplete={onMovementComplete} onSelectSpace={onSelectSpace} />
+      <Board players={players} pawnGroups={pawnGroups} activePlayerSessionId={activePlayerSessionId} destinationSpaceId={destinationSpaceId} propertyBuildings={propertyBuildings} thrownObjects={thrownObjects} earthquakeEvents={earthquakeEvents} cityEffectEvents={cityEffectEvents} worldCupSpaceId={worldCupSpaceId} festivalSpaceIds={festivalSpaceIds} highlightedSpaceIds={highlightedSpaceIds} selectionMode={selectionMode} showLiquidationValues={showLiquidationValues} landingPulseSpaceId={landingPulseSpaceId} landingPulseSequence={landingPulseSequence} diceRollSequence={diceRollSequence} dice={dice} diceVisible={diceVisible} diceResultVisible={diceResultVisible} presentationSpeed={presentationSpeed} reducedMotion={reducedMotion} pawnMovementEnabled={pawnMovementEnabled} pawnMoveMode={pawnMoveMode} pawnStepSoundEnabled={pawnStepSoundEnabled} onMovementComplete={onMovementComplete} onSelectSpace={onSelectSpace} />
     </Canvas>
     {contextStatus !== 'ready' && <div className="scene-context-recovery" role="status" aria-live="polite">
       <strong>{contextStatus === 'failed' ? 'O tabuleiro perdeu a conexão gráfica' : contextStatus === 'recovering' ? 'Restaurando o tabuleiro…' : 'Reconectando o tabuleiro…'}</strong>
@@ -1001,6 +1033,8 @@ function areScenePropsEqual(first: BoardSceneProps, second: BoardSceneProps) {
   return first.nightMode === second.nightMode
     && samePlayers(first.players, second.players)
     && first.activePlayerSessionId === second.activePlayerSessionId
+    && first.localPlayerSessionId === second.localPlayerSessionId
+    && first.cameraMode === second.cameraMode
     && first.destinationSpaceId === second.destinationSpaceId
     && sameThrows(first.thrownObjects, second.thrownObjects)
     && sameEarthquakes(first.earthquakeEvents, second.earthquakeEvents)

@@ -89,7 +89,7 @@ Proteção bloqueia qualquer efeito de carta, inclusive Generoso. Apagão e Prot
 - A FATEC Itapetininga fica no centro como modelo visual dos três blocos e da torre mostrados nas imagens de referência. Não ocupa casa de jogo. Os dados ficam suspensos pouco acima dos prédios durante a rolagem.
 - O modo noturno escurece a home e o lobby. Na partida, altera somente o fundo externo, sem escurecer o tabuleiro. A preferência é local e pode ser alterada durante o jogo.
 - Config, Emote e Regras ficam em botões quadrados na lateral. Uma seta 3D animada marca o destino após a rolagem e uma seta menor, na cor da pessoa ativa, aponta para o peão da vez. A interface adapta-se ao celular. Movimento reduzido, áudio e qualidade gráfica são controles locais.
-- A câmera gira por mouse/toque na área do tabuleiro e usa a roda/pinça para zoom; botões e painéis interativos não devem iniciar rotação.
+- A câmera gira por mouse/toque na área do tabuleiro e usa a roda/pinça para zoom; botões e painéis interativos não devem iniciar rotação. Um botão acima de Configurações alterna entre orbitar o tabuleiro e orbitar a ficha local; a troca preserva a direção e o zoom atuais e não interfere nas regras da partida.
 
 ## Escopo removido e referências
 

@@ -1,3 +1,12 @@
+# Câmera orbital e orientação dos tokens — concluído (2026-11-02)
+
+- Pedido: adicionar um botão acima das configurações que alterna entre órbita do tabuleiro e órbita do personagem local, sem mudar mecânicas; corrigir a orientação dos tokens Salto, Trem, Cofrinho, Navio, Patinho, Cachorro, Gato, Vaca e Pinguim, que avançam de ré.
+- Estado inicial verificado: branch `main` alinhada com `origin/main` em `a428015`; há alterações locais preexistentes em `assets/blender/special-corners.blend` e `assets/blender/special-corners.blend1`, fora do escopo e a preservar.
+- Implementado: botão local acima de Config alterna entre a órbita do tabuleiro e a órbita da ficha da própria pessoa. A câmera acompanha a posição animada do peão e preserva orientação/distância ao alternar. Os nove modelos citados recebem correção visual de 180°; os outros cinco preservam a orientação. As regras e o estado compartilhado não foram alterados.
+- Regressões: cobertura da correção dos nove tokens, orientação preservada nos outros cinco e deslocamento/retorno do alvo mantendo o enquadramento. Atualizado o teste da lateral do HUD de três para quatro atalhos.
+- Validação: `npm run verify` passou com 61 arquivos e 332 testes; builds web e servidor passaram. Playtest manual em partida com ficha Salto: botão apareceu acima de Config; alternância recentrou a câmera na ficha e a segunda ativação retornou ao tabuleiro. `git diff --check` sem erros. Não houve viewport mobile disponível para inspeção manual.
+- Próximo passo: observar a preferência de enquadramento durante partidas em telas pequenas e com diferentes fichas.
+
 # Bots, dívida e avisos de efeitos na cidade — concluído (2026-11-02)
 
 - Pedido: melhorar decisões dos bots, especialmente recompra; restringir valores de liquidação à pessoa que está pagando a dívida; destacar efeitos temporários nas cidades e celebrar a Copa com confete.
