@@ -35,6 +35,7 @@ import { isPlayerEmote, PLAYER_EMOTES, type PlayerEmote } from '../../shared/pla
 import { getThrowableLabel, getThrowableSymbol, isThrowableObject, THROWABLES, THROW_COOLDOWN_MS, THROW_IMPACT_DURATION_MS, THROW_PROJECTILE_DURATION_MS, type ThrowableObject } from '../../shared/throwables'
 import { getRevealKicker } from './revealCopy'
 import { HOME_REGION_ROUTE } from './homeRegionRoute'
+import { buildRoomInviteUrl, getRoomInviteCode, normalizeRoomCode } from './roomInvite'
 
 type Mode = GameMode
 type Screen = 'home' | 'room' | 'game'
@@ -117,7 +118,11 @@ function App() {
   const [landingPulseSpaceId, setLandingPulseSpaceId] = useState(-1)
   const [landingPulseSequence, setLandingPulseSequence] = useState(0)
   const [name, setName] = useState('')
-  const [roomCode, setRoomCode] = useState('')
+  const [inviteRoomCode] = useState(() => getRoomInviteCode(typeof window === 'undefined' ? '' : window.location.search))
+  const isRoomInvite = Boolean(inviteRoomCode)
+  const [roomCode, setRoomCode] = useState(inviteRoomCode ?? '')
+  const [roomInviteUrl, setRoomInviteUrl] = useState('')
+  const [roomInviteCopied, setRoomInviteCopied] = useState(false)
   const [mode, setMode] = useState<Mode>('classic')
   const [matchDuration, setMatchDuration] = useState<MatchDuration>(1800)
   const [error, setError] = useState('')
@@ -732,6 +737,8 @@ function App() {
       activeRoom.current = nextRoom
       setRoom(nextRoom)
       setRoomCode(nextRoom.roomId)
+      setRoomInviteUrl('')
+      setRoomInviteCopied(false)
       setScreen('room')
     } catch {
       setError('Não foi possível criar a sala. Confira se o servidor está disponível e tente novamente.')
@@ -742,21 +749,40 @@ function App() {
 
   async function joinRoom() {
     if (!name.trim()) return setError('Escolha um nome para continuar.')
-    if (roomCode.trim().length !== 5) return setError('Digite um código de sala com 5 caracteres.')
+    const normalizedRoomCode = normalizeRoomCode(roomCode)
+    if (!normalizedRoomCode) return setError('Digite um código de sala válido com 5 caracteres.')
     setIsConnecting(true)
     setError('')
     try {
-      const nextRoom = await roomClient.joinById(roomCode.trim().toUpperCase(), { name: name.trim() })
+      const nextRoom = await roomClient.joinById(normalizedRoomCode, { name: name.trim() })
       previousFeedbackSnapshot.current = null
       setIsReconnecting(false)
       activeRoom.current = nextRoom
       setRoom(nextRoom)
       setRoomCode(nextRoom.roomId)
+      setRoomInviteUrl('')
+      setRoomInviteCopied(false)
       setScreen('room')
     } catch {
       setError('Não encontrei essa sala. Confira o código e tente novamente.')
     } finally {
       setIsConnecting(false)
+    }
+  }
+
+  async function copyRoomInvite() {
+    const inviteUrl = buildRoomInviteUrl(window.location.href, roomCode)
+    if (!inviteUrl) return setError('Não foi possível gerar um link para esta sala.')
+
+    setRoomInviteUrl(inviteUrl)
+    setRoomInviteCopied(false)
+    try {
+      if (!navigator.clipboard?.writeText) throw new Error('Clipboard unavailable')
+      await navigator.clipboard.writeText(inviteUrl)
+      setRoomInviteCopied(true)
+      setError('')
+    } catch {
+      setError('Copie o link de convite exibido abaixo e envie para sua turma.')
     }
   }
 
@@ -904,15 +930,17 @@ function App() {
             <div className="mode-note"><span className="note-icon">✦</span><span>Complete regiões, monopolize linhas e vença.</span><span className="player-limit">2–{MAX_ROOM_PLAYERS} JOGADORES</span></div>
           </div>
 
-          <section className="entry-card" aria-label="Criar ou entrar em uma sala">
-            <div className="card-heading"><span className="step-number">01</span><div><h2>Entre na mesa</h2><p>Sem cadastro. Só escolha seu nome.</p></div></div>
+          <section className={`entry-card${isRoomInvite ? ' invite-entry-card' : ''}`} aria-label={isRoomInvite ? `Entrar na sala ${roomCode}` : 'Criar ou entrar em uma sala'}>
+            <div className="card-heading"><span className="step-number">01</span><div><h2>{isRoomInvite ? 'Você foi convidado' : 'Entre na mesa'}</h2><p>{isRoomInvite ? `Sala ${roomCode} · Digite seu nome para entrar.` : 'Sem cadastro. Só escolha seu nome.'}</p></div></div>
             <label className="field-label" htmlFor="player-name">SEU NOME</label>
-            <input id="player-name" className="text-field" maxLength={18} placeholder="Como seus amigos te chamam?" value={name} onChange={(event) => { setName(event.target.value); setError('') }} />
-            <button className="primary-button" onClick={() => void createRoom()} disabled={isConnecting}><span>{isConnecting ? 'Conectando…' : 'Criar uma sala'}</span><span className="button-arrow">↗</span></button>
-            <div className="divider"><span />ou entre com um código<span /></div>
-            <div className="join-row"><input className="text-field code-field" maxLength={5} placeholder="CÓDIGO" value={roomCode} onChange={(event) => { setRoomCode(event.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '')); setError('') }} aria-label="Código da sala" /><button className="join-button" onClick={() => void joinRoom()} disabled={isConnecting}>Entrar <span>→</span></button></div>
+            <input id="player-name" className="text-field" maxLength={18} placeholder="Como seus amigos te chamam?" value={name} autoFocus={isRoomInvite} onKeyDown={(event) => { if (isRoomInvite && event.key === 'Enter') void joinRoom() }} onChange={(event) => { setName(event.target.value); setError('') }} />
+            {isRoomInvite ? <button className="primary-button" onClick={() => void joinRoom()} disabled={isConnecting}><span>{isConnecting ? 'Entrando…' : 'Entrar na sala'}</span><span className="button-arrow">↗</span></button> : <>
+              <button className="primary-button" onClick={() => void createRoom()} disabled={isConnecting}><span>{isConnecting ? 'Conectando…' : 'Criar uma sala'}</span><span className="button-arrow">↗</span></button>
+              <div className="divider"><span />ou entre com um código<span /></div>
+              <div className="join-row"><input className="text-field code-field" maxLength={5} placeholder="CÓDIGO" value={roomCode} onChange={(event) => { setRoomCode(event.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '')); setError('') }} aria-label="Código da sala" /><button className="join-button" onClick={() => void joinRoom()} disabled={isConnecting}>Entrar <span>→</span></button></div>
+            </>}
             {error && <p className="form-error" role="alert">{error}</p>}
-            <div className="privacy-note"><span>◈</span> Salas temporárias. Seu nome aparece só para quem tem o código.</div>
+            <div className="privacy-note"><span>◈</span> Salas temporárias. Seu nome aparece para as pessoas da sala.</div>
           </section>
           <div className="home-footer"><span>UMA MESA PARA A SUA TURMA</span><span>40 CASAS <i>·</i> 4 COMPANHIAS</span></div>
         </section>
@@ -924,8 +952,9 @@ function App() {
             <button className="back-link" onClick={() => void leaveRoom()}>← Início</button>
             <span className="eyebrow">SALA PRIVADA</span>
             <h1>Chame a<br /><em>sua turma.</em></h1>
-            <p>Compartilhe o código com seus amigos para sentarem à mesa.</p>
+            <p>Envie um link de convite; seus amigos só precisam informar o nome para entrar.</p>
             <div className="room-code-label">CÓDIGO DA SALA</div><button className="room-code" onClick={() => navigator.clipboard?.writeText(roomCode)}>{roomCode}<span>▣</span></button>
+            <div className="room-invite-tools"><button type="button" className="room-invite-button" onClick={() => void copyRoomInvite()}>{roomInviteCopied ? '✓ Link copiado' : 'Copiar link de convite'}</button>{roomInviteUrl && <label className="room-invite-link"><span>LINK DE CONVITE</span><input aria-label="Link de convite da sala" readOnly value={roomInviteUrl} onFocus={(event) => event.currentTarget.select()} /></label>}</div>
             <div className="room-mode"><span className="mode-icon">✦</span><div><strong>BANTEC · {durationLabel(matchDuration)}</strong><small>{matchDuration === 0 ? 'Sem limite para a partida; turnos e decisões continuam cronometrados.' : 'Vence quem completar um monopólio ou tiver o maior patrimônio ao fim do tempo.'}</small></div></div>
             {isHost && <div className="lobby-duration-selector" role="group" aria-label="Duração da partida"><span>DURAÇÃO DA PARTIDA</span>{MATCH_DURATIONS.map((duration) => <button key={duration} type="button" className="lobby-duration-option" aria-pressed={matchDuration === duration} onClick={() => room?.send('setMatchDuration', { duration })}>{durationLabel(duration)}</button>)}</div>}
             <div className={`dev-tools-setting${devModeEnabled ? ' enabled' : ''}`} aria-live="polite"><span><strong>Modo DEV · dados forçados</strong><small>{devModeEnabled ? 'Ativado para esta partida' : 'Desativado para esta partida'}</small></span>{isHost && <button type="button" aria-pressed={devModeEnabled} onClick={() => room?.send('setDevToolsEnabled', { enabled: !devModeEnabled })}>{devModeEnabled ? 'Desativar' : 'Ativar'}</button>}</div>

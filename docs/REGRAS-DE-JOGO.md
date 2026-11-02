@@ -5,6 +5,7 @@ Este documento descreve somente as regras atuais do BANTEC. Referências ao Expr
 ## Sala e partida
 
 - Partidas privadas para 2–6 participantes, sem conta. A anfitriã pode preencher lugares vazios com bots antes de começar; o servidor recusa conexões depois do sexto lugar.
+- O lobby oferece um link de convite para a sala. Quem abrir o link informa seu nome e entra diretamente; o código da sala também continua disponível para entrada manual.
 - No lobby, cada participante humano confirma que está pronto. Apenas a anfitriã pode iniciar, depois que todas as pessoas estiverem prontas e conectadas; bots contam como prontos automaticamente.
 - Há um modo de jogo. No lobby, a anfitriã escolhe 15 minutos, 30 minutos, 1 hora ou sem limite de tempo; cada participante começa com R$ 2.000.000.
 - A partida termina imediatamente se alguém completar um Monopólio em Linha, dois Monopólios Regionais ou possuir as quatro companhias. Se o relógio zerar, a resolução já iniciada termina e vence quem tiver maior patrimônio; dívidas continuam até serem quitadas ou levarem à falência.

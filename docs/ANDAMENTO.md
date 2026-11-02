@@ -1,3 +1,12 @@
+# Link de convite direto para a sala — concluído (2026-11-02)
+
+- Pedido: gerar um link de sala que leve a pessoa diretamente ao convite; antes de entrar, ela informa o nome de usuário.
+- Estado verificado: o anfitrião já via e podia copiar o código, mas quem recebia precisava abrir a home, digitar o código e depois entrar.
+- Direção: link com código na query string; a home reconhece um código válido, pede o nome e oferece a entrada direta. No lobby, o anfitrião copia o convite; o código manual continua funcionando.
+- Implementado: o lobby gera e copia uma URL com o código da sala; o link mantém o caminho da aplicação e acrescenta `?room=...`. Ao abrir uma sala válida, a home identifica o convite, foca o campo de nome e permite entrar pelo botão ou Enter, sem digitar o código. Se a cópia automática não estiver disponível, o link fica visível para cópia manual. O código manual segue disponível fora do fluxo do convite.
+- Validação: `npm run verify` passou com loopback local permitido (58 arquivos, 311 testes e builds web/servidor). Playtest local em duas abas: criei a sala `GW8TM`, copiei `http://127.0.0.1:5173/?room=GW8TM`, abri o link noutra aba, informei “Convidado” e confirmei entrada no mesmo lobby com 2/6 lugares ocupados.
+- Próximo passo: observar o compartilhamento em celulares usando o clipboard do navegador; quando esse recurso é negado, o campo de link selecionável oferece cópia manual.
+
 # Salas e interface responsivas para seis participantes — concluído (2026-11-02)
 
 - Pedido: permitir partidas com até seis pessoas e revisar a responsividade geral, com atenção aos cartões de jogadores e às telas desktop, tablet e celular.

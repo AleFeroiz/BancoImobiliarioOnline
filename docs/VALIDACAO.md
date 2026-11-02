@@ -1,3 +1,10 @@
+# 2026-11-02 — Convite de sala por link
+
+- `npm run verify` passou com loopback local permitido: 58 arquivos de teste, 311 testes, build Vite e build do servidor. Permanece o aviso existente do chunk 3D acima de 500 kB.
+- Regressões cobrem normalização/validação do código, leitura da query `room` e geração de link preservando o caminho da aplicação.
+- Playtest local em duas abas: criei a sala `GW8TM`, usei “Copiar link de convite”, confirmei `http://127.0.0.1:5173/?room=GW8TM`, abri a URL em outra aba e entrei com um nome. O convidado apareceu no lobby do anfitrião sem digitar o código.
+- O botão mostrou “Link copiado” e a URL também ficou visível em campo selecionável para cópia manual.
+
 # 2026-11-02 — Salas e HUD responsivos para seis participantes
 
 - `npm run verify` passou com loopback local permitido: 57 arquivos de teste, 308 testes, build Vite e build do servidor. Permanece o aviso conhecido do chunk 3D acima de 500 kB.
