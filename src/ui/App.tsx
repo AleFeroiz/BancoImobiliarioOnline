@@ -1,10 +1,11 @@
 import { lazy, Suspense, useEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react'
-import type { Room } from '@colyseus/sdk'
+import { CloseCode, type Room } from '@colyseus/sdk'
 import { CHARACTER_OPTIONS, MAX_ROOM_PLAYERS, type CharacterType, type GameMode, type LobbyPlayer } from '../../shared/lobby'
 import { getMatchEndSummary, type MatchEndReason } from '../../shared/game'
 import { EVENT_CARDS } from '../../shared/cards'
 import { scheduleSceneLoad } from './sceneLoading'
 import { roomClient } from './roomClient'
+import { configureRoomReconnection, recoverRoomAfterRetries } from './roomRecovery'
 import { finalScoreMetrics, rankFinalScore, scoreCriteria } from './scoreCriteria'
 import { getLobbyPlayerEntries } from './lobbySnapshot'
 import { canAffordPurchase } from './purchaseActions'
@@ -195,6 +196,7 @@ function App() {
   const [isHost, setIsHost] = useState(false)
   const [isConnecting, setIsConnecting] = useState(false)
   const activeRoom = useRef<Room | null>(null)
+  const recoveringRoom = useRef<Room | null>(null)
   const fpsSamples = useRef(createFrameRateAccumulator())
   const previousFeedbackSnapshot = useRef<{ description: string; diceSequence: number; turnPhase: TurnPhase; players: Map<string, { cash: number; position: number }>; properties: Map<string, PropertyHolding> } | null>(null)
   const pendingLandingSound = useRef<GameSound | null>(null)
@@ -674,8 +676,33 @@ function App() {
       }, event.effect === 'world-cup' ? 4200 : 3200)
       cityEffectTimeouts.set(event.id, timer)
     })
-    const handleLeave = (_code: number, reason?: string) => {
+    const handleLeave = async (code: number, reason?: string) => {
       if (activeRoom.current !== room) return
+      if (code === CloseCode.FAILED_TO_RECONNECT) {
+        if (recoveringRoom.current === room) return
+        recoveringRoom.current = room
+        setIsReconnecting(true)
+        const playerName = room.state.players.get(room.sessionId)?.name ?? name.trim()
+        const recovery = await recoverRoomAfterRetries(
+          () => roomClient.reconnect(room.reconnectionToken),
+          () => roomClient.joinById(room.roomId, { name: playerName }),
+        )
+        recoveringRoom.current = null
+        if (activeRoom.current !== room) {
+          if (recovery.room) void recovery.room.leave()
+          return
+        }
+        if (recovery.room) {
+          configureRoomReconnection(recovery.room)
+          previousFeedbackSnapshot.current = null
+          activeRoom.current = recovery.room
+          setRoom(recovery.room)
+          setRoomCode(recovery.room.roomId)
+          setIsReconnecting(false)
+          setError('')
+          return
+        }
+      }
       activeRoom.current = null
       setRoom(null)
       setPlayerEmotes({})
@@ -698,7 +725,9 @@ function App() {
       impactTimeouts.current.clear()
       setIsReconnecting(false)
       setScreen('home')
-      setError(reason || 'A conexão com a sala foi encerrada.')
+      setError(code === CloseCode.FAILED_TO_RECONNECT
+        ? 'A conexão caiu e não foi possível recuperar sua sala. Confira sua internet e tente entrar novamente com o mesmo código e nome.'
+        : reason || 'A conexão com a sala foi encerrada.')
     }
 
     room.onStateChange(updateLobby)
@@ -724,7 +753,7 @@ function App() {
       removeDevCardArmedMessage()
       removeDevCardUsedMessage()
     }
-  }, [room, soundEnabled, reducedMotion])
+  }, [room, soundEnabled, reducedMotion, name])
 
   useEffect(() => {
     if (!soundEnabled) return
@@ -754,6 +783,7 @@ function App() {
     setError('')
     try {
       const nextRoom = await roomClient.create('game_room', { mode, matchDuration, name: name.trim() })
+      configureRoomReconnection(nextRoom)
       previousFeedbackSnapshot.current = null
       setIsReconnecting(false)
       activeRoom.current = nextRoom
@@ -777,6 +807,7 @@ function App() {
     setError('')
     try {
       const nextRoom = await roomClient.joinById(normalizedRoomCode, { name: name.trim() })
+      configureRoomReconnection(nextRoom)
       previousFeedbackSnapshot.current = null
       setIsReconnecting(false)
       activeRoom.current = nextRoom

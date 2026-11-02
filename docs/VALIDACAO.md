@@ -1,3 +1,11 @@
+# 2026-11-02 — Recuperação da sala e orientação das fichas
+
+- `npm run verify` passou com loopback local permitido: 62 arquivos de teste, 336 testes, build Vite e build do servidor. O primeiro teste dentro do sandbox falhou em `fetch failed`; a repetição com a permissão de loopback passou. Aviso já conhecido de chunk 3D acima de 500 kB.
+- Novos testes cobrem o limite de 60 tentativas automáticas, o uso do token antes da recuperação por código/nome e a falha somente quando as duas rotas falham. A suíte Colyseus mantém testes de reconexão pelo token e recuperação da cadeira pelo mesmo nome.
+- Testes geométricos dos nove tokens confirmam que o avanço é invertido mantendo o eixo vertical global Y; as cinco fichas restantes preservam sua orientação. A revisão do print do usuário mostrou que a primeira rotação local Z não refletia a pose esperada no tabuleiro, por isso foi substituída pelo eixo Y global. Os 18 testes direcionados passaram após a atualização.
+- Playtest local em Chrome: selecionei Salto, iniciei a partida, avancei a ficha até Belém e revisei sua orientação também com a câmera inclinada. A porta 2567 respondeu `EADDRINUSE` sem listener identificável; usei 2569, alternativa já registrada no histórico do projeto. A alternância para câmera Seguir recentrou o tabuleiro no jogador.
+- Não simulei queda de rede no navegador; as duas rotas de recuperação são cobertas por regressão unitária e a recuperação por identidade tem cobertura de integração do servidor. A suíte completa após o ajuste final passou com 62 arquivos, 336 testes e builds web/servidor.
+
 # 2026-11-02 — Convite de sala por link
 
 - `npm run verify` passou com loopback local permitido: 58 arquivos de teste, 311 testes, build Vite e build do servidor. Permanece o aviso existente do chunk 3D acima de 500 kB.

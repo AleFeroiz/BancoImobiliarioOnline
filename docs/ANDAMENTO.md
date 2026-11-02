@@ -1,3 +1,13 @@
+# Falha ao recuperar a conexão e rotação de fichas — concluído (2026-11-02)
+
+- Pedido: resolver quedas frequentes em que as tentativas Colyseus não recuperam a sala; desfazer a correção anterior dos tokens e aplicar os 180° no eixo correto para não deixar os modelos de barriga para cima.
+- Estado inicial: `main` está em `0c8d4a3`, alinhada com `origin/main`. As alterações locais em `assets/blender/special-corners.blend` e `.blend1` continuam fora do escopo.
+- Descobertas: o SDK instalado encerra a reconexão automática após 15 tentativas e o cliente atual volta à home no `onLeave`, sem tentar recuperar pelo token ou pelo código/nome. O GLB usa raízes com rotação X=90°; a rotação Euler Y anterior foi composta no referencial local inclinado e tombou os modelos. A primeira tentativa local em Z também não correspondeu ao eixo vertical real, como mostrou a revisão do usuário. Blender 5.2.2 LTS/add-on 1.8 conectados; os nós temporários do GLB foram removidos e a cena aberta foi restaurada sem salvar.
+- Implementado: o cliente continua tentando por até 60 tentativas automáticas e, se esgotadas, tenta o token de sessão e depois a cadeira pelo código/nome. Só retorna à home se ambas as rotas falharem; mostra uma mensagem para tentar entrar novamente com a mesma identidade. A correção visual agora gira 180° pelo eixo Y global da cena, preservando a postura vertical e invertendo o avanço.
+- Regressões: 4 testes novos para configuração e fallback da reconexão; 14 casos geométricos verificam a inversão no eixo Y global nas nove fichas e preservam as outras cinco. Suíte Colyseus preexistente cobre token e reentrada por identidade.
+- Validação: `npm run verify` passou após o ajuste final (62 arquivos, 336 testes, builds web e servidor; aviso conhecido de chunk 3D acima de 500 kB). Playtest local: Salto selecionado, partida iniciada, ficha movida até Belém e câmera inclinada para revisar a direção; porta 2567 sem listener identificável, alternativa 2569 usada. `git diff --check` passou.
+- Limite: não forcei uma desconexão ao vivo no navegador. As rotas de recuperação são cobertas por testes; viewport mobile não foi revisado nesta tarefa.
+
 # Câmera orbital e orientação dos tokens — concluído (2026-11-02)
 
 - Pedido: adicionar um botão acima das configurações que alterna entre órbita do tabuleiro e órbita do personagem local, sem mudar mecânicas; corrigir a orientação dos tokens Salto, Trem, Cofrinho, Navio, Patinho, Cachorro, Gato, Vaca e Pinguim, que avançam de ré.

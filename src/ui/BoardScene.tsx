@@ -8,7 +8,7 @@ import { boardSpaces, positionOnBoard } from '../game/board'
 import { getCameraFraming } from './cameraFraming'
 import { getCameraZoomLimits } from './cameraZoom'
 import { getCameraTargetShift } from './cameraTarget'
-import { getTokenForwardCorrection } from './tokenOrientation'
+import { applyTokenForwardCorrection } from './tokenOrientation'
 import { BUILDING_GROUP_Y, getBoardSpaceDecoration, getPropertyModelYOffset } from './boardDecoration'
 import { getBoardTileTheme } from './boardTileTheme'
 import { getFestivalBannerPlacement } from './festivalBanner'
@@ -281,7 +281,7 @@ function AnimatedPawn({ player, stackIndex, pawnGroups, reducedMotion, movementE
     const source = sourceName ? tokenScene.getObjectByName(sourceName) : null
     if (!source) return null
     const clone = source.clone(true)
-    clone.rotation.y += getTokenForwardCorrection(player.characterType)
+    applyTokenForwardCorrection(clone, player.characterType)
     const bounds = new Box3().setFromObject(clone)
     const placement = getCenteredModelPlacement(bounds)
     clone.position.x += placement[0]
