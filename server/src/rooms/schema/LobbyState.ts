@@ -73,6 +73,7 @@ export const LobbyState = schema({
   auctionStartingBid: t.int32().default(0),
   auctionHighestBid: t.int32().default(0),
   auctionHighestBidderSessionId: t.string().default(''),
+  auctionPhase: t.string().default(''),
   auctionSeconds: t.uint8().default(0),
 })
 

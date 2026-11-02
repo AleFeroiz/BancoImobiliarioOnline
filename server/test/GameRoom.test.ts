@@ -617,7 +617,7 @@ describe('sala privada', () => {
     expect(room.state.properties.get(String(propertyId))?.ownerSessionId ?? '').toBe('')
   })
 
-  it('restringe o início do leilão ao turno do dono, reserva lances e transfere o título ao maior lance', async () => {
+  it('anuncia fora da vez, aceita participantes, reserva lances e transfere o título ao maior lance', async () => {
     const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
     const host = await colyseus.connectTo(room, { name: 'Ana' })
     const seller = await colyseus.connectTo(room, { name: 'Bia' })
@@ -633,38 +633,50 @@ describe('sala privada', () => {
     const title = new PropertyState()
     title.ownerSessionId = seller.sessionId
     room.state.properties.set('1', title)
-    room.state.activePlayerSessionId = seller.sessionId
-    room.state.turnPhase = 'resolve'
-    const wrongTurnError = new Promise<{ message: string }>((resolve) => host.onMessage('room:error', resolve))
-    host.send('auctionStart', { propertyId: 1, startingBid: 120_000 })
-    await expect(wrongTurnError).resolves.toMatchObject({ message: expect.stringContaining('durante seu turno') })
-    expect(room.state.auctionId).toBe(0)
+    title.houses = 2
+    room.state.activePlayerSessionId = host.sessionId
+    room.state.turnPhase = 'debt'
     seller.send('auctionStart', { propertyId: 1, startingBid: 120_000 })
     await waitFor(() => room.state.auctionId > 0)
-    expect(room.state.activePlayerSessionId).toBe(seller.sessionId)
     expect(room.state.auctionStartingBid).toBe(120_000)
+    expect(room.state.auctionPhase).toBe('interest')
+    expect(room.state.auctionSeconds).toBe(10)
 
     const sellerBidError = new Promise<{ message: string }>((resolve) => seller.onMessage('room:error', resolve))
     seller.send('auctionBid', { auctionId: room.state.auctionId, amount: 120_000 })
     await expect(sellerBidError).resolves.toMatchObject({ message: expect.stringContaining('não está disponível') })
 
+    const prematureBidError = new Promise<{ message: string }>((resolve) => host.onMessage('room:error', resolve))
+    host.send('auctionBid', { auctionId: room.state.auctionId, amount: 120_000 })
+    await expect(prematureBidError).resolves.toMatchObject({ message: expect.stringContaining('não está disponível') })
+    host.send('auctionAccept', { auctionId: room.state.auctionId })
+    await waitFor(() => room.state.auctionPhase === 'bidding')
+    expect(room.state.auctionSeconds).toBe(10)
+
     const hostCash = room.state.players.get(host.sessionId)!.cash
     host.send('auctionBid', { auctionId: room.state.auctionId, amount: 120_000 })
     await waitFor(() => room.state.auctionHighestBidderSessionId === host.sessionId)
     expect(room.state.players.get(host.sessionId)!.cash).toBe(hostCash - 120_000)
-    bidder.send('auctionBid', { auctionId: room.state.auctionId, amount: 130_000 })
+    room.state.auctionSeconds = 2
+    host.send('auctionBid', { auctionId: room.state.auctionId, amount: 130_000 })
+    await waitFor(() => room.state.auctionHighestBid === 130_000)
+    expect(room.state.auctionSeconds).toBe(10)
+    expect(room.state.players.get(host.sessionId)!.cash).toBe(hostCash - 130_000)
+    bidder.send('auctionBid', { auctionId: room.state.auctionId, amount: 140_000 })
     await waitFor(() => room.state.auctionHighestBidderSessionId === bidder.sessionId)
+    expect(room.state.auctionSeconds).toBe(10)
     expect(room.state.players.get(host.sessionId)!.cash).toBe(hostCash)
-    expect(room.state.players.get(bidder.sessionId)!.cash).toBe(STARTING_CASH - 130_000)
+    expect(room.state.players.get(bidder.sessionId)!.cash).toBe(STARTING_CASH - 140_000)
 
     room.state.auctionSeconds = 1
     await waitFor(() => room.state.auctionId === 0, 1800)
     expect(room.state.properties.get('1')?.ownerSessionId).toBe(bidder.sessionId)
-    expect(room.state.players.get(seller.sessionId)!.cash).toBe(STARTING_CASH + 130_000)
-    expect(room.state.players.get(bidder.sessionId)!.cash).toBe(STARTING_CASH - 130_000)
+    expect(room.state.properties.get('1')?.houses).toBe(2)
+    expect(room.state.players.get(seller.sessionId)!.cash).toBe(STARTING_CASH + 140_000)
+    expect(room.state.players.get(bidder.sessionId)!.cash).toBe(STARTING_CASH - 140_000)
   })
 
-  it('não permite leiloar imóvel livre ou título cujo grupo ainda tem construções', async () => {
+  it('permite anunciar fora da vez com construções, mas não permite leiloar imóvel livre', async () => {
     const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
     const host = await colyseus.connectTo(room, { name: 'Duda' })
     const guest = await colyseus.connectTo(room, { name: 'Eva' })
@@ -686,11 +698,34 @@ describe('sala privada', () => {
     builtSibling.ownerSessionId = host.sessionId
     builtSibling.houses = 1
     room.state.properties.set(String(sibling.id), builtSibling)
-    const builtMessage = new Promise<{ message: string }>((resolve) => host.onMessage('room:error', resolve))
+    room.state.activePlayerSessionId = guest.sessionId
+    room.state.turnPhase = 'debt'
     host.send('auctionStart', { propertyId: 1, startingBid: 50_000 })
-    await expect(builtMessage).resolves.toMatchObject({ message: expect.stringContaining('Venda as construções') })
-    expect(room.state.auctionId).toBe(0)
+    await waitFor(() => room.state.auctionId > 0)
+    expect(room.state.auctionPhase).toBe('interest')
     expect(room.state.properties.get('1')?.ownerSessionId).toBe(host.sessionId)
+    host.send('auctionCancel', { auctionId: room.state.auctionId })
+    await waitFor(() => room.state.auctionId === 0)
+  })
+
+  it('cancela sem venda se ninguém aceitar em dez segundos', async () => {
+    const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
+    const host = await colyseus.connectTo(room, { name: 'Ana' })
+    await colyseus.connectTo(room, { name: 'Bia' })
+    host.send('start')
+    await waitFor(() => room.state.status === 'playing')
+    const propertySpace = boardSpaces.find((space) => space.kind === 'property')!
+    const property = new PropertyState()
+    property.ownerSessionId = host.sessionId
+    room.state.properties.set(String(propertySpace.id), property)
+
+    host.send('auctionStart', { propertyId: propertySpace.id, startingBid: 50_000 })
+    await waitFor(() => room.state.auctionId > 0)
+    room.state.auctionSeconds = 1
+    await waitFor(() => room.state.auctionId === 0, 1800)
+
+    expect(property.ownerSessionId).toBe(host.sessionId)
+    expect(room.state.landingDescription).toContain('ninguém aceitou')
   })
 
   it('bloqueia comprar três casas antes da primeira volta e libera depois dela', async () => {
@@ -1018,10 +1053,14 @@ describe('sala privada', () => {
     expect(room.state.debtCreditorSessionId).toBe('')
     expect(player.cash).toBe(20_000)
 
-    const debtAuctionError = new Promise<{ message: string }>((resolve) => host.onMessage('room:error', resolve))
+    const debtAuctionProperty = new PropertyState()
+    debtAuctionProperty.ownerSessionId = host.sessionId
+    room.state.properties.set('15', debtAuctionProperty)
     host.send('auctionStart', { propertyId: 15, startingBid: 10_000 })
-    await expect(debtAuctionError).resolves.toMatchObject({ message: expect.stringContaining('durante seu turno') })
-    expect(room.state.auctionId).toBe(0)
+    await waitFor(() => room.state.auctionId > 0)
+    expect(room.state.auctionPhase).toBe('interest')
+    host.send('auctionCancel', { auctionId: room.state.auctionId })
+    await waitFor(() => room.state.auctionId === 0)
 
     const propertyId = 15
     const property = new PropertyState()
@@ -1886,6 +1925,8 @@ describe('sala privada', () => {
     host.send('auctionStart', { propertyId: propertySpace.id, startingBid: 50_000 })
     await waitFor(() => room.state.auctionId > 0)
 
+    guest.send('auctionAccept', { auctionId: room.state.auctionId })
+    await waitFor(() => room.state.auctionPhase === 'bidding')
     guest.send('auctionBid', { auctionId: room.state.auctionId, amount: 50_000 })
     await waitFor(() => room.state.auctionHighestBidderSessionId === guest.sessionId)
     expect(room.state.players.get(guest.sessionId)?.cash).toBe(STARTING_CASH - 50_000)

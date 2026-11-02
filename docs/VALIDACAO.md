@@ -1,7 +1,13 @@
 # 2026-11-01 — Cancelamento de leilão em imóvel devolvido ao banco
 
 - Em partida local com bot, abri o inspetor de Canaã dos Carajás. O leilão ficou desabilitado porque outra cidade do mesmo grupo tinha construções; a interface mostrou “Venda todas as casas e hotéis do grupo antes de leiloar uma cidade dele.” Isso explica o bloqueio da captura de Curitiba, que mostrava duas casas.
-- Comprei Maceió, cujo grupo não tinha construções. O botão “Leiloar imóvel” ficou habilitado e, ao acioná-lo, o painel mostrou o leilão ativo com 20 segundos. A interface conclui que o fluxo de abertura funciona quando as condições são válidas.
+- Validação histórica: Maceió sem construções abriu um leilão de 20 segundos. O fluxo foi substituído pela janela de aceite de 10 segundos e lances de 10 segundos abaixo.
+
+## 2026-11-01 — Aceite e disputa em leilão voluntário
+
+- `npm run verify`: 55 arquivos de teste e 292 testes passaram; `tsc -b`, build Vite e build de servidor concluíram. Continua o aviso conhecido de chunk maior que 500 kB.
+- Regressões de servidor: anúncio fora da vez durante dívida, imóvel com construções no grupo, janela inicial de aceite, rejeição de lance antes do aceite, abertura da fase de lances, reserva e devolução ao ser superado, transferência do imóvel com suas casas, reinício em 10 segundos, cancelamento sem aceite e cancelamento/reembolso se o título voltar ao banco por Terremoto. Teste de UI cobre a remoção dos bloqueios por turno e construções.
+- Playtest local: o painel de propriedade habilitou “Leiloar imóvel” fora da vez, abriu o indicador “Leilão · aceite · 10s” e mostrou o valor mínimo e a instrução para aceitar. A porta Colyseus padrão 2567 estava ocupada sem processo identificável; usei 2569 e o Vite em 5173. A tentativa de conectar um segundo cliente depois de a partida começar foi recusada pelo lobby; a aceitação manual de dois clientes fica pendente de uma próxima sessão iniciada com ambos no lobby.
 - Enquanto o leilão de Maceió estava ativo, o Bot 1 usou Terremoto e devolveu o título ao banco. O relógio do leilão permaneceu correndo, revelando que era preciso cancelar o leilão e reembolsar um lance reservado. A correção em `returnTitleToBank` agora limpa o leilão correspondente; regressão de servidor cobre terremoto, cancelamento e devolução do lance.
 - Na mesma partida, comprei Canaã dos Carajás e Maceió; os rótulos de aluguel apareceram no tile junto dos modelos. O terreno permaneceu visível sobre o piso no enquadramento geral. A distância de câmera não permitiu avaliar com precisão a folga de altura; os testes geométricos existentes verificam o alinhamento da base.
 

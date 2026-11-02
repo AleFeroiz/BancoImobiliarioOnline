@@ -20,10 +20,9 @@ describe('lance de leilão', () => {
     expect(adjustAuctionStartingBid('10000', -1, 10_000)).toBe('10000')
   })
 
-  it('explica por que um leilão não pode começar', () => {
-    expect(getAuctionStartBlockReason(true, true, 500_000)).toContain('Venda todas as casas e hotéis')
-    expect(getAuctionStartBlockReason(false, false, 500_000)).toContain('durante seu turno')
-    expect(getAuctionStartBlockReason(true, false, 0)).toContain('lance inicial mínimo')
-    expect(getAuctionStartBlockReason(true, false, 500_000)).toBeNull()
+  it('permite anunciar fora da vez mesmo com construções e valida só disputa aberta ou lance inicial', () => {
+    expect(getAuctionStartBlockReason(500_000, false)).toBeNull()
+    expect(getAuctionStartBlockReason(0, false)).toContain('lance inicial mínimo')
+    expect(getAuctionStartBlockReason(500_000, true)).toContain('Já existe um leilão')
   })
 })

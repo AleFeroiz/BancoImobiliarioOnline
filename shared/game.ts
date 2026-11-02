@@ -35,7 +35,8 @@ export type MatchDuration = (typeof MATCH_DURATIONS)[number]
 export const CLASSIC_MATCH_SECONDS: MatchDuration = 30 * 60
 export const TURN_ROLL_SECONDS = 20
 export const TURN_DECISION_SECONDS = 15
-export const AUCTION_DURATION_SECONDS = 20
+export const AUCTION_ACCEPT_SECONDS = 10
+export const AUCTION_BID_SECONDS = 10
 export const AUCTION_MIN_BID_INCREMENT = 10_000
 
 export function isMatchDuration(value: unknown): value is MatchDuration {

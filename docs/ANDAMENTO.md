@@ -1,12 +1,21 @@
+# Leilão voluntário com aceite e disputa — concluído (2026-11-01)
+
+- O dono anuncia uma propriedade em qualquer fase e fora do próprio turno; pode manter construções no grupo, e melhorias seguem com o imóvel. Outra pessoa tem 10 segundos para aceitar; o aceite abre uma janela de 10 segundos para lances. Cada oferta válida reinicia essa contagem. Sem aceite ou sem lances, o anúncio termina sem venda.
+- O painel separa aceite de disputa e mostra o cronômetro atual. O vendedor pode cancelar antes do primeiro lance. A oferta vencedora transfere o título com as construções. Se o título voltar ao banco no meio do leilão, a sala cancela e devolve o lance reservado.
+- Regressões cobrem anúncio fora do turno durante dívida e com construções, aceite obrigatório antes de ofertar, lance reservado e reembolsado ao ser superado, reinício do relógio, transferência das construções e expiração sem aceite.
+- `npm run verify` passou: 55 arquivos de teste, 292 testes e builds web/servidor. Playtest local confirmou o anúncio sem restrição, o rótulo de aceite e a contagem regressiva de 10 segundos. O modo de dois clientes humanos não foi exercitado manualmente; os estados de aceite/lance estão cobertos pelo teste de servidor.
+- As alterações de trabalho locais em `assets/blender/special-corners.blend` e `assets/blender/special-corners.blend1` são alheias a esta tarefa e permanecem preservadas.
+
 # Efeitos de propriedades, leilão, setas e animação de projéteis — concluído (2026-11-01)
 
 - Pedido: manter o terreno apoiado no piso; limpar os efeitos de uma propriedade quando o título voltar ao banco, mantendo o Festival; impedir efeitos temporários em cidades livres; remover negociação entre jogadores; explicar o bloqueio do leilão; adicionar setas 3D de destino e vez; evitar que ovo, lama, tomate ou farinha pulem a animação em lançamentos repetidos.
-- Implementado: o terreno fica no nível da superfície enquanto casas/hotel mantêm sua altura; devolução por dívida, falência sem credor e Terremoto usam a mesma limpeza de efeitos e da sede da Copa. Festival permanece na cidade. A negociação de dinheiro e títulos saiu da interface, protocolo, schema e regras. O bloqueio de leilão informa que o grupo deve ficar sem construções. A seta dourada indica a casa de destino e uma seta na cor do jogador aponta para o peão da vez. O relógio de projéteis reinicia na montagem do novo evento e limita frames longos para não pular o voo.
+- Implementado: o terreno fica no nível da superfície enquanto casas/hotel mantêm sua altura; devolução por dívida, falência sem credor e Terremoto usam a mesma limpeza de efeitos e da sede da Copa. Festival permanece na cidade. A negociação de dinheiro e títulos saiu da interface, protocolo, schema e regras. A seta dourada indica a casa de destino e uma seta na cor do jogador aponta para o peão da vez. O relógio de projéteis reinicia na montagem do novo evento e limita frames longos para não pular o voo.
 - Regressões: limpeza de efeitos/Festival na devolução e Terremoto, cancelamento de leilão e devolução de lance quando o título volta ao banco, razão do bloqueio de leilão, cálculo do destino e avanço seguro da animação após frame longo.
 - Validação automatizada: `npm run verify` passou com 55 arquivos de teste, 291 testes, build web e build do servidor. O hook será executado novamente no commit. O build mantém o aviso conhecido de chunks acima de 500 kB.
 - Playtest manual: Vite e sala local foram abertos; a porta 2567 estava ocupada sem processo identificável, então usei a porta alternativa 2569. O leilão ficou bloqueado em Canaã porque outra cidade do mesmo grupo tinha construções, e a interface mostrou esse motivo. Em Maceió, sem construções no grupo, o botão habilitou e abriu o estado de leilão por 20 segundos. Um Terremoto atingiu o próprio título durante o leilão e revelou que ele continuava aberto; a regressão cobre o cancelamento e o reembolso. A compra de Canaã também mostrou o modelo de terreno no tile; a vista geral não permite medir visualmente a folga de altura. Alterações locais em `assets/blender/special-corners.blend` e `.blend1` foram preservadas fora do escopo.
 - Publicação: `5ff5dff` e `438d444` já estão em `main` e `origin/main`; a nova correção ainda será publicada após a validação e o hook.
-- Próximo passo: publicar a correção de cancelamento do leilão e observar em partida humana os arremessos repetidos e o posicionamento do terreno com câmera aproximada.
+- O fluxo de leilão descrito acima substitui as restrições antigas; a validação anterior de 20 segundos e grupo sem construções é histórica.
+- Próximo passo: observar os aceites e disputas em uma partida com duas pessoas humanas.
 
 # Cartões destacam cidades e ajuste de construções — concluído (2026-11-01)
 
