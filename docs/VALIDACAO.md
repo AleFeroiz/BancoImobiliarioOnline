@@ -1,3 +1,10 @@
+# 2026-11-01 — Cancelamento de leilão em imóvel devolvido ao banco
+
+- Em partida local com bot, abri o inspetor de Canaã dos Carajás. O leilão ficou desabilitado porque outra cidade do mesmo grupo tinha construções; a interface mostrou “Venda todas as casas e hotéis do grupo antes de leiloar uma cidade dele.” Isso explica o bloqueio da captura de Curitiba, que mostrava duas casas.
+- Comprei Maceió, cujo grupo não tinha construções. O botão “Leiloar imóvel” ficou habilitado e, ao acioná-lo, o painel mostrou o leilão ativo com 20 segundos. A interface conclui que o fluxo de abertura funciona quando as condições são válidas.
+- Enquanto o leilão de Maceió estava ativo, o Bot 1 usou Terremoto e devolveu o título ao banco. O relógio do leilão permaneceu correndo, revelando que era preciso cancelar o leilão e reembolsar um lance reservado. A correção em `returnTitleToBank` agora limpa o leilão correspondente; regressão de servidor cobre terremoto, cancelamento e devolução do lance.
+- Na mesma partida, comprei Canaã dos Carajás e Maceió; os rótulos de aluguel apareceram no tile junto dos modelos. O terreno permaneceu visível sobre o piso no enquadramento geral. A distância de câmera não permitiu avaliar com precisão a folga de altura; os testes geométricos existentes verificam o alinhamento da base.
+
 # 2026-11-01 — Destaque das cidades por cartão e altura das construções
 
 - `npm run verify` passou com loopback local: 54 arquivos, 290 testes; build web e build do servidor. O build mantém o aviso existente de chunk 3D maior que 500 KB. Testes direcionados de destaque, geometria e layout: 12 testes aprovados.

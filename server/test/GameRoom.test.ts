@@ -1870,6 +1870,39 @@ describe('sala privada', () => {
     expect(room.state.players.get(guest.sessionId)?.cash).toBe(STARTING_CASH)
   })
 
+  it('cancela o leilão e devolve o lance se o imóvel voltar ao banco durante um Terremoto', async () => {
+    const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
+    const host = await colyseus.connectTo(room, { name: 'Ana' })
+    const guest = await colyseus.connectTo(room, { name: 'Bia' })
+    host.send('start')
+    await waitFor(() => room.state.status === 'playing')
+
+    const propertySpace = boardSpaces.find((space) => space.kind === 'property' && space.buildable)!
+    const property = new PropertyState()
+    property.ownerSessionId = host.sessionId
+    room.state.properties.set(String(propertySpace.id), property)
+    room.state.activePlayerSessionId = host.sessionId
+    room.state.turnPhase = 'resolve'
+    host.send('auctionStart', { propertyId: propertySpace.id, startingBid: 50_000 })
+    await waitFor(() => room.state.auctionId > 0)
+
+    guest.send('auctionBid', { auctionId: room.state.auctionId, amount: 50_000 })
+    await waitFor(() => room.state.auctionHighestBidderSessionId === guest.sessionId)
+    expect(room.state.players.get(guest.sessionId)?.cash).toBe(STARTING_CASH - 50_000)
+
+    room.state.activePlayerSessionId = guest.sessionId
+    room.state.turnPhase = 'card-target'
+    room.state.activeCardId = 'earthquake'
+    guest.send('resolveCardTarget', { propertyId: propertySpace.id, targetSessionId: host.sessionId })
+    await waitFor(() => property.ownerSessionId === '')
+
+    expect(room.state.auctionId).toBe(0)
+    expect(room.state.auctionPropertyId).toBe(255)
+    expect(room.state.auctionHighestBid).toBe(0)
+    expect(room.state.players.get(guest.sessionId)?.cash).toBe(STARTING_CASH)
+    expect(property).toMatchObject({ ownerSessionId: '', houses: 0, blackoutTurns: 0, protectionTurns: 0 })
+  })
+
   it('rejeita Apagão e Terremoto contra propriedades com hotel', async () => {
     const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
     const host = await colyseus.connectTo(room, { name: 'Ana' })

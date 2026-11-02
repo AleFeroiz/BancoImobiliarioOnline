@@ -952,6 +952,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
   }
 
   private returnTitleToBank(propertyId: number, property: PropertyState) {
+    if (this.state.auctionId > 0 && this.state.auctionPropertyId === propertyId) this.clearAuction(true)
     property.ownerSessionId = ''
     property.houses = 0
     property.blackoutTurns = 0
