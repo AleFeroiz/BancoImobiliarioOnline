@@ -1,3 +1,11 @@
+# Escala maior no lobby — concluído (2026-11-02)
+
+- Pedido: ampliar os controles e textos do lobby, mantendo todos os dados visíveis sem rolagem.
+- Implementado: aumentei tipografia, alturas de botões, fichas, avatares, espaçamento e respiro do cartão. As regras mobile continuam em duas colunas e foram ampliadas com medidas próprias para caber em 390×844, inclusive com seis participantes.
+- Revisão visual local: desktop 1280×720 e celular 390×844 com seis lugares ocupados; todo o lobby coube na tela, sem barra de rolagem.
+- `npm run verify` passou: 62 arquivos de teste, 336 testes, builds Vite e servidor. Permanece o aviso conhecido de chunk 3D acima de 500 kB. Graphify atualizado para 1.161 nós, 2.194 arestas e 80 comunidades.
+- Próximo passo: conferir a legibilidade final em celulares físicos.
+
 # Falha ao recuperar a conexão e rotação de fichas — concluído (2026-11-02)
 
 - Pedido: resolver quedas frequentes em que as tentativas Colyseus não recuperam a sala; desfazer a correção anterior dos tokens e aplicar os 180° no eixo correto para não deixar os modelos de barriga para cima.

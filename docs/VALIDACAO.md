@@ -55,6 +55,13 @@
 - Regressões cobrem aceitação de recompra pelo bot com caixa suficiente, reservas e conclusão de grupo; valores de liquidação só para a sessão devedora; mensagens de transferência, Apagão, Proteção, Terremoto e Copa.
 - Playtest local com pessoa e bot: comprei Canaã dos Carajás, escolhi a sede da Copa e depois apliquei Proteção por carta DEV. O HUD mostrou a sede e o selo temporário `PROTEÇÃO!` sobre a cidade protegida, além da bolha persistente. A conexão da sala de QA encerrou quando o servidor reiniciou durante o build; o selo da Copa com confetes não foi capturado manualmente.
 
+# 2026-11-02 — Escala maior no lobby
+
+- Regressão visual estrutural em `tests/interfaceLayout.test.ts` confere as dimensões ampliadas em desktop e mobile.
+- Playtest local em viewport desktop 1280×720: as opções de cor, fichas, configurações e participantes ficaram maiores e permaneceram visíveis sem rolagem.
+- Playtest local em celular 390×844 com anfitriã e cinco bots: todos os seis lugares, as 12 cores, 14 fichas, prontidão e controles de sala couberam na tela; sem barra de rolagem.
+- `npm run verify` passou com 62 arquivos e 336 testes, builds Vite e servidor; permanece o aviso conhecido de chunk acima de 500 kB. `npm run graphify -- update .` concluiu com 1.161 nós, 2.194 arestas e 80 comunidades.
+
 # 2026-11-02 — Home e lobby compactos
 
 - Playtest manual local no navegador: home mostra somente o título “BANTEC.” com os cinco marcadores regionais imediatamente abaixo; removida a frase de destaque anterior. Em desktop (1920×1080) e celular (390×844), a chamada, percurso, duração, acesso à sala e rodapé ficaram visíveis sem rolagem.
