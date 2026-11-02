@@ -1,3 +1,13 @@
+# Paleta de cores de participantes — concluída (2026-11-02)
+
+- Pedido: substituir cores próximas entre si por uma seleção inspirada nas cores de personagens de Among Us.
+- Estado inicial verificado: a lista tinha 12 entradas, incluindo pares visualmente próximos (turquesa/ciano e roxo/lavanda); cada cor é compartilhada entre lobby, cartões, fichas e sinais no tabuleiro.
+- Implementado: 12 tons reconhecíveis inspirados nos personagens de Among Us; os pares próximos da paleta anterior foram removidos. As cores e nomes atualizados alimentam lobby, peões, cartões e indicações de cor.
+- `npm run verify` passou: 55 arquivos, 296 testes e builds web/servidor. A primeira execução do teste Colyseus falhou por loopback restrito; repetida com acesso local permitido, passou. O build mantém o aviso existente do chunk 3D acima de 500 kB.
+- Playtest visual local no lobby: os 12 nomes e amostras foram renderizados em três linhas, com a cor selecionada visível no cartão da mesa. Servidor de sala e Vite foram encerrados após a revisão.
+- Código publicado em `main` no commit `8362402`; a paleta e o teste de regressão já estão sincronizados com `origin/main`.
+- Próximo passo: observar em uma partida com mais pessoas se os tons continuam fáceis de distinguir na tela.
+
 # Prontidão de participantes no lobby — concluído (2026-11-02)
 
 - Pedido: exigir que cada pessoa confirme que está pronta antes de a anfitriã iniciar a partida.

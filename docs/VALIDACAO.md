@@ -1,3 +1,10 @@
+# 2026-11-02 — Paleta de participantes
+
+- `npm run verify`: 55 arquivos de teste, 296 testes aprovados, build Vite e build do servidor aprovados. Permanece o aviso existente de chunk 3D acima de 500 kB.
+- Regressão da paleta confirma os 12 nomes e códigos hexadecimais aprovados e a validação das cores listadas.
+- Playtest visual no lobby local: as 12 opções aparecem em três linhas com nomes legíveis e amostras de cores distintas; Vermelho aparece selecionado no cartão do participante.
+- A primeira execução falhou porque os testes de sala não alcançaram o loopback (`fetch failed`); repetida com loopback permitido, a suíte passou. Playtest usou Colyseus na porta 2569 porque 2567 retornou `EADDRINUSE` sem processo/listener persistente identificável.
+
 # 2026-11-02 — Posicionamento de títulos e festivais
 
 - `npm run verify`: 55 arquivos, 296 testes aprovados; build Vite e build do servidor passaram. A primeira execução após renomear o controle de destaque apontou uma expectativa textual antiga; foi atualizada e a suíte completa repetida. Permanece o aviso de chunk 3D acima de 500 kB.
