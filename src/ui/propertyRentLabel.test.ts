@@ -1,9 +1,15 @@
 import { describe, expect, it } from 'vitest'
 import { boardSpaces } from '../game/board'
-import { getPropertyBoardLabel, getPropertyLiquidationLabel, getPropertyRentLabel } from './propertyRentLabel'
+import { canShowLiquidationValues, getPropertyBoardLabel, getPropertyLiquidationLabel, getPropertyRentLabel } from './propertyRentLabel'
 import { PROPERTY_HOTEL_LEVEL, bankReturnValue, buildingSaleValue } from '../../shared/game'
 
 describe('rótulos 3D de aluguel', () => {
+  it('só autoriza valores de liquidação na tela de quem está resolvendo a dívida', () => {
+    expect(canShowLiquidationValues('debt', 'devedor', 'devedor')).toBe(true)
+    expect(canShowLiquidationValues('debt', 'credor', 'devedor')).toBe(false)
+    expect(canShowLiquidationValues('debt', '', 'devedor')).toBe(false)
+    expect(canShowLiquidationValues('resolve', 'devedor', 'devedor')).toBe(false)
+  })
   it('mostra o aluguel base, grupo completo e construções da propriedade', () => {
     const first = boardSpaces.find((space) => space.kind === 'property' && space.buildable)!
     const group = boardSpaces.filter((space) => space.kind === 'property' && space.buildable && space.region === first.region)

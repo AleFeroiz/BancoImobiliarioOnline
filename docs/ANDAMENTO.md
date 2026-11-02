@@ -1,3 +1,10 @@
+# Bots, dívida e avisos de efeitos na cidade — concluído (2026-11-02)
+
+- Pedido: melhorar decisões dos bots, especialmente recompra; restringir valores de liquidação à pessoa que está pagando a dívida; destacar efeitos temporários nas cidades e celebrar a Copa com confete.
+- Descobertas: faltava uma ação de bot na fase `buyback`; o cliente mostrava valores de liquidação em todos os dispositivos porque só conferia a fase sincronizada; apagão e proteção não tinham sinal visual no instante da aplicação, e a Copa só deixava a bandeira permanente.
+- Implementado: recompra pelo bot com reserva de caixa e menor reserva quando completa grupo; valores de liquidação somente para a sessão ativa que resolve dívida; mensagens sincronizadas e selos/aneis temporários para transferência, apagão, proteção, terremoto e Copa, com confetes na sede. Terremoto mantém também o colapso 3D.
+- Validação: `npm run verify` passou com 59 arquivos e 317 testes, build Vite e build do servidor. Playtest local confirmou o selo de Proteção sobre a cidade e a bandeira da sede; a conexão temporária caiu quando o servidor reiniciou durante o build.
+- Próximo passo: observar em partidas reais se as decisões de recompra e os avisos temporários das cidades ficam claros para o grupo.
 # Link de convite direto para a sala — concluído (2026-11-02)
 
 - Pedido: gerar um link de sala que leve a pessoa diretamente ao convite; antes de entrar, ela informa o nome de usuário.

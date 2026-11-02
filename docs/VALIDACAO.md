@@ -41,6 +41,11 @@
 - A inspeção do Blender 5.2.2 LTS confirmou que os GLBs têm variações nomeadas dispostas como uma faixa no arquivo. A cena clona cada raiz, remove a transformação raiz de origem, centraliza os limites e apoia a base sobre Y=0; isso explica modelos afastados de (0,0,0) no arquivo sem transferir esse arranjo para a mesa. Nenhum arquivo Blender ou GLB foi salvo.
 - Não reproduzi manualmente uma liquidação/recompra nem uma companhia possuída por outro jogador nesta sala. A transição simultânea e a inclusão das companhias estão cobertas por regressões unitárias.
 
+# 2026-11-02 — Decisões de bots, liquidação e avisos de efeito na cidade
+
+- `npm run verify` passou após liberar loopback local: 59 arquivos de teste, 317 testes, build Vite e build do servidor. O build mantém o aviso conhecido de bundle de cena 3D acima de 500 kB.
+- Regressões cobrem aceitação de recompra pelo bot com caixa suficiente, reservas e conclusão de grupo; valores de liquidação só para a sessão devedora; mensagens de transferência, Apagão, Proteção, Terremoto e Copa.
+- Playtest local com pessoa e bot: comprei Canaã dos Carajás, escolhi a sede da Copa e depois apliquei Proteção por carta DEV. O HUD mostrou a sede e o selo temporário `PROTEÇÃO!` sobre a cidade protegida, além da bolha persistente. A conexão da sala de QA encerrou quando o servidor reiniciou durante o build; o selo da Copa com confetes não foi capturado manualmente.
 # 2026-11-02 — Recuperação após perda do contexto WebGL
 
 - Regressões direcionadas: 7 testes passaram; verificam redução de qualidade de `alta` para `equilibrada` e depois `desempenho`, além dos eventos de perda/restauração que comandam a mensagem e a recuperação do Canvas.

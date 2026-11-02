@@ -3,6 +3,10 @@ import { PROPERTY_HOTEL_LEVEL, bankReturnValue, buildingSaleValue, calculateComp
 
 export type PropertyRentHolding = { spaceId: number; ownerSessionId: string; houses: number; blackoutTurns?: number; ownerColor?: string }
 
+export function canShowLiquidationValues(turnPhase: string, localSessionId: string, activePlayerSessionId: string) {
+  return turnPhase === 'debt' && Boolean(localSessionId) && localSessionId === activePlayerSessionId
+}
+
 export function getPropertyLiquidationLabel(spaceId: number, holdings: readonly PropertyRentHolding[]) {
   const space = boardSpaces[spaceId]
   const holding = holdings.find((item) => item.spaceId === spaceId)

@@ -9,7 +9,7 @@ import { isPlayerEmote } from '../../../shared/playerEmotes.js'
 import { isThrowableObject, THROW_COOLDOWN_MS } from '../../../shared/throwables.js'
 import { EVENT_CARDS } from '../../../shared/cards.js'
 import { LobbyPlayerState, LobbyState, PropertyState } from './schema/LobbyState.js'
-import { chooseBotAuctionBid, shouldBotBuyProperty } from './botStrategy.js'
+import { chooseBotAuctionBid, shouldBotBuyback, shouldBotBuyProperty } from './botStrategy.js'
 
 const ROOM_CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
 const ROOM_CODE_LENGTH = 5
@@ -821,6 +821,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
         return
       }
       this.state.worldCupSpaceId = propertyId
+      this.broadcast('game:city-effect', { id: ++this.throwSequence, spaceId: propertyId, effect: 'world-cup' })
       this.state.turnPhase = 'resolve'
       this.state.landingDescription = `${space.name} será sede da Copa do Mundo. O aluguel agora vale duas vezes o valor normal.`
       this.finishExpiredPhaseIfReady()
@@ -878,6 +879,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
           return
         }
         property.ownerSessionId = targetId
+        this.broadcast('game:city-effect', { id: ++this.throwSequence, spaceId: propertyId, effect: 'generous' })
         this.state.landingDescription = `${actor.name} deu ${boardSpaces[propertyId].name} a ${target!.name}.`
         if (this.checkMonopolyVictory(targetId)) return
       } else if (card.effect.kind === 'blackout') {
@@ -886,13 +888,16 @@ export class GameRoom extends Room<{ state: LobbyState }> {
           return
         }
         property.blackoutTurns = 3
+        this.broadcast('game:city-effect', { id: ++this.throwSequence, spaceId: propertyId, effect: 'blackout' })
         this.state.landingDescription = `${boardSpaces[propertyId].name} ficará sem aluguel nos próximos três turnos de ${target!.name}.`
       } else if (card.effect.kind === 'earthquake') {
         if (space?.kind !== 'property' || !property || property.ownerSessionId !== targetId || !validTarget || property.houses === PROPERTY_HOTEL_LEVEL || cardBlocked) {
           invalid('Escolha um imóvel sem hotel e sem proteção que pertença a outra pessoa.')
           return
         }
-        this.broadcast('game:earthquake', { id: ++this.throwSequence, spaceId: propertyId, houses: property.houses, ownerColor: this.state.players.get(property.ownerSessionId)?.color ?? '#536c7d' })
+        const earthquakeId = ++this.throwSequence
+        this.broadcast('game:earthquake', { id: earthquakeId, spaceId: propertyId, houses: property.houses, ownerColor: this.state.players.get(property.ownerSessionId)?.color ?? '#536c7d' })
+        this.broadcast('game:city-effect', { id: earthquakeId, spaceId: propertyId, effect: 'earthquake' })
         this.returnTitleToBank(propertyId, property)
         this.state.landingDescription = `${boardSpaces[propertyId].name} foi destruída pelo terremoto e voltou ao banco.`
       } else if (card.effect.kind === 'thief') {
@@ -909,6 +914,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
           return
         }
         property.protectionTurns = Math.max(property.protectionTurns, 4)
+        this.broadcast('game:city-effect', { id: ++this.throwSequence, spaceId: propertyId, effect: 'protection' })
         this.state.landingDescription = `${boardSpaces[propertyId].name} está protegida contra cartas pelos próximos três turnos do dono.`
       } else if (card.effect.kind === 'swap') {
         const secondId = typeof payload?.secondSessionId === 'string' ? payload.secondSessionId : ''
@@ -1177,6 +1183,15 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       this.autoResolveCardTarget(client, sessionId)
     } else if (this.state.turnPhase === 'roll') {
       this.messages.roll(client)
+    } else if (this.state.turnPhase === 'buyback') {
+      const propertyId = this.state.pendingPropertyId
+      const property = this.state.properties.get(String(propertyId))
+      const space = boardSpaces[propertyId]
+      const completesGroup = Boolean(space?.kind === 'property' && boardSpaces
+        .filter((candidate) => candidate.kind === 'property' && candidate.color === space.color)
+        .every((candidate) => candidate.id === propertyId || this.state.properties.get(String(candidate.id))?.ownerSessionId === sessionId))
+      const price = property ? forcedBuybackCost(propertyId, property.houses) : Number.POSITIVE_INFINITY
+      this.messages.buyback(client, { accept: Boolean(property && shouldBotBuyback(price, botCash, completesGroup)) })
     } else if (this.state.turnPhase === 'purchase') {
       const space = boardSpaces[this.state.pendingPropertyId]
       const groupSpaces = space?.kind === 'property' ? boardSpaces.filter((candidate) => candidate.kind === 'property' && candidate.color === space.color) : []

@@ -654,6 +654,32 @@ describe('sala privada', () => {
     expect(otherBots.every(([sessionId]) => room.state.players.get(sessionId)?.position === 0)).toBe(true)
   })
 
+  it('bot aceita uma recompra acessível em vez de deixar a oferta expirar', async () => {
+    const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
+    const host = await colyseus.connectTo(room, { name: 'Bot' })
+    const guest = await colyseus.connectTo(room, { name: 'Dona' })
+    markPlayersReady(room)
+    host.send('start')
+    await waitFor(() => room.state.status === 'playing')
+
+    const propertySpace = boardSpaces.find((space) => space.kind === 'property' && !space.buildable)!
+    const property = new PropertyState()
+    property.ownerSessionId = guest.sessionId
+    room.state.properties.set(String(propertySpace.id), property)
+    room.state.activePlayerSessionId = host.sessionId
+    room.state.turnPhase = 'buyback'
+    room.state.pendingPropertyId = propertySpace.id
+    const bot = room.state.players.get(host.sessionId)!
+    bot.isBotControlled = true
+    const initialCash = bot.cash
+    const serverGame = room as unknown as { processBotStep: () => void }
+
+    serverGame.processBotStep()
+
+    expect(property.ownerSessionId).toBe(host.sessionId)
+    expect(bot.cash).toBeLessThan(initialCash)
+  })
+
   it('permite recusar uma propriedade sem dono e deixa o imóvel livre para a próxima vez', async () => {
     const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
     const host = await colyseus.connectTo(room, { name: 'Ana' })
@@ -1858,6 +1884,45 @@ describe('sala privada', () => {
     expect(room.state.landingDescription).toContain(property.name)
   })
 
+  it('avisa a sala quando uma carta altera a cidade ou escolhe a sede da Copa', async () => {
+    const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
+    const host = await colyseus.connectTo(room, { name: 'Ana' })
+    const guest = await colyseus.connectTo(room, { name: 'Bia' })
+    markPlayersReady(room)
+    host.send('start')
+    await waitFor(() => room.state.status === 'playing')
+    const propertySpace = boardSpaces.find((space) => space.kind === 'property' && space.buildable)!
+    const property = new PropertyState()
+    property.ownerSessionId = host.sessionId
+    room.state.properties.set(String(propertySpace.id), property)
+    room.state.activePlayerSessionId = host.sessionId
+    room.state.turnPhase = 'card-target'
+    room.state.activeCardId = 'generous'
+
+    const generous = new Promise<{ spaceId: number; effect: string }>((resolve) => host.onMessage('game:city-effect', resolve))
+    host.send('resolveCardTarget', { propertyId: propertySpace.id, targetSessionId: guest.sessionId })
+    await expect(generous).resolves.toMatchObject({ spaceId: propertySpace.id, effect: 'generous' })
+
+    room.state.turnPhase = 'card-target'
+    room.state.activeCardId = 'blackout'
+
+    const blackout = new Promise<{ spaceId: number; effect: string }>((resolve) => host.onMessage('game:city-effect', resolve))
+    host.send('resolveCardTarget', { propertyId: propertySpace.id, targetSessionId: guest.sessionId })
+    await expect(blackout).resolves.toMatchObject({ spaceId: propertySpace.id, effect: 'blackout' })
+
+    property.ownerSessionId = host.sessionId
+    room.state.turnPhase = 'card-target'
+    room.state.activeCardId = 'protection'
+    const protection = new Promise<{ spaceId: number; effect: string }>((resolve) => host.onMessage('game:city-effect', resolve))
+    host.send('resolveCardTarget', { propertyId: propertySpace.id })
+    await expect(protection).resolves.toMatchObject({ spaceId: propertySpace.id, effect: 'protection' })
+
+    room.state.turnPhase = 'world-cup'
+    const worldCup = new Promise<{ spaceId: number; effect: string }>((resolve) => host.onMessage('game:city-effect', resolve))
+    host.send('chooseWorldCup', { propertyId: propertySpace.id })
+    await expect(worldCup).resolves.toMatchObject({ spaceId: propertySpace.id, effect: 'world-cup' })
+  })
+
   it('valida alvos de Generoso, Apagão, Proteção e Terremoto no servidor', async () => {
     const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
     const host = await colyseus.connectTo(room, { name: 'Ana' })
@@ -2000,8 +2065,10 @@ describe('sala privada', () => {
     room.state.activeCardId = 'earthquake'
 
     const collapse = new Promise<{ spaceId: number; houses: number; ownerColor: string }>((resolve) => host.onMessage('game:earthquake', resolve))
+    const earthquakeCue = new Promise<{ spaceId: number; effect: string }>((resolve) => host.onMessage('game:city-effect', resolve))
     host.send('resolveCardTarget', { propertyId: propertySpace.id, targetSessionId: guest.sessionId })
     await expect(collapse).resolves.toMatchObject({ spaceId: propertySpace.id, houses: 2, ownerColor: expect.any(String) })
+    await expect(earthquakeCue).resolves.toMatchObject({ spaceId: propertySpace.id, effect: 'earthquake' })
     await waitFor(() => property.ownerSessionId === '')
 
     expect(property).toMatchObject({ houses: 0, blackoutTurns: 0, protectionTurns: 0 })

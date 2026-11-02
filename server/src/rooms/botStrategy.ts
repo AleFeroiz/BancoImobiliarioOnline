@@ -8,6 +8,12 @@ export function shouldBotBuyProperty(price: number, cash: number, completesGroup
   return cash - price >= reserve
 }
 
+export function shouldBotBuyback(price: number, cash: number, completesGroup: boolean) {
+  if (cash < price) return false
+  const reserve = completesGroup ? 50_000 : 150_000
+  return cash - price >= reserve
+}
+
 export function chooseBotAuctionBid({
   price,
   bankReturnValue,

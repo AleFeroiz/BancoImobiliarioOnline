@@ -29,6 +29,7 @@ import { FpsMeter } from './FpsMeterOverlay'
 import { createFrameRateAccumulator } from './fpsMeter'
 import { readNightMode, saveNightMode } from './nightMode'
 import { dismissCardRevealOnPointerDown } from './cardRevealInput'
+import { canShowLiquidationValues } from './propertyRentLabel'
 import { adjustMoneyValue } from './moneyStepper'
 import { DEFAULT_GRAPHICS_QUALITY, type GraphicsQuality } from './graphicsQuality'
 import { isPlayerEmote, PLAYER_EMOTES, type PlayerEmote } from '../../shared/playerEmotes'
@@ -43,6 +44,7 @@ type TurnPhase = 'roll' | 'rolling' | 'moving' | 'resolve' | 'purchase' | 'buyba
 type SyncedPlayer = LobbyPlayer & { sessionId: string; cash: number; devInfiniteCash: boolean; hasCompletedFirstLap: boolean; nextRentMultiplier: number; isJailed: boolean; jailTurns: number; isBankrupt: boolean; finalCash: number; finalNetWorth: number; tieBreakRoll: number }
 type ThrowableEvent = { id: number; fromSessionId: string; toSessionId: string; object: ThrowableObject }
 type EarthquakeEvent = { id: number; spaceId: number; houses: number; ownerColor: string }
+type CityEffectEvent = { id: number; spaceId: number; effect: 'blackout' | 'protection' | 'world-cup' | 'earthquake' | 'generous' }
 const BoardScene = lazy(() => import('./BoardScene'))
 const CashHudOverlay = lazy(() => import('./CashHud').then(({ CashHudOverlay }) => ({ default: CashHudOverlay })))
 
@@ -170,6 +172,7 @@ function App() {
   const [throwCooldownNow, setThrowCooldownNow] = useState(Date.now())
   const [thrownObjects, setThrownObjects] = useState<ThrowableEvent[]>([])
   const [earthquakeEvents, setEarthquakeEvents] = useState<EarthquakeEvent[]>([])
+  const [cityEffectEvents, setCityEffectEvents] = useState<CityEffectEvent[]>([])
   const [doublesAnnouncementVisible, setDoublesAnnouncementVisible] = useState(false)
   const [throwImpacts, setThrowImpacts] = useState<ThrowableEvent[]>([])
   const [graphicsQuality, setGraphicsQuality] = useState<GraphicsQuality>(DEFAULT_GRAPHICS_QUALITY)
@@ -658,6 +661,18 @@ function App() {
       earthquakeTimeouts.current.set(event.id, timer)
     }
     const removeEarthquakeMessage = room.onMessage<EarthquakeEvent>('game:earthquake', handleEarthquake)
+    const cityEffectTimeouts = new Map<number, number>()
+    const removeCityEffectMessage = room.onMessage<CityEffectEvent>('game:city-effect', (event) => {
+      if (!Number.isInteger(event?.id) || !Number.isInteger(event?.spaceId) || !['blackout', 'protection', 'world-cup', 'earthquake', 'generous'].includes(event?.effect)) return
+      setCityEffectEvents((current) => [...current.filter((item) => item.id !== event.id), event])
+      const oldTimer = cityEffectTimeouts.get(event.id)
+      if (oldTimer !== undefined) window.clearTimeout(oldTimer)
+      const timer = window.setTimeout(() => {
+        setCityEffectEvents((current) => current.filter((item) => item.id !== event.id))
+        cityEffectTimeouts.delete(event.id)
+      }, event.effect === 'world-cup' ? 4200 : 3200)
+      cityEffectTimeouts.set(event.id, timer)
+    })
     const handleLeave = (_code: number, reason?: string) => {
       if (activeRoom.current !== room) return
       activeRoom.current = null
@@ -665,6 +680,9 @@ function App() {
       setPlayerEmotes({})
       setThrownObjects([])
       setEarthquakeEvents([])
+      setCityEffectEvents([])
+      cityEffectTimeouts.forEach((timer) => window.clearTimeout(timer))
+      cityEffectTimeouts.clear()
       earthquakeTimeouts.current.forEach((timer) => window.clearTimeout(timer))
       earthquakeTimeouts.current.clear()
       setThrowImpacts([])
@@ -699,6 +717,9 @@ function App() {
       removePlayerEmoteMessage()
       removeThrowableMessage()
       removeEarthquakeMessage()
+      removeCityEffectMessage()
+      cityEffectTimeouts.forEach((timer) => window.clearTimeout(timer))
+      cityEffectTimeouts.clear()
       removeDevCardArmedMessage()
       removeDevCardUsedMessage()
     }
@@ -901,7 +922,7 @@ function App() {
       <div className="scene-backdrop">
         {sceneReady && (
           <Suspense fallback={<div className="scene-placeholder" aria-hidden="true" />}>
-            <BoardScene nightMode={nightMode} players={playerTokens} activePlayerSessionId={turnPhase === 'ended' ? '' : activePlayerSessionId} destinationSpaceId={destinationSpaceId} propertyBuildings={propertyBuildings} thrownObjects={thrownObjects} earthquakeEvents={earthquakeEvents} worldCupSpaceId={worldCupSpaceId} festivalSpaceIds={festivalSpaceIds} highlightedSpaceIds={highlightedSpaceIds} selectionMode={(Boolean(boardChoicePhase) || playerHighlightMode) && !isPresentationAnimating} showLiquidationValues={turnPhase === 'debt'} landingPulseSpaceId={landingPulseSpaceId} landingPulseSequence={landingPulseSequence} diceRollSequence={diceRollSequence} renderWakeSequence={turnNumber} dice={dice} diceVisible={showDice} diceResultVisible={(turnPhase === 'moving' && diceForPawnMovement) || (turnPhase === 'rolling' && dice[0] > 0 && dice[1] === 0)} presentationSpeed={presentationSpeed} reducedMotion={reducedMotion} pawnMovementEnabled={turnPhase === 'moving'} pawnMoveMode={pawnMoveMode} pawnStepSoundEnabled={soundEnabled} graphicsQuality={graphicsQuality} cameraEnabled={screen === 'game' && turnPhase !== 'ended'} fpsMeterEnabled={fpsMeterEnabled} fpsSamples={fpsSamples} onMovementComplete={() => setPresentationStage('idle')} onSelectSpace={handleSelectSpace} />
+            <BoardScene nightMode={nightMode} players={playerTokens} activePlayerSessionId={turnPhase === 'ended' ? '' : activePlayerSessionId} destinationSpaceId={destinationSpaceId} propertyBuildings={propertyBuildings} thrownObjects={thrownObjects} earthquakeEvents={earthquakeEvents} cityEffectEvents={cityEffectEvents} worldCupSpaceId={worldCupSpaceId} festivalSpaceIds={festivalSpaceIds} highlightedSpaceIds={highlightedSpaceIds} selectionMode={(Boolean(boardChoicePhase) || playerHighlightMode) && !isPresentationAnimating} showLiquidationValues={canShowLiquidationValues(turnPhase, localSessionId, activePlayerSessionId)} landingPulseSpaceId={landingPulseSpaceId} landingPulseSequence={landingPulseSequence} diceRollSequence={diceRollSequence} renderWakeSequence={turnNumber} dice={dice} diceVisible={showDice} diceResultVisible={(turnPhase === 'moving' && diceForPawnMovement) || (turnPhase === 'rolling' && dice[0] > 0 && dice[1] === 0)} presentationSpeed={presentationSpeed} reducedMotion={reducedMotion} pawnMovementEnabled={turnPhase === 'moving'} pawnMoveMode={pawnMoveMode} pawnStepSoundEnabled={soundEnabled} graphicsQuality={graphicsQuality} cameraEnabled={screen === 'game' && turnPhase !== 'ended'} fpsMeterEnabled={fpsMeterEnabled} fpsSamples={fpsSamples} onMovementComplete={() => setPresentationStage('idle')} onSelectSpace={handleSelectSpace} />
           </Suspense>
         )}
       </div>
@@ -916,14 +937,14 @@ function App() {
         <section className="home-layout">
           <div className="hero-copy">
             <span className="eyebrow"><span className="eyebrow-dot" /> MESA ABERTA, AMIGOS A CAMINHO</span>
-            <h1>BANTEC.<br /><em>Seu Brasil, seu negócio.</em></h1>
-            <p>Reúna a turma, invista nas cidades brasileiras e conquiste o maior patrimônio.</p>
+            <h1>BANTEC.</h1>
             <div className="home-region-route" aria-label="Percurso pelas cinco regiões do Brasil">
               <div className="region-route-heading"><span>DO NORTE AO SUDESTE</span><span>24 CIDADES · 5 REGIÕES</span></div>
               <ol className="region-route-list">
                 {HOME_REGION_ROUTE.map((region) => <li key={region.id} className="region-route-stop" style={{ '--region-color': region.color } as CSSProperties}><span className="region-route-node" /><span>{region.name}</span></li>)}
               </ol>
             </div>
+            <p>Reúna a turma, invista nas cidades brasileiras e conquiste o maior patrimônio.</p>
             <div className="mode-switch match-duration-selector" role="group" aria-label="Duração da partida">
               {MATCH_DURATIONS.map((duration) => <button key={duration} type="button" aria-pressed={matchDuration === duration} className={`mode-tab${matchDuration === duration ? ' selected' : ''}`} onClick={() => setMatchDuration(duration)}><span>{durationLabel(duration)}</span><small>{duration === 0 ? 'Sem limite' : duration === 900 ? 'Partida rápida' : duration === 1800 ? 'Clássica' : 'Partida longa'}</small></button>)}
             </div>
