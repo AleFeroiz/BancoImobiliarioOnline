@@ -1,3 +1,9 @@
+# 2026-11-02 — Empilhamento de fichas
+
+- Regressões direcionadas: 12 testes passaram para orientação das fichas nos quatro lados, centralização nos quatro cantos, pilha determinística de seis participantes, pilhas independentes por piso e índices inválidos.
+- `npm run verify` passou com loopback local permitido: 56 arquivos de teste, 302 testes, build Vite e build do servidor. O build conserva o aviso conhecido de chunk 3D acima de 500 kB. A tentativa inicial dentro do sandbox não alcançou o servidor Colyseus (`fetch failed`); a repetição com loopback passou.
+- Playtest visual local em Chrome: iniciei uma sala com anfitriã e três bots. As quatro fichas ficaram empilhadas no centro da casa Partida, sem erro ou aviso no console. Não validei visualmente uma pilha de seis porque o limite atual de sala é quatro; seis alturas e a ordem determinística estão cobertas por teste.
+
 # 2026-11-02 — Paleta de participantes
 
 - `npm run verify`: 55 arquivos de teste, 296 testes aprovados, build Vite e build do servidor aprovados. Permanece o aviso existente de chunk 3D acima de 500 kB.

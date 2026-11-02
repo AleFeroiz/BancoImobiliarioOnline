@@ -10,6 +10,7 @@ import { getCameraZoomLimits } from './cameraZoom'
 import { BUILDING_GROUP_Y, getBoardSpaceDecoration, getPropertyModelYOffset } from './boardDecoration'
 import { getBoardTileTheme } from './boardTileTheme'
 import { getFestivalBannerPlacement } from './festivalBanner'
+import { getPawnStackIndices, getPawnTilePosition } from './pawnPlacement'
 import { fitSpaceLabel, shouldRenderSpaceLabel } from './spaceLabel'
 import { getPawnStepPath } from './pawnPath'
 import { getPropertyDisplayHouses, getPropertyVisualChange } from './gameFeedback'
@@ -222,13 +223,14 @@ function SpaceLabel({ name, size, ink, outline, outwardRotation }: { name: strin
   )
 }
 
-function AnimatedPawn({ player, seatIndex, pawnGroups, reducedMotion, movementEnabled, moveMode, presentationSpeed, pawnStepSoundEnabled, isActive, onMovementComplete }: { player: PlayerToken; seatIndex: number; pawnGroups: Map<string, Group>; reducedMotion: boolean; movementEnabled: boolean; moveMode: 'walk' | 'teleport'; presentationSpeed: AnimationSpeed; pawnStepSoundEnabled: boolean; isActive: boolean; onMovementComplete: () => void }) {
+function AnimatedPawn({ player, stackIndex, pawnGroups, reducedMotion, movementEnabled, moveMode, presentationSpeed, pawnStepSoundEnabled, isActive, onMovementComplete }: { player: PlayerToken; stackIndex: number; pawnGroups: Map<string, Group>; reducedMotion: boolean; movementEnabled: boolean; moveMode: 'walk' | 'teleport'; presentationSpeed: AnimationSpeed; pawnStepSoundEnabled: boolean; isActive: boolean; onMovementComplete: () => void }) {
   const group = useRef<Group>(null)
   const { invalidate } = useThree()
   const { scene: tokenScene } = useGLTF('/assets/player-tokens.glb')
   const visualSpace = useRef(player.position)
+  const visualStackIndex = useRef(stackIndex)
   const hopPath = useRef<number[]>([])
-  const hopStart = useRef({ x: 0, z: 0 })
+  const hopStart = useRef({ x: 0, y: 0, z: 0 })
   const elapsed = useRef(0)
   const lastStepSoundIndex = useRef(-1)
   const hopDuration = useRef(getAnimationDuration(PAWN_STEP_ANIMATION_DURATION_MS, presentationSpeed) / 1000)
@@ -239,11 +241,8 @@ function AnimatedPawn({ player, seatIndex, pawnGroups, reducedMotion, movementEn
     if (node) pawnGroups.set(player.id, node)
     else pawnGroups.delete(player.id)
   }, [pawnGroups, player.id])
-  const vehicleOffsets = [[-0.2, -0.2], [0.2, -0.2], [-0.2, 0.2], [0.2, 0.2]] as const
-  const offsetX = player.characterType === 'pawn' ? 0.13 * (seatIndex - 1.5) : vehicleOffsets[seatIndex]?.[0] ?? 0
-  const offsetZ = player.characterType === 'pawn' ? 0.06 : vehicleOffsets[seatIndex]?.[1] ?? 0
   const baseY = player.characterType === 'pawn' ? 0.35 : 0.16
-  const initial = positionOnBoard(visualSpace.current)
+  const initial = getPawnTilePosition(visualSpace.current, baseY, visualStackIndex.current)
   const model = useMemo(() => {
     if (player.characterType === 'pawn') return null
     const tokenRoots: Partial<Record<CharacterType, string>> = { car: 'Token_Car', motorcycle: 'Token_Motorcycle', airplane: 'Token_Airplane', highHeel: 'Token_HighHeel', train: 'Token_Train', topHat: 'Token_TopHat', piggyBank: 'Token_PiggyBank', ship: 'Token_Ship', rubberDuck: 'Token_RubberDuck', dog: 'Token_Dog', cat: 'Token_Cat', cow: 'Token_Cow', penguin: 'Token_Penguin' }
@@ -278,24 +277,34 @@ function AnimatedPawn({ player, seatIndex, pawnGroups, reducedMotion, movementEn
   }), [model])
 
   useEffect(() => {
-    if (player.position === visualSpace.current) return
+    if (player.position === visualSpace.current) {
+      if (stackIndex !== visualStackIndex.current) {
+        const position = getPawnTilePosition(player.position, baseY, stackIndex)
+        group.current?.position.set(position.x, position.y, position.z)
+        visualStackIndex.current = stackIndex
+      }
+      return
+    }
     if (!movementEnabled && !reducedMotion) return
     const path = moveMode === 'teleport' ? [player.position] : getPawnStepPath(visualSpace.current, player.position)
     if (!path.length) return
     if (reducedMotion) {
-      const destination = positionOnBoard(player.position)
-      group.current?.position.set(destination.x + offsetX, baseY, destination.z + offsetZ)
+      const destination = getPawnTilePosition(player.position, baseY, stackIndex)
+      group.current?.position.set(destination.x, destination.y, destination.z)
       visualSpace.current = player.position
+      visualStackIndex.current = stackIndex
       hopPath.current = []
       onMovementCompleteRef.current()
       return
     }
-    hopStart.current = group.current ? { x: group.current.position.x, z: group.current.position.z } : { x: initial.x + offsetX, z: initial.z + offsetZ }
+    hopStart.current = group.current
+      ? { x: group.current.position.x, y: group.current.position.y, z: group.current.position.z }
+      : { x: initial.x, y: initial.y, z: initial.z }
     hopPath.current = path
     lastStepSoundIndex.current = -1
     hopDuration.current = getAnimationDuration(moveMode === 'teleport' ? PAWN_TELEPORT_ANIMATION_DURATION_MS : PAWN_STEP_ANIMATION_DURATION_MS, presentationSpeed) / 1000
     elapsed.current = 0
-  }, [player.position, initial.x, initial.z, offsetX, offsetZ, presentationSpeed, reducedMotion, movementEnabled, moveMode])
+  }, [player.position, stackIndex, baseY, initial.x, initial.y, initial.z, presentationSpeed, reducedMotion, movementEnabled, moveMode])
 
   useFrame((_, delta) => {
     const pawn = group.current
@@ -306,11 +315,12 @@ function AnimatedPawn({ player, seatIndex, pawnGroups, reducedMotion, movementEn
       elapsed.current += delta
       const hopIndex = Math.floor(elapsed.current / hopDuration.current)
       if (hopIndex >= path.length) {
-        const destination = positionOnBoard(path[path.length - 1] ?? player.position)
-        pawn.position.set(destination.x + offsetX, baseY, destination.z + offsetZ)
+        const destination = getPawnTilePosition(path[path.length - 1] ?? player.position, baseY, stackIndex)
+        pawn.position.set(destination.x, destination.y, destination.z)
         pawn.rotation.z = 0
         hopPath.current = []
         visualSpace.current = player.position
+        visualStackIndex.current = stackIndex
         onMovementCompleteRef.current()
         return
       }
@@ -320,11 +330,10 @@ function AnimatedPawn({ player, seatIndex, pawnGroups, reducedMotion, movementEn
         playGameSound('pawn-step')
       }
       const progress = Math.min((elapsed.current - hopIndex * hopDuration.current) / hopDuration.current, 1)
-      const from = hopIndex === 0 ? hopStart.current : positionOnBoard(path[hopIndex - 1] ?? player.position)
-      const to = positionOnBoard(path[hopIndex] ?? player.position)
-      const fromX = hopIndex === 0 ? from.x : from.x + offsetX
-      const fromZ = hopIndex === 0 ? from.z : from.z + offsetZ
-      pawn.position.set(fromX + (to.x + offsetX - fromX) * progress, baseY + Math.sin(progress * Math.PI) * 0.24, fromZ + (to.z + offsetZ - fromZ) * progress)
+      const from = hopIndex === 0 ? hopStart.current : getPawnTilePosition(path[hopIndex - 1] ?? player.position, baseY)
+      const isFinalStep = hopIndex === path.length - 1
+      const to = getPawnTilePosition(path[hopIndex] ?? player.position, baseY, isFinalStep ? stackIndex : 0)
+      pawn.position.set(from.x + (to.x - from.x) * progress, from.y + (to.y - from.y) * progress + Math.sin(progress * Math.PI) * 0.24, from.z + (to.z - from.z) * progress)
       if (player.characterType !== 'pawn') pawn.rotation.y = Math.atan2(to.x - from.x, to.z - from.z)
       pawn.rotation.z = Math.sin(progress * Math.PI) * 0.14
       return
@@ -332,7 +341,7 @@ function AnimatedPawn({ player, seatIndex, pawnGroups, reducedMotion, movementEn
   })
 
   return (
-    <group ref={registerPawnGroup} position={[initial.x + offsetX, baseY, initial.z + offsetZ]} rotation={[0, player.position <= 10 ? Math.PI / 2 : player.position <= 20 ? Math.PI : player.position <= 30 ? -Math.PI / 2 : 0, 0]}>
+    <group ref={registerPawnGroup} position={[initial.x, initial.y, initial.z]} rotation={[0, player.position <= 10 ? Math.PI / 2 : player.position <= 20 ? Math.PI : player.position <= 30 ? -Math.PI / 2 : 0, 0]}>
       <TokenHighlight color={player.color} baseY={baseY} />
       {player.characterType === 'pawn' ? <>
         <group scale={1.24}>
@@ -651,6 +660,7 @@ function FatecLandmark() {
 
 function Board({ players, activePlayerSessionId, destinationSpaceId, propertyBuildings, thrownObjects, earthquakeEvents, worldCupSpaceId, festivalSpaceIds, highlightedSpaceIds, selectionMode, showLiquidationValues, landingPulseSpaceId, landingPulseSequence, diceRollSequence, dice, diceVisible, diceResultVisible, presentationSpeed, reducedMotion, pawnMovementEnabled, pawnMoveMode, pawnStepSoundEnabled, onMovementComplete, onSelectSpace }: { players: PlayerToken[]; activePlayerSessionId: string; destinationSpaceId: number; propertyBuildings: PropertyBuilding[]; thrownObjects: ThrowableEvent[]; earthquakeEvents: EarthquakeEvent[]; worldCupSpaceId: number; festivalSpaceIds: readonly number[]; highlightedSpaceIds: readonly number[]; selectionMode: boolean; showLiquidationValues: boolean; landingPulseSpaceId: number; landingPulseSequence: number; dice: [number, number]; diceVisible: boolean; diceResultVisible: boolean; diceRollSequence: number; presentationSpeed: AnimationSpeed; reducedMotion: boolean; pawnMovementEnabled: boolean; pawnMoveMode: 'walk' | 'teleport'; pawnStepSoundEnabled: boolean; onMovementComplete: () => void; onSelectSpace: (spaceId: number) => void }) {
   const pawnGroups = useMemo(() => new Map<string, Group>(), [])
+  const pawnStackIndices = useMemo(() => getPawnStackIndices(players), [players])
   const { scene: buildingScene } = useGLTF('/assets/board-models/board-models.glb')
   const propertyRentLabels = useMemo(() => boardSpaces
     .filter((space) => space.kind === 'property' && propertyBuildings.some((holding) => holding.spaceId === space.id && Boolean(holding.ownerSessionId)))
@@ -735,7 +745,7 @@ function Board({ players, activePlayerSessionId, destinationSpaceId, propertyBui
         {propertyBuildings.filter(({ ownerSessionId }) => Boolean(ownerSessionId)).map(({ spaceId, houses, blackoutTurns = 0, protectionTurns = 0, ownerColor, ownerSessionId }) => <AnimatedBuilding key={`buildings-${spaceId}`} spaceId={spaceId} houses={houses} blackoutTurns={blackoutTurns} protectionTurns={protectionTurns} ownerColor={ownerColor} ownerSessionId={ownerSessionId} reducedMotion={reducedMotion} presentationSpeed={presentationSpeed} dimmed={selectionMode && !highlightedSpaceIds.includes(spaceId)} />)}
       </Suspense>
       {destinationSpaceId >= 0 && (() => { const target = positionOnBoard(destinationSpaceId); return <group position={[target.x, 0, target.z]}><FloatingPointingArrow color="#ffe27a" size={0.9} baseY={1.5} /></group> })()}
-      {players.map((player) => <AnimatedPawn key={player.id} player={player} seatIndex={player.seatIndex} pawnGroups={pawnGroups} reducedMotion={reducedMotion} movementEnabled={pawnMovementEnabled} moveMode={pawnMoveMode} presentationSpeed={presentationSpeed} pawnStepSoundEnabled={pawnStepSoundEnabled} isActive={player.id === activePlayerSessionId} onMovementComplete={onMovementComplete} />)}
+      {players.map((player) => <AnimatedPawn key={player.id} player={player} stackIndex={pawnStackIndices.get(player.id) ?? 0} pawnGroups={pawnGroups} reducedMotion={reducedMotion} movementEnabled={pawnMovementEnabled} moveMode={pawnMoveMode} presentationSpeed={presentationSpeed} pawnStepSoundEnabled={pawnStepSoundEnabled} isActive={player.id === activePlayerSessionId} onMovementComplete={onMovementComplete} />)}
       {thrownObjects.map((event) => <ThrowableProjectile key={event.id} event={event} pawnGroups={pawnGroups} />)}
       {earthquakeEvents.map((event) => <EarthquakeCollapse key={event.id} event={event} scene={buildingScene} />)}
       {diceVisible && <>

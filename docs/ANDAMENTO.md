@@ -1,3 +1,10 @@
+# Empilhamento de fichas no tabuleiro — concluído (2026-11-02)
+
+- Todas as fichas agora compartilham a posição voltada para dentro de cada piso e ocupantes da mesma casa formam uma torre vertical em ordem estável de assento. Nas quatro casas de canto, a pilha fica centralizada.
+- Regressões cobrem orientação nos quatro lados, centralização nos cantos, seis pessoas na mesma pilha, separação entre casas e dados inválidos.
+- Validação: `npm run verify` passou com loopback local permitido (56 arquivos, 302 testes; builds Vite e servidor). O build continua exibindo o aviso conhecido de chunk 3D acima de 500 kB. Playtest local com anfitriã e três bots mostrou as quatro fichas empilhadas na Partida; console do navegador sem erros ou avisos. A pilha de seis foi verificada em teste determinístico, pois a sala continua limitada a quatro participantes.
+- O usuário apontou os cartões de participantes como a principal estranheza da UI. Não houve decisão de layout nesta frente; a revisão dos cartões segue como próxima conversa de design.
+
 # Recuperação do tabuleiro após perda de WebGL — concluído (2026-11-02)
 
 - Relato: após comprar duas casas, o navegador do anfitrião piscou e continuou mostrando HUD/turno; para a amiga, somente o tabuleiro desapareceu. Reabrir a página recuperou a cena. Isso isola o sintoma no Canvas local; a captura não mostrou erro JavaScript nem uma mensagem explícita de contexto WebGL.
