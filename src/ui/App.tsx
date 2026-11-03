@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react'
+import { lazy, Suspense, useEffect, useRef, useState, type CSSProperties } from 'react'
 import { CloseCode, type Room } from '@colyseus/sdk'
 import { CHARACTER_OPTIONS, MAX_ROOM_PLAYERS, type CharacterType, type GameMode, type LobbyPlayer } from '../../shared/lobby'
 import { getMatchEndSummary, type MatchEndReason } from '../../shared/game'
@@ -17,7 +17,7 @@ import { PLAYER_COLOR_NAMES } from '../../shared/playerColors'
 import { getCashToastPlacement, getGameSound, getLandingSpecialSound, getPropertyChangeSound, getPropertyVisualChange, formatCashDelta, type GameSound } from './gameFeedback'
 import { CashChangeToast } from './CashChangeToast'
 import { stepDieValue } from './forcedDice'
-import { getOwnedPropertySpaceIds } from './playerOwnershipHighlight'
+import { getOwnedPropertySpaceIds, shouldShowPlayerInspection } from './playerOwnershipHighlight'
 import { getDiceDestinationSpaceId } from './arrowGuidance'
 import type { GameFeedbackItem } from './feedbackQueue'
 import { playGameSound, startGameMusic, stopGameMusic, unlockGameAudio } from './gameAudio'
@@ -29,7 +29,7 @@ import { areNumberPairsEqual, areRecordArraysEqual, areRecordMapsEqual } from '.
 import { FpsMeter } from './FpsMeterOverlay'
 import { createFrameRateAccumulator } from './fpsMeter'
 import { readNightMode, saveNightMode } from './nightMode'
-import { dismissCardRevealOnPointerDown } from './cardRevealInput'
+import { CARD_REVEAL_SECONDS } from '../../shared/game'
 import { canShowLiquidationValues } from './propertyRentLabel'
 import { adjustMoneyValue } from './moneyStepper'
 import { DEFAULT_GRAPHICS_QUALITY, type GraphicsQuality } from './graphicsQuality'
@@ -151,6 +151,7 @@ function App() {
   const [activeCardDescription, setActiveCardDescription] = useState('')
   const [activeCardId, setActiveCardId] = useState('')
   const [dismissedRevealKey, setDismissedRevealKey] = useState('')
+  const [revealSnapshot, setRevealSnapshot] = useState<{ key: string; kind: 'event' | 'world-cup' | 'world-tour'; title: string; description: string; noTarget: boolean } | null>(null)
   const [pendingPropertyId, setPendingPropertyId] = useState(255)
   const [worldCupSpaceId, setWorldCupSpaceId] = useState(255)
   const [festivalSpaceIds, setFestivalSpaceIds] = useState<number[]>([])
@@ -288,7 +289,8 @@ function App() {
     ownerSessionId: holding.ownerSessionId,
     isProperty: boardSpaces[Number(id)]?.kind === 'property',
   })))
-  const playerHighlightMode = Boolean(selectedPlayerSessionId) && turnPhase !== 'ended' && !boardChoicePhase
+  const playerHighlightMode = shouldShowPlayerInspection(selectedPlayerSessionId, turnPhase, Boolean(boardChoicePhase))
+  const inspectedPlayer = playerHighlightMode ? roomPlayers.find((player) => player.sessionId === selectedPlayerSessionId) : undefined
   const highlightedSpaceIds = boardChoicePhase
     ? boardChoiceSpaceIds
     : turnPhase === 'purchase'
@@ -299,7 +301,10 @@ function App() {
           ? selectedPlayerPropertySpaceIds
           : selectedSpaceId === null ? [] : [selectedSpaceId]
   useEffect(() => {
-    if (boardChoicePhase) setSelectedSpaceId(null)
+    if (boardChoicePhase) {
+      setSelectedSpaceId(null)
+      setSelectedPlayerSessionId('')
+    }
   }, [boardChoicePhase])
   const landedHolding = activePlayer && activeSpace.kind === 'property' ? holdingsById.get(activeSpace.id) : undefined
   const ownPropertyLanding = turnPhase === 'resolve' && activeSpace.kind === 'property' && Boolean(activeSpace.buildable) && pendingPropertyId === activeSpace.id && landedHolding?.ownerSessionId === activePlayerSessionId && Boolean(activePlayer && landedHolding && (landedHolding.houses === PROPERTY_BUILD_LEVELS
@@ -313,7 +318,7 @@ function App() {
   const pendingPurchaseRent = pendingPurchaseSpace?.kind === 'property'
     ? pendingPurchaseSpace.company ? calculateCompanyRent(purchaseRentOwnership, '__preview__') : calculateRent(pendingPurchaseSpace.id, purchaseRentOwnership, pendingPurchaseHouses, worldCupSpaceId, festivalSet)
     : 0
-  const revealKind = activeCardTitle && ['resolve', 'card-target'].includes(turnPhase)
+  const revealKind: 'event' | 'world-cup' | 'world-tour' | null = activeCardTitle && ['resolve', 'card-target', 'moving', 'debt', 'world-cup', 'world-tour'].includes(turnPhase)
     ? 'event'
     : turnPhase === 'world-cup'
       ? 'world-cup'
@@ -321,7 +326,12 @@ function App() {
         ? 'world-tour'
         : null
   const revealKey = revealKind ? `${turnNumber}:${activePlayerSessionId}:${revealKind}:${activeCardTitle}` : ''
-  const showTransientReveal = Boolean(revealKind && revealKey !== dismissedRevealKey)
+  const cardHasNoTarget = turnPhase === 'card-target' && (propertyTargetCard && cardPropertyChoices.length === 0 || activeCardId === 'thief' && !roomPlayers.some((candidate) => candidate.sessionId !== localSessionId && !candidate.isBankrupt) || activeCardId === 'swap' && roomPlayers.filter((candidate) => !candidate.isBankrupt).length < 2)
+  const visibleReveal = revealKind ? { key: revealKey, kind: revealKind, title: activeCardTitle, description: activeCardDescription, noTarget: cardHasNoTarget || (revealSnapshot?.key === revealKey && revealSnapshot.noTarget) } : revealSnapshot
+  const showTransientReveal = Boolean(visibleReveal && visibleReveal.key !== dismissedRevealKey)
+  useEffect(() => {
+    if (revealKind && revealKey) setRevealSnapshot({ key: revealKey, kind: revealKind, title: activeCardTitle, description: activeCardDescription, noTarget: cardHasNoTarget })
+  }, [revealKey])
   const selectingPlayer = isMyTurn && turnPhase === 'card-target' && !showTransientReveal && (activeCardId === 'thief' || activeCardId === 'swap' || activeCardId === 'generous' && selectedCardPropertyId !== null)
   const companyDieResultVisible = dice[0] > 0 && dice[1] === 0 && ['resolve', 'debt', 'buyback'].includes(turnPhase)
   const showDice = shouldShowRolledDice(turnPhase, diceForPawnMovement) || companyDieResultVisible
@@ -382,13 +392,13 @@ function App() {
 
 
   useEffect(() => {
-    if (!showTransientReveal || !revealKey) return
+    if (!showTransientReveal || !visibleReveal) return
     const timeout = window.setTimeout(() => {
-      setDismissedRevealKey(revealKey)
-      if (revealKind === 'event' && isMyTurn && turnPhase === 'card-target') room?.send('dismissCardReveal')
-    }, 15_000)
+      setDismissedRevealKey(visibleReveal.key)
+      if (visibleReveal.kind === 'event' && isMyTurn && turnPhase === 'card-target') room?.send('dismissCardReveal')
+    }, CARD_REVEAL_SECONDS * 1000)
     return () => window.clearTimeout(timeout)
-  }, [isMyTurn, revealKey, revealKind, room, showTransientReveal, turnPhase])
+  }, [visibleReveal?.key, showTransientReveal])
 
   useEffect(() => {
     if (sceneReady || screen === 'game') {
@@ -875,6 +885,8 @@ function App() {
     setLandingDescription('')
     setActiveCardTitle('')
     setActiveCardDescription('')
+    setRevealSnapshot(null)
+    setDismissedRevealKey('')
     setPendingPropertyId(255)
     setSelectedSpaceId(null)
     setDebtAmount(0)
@@ -955,22 +967,18 @@ function App() {
   }
 
   function dismissTransientReveal() {
-    if (!revealKey) return
-    setDismissedRevealKey(revealKey)
-    if (revealKind === 'event' && isMyTurn && turnPhase === 'card-target') room?.send('dismissCardReveal')
-    if (revealKind === 'event' && isMyTurn && turnPhase === 'resolve') room?.send('finishTurn')
-  }
-
-  function handleTransientRevealPointerDown(event: ReactPointerEvent<HTMLElement>) {
-    dismissCardRevealOnPointerDown(event, showTransientReveal, dismissTransientReveal)
+    if (!visibleReveal) return
+    setDismissedRevealKey(visibleReveal.key)
+    if (visibleReveal.kind === 'event' && isMyTurn && turnPhase === 'card-target') room?.send('dismissCardReveal')
+    if (visibleReveal.kind === 'event' && isMyTurn && turnPhase === 'resolve') room?.send('finishTurn')
   }
 
   return (
-    <main className={`app-shell screen-${screen}${screen === 'game' && turnPhase === 'ended' ? ' screen-ended' : ''}${screen === 'game' && isPresentationAnimating ? ' game-presentation-active' : ''}`} data-reduced-motion={reducedMotion} data-night-mode={nightMode ? 'true' : 'false'} onPointerDownCapture={handleTransientRevealPointerDown}>
+    <main className={`app-shell screen-${screen}${screen === 'game' && turnPhase === 'ended' ? ' screen-ended' : ''}${screen === 'game' && isPresentationAnimating ? ' game-presentation-active' : ''}`} data-reduced-motion={reducedMotion} data-night-mode={nightMode ? 'true' : 'false'}>
       <div className="scene-backdrop">
         {sceneReady && (
           <Suspense fallback={<div className="scene-placeholder" aria-hidden="true" />}>
-            <BoardScene nightMode={nightMode} players={playerTokens} activePlayerSessionId={turnPhase === 'ended' ? '' : activePlayerSessionId} localPlayerSessionId={localSessionId} cameraMode={cameraMode} destinationSpaceId={destinationSpaceId} propertyBuildings={propertyBuildings} thrownObjects={thrownObjects} earthquakeEvents={earthquakeEvents} cityEffectEvents={cityEffectEvents} worldCupSpaceId={worldCupSpaceId} festivalSpaceIds={festivalSpaceIds} highlightedSpaceIds={highlightedSpaceIds} selectionMode={(Boolean(boardChoicePhase) || playerHighlightMode) && !isPresentationAnimating} showLiquidationValues={canShowLiquidationValues(turnPhase, localSessionId, activePlayerSessionId)} landingPulseSpaceId={landingPulseSpaceId} landingPulseSequence={landingPulseSequence} diceRollSequence={diceRollSequence} renderWakeSequence={turnNumber} dice={dice} diceVisible={showDice} diceResultVisible={companyDieResultVisible || (turnPhase === 'moving' && diceForPawnMovement) || (turnPhase === 'rolling' && dice[0] > 0 && dice[1] === 0)} presentationSpeed={presentationSpeed} reducedMotion={reducedMotion} pawnMovementEnabled={turnPhase === 'moving'} pawnMoveMode={pawnMoveMode} pawnStepSoundEnabled={soundEnabled} graphicsQuality={graphicsQuality} cameraEnabled={screen === 'game' && turnPhase !== 'ended'} fpsMeterEnabled={fpsMeterEnabled} fpsSamples={fpsSamples} onMovementComplete={() => setPresentationStage('idle')} onSelectSpace={handleSelectSpace} />
+            <BoardScene nightMode={nightMode} players={playerTokens} activePlayerSessionId={turnPhase === 'ended' ? '' : activePlayerSessionId} localPlayerSessionId={localSessionId} cameraMode={cameraMode} destinationSpaceId={destinationSpaceId} propertyBuildings={propertyBuildings} thrownObjects={thrownObjects} earthquakeEvents={earthquakeEvents} cityEffectEvents={cityEffectEvents} worldCupSpaceId={worldCupSpaceId} festivalSpaceIds={festivalSpaceIds} highlightedSpaceIds={highlightedSpaceIds} selectionMode={Boolean(boardChoicePhase && !isPresentationAnimating) || playerHighlightMode} showLiquidationValues={canShowLiquidationValues(turnPhase, localSessionId, activePlayerSessionId)} landingPulseSpaceId={landingPulseSpaceId} landingPulseSequence={landingPulseSequence} diceRollSequence={diceRollSequence} renderWakeSequence={turnNumber} dice={dice} diceVisible={showDice} diceResultVisible={companyDieResultVisible || (turnPhase === 'moving' && diceForPawnMovement) || (turnPhase === 'rolling' && dice[0] > 0 && dice[1] === 0)} presentationSpeed={presentationSpeed} reducedMotion={reducedMotion} pawnMovementEnabled={turnPhase === 'moving'} pawnMoveMode={pawnMoveMode} pawnStepSoundEnabled={soundEnabled} graphicsQuality={graphicsQuality} cameraEnabled={screen === 'game' && turnPhase !== 'ended'} fpsMeterEnabled={fpsMeterEnabled} fpsSamples={fpsSamples} onMovementComplete={() => setPresentationStage('idle')} onSelectSpace={handleSelectSpace} />
           </Suspense>
         )}
       </div>
@@ -1072,6 +1080,7 @@ function App() {
               </div>}
             </div>
           })}</div>
+          {inspectedPlayer && !selectingPlayer && <div className="inspected-player-banner" style={{ '--inspected-color': inspectedPlayer.color } as CSSProperties} role="status"><span className="inspected-player-dot" />{inspectedPlayer.name}<small>PROPRIEDADES EM DESTAQUE</small></div>}
           {selectingPlayer && <div className="player-target-prompt" role="status"><strong>{activeCardId === 'swap' && firstSwapTargetId ? 'ESCOLHA O SEGUNDO JOGADOR' : 'ESCOLHA O JOGADOR'}</strong><small>Toque em um cartão iluminado · {turnSeconds}s</small></div>}
           {throwImpacts.length > 0 && <div className={`throw-impact-screen impact-${throwImpacts[throwImpacts.length - 1].object}`} role="status" aria-live="polite" aria-label={`Você foi atingido com ${getThrowableLabel(throwImpacts[throwImpacts.length - 1].object)}`}><span key={throwImpacts[throwImpacts.length - 1].id}>{getThrowableSymbol(throwImpacts[throwImpacts.length - 1].object)}</span><small>{getThrowableLabel(throwImpacts[throwImpacts.length - 1].object)}</small></div>}
           {localPlayer && turnPhase !== 'ended' && <div className={`game-quick-actions seat-${roomPlayers.findIndex((player) => player.sessionId === localPlayer.sessionId)}`} aria-label="Ações rápidas" data-camera-drag="off"><button type="button" className="camera-mode-button" onClick={() => setCameraMode((mode) => mode === 'board' ? 'player' : 'board')} aria-label={cameraMode === 'board' ? 'Seguir meu personagem' : 'Orbitar tabuleiro'} aria-pressed={cameraMode === 'player'}><span aria-hidden="true">◎</span><small>{cameraMode === 'board' ? 'Tabuleiro' : 'Seguir'}</small></button><button type="button" onClick={() => setShowOptions(true)} aria-label="Configurações da partida"><span aria-hidden="true">⚙</span><small>Config</small></button><div className="emote-control"><button type="button" onClick={() => setShowEmotePicker((open) => !open)} aria-label="Escolher emote" aria-expanded={showEmotePicker}><span aria-hidden="true">☺</span><small>Emote</small></button>{showEmotePicker && <div className="emote-picker" role="group" aria-label="Escolha um emote">{PLAYER_EMOTES.map(({ id, label, symbol }) => <button key={id} type="button" aria-label={label} title={label} onClick={() => { room?.send('emote', { emote: id }); setShowEmotePicker(false) }}>{symbol}</button>)}</div>}</div><button type="button" onClick={() => setShowHelp((open) => !open)} aria-label="Prévia das regras" aria-expanded={showHelp} aria-controls="game-help-dialog"><span aria-hidden="true">?</span><small>Regras</small></button></div>}
@@ -1187,7 +1196,7 @@ function App() {
                   {(activeCardId === 'blackout' || activeCardId === 'earthquake' || activeCardId === 'protection') && <p className="map-choice-hint">Toque em uma propriedade iluminada no tabuleiro para {activeCardId === 'blackout' ? 'apagar por três turnos' : activeCardId === 'earthquake' ? 'destruir' : 'proteger por três turnos'}.</p>}
                   {activeCardId === 'thief' && <div className="card-target-list">{roomPlayers.filter((candidate) => candidate.sessionId !== localSessionId && !candidate.isBankrupt).map((candidate) => <button className="card-target-option" key={candidate.sessionId} onClick={() => room?.send('resolveCardTarget', { targetSessionId: candidate.sessionId })}>Roubar de {candidate.name}</button>)}</div>}
                   {activeCardId === 'swap' && <div className="card-target-list">{roomPlayers.filter((candidate) => !candidate.isBankrupt).flatMap((first, firstIndex, all) => all.slice(firstIndex + 1).map((second) => <button className="card-target-option" key={`${first.sessionId}-${second.sessionId}`} onClick={() => room?.send('resolveCardTarget', { targetSessionId: first.sessionId, secondSessionId: second.sessionId })}>Trocar {first.name} ↔ {second.name}</button>))}</div>}
-                  {(propertyTargetCard && cardPropertyChoices.length === 0 || ['thief', 'swap'].includes(activeCardId) && roomPlayers.filter((candidate) => !candidate.isBankrupt).length < 2) && <p>Não há alvo válido. A carta será descartada ao fim do tempo.</p>}
+                  {cardHasNoTarget && <p>Não existe alvo disponível.</p>}
                 </div>
               ) : turnPhase === 'ended' ? (
                 <div className="final-result-content">
@@ -1274,7 +1283,7 @@ function App() {
           {isMyTurn && !showTransientReveal && !feedbackPending && turnPhase === 'card-target' && propertyTargetCard && selectedCardPropertyId === null && cardPropertyChoices.length > 0 && <div className="map-choice-prompt" role="status">Toque em uma propriedade iluminada para escolher o alvo da carta</div>}
           {isMyTurn && !showTransientReveal && !feedbackPending && turnPhase === 'debt' && debtPropertyChoices.length > 0 && <div className="map-choice-prompt" role="status">Toque em uma propriedade iluminada para liquidá-la</div>}
           {portfolioBoardSelection && <div className="map-choice-prompt" role="status">Toque numa propriedade sua iluminada para abrir as opções <button type="button" onClick={() => setPortfolioBoardSelection(false)}>Cancelar</button></div>}
-          {showTransientReveal && <div className="card-reveal-backdrop" role="button" tabIndex={0} aria-label="Fechar carta e continuar" onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') dismissTransientReveal() }}><article className="game-event-card" aria-live="polite"><span className="event-card-kicker">{getRevealKicker(revealKind!)}</span><div className="event-card-art" aria-hidden="true">{revealKind === 'world-cup' ? '✦' : revealKind === 'world-tour' ? '↗' : '◆'}</div><h2>{revealKind === 'event' ? activeCardTitle : revealKind === 'world-cup' ? 'Escolha a sede' : 'Escolha para onde viajar'}</h2><p>{revealKind === 'event' ? activeCardDescription : revealKind === 'world-cup' ? 'Toque em uma propriedade sua iluminada no tabuleiro. O aluguel dela vale duas vezes.' : 'Toque em uma casa iluminada. Propriedades de outras pessoas ficam indisponíveis.'}</p><small>Toque em qualquer lugar para continuar · {turnSeconds || 15}s</small></article></div>}
+          {showTransientReveal && visibleReveal && <div className="card-reveal-backdrop"><article className="game-event-card" role="dialog" aria-modal="true" aria-label="Carta revelada"><span className="event-card-kicker">{getRevealKicker(visibleReveal.kind)}</span><div className="event-card-art" aria-hidden="true">{visibleReveal.kind === 'world-cup' ? '✦' : visibleReveal.kind === 'world-tour' ? '↗' : '◆'}</div><h2>{visibleReveal.kind === 'event' ? visibleReveal.title : visibleReveal.kind === 'world-cup' ? 'Escolha a sede' : 'Escolha para onde viajar'}</h2><p>{visibleReveal.kind === 'event' ? visibleReveal.description : visibleReveal.kind === 'world-cup' ? 'Toque em uma propriedade sua iluminada no tabuleiro. O aluguel dela vale duas vezes.' : 'Toque em uma casa iluminada. Propriedades de outras pessoas ficam indisponíveis.'}</p>{visibleReveal.noTarget && <p className="card-no-target">Não existe alvo disponível.</p>}<button type="button" className="card-reveal-ok" onClick={dismissTransientReveal}>OK</button><small>A carta avança automaticamente após {CARD_REVEAL_SECONDS} segundos.</small></article></div>}
           <div className="game-bottom"><span className="game-sync-label">JOGADA SINCRONIZADA · {modeDetails[mode].title.toUpperCase()}</span><button className="leave-button" onClick={() => void leaveRoom()}>Sair da mesa</button></div>
         </section>
       )}

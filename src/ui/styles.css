@@ -1224,3 +1224,14 @@ button:disabled{opacity:.55;cursor:not-allowed}
 .screen-game .debt-panel .debt-summary strong{font-size:clamp(19px,2vw,28px)}
 .screen-game .debt-panel .debt-summary .debt-shortfall strong{font-size:clamp(27px,3vw,39px)}
 @media(max-width:640px){.screen-game .roll-control-button{min-height:56px;min-width:190px;font-size:15px}.player-target-prompt{top:57%}.player-target-prompt strong{font-size:20px}.screen-game .turn-card.debt-panel{top:56%;max-height:calc(100dvh - 245px);padding:15px}.screen-game .debt-panel .debt-summary>div{padding:8px}}
+/* Carta explícita e inspeção persistente */
+.card-reveal-backdrop{pointer-events:auto}
+.game-event-card{display:flex;flex-direction:column;align-items:center;text-align:center}
+.card-reveal-ok{display:block;min-width:142px;min-height:46px;margin:16px auto 9px;padding:10px 25px;border:0;border-radius:12px;background:#dec06e;color:#20362c;font-weight:800;font-size:14px;box-shadow:0 6px 0 #9a7735,0 12px 24px #0003}
+.card-reveal-ok:hover,.card-reveal-ok:focus-visible{background:#f1d389;outline:3px solid #fff8dc;outline-offset:2px}
+.card-no-target{font-weight:800;color:#8f362d}
+.screen-game .player-card.highlighted{outline:4px solid #fff9de;outline-offset:3px;transform:translateY(3px) scale(1.035);box-shadow:0 0 0 7px color-mix(in srgb,currentColor 35%,transparent),0 18px 30px #0008;z-index:3}
+.inspected-player-banner{position:absolute;z-index:13;top:clamp(154px,18vh,210px);left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:10px;max-width:min(90vw,480px);padding:11px 17px;border:2px solid var(--inspected-color);border-radius:999px;background:color-mix(in srgb,var(--inspected-color) 24%,#101c20);color:#fff;font-size:17px;font-weight:800;box-shadow:0 12px 30px #0008;pointer-events:none}
+.inspected-player-dot{width:15px;height:15px;flex:none;border-radius:50%;background:var(--inspected-color);box-shadow:0 0 0 4px #fff4}
+.inspected-player-banner small{font-size:9px;letter-spacing:.1em;font-weight:700;opacity:.85}
+@media(max-width:640px){.inspected-player-banner{top:155px;font-size:14px;padding:8px 14px;white-space:nowrap}.inspected-player-banner small{display:none}}

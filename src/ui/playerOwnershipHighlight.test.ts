@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { getOwnedPropertySpaceIds } from './playerOwnershipHighlight'
+import { getOwnedPropertySpaceIds, shouldShowPlayerInspection } from './playerOwnershipHighlight'
 
 describe('destaque dos títulos por jogador', () => {
   const holdings = [
@@ -17,5 +17,12 @@ describe('destaque dos títulos por jogador', () => {
 
   it('não destaca títulos sem dono selecionado', () => {
     expect(getOwnedPropertySpaceIds('', holdings)).toEqual([])
+  })
+
+  it('mantém a inspeção durante dados e movimento e cede em escolhas do tabuleiro', () => {
+    expect(shouldShowPlayerInspection('player-a', 'rolling', false)).toBe(true)
+    expect(shouldShowPlayerInspection('player-a', 'moving', false)).toBe(true)
+    expect(shouldShowPlayerInspection('player-a', 'card-target', true)).toBe(false)
+    expect(shouldShowPlayerInspection('player-a', 'debt', true)).toBe(false)
   })
 })

@@ -6,6 +6,7 @@ import type { LobbyState } from '../src/rooms/schema/LobbyState.js'
 import { PropertyState } from '../src/rooms/schema/LobbyState.js'
 import { boardSpaces, getLineTitleIds } from '../../shared/board.js'
 import { EVENT_CARDS, type EventCard } from '../../shared/cards.js'
+import { CARD_REVEAL_SECONDS, CARD_TARGET_SECONDS } from '../../shared/game.js'
 import { PROPERTY_HOTEL_LEVEL, START_BONUS, STARTING_CASH, TURN_DECISION_SECONDS, TURN_ROLL_SECONDS, bankReturnValue, buildingSaleValue, calculateRent, constructionCost, forcedBuybackCost, taxForSpace } from '../../shared/game.js'
 
 async function waitFor(condition: () => boolean, timeout = 2500) {
@@ -1813,13 +1814,13 @@ describe('sala privada', () => {
 
     serverGame.updateTurnClock()
     serverGame.updateTurnClock()
-    expect(room.state.turnSeconds).toBe(TURN_DECISION_SECONDS - 2)
+    expect(room.state.turnSeconds).toBe(CARD_REVEAL_SECONDS - 2)
 
     host.send('dismissCardReveal')
-    await waitFor(() => !serverGame.cardTargetRevealPending && room.state.turnSeconds === TURN_DECISION_SECONDS)
+    await waitFor(() => !serverGame.cardTargetRevealPending && room.state.turnSeconds === CARD_TARGET_SECONDS)
     serverGame.updateTurnClock()
     expect(room.state.turnPhase).toBe('card-target')
-    expect(room.state.turnSeconds).toBe(TURN_DECISION_SECONDS - 1)
+    expect(room.state.turnSeconds).toBe(CARD_TARGET_SECONDS - 1)
 
     room.state.turnSeconds = 1
     serverGame.updateTurnClock()
@@ -1856,6 +1857,47 @@ describe('sala privada', () => {
     expect([guest.sessionId, third.sessionId]).toContain(owners.find((owner) => owner !== host.sessionId))
   })
 
+  it('encerra Generoso sem alvo ao confirmar a carta, sem aguardar escolha', async () => {
+    const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
+    const host = await colyseus.connectTo(room, { name: 'Ana' })
+    await colyseus.connectTo(room, { name: 'Bia' })
+    markPlayersReady(room)
+    host.send('start')
+    await waitFor(() => room.state.status === 'playing')
+
+    const serverGame = room as unknown as { resolveEventCard: (sessionId: string, player: unknown) => void; drawEventCard: () => EventCard }
+    serverGame.drawEventCard = () => EVENT_CARDS.find((card) => card.id === 'generous')!
+    serverGame.resolveEventCard(host.sessionId, room.state.players.get(host.sessionId)!)
+    expect(room.state.turnPhase).toBe('card-target')
+    expect(room.state.turnSeconds).toBe(CARD_REVEAL_SECONDS)
+
+    host.send('dismissCardReveal')
+    await waitFor(() => room.state.turnPhase !== 'card-target')
+    expect(room.state.landingDescription).toBe('Não existe alvo disponível.')
+  })
+
+  it('encerra carta sem alvo quando termina somente o prazo de leitura', async () => {
+    const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
+    const host = await colyseus.connectTo(room, { name: 'Ana' })
+    await colyseus.connectTo(room, { name: 'Bia' })
+    markPlayersReady(room)
+    host.send('start')
+    await waitFor(() => room.state.status === 'playing')
+
+    const serverGame = room as unknown as { updateTurnClock: () => void; turnTimerKey: string; cardTargetRevealPending: boolean }
+    room.state.turnPhase = 'card-target'
+    room.state.activePlayerSessionId = host.sessionId
+    room.state.activeCardId = 'generous'
+    room.state.turnSeconds = 1
+    serverGame.turnTimerKey = `${room.state.turnNumber}:${host.sessionId}:card-target`
+    serverGame.cardTargetRevealPending = true
+    serverGame.updateTurnClock()
+
+    expect(serverGame.cardTargetRevealPending).toBe(false)
+    expect(room.state.turnPhase).toBe('resolve')
+    expect(room.state.landingDescription).toBe('Não existe alvo disponível.')
+  })
+
   it('inicia a janela de seleção quando o aviso da carta expira sozinho', async () => {
     const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
     const host = await colyseus.connectTo(room, { name: 'Ana' })
@@ -1867,6 +1909,7 @@ describe('sala privada', () => {
     const serverGame = room as unknown as { updateTurnClock: () => void; turnTimerKey: string; cardTargetRevealPending: boolean }
     room.state.turnPhase = 'card-target'
     room.state.activePlayerSessionId = host.sessionId
+    room.state.activeCardId = 'thief'
     room.state.turnSeconds = 2
     serverGame.turnTimerKey = `${room.state.turnNumber}:${host.sessionId}:card-target`
     serverGame.cardTargetRevealPending = true
@@ -1877,10 +1920,10 @@ describe('sala privada', () => {
 
     serverGame.updateTurnClock()
     expect(serverGame.cardTargetRevealPending).toBe(false)
-    expect(room.state.turnSeconds).toBe(TURN_DECISION_SECONDS)
+    expect(room.state.turnSeconds).toBe(CARD_TARGET_SECONDS)
     serverGame.updateTurnClock()
     expect(room.state.turnPhase).toBe('card-target')
-    expect(room.state.turnSeconds).toBe(TURN_DECISION_SECONDS - 1)
+    expect(room.state.turnSeconds).toBe(CARD_TARGET_SECONDS - 1)
   })
 
   it('abre a compra normal ao resolver um destino escolhido por carta', async () => {

@@ -399,7 +399,7 @@ function AnimatedPawn({ player, stackIndex, pawnGroups, reducedMotion, movementE
       </> : model && <><primitive object={model.outline} scale={0.61} /><primitive object={model.object} scale={0.56} /></>}
       {player.activity && <Html position={[0, player.characterType === 'pawn' ? 0.86 : 0.66, 0]} center distanceFactor={12} zIndexRange={[6, 0]} style={{ pointerEvents: 'none' }}><div className="turn-activity-bubble" role="status" aria-live="polite">{player.activity}</div></Html>}
       {player.emote && <Html key={player.emote.sequence} position={[0, player.characterType === 'pawn' ? 1.08 : 0.9, 0]} center distanceFactor={10} zIndexRange={[8, 0]} style={{ pointerEvents: 'none' }}><div className="player-emote-bubble" aria-label="Emote do jogador">{getPlayerEmoteSymbol(player.emote.emote)}</div></Html>}
-      {isActive && <group position={[0, 1.05, 0]}><FloatingPointingArrow color={player.color} size={0.72} baseY={0} /></group>}
+      {isActive && <group position={[0, 1.05, 0]}><FloatingPointingArrow color={player.color} size={1.05} baseY={0} /></group>}
     </group>
   )
 }
@@ -823,7 +823,7 @@ function Board({ players, pawnGroups, activePlayerSessionId, destinationSpaceId,
       <Suspense fallback={null}>
         {propertyBuildings.filter(({ ownerSessionId }) => Boolean(ownerSessionId)).map(({ spaceId, houses, blackoutTurns = 0, protectionTurns = 0, ownerColor, ownerSessionId }) => <AnimatedBuilding key={`buildings-${spaceId}`} spaceId={spaceId} houses={houses} blackoutTurns={blackoutTurns} protectionTurns={protectionTurns} ownerColor={ownerColor} ownerSessionId={ownerSessionId} reducedMotion={reducedMotion} presentationSpeed={presentationSpeed} dimmed={selectionMode && !highlightedSpaceIds.includes(spaceId)} />)}
       </Suspense>
-      {destinationSpaceId >= 0 && (() => { const target = positionOnBoard(destinationSpaceId); return <group position={[target.x, 0, target.z]}><FloatingPointingArrow color="#ffe27a" size={0.9} baseY={1.5} /></group> })()}
+      {destinationSpaceId >= 0 && (() => { const target = positionOnBoard(destinationSpaceId); return <group position={[target.x, 0, target.z]}><FloatingPointingArrow color="#ffe27a" size={1.3} baseY={1.5} /></group> })()}
       {players.map((player) => <AnimatedPawn key={player.id} player={player} stackIndex={pawnStackIndices.get(player.id) ?? 0} pawnGroups={pawnGroups} reducedMotion={reducedMotion} movementEnabled={pawnMovementEnabled} moveMode={pawnMoveMode} presentationSpeed={presentationSpeed} pawnStepSoundEnabled={pawnStepSoundEnabled} isActive={player.id === activePlayerSessionId} onMovementComplete={onMovementComplete} />)}
       {thrownObjects.map((event) => <ThrowableProjectile key={event.id} event={event} pawnGroups={pawnGroups} />)}
       {earthquakeEvents.map((event) => <EarthquakeCollapse key={event.id} event={event} scene={buildingScene} />)}

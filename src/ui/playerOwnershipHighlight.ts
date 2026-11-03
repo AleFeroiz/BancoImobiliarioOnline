@@ -7,3 +7,7 @@ export function getOwnedPropertySpaceIds(playerSessionId: string, holdings: read
     .map((holding) => holding.spaceId)
     .sort((first, second) => first - second)
 }
+
+export function shouldShowPlayerInspection(playerSessionId: string, turnPhase: string, boardChoiceActive: boolean) {
+  return Boolean(playerSessionId) && turnPhase !== 'ended' && !boardChoiceActive
+}

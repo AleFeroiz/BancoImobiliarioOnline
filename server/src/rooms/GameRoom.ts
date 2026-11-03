@@ -4,6 +4,7 @@ import { MAX_ROOM_PLAYERS, type GameMode } from '../../../shared/lobby.js'
 import { isCharacterType, isGameMode, normalizePlayerName } from '../../../shared/lobby.js'
 import { AUCTION_ACCEPT_SECONDS, AUCTION_BID_SECONDS, AUCTION_MIN_BID_INCREMENT, CLASSIC_MATCH_SECONDS, DEFAULT_ANIMATION_SPEED, DICE_ANIMATION_DURATION_MS, JAIL_TURNS, MATCH_DURATIONS, PAWN_STEP_ANIMATION_DURATION_MS, PAWN_TELEPORT_ANIMATION_DURATION_MS, PROPERTY_BUILD_LEVELS, PROPERTY_HOTEL_LEVEL, START_BONUS, STARTING_CASH, TURN_DECISION_SECONDS, TURN_ROLL_SECONDS, applyRentMultiplier, areDiceDoubles, bankReturnValue, buildingSaleValue, calculateCompanyRent, calculateNetWorth, calculateRent, canBuildHotel, canBuildLevelAfterFirstLap, canBuildProperty, canReturnPropertyToBank, canSellBuilding, chooseFestivalCityIds, constructionCost, describeLanding, forcedBuybackCost, getAnimationDuration, getMonopolyWinReason, hasLiquidatableAssets, hotelConstructionCost, isAnimationSpeed, isMatchDuration, movePosition, taxForSpace, type MatchEndReason } from '../../../shared/game.js'
 import { boardSpaces } from '../../../shared/board.js'
+import { CARD_REVEAL_SECONDS, CARD_TARGET_SECONDS } from '../../../shared/game.js'
 import { PLAYER_COLORS, isPlayerColor } from '../../../shared/playerColors.js'
 import { isPlayerEmote } from '../../../shared/playerEmotes.js'
 import { isThrowableObject, THROW_COOLDOWN_MS } from '../../../shared/throwables.js'
@@ -835,7 +836,11 @@ export class GameRoom extends Room<{ state: LobbyState }> {
         || this.getPlayerSessionId(client) !== this.state.activePlayerSessionId
         || !this.cardTargetRevealPending) return
       this.cardTargetRevealPending = false
-      this.state.turnSeconds = TURN_DECISION_SECONDS
+      if (!this.hasCardTargetOptions(this.getPlayerSessionId(client))) {
+        this.autoResolveCardTarget(client, this.getPlayerSessionId(client))
+        return
+      }
+      this.state.turnSeconds = CARD_TARGET_SECONDS
       this.turnTimerKey = `${this.state.turnNumber}:${this.getPlayerSessionId(client)}:card-target`
     },
     chooseWorldCup: (client: Client, payload: { propertyId?: unknown }) => {
@@ -1045,14 +1050,20 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       this.turnTimerKey = key
       this.state.turnSeconds = phase === 'roll'
         ? TURN_ROLL_SECONDS
-      : ['purchase', 'buyback', 'company-roll', 'resolve', 'jail', 'world-cup', 'world-tour', 'card-target', 'debt'].includes(phase) ? TURN_DECISION_SECONDS : 0
+      : phase === 'card-target' ? (this.cardTargetRevealPending ? CARD_REVEAL_SECONDS : CARD_TARGET_SECONDS)
+      : ['purchase', 'buyback', 'company-roll', 'resolve', 'jail', 'world-cup', 'world-tour', 'debt'].includes(phase) ? TURN_DECISION_SECONDS : 0
       return
     }
     if (phase === 'card-target' && this.cardTargetRevealPending) {
       if (this.state.turnSeconds > 1) this.state.turnSeconds -= 1
       else {
         this.cardTargetRevealPending = false
-        this.state.turnSeconds = TURN_DECISION_SECONDS
+        if (!this.hasCardTargetOptions(this.state.activePlayerSessionId)) {
+          const client = { sessionId: this.state.activePlayerSessionId, send: () => undefined } as unknown as Client
+          this.autoResolveCardTarget(client, this.state.activePlayerSessionId)
+          return
+        }
+        this.state.turnSeconds = CARD_TARGET_SECONDS
       }
       return
     }
@@ -1517,6 +1528,18 @@ export class GameRoom extends Room<{ state: LobbyState }> {
     this.finishExpiredPhaseIfReady()
   }
 
+  private hasCardTargetOptions(sessionId: string) {
+    const kind = EVENT_CARDS.find((card) => card.id === this.state.activeCardId)?.effect.kind
+    const players = Array.from(this.state.players.entries()).filter(([, player]) => !player.isBankrupt)
+    const holdings = Array.from(this.state.properties.entries()).map(([id, holding]) => ({ id: Number(id), holding }))
+    if (kind === 'swap') return players.length >= 2
+    if (kind === 'thief') return players.some(([id]) => id !== sessionId)
+    if (kind === 'generous') return players.some(([id]) => id !== sessionId) && holdings.some(({ holding }) => holding.ownerSessionId === sessionId && holding.protectionTurns === 0)
+    if (kind === 'protection') return holdings.some(({ id, holding }) => boardSpaces[id]?.kind === 'property' && holding.ownerSessionId === sessionId && holding.protectionTurns === 0)
+    if (kind === 'blackout' || kind === 'earthquake') return holdings.some(({ id, holding }) => boardSpaces[id]?.kind === 'property' && holding.ownerSessionId !== '' && holding.ownerSessionId !== sessionId && holding.houses !== PROPERTY_HOTEL_LEVEL && holding.protectionTurns === 0)
+    return false
+  }
+
   private autoResolveCardTarget(client: Client, sessionId: string) {
     const card = EVENT_CARDS.find((candidate) => candidate.id === this.state.activeCardId)
     if (!card) return
@@ -1534,7 +1557,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       const target = pick(players.filter(([id]) => id !== sessionId))
       if (target) this.messages.resolveCardTarget(client, { targetSessionId: target[0] })
     } else if (card.effect.kind === 'protection') {
-      const property = pick(properties.filter(([id, holding]) => boardSpaces[id]?.kind === 'property' && holding.ownerSessionId === sessionId))
+      const property = pick(properties.filter(([id, holding]) => boardSpaces[id]?.kind === 'property' && holding.ownerSessionId === sessionId && holding.protectionTurns === 0))
       if (property) this.messages.resolveCardTarget(client, { propertyId: property[0] })
     } else if (card.effect.kind === 'swap') {
       const pair = pick(players.flatMap((first, index) => players.slice(index + 1).map((second) => [first, second] as const)))
@@ -1546,7 +1569,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       this.state.turnPhase = 'resolve'
       this.state.turnSeconds = TURN_DECISION_SECONDS
       this.turnTimerKey = `${this.state.turnNumber}:${sessionId}:resolve`
-      this.state.landingDescription += ' Não havia opção válida; a carta foi descartada.'
+      this.state.landingDescription = 'Não existe alvo disponível.'
       this.finishExpiredPhaseIfReady()
     }
   }
@@ -1561,7 +1584,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
     if (['generous', 'blackout', 'earthquake', 'thief', 'protection', 'swap'].includes(card.effect.kind)) {
       this.state.turnPhase = 'card-target'
       this.cardTargetRevealPending = !player.isBot && !player.isBotControlled && player.isConnected
-      this.state.turnSeconds = TURN_DECISION_SECONDS
+      this.state.turnSeconds = this.cardTargetRevealPending ? CARD_REVEAL_SECONDS : CARD_TARGET_SECONDS
       this.turnTimerKey = `${this.state.turnNumber}:${sessionId}:card-target`
       return
     }
