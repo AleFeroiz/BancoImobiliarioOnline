@@ -36,6 +36,7 @@ import { DEFAULT_GRAPHICS_QUALITY, type GraphicsQuality } from './graphicsQualit
 import { isPlayerEmote, PLAYER_EMOTES, type PlayerEmote } from '../../shared/playerEmotes'
 import { getThrowableLabel, getThrowableSymbol, isThrowableObject, THROWABLES, THROW_COOLDOWN_MS, THROW_IMPACT_DURATION_MS, THROW_PROJECTILE_DURATION_MS, type ThrowableObject } from '../../shared/throwables'
 import { getRevealKicker } from './revealCopy'
+import { shouldOpenAuctionPanel } from './auctionPanelState'
 import { HOME_REGION_ROUTE } from './homeRegionRoute'
 import { buildRoomInviteUrl, getRoomInviteCode, normalizeRoomCode } from './roomInvite'
 
@@ -169,6 +170,7 @@ function App() {
   const [portfolioBoardSelection, setPortfolioBoardSelection] = useState(false)
   const [selectedPlayerSessionId, setSelectedPlayerSessionId] = useState('')
   const [showAuctionPanel, setShowAuctionPanel] = useState(false)
+  const previousAuctionIdRef = useRef(0)
   const [showHelp, setShowHelp] = useState(false)
   const [showOptions, setShowOptions] = useState(false)
   const [cameraMode, setCameraMode] = useState<'board' | 'player'>('board')
@@ -660,6 +662,11 @@ function App() {
       setAuctionHighestBidderSessionId(snapshot.auctionHighestBidderSessionId)
       setAuctionPhase(snapshot.auctionPhase)
       setAuctionSeconds(snapshot.auctionSeconds)
+      if (shouldOpenAuctionPanel(previousAuctionIdRef.current, snapshot.auctionId)) {
+        setShowAuctionPanel(true)
+        setShowPropertyPanel(false)
+      }
+      previousAuctionIdRef.current = snapshot.auctionId
       if (snapshot.status === 'playing' || snapshot.status === 'ended') setScreen('game')
     }
     const handleRoomError = (payload: { message: string }) => {
@@ -1106,12 +1113,12 @@ function App() {
           <div className="game-topline"><button className="back-link" onClick={() => setScreen('room')}>← Sala {roomCode}</button><div className="game-status-cluster"><div className={`game-pill ${matchEnding || (matchDuration > 0 && matchSeconds <= 60) ? 'clock-warning' : ''}`}>{modeDetails[mode].title.toUpperCase()} <span>·</span> {matchDuration === 0 ? 'SEM TEMPO' : formatClock(matchSeconds)}</div>{turnPhase !== 'ended' && <div className={`turn-clock-pill ${turnSeconds > 0 && turnSeconds <= 5 ? 'clock-warning' : ''}`} role="timer" aria-label={`Relógio do turno de ${activePlayer?.name ?? 'jogador ativo'}: ${turnSeconds} segundos restantes`}><span aria-hidden="true">◷</span><small>VEZ · {activePlayer?.name ?? '—'}</small><strong>{formatClock(turnSeconds)}</strong></div>}{animationSpeedControl}</div><div className="game-tools">{auctionId > 0 && <button className="portfolio-toggle auction-toggle-active" aria-expanded={showAuctionPanel} onClick={() => { setShowAuctionPanel((open) => !open);  setShowPropertyPanel(false); setError('') }}>{`Leilão · ${auctionPhase === 'interest' ? 'aceite' : 'lances'} · ${auctionSeconds}s`}</button>}</div></div>
           <div className="game-topline-camera-hint" aria-label="Controles da câmera">Arraste para girar · scroll ou pinça para zoom</div>
           {doublesAnnouncementVisible && <div className="doubles-announcement" role="status" aria-live="assertive"><span>✦</span><strong>TIROU DUPLAS!</strong><small>Você joga novamente</small></div>}
-          <div className="player-hud">{roomPlayers.map((player, index) => {
+          <div className={`player-hud player-count-${roomPlayers.length}`}>{roomPlayers.map((player, index) => {
             const remainingCooldown = Math.max(0, (throwCooldowns[player.sessionId] ?? 0) - throwCooldownNow)
             const canThrowAtPlayer = Boolean(localPlayer && player.sessionId !== localSessionId && !player.isBankrupt && !localPlayer.isBankrupt && turnPhase !== 'ended')
             return <div className={`player-card-slot seat-${index}`} key={player.sessionId}>
               <button type="button" aria-label={selectingPlayer ? `Escolher ${player.name}` : `Destacar títulos de ${player.name}`} aria-pressed={selectingPlayer ? firstSwapTargetId === player.sessionId : selectedPlayerSessionId === player.sessionId} disabled={selectingPlayer && (player.isBankrupt || activeCardId !== 'swap' && activeCardId !== 'communism' && player.sessionId === localSessionId)} className={`player-card seat-${index} ${player.sessionId === activePlayerSessionId ? 'active' : ''} ${selectedPlayerSessionId === player.sessionId ? 'highlighted' : ''} ${player.isBankrupt ? 'bankrupt' : ''} ${player.isConnected === false ? 'disconnected' : ''} ${selectingPlayer ? 'target-choice' : ''} ${selectingPlayer && (player.isBankrupt || activeCardId !== 'swap' && activeCardId !== 'communism' && player.sessionId === localSessionId) ? 'target-unavailable' : ''} ${firstSwapTargetId === player.sessionId ? 'target-selected' : ''}`} style={{ backgroundColor: player.color ?? PLAYER_COLORS[index] ?? PLAYER_COLORS[0] }} onClick={() => choosePlayerCard(player)}><div className="player-card-main"><strong>{player.name}</strong><b>{formatMoney(player.cash)}</b></div>{player.isBotControlled && <span className="player-bot-control-label">BOT NO CONTROLE</span>}<CashChangeToast cash={player.cash} playerName={player.name} placement={getCashToastPlacement(index)} /><span className="player-money-anchor" data-cash-anchor={player.sessionId} aria-hidden="true"><CashHudSymbols cash={player.cash} /></span></button>
-              {player.nextRentMultiplier !== 1 && <div className="held-card" data-camera-drag="off"><button type="button" aria-label={`Carta guardada: ${player.nextRentMultiplier > 1 ? 'Aluguel em dobro' : 'Desconto no aluguel'}`} aria-describedby={`held-card-tip-${player.sessionId}`}>🃏</button><span id={`held-card-tip-${player.sessionId}`} role="tooltip"><b>{player.nextRentMultiplier > 1 ? 'Aluguel em dobro' : 'Desconto no aluguel'}</b><small>{player.nextRentMultiplier > 1 ? 'Pague 2× no próximo aluguel.' : 'Pague metade no próximo aluguel.'}</small></span></div>}
+            {player.nextRentMultiplier !== 1 && <div className="held-card" data-camera-drag="off"><button type="button" aria-label={`Carta guardada: ${player.nextRentMultiplier > 1 ? 'Aluguel em dobro' : 'Desconto no aluguel'}`} aria-describedby={`held-card-tip-${player.sessionId}`} onPointerDown={(event) => event.stopPropagation()} onClick={(event) => event.stopPropagation()}>🃏</button><span id={`held-card-tip-${player.sessionId}`} role="tooltip"><b>{player.nextRentMultiplier > 1 ? 'Aluguel em dobro' : 'Desconto no aluguel'}</b><small>{player.nextRentMultiplier > 1 ? 'Pague 2× no próximo aluguel.' : 'Pague metade no próximo aluguel.'}</small></span></div>}
               {canThrowAtPlayer && <div className={`player-throw-control${index % 2 === 1 ? ' toward-center-left' : ''}`} data-camera-drag="off">
                 <button type="button" className="player-throw-button" aria-label={`Lançar objeto em ${player.name}`} aria-expanded={throwPickerTargetSessionId === player.sessionId} disabled={remainingCooldown > 0} title={remainingCooldown > 0 ? `Aguarde ${Math.ceil(remainingCooldown / 1000)}s` : `Lançar objeto em ${player.name}`} onClick={() => { setShowEmotePicker(false); setThrowPickerTargetSessionId((target) => target === player.sessionId ? '' : player.sessionId) }}><span aria-hidden="true">➶</span>{remainingCooldown > 0 && <small>{Math.ceil(remainingCooldown / 1000)}s</small>}</button>
                 {throwPickerTargetSessionId === player.sessionId && <div className="throw-picker" role="group" aria-label={`Escolha o objeto para lançar em ${player.name}`}>{THROWABLES.map(({ id, label, symbol }) => <button key={id} type="button" onClick={() => { if (!room) return; const now = Date.now(); room.send('throwObject', { targetSessionId: player.sessionId, object: id }); setThrowCooldownNow(now); setThrowCooldowns((current) => ({ ...current, [player.sessionId]: now + THROW_COOLDOWN_MS })); setThrowPickerTargetSessionId('') }}><span aria-hidden="true">{symbol}</span><small>{label}</small></button>)}</div>}
@@ -1320,7 +1327,7 @@ function App() {
             {isHost && devModeEnabled && <form className="dev-cash-controls" aria-label="Ajustar dinheiro DEV" onSubmit={(event) => { event.preventDefault(); if (devCashTarget) room?.send('devSetCash', { sessionId: devCashTarget.sessionId, cash: Number(devCashAmount), infinite: devCashTarget.devInfiniteCash }) }}>
               <label htmlFor="dev-cash-player">Saldo do jogador</label>
               <select id="dev-cash-player" value={devCashTarget?.sessionId ?? ''} onChange={(event) => setDevCashTargetSessionId(event.target.value)}>{roomPlayers.filter((player) => !player.isBankrupt).map((player) => <option key={player.sessionId} value={player.sessionId}>{player.name}</option>)}</select>
-              <input aria-label="Definir saldo em reais" type="number" min="0" max="2147483647" step="10000" value={devCashAmount} onChange={(event) => setDevCashAmount(event.target.value)} />
+              <div className="dev-cash-amount"><button type="button" aria-label="Diminuir saldo DEV" disabled={!Number.isSafeInteger(Number(devCashAmount)) || Number(devCashAmount) <= 0} onClick={() => setDevCashAmount(String(adjustMoneyValue(Number(devCashAmount) || 0, -1, 10_000, 0, 2_147_483_647)))}>−</button><input aria-label="Definir saldo em reais" type="number" inputMode="numeric" min="0" max="2147483647" step="10000" value={devCashAmount} onChange={(event) => setDevCashAmount(event.target.value)} /><button type="button" aria-label="Aumentar saldo DEV" disabled={!Number.isSafeInteger(Number(devCashAmount)) || Number(devCashAmount) >= 2_147_483_647} onClick={() => setDevCashAmount(String(adjustMoneyValue(Number(devCashAmount) || 0, 1, 10_000, 0, 2_147_483_647)))}>+</button></div>
               <button type="submit" disabled={!devCashTarget || !Number.isSafeInteger(Number(devCashAmount)) || Number(devCashAmount) < 0 || Number(devCashAmount) > 2147483647}>Definir saldo</button>
               {devCashTarget && <label className="dev-infinite-toggle"><input type="checkbox" checked={devCashTarget.devInfiniteCash} onChange={(event) => room?.send('devSetCash', { sessionId: devCashTarget.sessionId, cash: Number(devCashAmount), infinite: event.target.checked })} /> Dinheiro infinito</label>}
             </form>}

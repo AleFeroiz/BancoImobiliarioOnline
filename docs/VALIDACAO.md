@@ -1025,3 +1025,19 @@
 # Cartas guardadas, uso de cartas e voltas restantes — 2026-11-03
 
 - `npm run verify` passou: 356 testes em 62 arquivos, builds web e servidor concluídos. Playtest local iniciou sala com bot e partida em http://127.0.0.1:5173; os estados aleatórios não acionaram cartas guardadas nem Apagão/Proteção, portanto a revisão visual específica desses estados continua pendente.
+
+# 2026-11-03 — Playtest com agent-browser
+
+- Skill `agent-browser` (guias `core` e `dogfood`) aplicada; `game-studio` encaminhou para `game-playtest` conforme a direção R3F já aprovada.
+- Playtest local: home, criação de sala `GRUKB`, lobby com um bot, prontidão, início de partida, rolagem, compra de AgroBrasil e painel de configurações. Verificadas capturas em 390×844 e 1280×720; ao sair, a sessão retornou à home.
+- Console sem erros de aplicação ou falhas de rede. Única mensagem informativa: sugestão do React DevTools.
+- Achado reproduzido em duas capturas: em 1280×720 os cartões dos participantes cobrem parte do vértice superior do tabuleiro. Relatório e evidências em `dogfood-output/report.md` e `dogfood-output/screenshots/`.
+- Validação restrita a uma sala local, uma pessoa e um bot; não revisa partidas entre múltiplas pessoas nem outras resoluções desktop.
+
+# 2026-11-03 — Responsividade, leilão e controles DEV
+
+- `npm run verify`: 363 testes em 63 arquivos passaram; builds web e servidor passaram. O build mantém o aviso existente de chunk 3D acima de 500 kB. `git diff --check` passou.
+- Regressões verificam abertura do painel para novo leilão em toda sessão, sem reabertura em atualizações do mesmo leilão, além de interação de `select`, alvos móveis, scroll interno, layout do HUD e largura de tooltip.
+- Playtest com `agent-browser` em sala local de seis participantes. Em 1280×720, os cartões ficaram em uma faixa e o tabuleiro sem sobreposição do HUD; em 390×844, o HUD se reorganizou e o formulário DEV rolou dentro do painel. O botão de saldo alterou R$ 3.000.000 para R$ 3.010.000, e o seletor “Casa de destino” abriu e permitiu teleporte no teste anterior desta mesma sessão. Console sem erros da aplicação; apenas a mensagem informativa do React DevTools.
+- Capturas da revisão em `dogfood-output/screenshots/owned-city-1280-revised.png` e `dogfood-output/screenshots/game-mobile-dev.png`.
+- Limite: a abertura automática de leilão foi coberta por regressão de estado; não foi concluída uma rodada humana completa com captura do painel aparecendo simultaneamente em dois clientes. O toque foi avaliado por viewport/controles do navegador, sem dispositivo físico.

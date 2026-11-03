@@ -30,3 +30,27 @@ describe('home e lobby responsivos', () => {
     expect(stylesheet).toContain('@media(max-width:640px)')
   })
 })
+
+describe('interações responsivas durante a partida', () => {
+  it('permite mouse e toque nos seletores e steppers do modo DEV', () => {
+    expect(stylesheet).toContain('.game-overlay button,.game-overlay input,.game-overlay select{pointer-events:auto}')
+    expect(stylesheet).toContain('.roll-control-dev .dev-teleport-controls select')
+    expect(stylesheet).toContain('min-height:42px;touch-action:manipulation')
+    expect(stylesheet).toContain('max-height:min(48dvh,420px)')
+    expect(stylesheet).toContain('overscroll-behavior:contain;touch-action:pan-y')
+    expect(stylesheet).toContain('.roll-control-dev .dev-teleport-controls>select,.roll-control-dev .dev-event-card-controls>select{grid-column:1;min-width:0;width:100%}')
+    expect(appSource).toContain('aria-label="Diminuir saldo DEV"')
+    expect(appSource).toContain('aria-label="Aumentar saldo DEV"')
+    expect(appSource).toContain('inputMode="numeric"')
+  })
+
+  it('afasta o segundo cartão em telas médias para preservar o topo do tabuleiro', () => {
+    expect(appSource).toContain('player-count-${roomPlayers.length}')
+    expect(stylesheet).toContain('.screen-game .player-hud.player-count-2>.player-card:nth-child(2){grid-column:3}')
+    expect(stylesheet).toContain('@media(min-width:1200px) and (max-height:800px){.screen-game .player-hud.player-count-6{grid-template-columns:repeat(6,minmax(0,1fr))')
+  })
+
+  it('limita a largura dos tooltips à viewport e amplia a leitura em telas largas', () => {
+    expect(stylesheet).toContain('width:clamp(150px,15vw,210px);max-width:calc(100vw - 16px);overflow-wrap:anywhere')
+  })
+})

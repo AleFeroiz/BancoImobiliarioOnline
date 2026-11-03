@@ -1,3 +1,13 @@
+# Revisão responsiva, leilões e controles DEV — implementação concluída (2026-11-03)
+
+- Pedido: revisar telas, tooltips e responsividade em diferentes dispositivos; mostrar o leilão a todos na sala; corrigir controles do modo DEV para mouse e toque.
+- Estado inicial: `main` acompanha `origin/main`; nenhuma alteração de código local. Alterações já existentes em `assets/blender/special-corners.blend`, `assets/blender/special-corners.blend1`, `docs/VALIDACAO.md` e `dogfood-output/` foram preservadas.
+- Fontes consultadas: regras confirmam leilão voluntário com anúncio/aceite/lances por 10 segundos e modo DEV de anfitriã; decisões confirmam R3F com DOM responsivo e controles por toque.
+- Descoberta: estado de leilão já sincronizava no schema, mas a abertura do painel era local; `pointer-events:none` do overlay impedia interação em `select`; em 1280×720 seis cartões ocupavam duas fileiras sobre o tabuleiro.
+- Implementado: painel de leilão abre automaticamente ao surgir um novo `auctionId` para todos os clientes conectados; exceção de pointer events inclui `select`; saldo DEV tem controles explícitos de incremento/decremento, layout móvel rolável e alvos maiores; tooltip se adapta à viewport; HUD de seis participantes em uma faixa em desktop baixo.
+- Validação: regressões de estado do painel e layout; `npm run verify` passou com 363 testes em 63 arquivos e builds web/servidor; playtest `agent-browser` em 1280×720 e 390×844 confirmou layout, campo/seletores DEV e ajuste de saldo. Ver `docs/VALIDACAO.md` para os limites da revisão manual.
+- Próximo passo: observar leilão com participantes humanos em uma partida real e rever o HUD em dispositivos físicos de toque.
+
 # Coroa e chapéu de bobo nas fichas — implementação concluída (2026-11-03)
 
 - Pedido: mostrar uma coroa 3D no participante de maior patrimônio e um chapéu de bobo da corte no de menor patrimônio, acompanhando mudanças durante a partida.

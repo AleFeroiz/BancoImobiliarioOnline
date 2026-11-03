@@ -7,6 +7,31 @@
 @media(max-width:640px){.topbar{height:66px;padding:0 20px}.topbar-right{font-size:7px;letter-spacing:.12em}.topbar-right .icon-button{margin-left:3px}.home-layout{min-height:calc(100vh - 66px);display:flex;flex-direction:column;align-items:stretch;justify-content:flex-start;padding:7vh 22px 60px;gap:26px}.scene-backdrop{inset:35% -45% 15% 10%;opacity:.58}.hero-copy h1{font-size:56px;margin:16px 0 12px}.hero-copy>p{font-size:12px;max-width:330px}.mode-switch{margin-top:23px}.entry-card{padding:20px}.card-heading{margin-bottom:19px}.home-footer{left:22px;right:22px;bottom:17px;font-size:7px}.room-layout{min-height:calc(100vh - 66px);display:flex;flex-direction:column;padding:22px 18px 40px;gap:0;justify-content:flex-start}.room-card{width:100%;padding:20px}.room-card h1{font-size:51px}.room-aside{display:none}.game-overlay{min-height:calc(100vh - 66px);padding:15px 13px 14px}.game-topline .back-link{font-size:8px}.game-pill{font-size:7px;padding:8px}.game-topline .icon-button{margin:0}.player-hud{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin-top:13px}.player-card{padding:8px}.turn-card{width:min(265px,100%);margin:auto 0 9vh}.game-bottom{font-size:6px;letter-spacing:.08em}.leave-button{padding:7px;font-size:8px}}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;transition:none!important}}
 
+/* Controles DEV ficam fora do canvas, mas precisam aceitar eventos nativos do mouse e do toque. */
+.game-overlay button,.game-overlay input,.game-overlay select{pointer-events:auto}
+.dev-cash-amount{display:flex;align-items:center;gap:4px}
+.dev-cash-amount button{min-width:32px;min-height:30px;border:1px solid #cbd2c2;border-radius:7px;background:#edf0e4;color:#3d5942;font-size:16px;font-weight:800;line-height:1}
+.held-card>[role=tooltip]{width:clamp(150px,15vw,210px);max-width:calc(100vw - 16px);overflow-wrap:anywhere}
+
+@media(min-width:641px) and (max-width:1320px){
+  .screen-game .player-hud.player-count-2>.player-card:nth-child(2){grid-column:3}
+}
+
+@media(max-width:640px){
+  .roll-control-dev{max-height:min(48dvh,420px);margin-bottom:env(safe-area-inset-bottom,0px);overscroll-behavior:contain;touch-action:pan-y}
+  .roll-control-dev .dev-dice-controls button,.roll-control-dev .dev-teleport-controls button,.roll-control-dev .dev-event-card-controls button,.roll-control-dev .dev-cash-controls button{min-height:42px;touch-action:manipulation}
+  .roll-control-dev .dev-teleport-controls,.roll-control-dev .dev-event-card-controls,.roll-control-dev .dev-cash-controls{flex-wrap:wrap;gap:7px;width:100%;padding:7px 4px;border-left:0;border-top:1px solid #d8d9ca;touch-action:pan-y}
+  .roll-control-dev .dev-teleport-controls select,.roll-control-dev .dev-event-card-controls select,.roll-control-dev .dev-cash-controls select,.roll-control-dev .dev-cash-controls input{min-height:42px;max-width:100%;font-size:14px;touch-action:manipulation}
+  .roll-control-dev .dev-teleport-controls,.roll-control-dev .dev-event-card-controls,.roll-control-dev .dev-cash-controls{display:grid;grid-template-columns:minmax(0,1fr) auto;min-width:0}
+  .roll-control-dev .dev-teleport-controls>label,.roll-control-dev .dev-event-card-controls>label,.roll-control-dev .dev-cash-controls>label:not(.dev-infinite-toggle),.roll-control-dev .dev-cash-controls>select,.roll-control-dev .dev-cash-controls>.dev-infinite-toggle{grid-column:1/-1}
+  .roll-control-dev .dev-teleport-controls>select,.roll-control-dev .dev-event-card-controls>select{grid-column:1;min-width:0;width:100%}
+  .roll-control-dev .dev-teleport-controls>button,.roll-control-dev .dev-event-card-controls>button{grid-column:2}
+  .roll-control-dev .dev-cash-amount{grid-column:1;min-width:0;justify-content:center}
+  .roll-control-dev .dev-cash-amount input{width:min(118px,32vw)}
+  .roll-control-dev .dev-cash-controls>button[type=submit]{grid-column:2}
+  .roll-control-dev .dev-cash-amount button{min-width:42px;min-height:42px}
+}
+
 button:disabled{opacity:.55;cursor:not-allowed}
 
 .scene-placeholder{position:absolute;inset:0;background:radial-gradient(ellipse at 54% 43%,rgba(117,144,99,.2),transparent 54%)}
@@ -1164,6 +1189,7 @@ button:disabled{opacity:.55;cursor:not-allowed}
 .screen-game .player-card-main{gap:5px;padding-top:8px}
 .screen-game .player-card-main strong{font-size:clamp(9px,.8vw,12px)}
 .screen-game .player-card-main b{overflow:hidden;text-overflow:clip;font-size:clamp(10px,1vw,15px);letter-spacing:-.045em}
+@media(min-width:1200px) and (max-height:800px){.screen-game .player-hud.player-count-6{grid-template-columns:repeat(6,minmax(0,1fr));gap:5px}.screen-game .player-hud.player-count-6 .player-card-slot .player-card{min-height:56px;padding:5px 6px}.screen-game .player-hud.player-count-6 .player-card-main{gap:3px;padding-top:5px}.screen-game .player-hud.player-count-6 .player-card-main b{font-size:clamp(10px,.9vw,13px)}}
 .screen-game .player-bot-control-label{top:3px;left:6px;font-size:5px}
 .screen-game .player-throw-control{flex-basis:34px}
 .screen-game .player-throw-button{width:34px;height:34px;border-radius:10px}
