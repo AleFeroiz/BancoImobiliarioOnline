@@ -1621,6 +1621,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
     this.state.activeCardTitle = card.title
     this.state.activeCardDescription = card.description
     this.state.activeCardId = card.id
+    this.state.activeCardUserName = player.name
     this.state.landingDescription = card.description
 
     if (['generous', 'blackout', 'earthquake', 'thief', 'protection', 'swap', 'communism'].includes(card.effect.kind)) {

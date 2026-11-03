@@ -84,6 +84,7 @@ button:disabled{opacity:.55;cursor:not-allowed}
 .screen-game .game-feedback-toast{top:clamp(104px,13vh,142px);bottom:auto;z-index:5;transform:translateX(-50%)}
 .screen-game .game-bottom{position:fixed;right:4vw;bottom:14px;left:4vw;z-index:5}
 .property-build-levels{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;margin:12px 0}
+.property-build-levels.hotel-purchase-levels{grid-template-columns:minmax(0,1fr)}
 .property-level-option{min-width:0;min-height:62px;display:grid;align-content:center;justify-items:center;gap:6px;padding:8px 6px;border:1px solid #d8ddcf;border-radius:10px;background:#f1f0e6;color:#445b47;text-align:center}
 .property-level-option span{font-size:11px;font-weight:700}
 .property-level-option small{font-size:9px;color:#7a8879;font-variant-numeric:tabular-nums}
@@ -518,6 +519,13 @@ button:disabled{opacity:.55;cursor:not-allowed}
 .world-cup-host-flag b{font-size:13px}
 .world-cup-host-flag small{font-size:6px;font-weight:900;letter-spacing:.08em}
 .property-blackout-badge{display:block;padding:3px 5px;border:1px solid #aeb5b2;border-radius:4px;background:#252b30eF;color:#f0f2ef;font-size:7px;font-weight:900;letter-spacing:.1em;box-shadow:0 2px 7px #0009}
+.property-protection-badge{display:block;padding:3px 5px;border:1px solid #9ee9ff;border-radius:4px;background:#123846ed;color:#d6f8ff;font-size:7px;font-weight:900;letter-spacing:.04em;box-shadow:0 2px 7px #0009;white-space:nowrap}
+.held-card{position:relative;pointer-events:auto;flex:none}
+.held-card>button{width:32px;height:36px;border:1px solid #d1b553;border-radius:7px;background:#fff8d8;color:#6d5720;font-size:17px;box-shadow:0 3px 10px #10231c44;cursor:pointer}
+.held-card>[role=tooltip]{position:absolute;z-index:50;right:0;top:calc(100% + 5px);display:none;width:150px;padding:7px 9px;border:1px solid #d4c276;border-radius:7px;background:#fff9df;color:#394b38;box-shadow:0 5px 16px #10231c55;text-align:left;pointer-events:none}
+.held-card:hover>[role=tooltip],.held-card:focus-within>[role=tooltip]{display:block}
+.held-card>[role=tooltip] b,.held-card>[role=tooltip] small{display:block}.held-card>[role=tooltip] b{font-size:10px}.held-card>[role=tooltip] small{margin-top:3px;font-size:9px;line-height:1.3}
+.card-user-attribution{display:block;margin:-2px 0 7px;color:#8d7141;font-size:10px;font-weight:800}
 @media(max-width:640px){
   .screen-game .topbar-right{gap:4px}
   .screen-game .topbar-right>span:nth-child(2){display:none}

@@ -658,8 +658,8 @@ function AnimatedBuilding({ spaceId, houses, ownerColor, ownerSessionId, reduced
   return (
     <group ref={group} position={[x + offsetX, BUILDING_GROUP_Y, z + offsetZ]} rotation={[0, buildingRotation, 0]}>
       {modelData && <primitive object={modelData.object} position={[0, getPropertyModelYOffset(displayHouses), 0]} scale={modelScale} />}
-      {blackoutTurns > 0 && <Html position={[0, 1.05, 0]} center distanceFactor={11} zIndexRange={[5, 0]} style={{ pointerEvents: 'none' }}><span className="property-blackout-badge">APAGÃO</span></Html>}
-      {protectionTurns > 0 && <group position={[0, 0.55, 0]} raycast={skipRaycast}><mesh><sphereGeometry args={[0.57, 20, 14]} /><meshBasicMaterial color="#8de5ff" transparent opacity={0.18} depthWrite={false} side={DoubleSide} /></mesh><mesh rotation={[Math.PI / 2, 0, 0]}><torusGeometry args={[0.56, 0.018, 6, 32]} /><meshBasicMaterial color="#baf3ff" transparent opacity={0.88} /></mesh><mesh position={[0, 0.3, 0]}><sphereGeometry args={[0.07, 8, 6]} /><meshBasicMaterial color="#e7fbff" /></mesh></group>}
+      {blackoutTurns > 0 && <Html position={[0, 1.05, 0]} center distanceFactor={11} zIndexRange={[5, 0]} style={{ pointerEvents: 'none' }}><span className="property-blackout-badge">APAGÃO · {blackoutTurns} VOLTAS</span></Html>}
+      {protectionTurns > 0 && <><group position={[0, 0.55, 0]} raycast={skipRaycast}><mesh><sphereGeometry args={[0.57, 20, 14]} /><meshBasicMaterial color="#8de5ff" transparent opacity={0.18} depthWrite={false} side={DoubleSide} /></mesh><mesh rotation={[Math.PI / 2, 0, 0]}><torusGeometry args={[0.56, 0.018, 6, 32]} /><meshBasicMaterial color="#baf3ff" transparent opacity={0.88} /></mesh><mesh position={[0, 0.3, 0]}><sphereGeometry args={[0.07, 8, 6]} /><meshBasicMaterial color="#e7fbff" /></mesh></group><Html position={[0, 1.2, 0]} center distanceFactor={11} zIndexRange={[5, 0]} style={{ pointerEvents: 'none' }}><span className="property-protection-badge">PROTEÇÃO · {protectionTurns} VOLTAS</span></Html></>}
     </group>
   )
 }

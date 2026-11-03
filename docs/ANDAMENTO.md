@@ -812,3 +812,8 @@
 - Implementado: companhias saíram da recompra forçada e das cartas com alvo direto no título; Comunismo divide a soma dos saldos entre duas pessoas solventes escolhidas; a Copa soma 0,25× por nova sede e afeta também companhias; o lobby retoma a cadeira offline pelo mesmo nome e código após esgotar as tentativas de token, preservando anfitrião e prontidão.
 - Validação: 356 testes em 62 arquivos e builds web/servidor passaram em `npm run verify`. O navegador local continuou bloqueado pela configuração Work (`Local browser use is disabled in Work settings`), então a revisão visual em partida ficou pendente. Ver `docs/VALIDACAO.md`.
 - Próximo passo: conferir visualmente a seleção do Comunismo, o rótulo da Copa e a retomada de conexão em uma sala real quando o navegador local estiver habilitado.
+# Cartas guardadas e marcadores de duração — implementação em andamento (2026-11-03)
+
+- Pedido: mostrar efeitos de cartas pendentes junto aos jogadores com tooltip; revelar carta, efeito e usuário a todos; contar voltas restantes de Apagão e Proteção sobre as cidades.
+- Implementado: efeitos pendentes de dobro/metade aparecem em ícones junto ao cartão de cada pessoa; revelação compartilhada identifica quem usou a carta; marcadores 3D indicam as voltas restantes.
+- Próximo passo: verificar build/testes e playtest no navegador, desktop e celular.

@@ -1022,3 +1022,6 @@
 
 - `npm run verify` passou com 62 arquivos e 356 testes; build web e build do servidor passaram. Regressões cobrem imunidade das companhias à recompra e às cartas com alvo, Comunismo com alvo inválido e divisão de saldos, quatro escolhas sucessivas de sede, aluguel de companhia com bônus da Copa e retomada da mesma cadeira no lobby.
 - Vite e Colyseus iniciaram nas portas 5173 e 2567. O navegador interno permaneceu indisponível com `Local browser use is disabled in Work settings`; não houve captura ou revisão visual desta mudança. Os dois servidores locais foram encerrados. O aviso conhecido de chunks acima de 500 kB permaneceu no build.
+# Cartas guardadas, uso de cartas e voltas restantes — 2026-11-03
+
+- `npm run verify` passou: 356 testes em 62 arquivos, builds web e servidor concluídos. Playtest local iniciou sala com bot e partida em http://127.0.0.1:5173; os estados aleatórios não acionaram cartas guardadas nem Apagão/Proteção, portanto a revisão visual específica desses estados continua pendente.
