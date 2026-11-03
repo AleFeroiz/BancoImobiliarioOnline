@@ -24,7 +24,8 @@ function createRoomCode() {
 }
 
 export class GameRoom extends Room<{ state: LobbyState }> {
-  maxClients = MAX_ROOM_PLAYERS
+  // Keep transport capacity for reconnecting sockets while the game still has six seats.
+  maxClients = MAX_ROOM_PLAYERS * 4
   state = new LobbyState()
   private auctionInterval?: ReturnType<typeof setInterval>
   private matchClockInterval?: ReturnType<typeof setInterval>
@@ -66,7 +67,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
   onAuth(_client: Client, options: { name?: unknown }) {
     const name = normalizePlayerName(options.name)
     if (!name) return false
-    if (this.state.status === 'waiting') return this.state.players.size < this.maxClients
+    if (this.state.status === 'waiting') return this.state.players.size < MAX_ROOM_PLAYERS
     if (this.state.status !== 'playing') return false
     return Array.from(this.state.players.values()).filter((player) => !player.isBot && !player.isConnected && player.name === name).length === 1
   }
@@ -190,7 +191,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
     },
     addBot: (client: Client) => {
       const requester = this.state.players.get(this.getPlayerSessionId(client))
-      if (this.state.status !== 'waiting' || !requester?.isHost || this.state.players.size >= this.maxClients) {
+      if (this.state.status !== 'waiting' || !requester?.isHost || this.state.players.size >= MAX_ROOM_PLAYERS) {
         client.send('room:error', { message: 'Só a pessoa anfitriã pode adicionar bots enquanto há lugares livres na sala.' })
         return
       }

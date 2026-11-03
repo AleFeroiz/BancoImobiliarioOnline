@@ -1,7 +1,23 @@
 import { describe, expect, it, vi } from 'vitest'
-import { configureRoomReconnection, recoverRoomAfterRetries, ROOM_RECONNECT_MAX_RETRIES } from './roomRecovery'
+import { clearLastRoom, configureRoomReconnection, readLastRoom, recoverRoomAfterRetries, ROOM_RECONNECT_MAX_RETRIES, saveLastRoom } from './roomRecovery'
 
 describe('room reconnection recovery', () => {
+  it('stores and restores the last room identity and token for a new visit', () => {
+    const values = new Map<string, string>()
+    const storage = { getItem: (key: string) => values.get(key) ?? null, setItem: (key: string, value: string) => { values.set(key, value) }, removeItem: (key: string) => { values.delete(key) } }
+    const lastRoom = { roomCode: 'ABCDE', name: 'Lia', reconnectionToken: 'secret-token' }
+    saveLastRoom(storage, lastRoom)
+    expect(readLastRoom(storage)).toEqual(lastRoom)
+    clearLastRoom(storage)
+    expect(readLastRoom(storage)).toBeNull()
+  })
+
+  it('ignores malformed saved rooms and unavailable storage', () => {
+    expect(readLastRoom({ getItem: () => '{broken' })).toBeNull()
+    expect(readLastRoom({ getItem: () => JSON.stringify({ roomCode: 'bad', name: 'Lia' }) })).toBeNull()
+    expect(readLastRoom(null)).toBeNull()
+    expect(() => saveLastRoom({ setItem: () => { throw new Error('blocked') } }, { roomCode: 'ABCDE', name: 'Lia', reconnectionToken: '' })).not.toThrow()
+  })
   it('keeps automatic retries active long enough for a temporary server outage', () => {
     const room = { reconnection: { maxRetries: 15, minUptime: 5000 } }
 

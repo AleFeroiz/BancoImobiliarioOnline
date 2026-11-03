@@ -1,3 +1,10 @@
+# Retomada de sala após queda e nova visita — 2026-11-03
+
+- Regressão Colyseus com seis conexões humanas: após queda com reserva de reconexão ativa, reentrada pelo mesmo código/nome falhava antes da correção com `room is locked`; passou após separar a capacidade de transporte do limite de seis cadeiras.
+- Testes de armazenamento local cobrem gravação, leitura, limpeza, valor inválido e indisponibilidade do armazenamento. O fluxo existente de token seguido de código/nome permanece coberto.
+- `npm run verify` passou: 61 arquivos, 344 testes, build Vite e build do servidor; aviso conhecido de chunks acima de 500 kB.
+- Playtest visual pendente: servidor Colyseus e Vite iniciaram nas portas 2567 e 5173, mas o navegador interno recusou abrir a URL local com `Local browser use is disabled in Work settings`. Ambos foram encerrados. Não há captura visual desta mudança.
+
 # 2026-11-03 — Revisão das telas da partida em celular
 
 - Revisão estática do CSS identificou a regra de paisagem que só era aplicada até 640 px e áreas de toque de 22 px nos cartões de jogador. A correção amplia os controles e adapta os painéis da partida, preservando a rolagem vertical em telas baixas.

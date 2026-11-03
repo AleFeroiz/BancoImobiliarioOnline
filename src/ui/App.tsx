@@ -5,7 +5,7 @@ import { getMatchEndSummary, type MatchEndReason } from '../../shared/game'
 import { EVENT_CARDS } from '../../shared/cards'
 import { scheduleSceneLoad } from './sceneLoading'
 import { roomClient } from './roomClient'
-import { configureRoomReconnection, recoverRoomAfterRetries } from './roomRecovery'
+import { clearLastRoom, configureRoomReconnection, readLastRoom, recoverRoomAfterRetries, saveLastRoom } from './roomRecovery'
 import { finalScoreMetrics, rankFinalScore, scoreCriteria } from './scoreCriteria'
 import { getLobbyPlayerEntries } from './lobbySnapshot'
 import { canAffordPurchase } from './purchaseActions'
@@ -120,10 +120,10 @@ function App() {
   const [targetBuildHouses, setTargetBuildHouses] = useState(1)
   const [landingPulseSpaceId, setLandingPulseSpaceId] = useState(-1)
   const [landingPulseSequence, setLandingPulseSequence] = useState(0)
-  const [name, setName] = useState('')
+  const [name, setName] = useState(() => readLastRoom(getLocalStorage())?.name ?? '')
   const [inviteRoomCode] = useState(() => getRoomInviteCode(typeof window === 'undefined' ? '' : window.location.search))
   const isRoomInvite = Boolean(inviteRoomCode)
-  const [roomCode, setRoomCode] = useState(inviteRoomCode ?? '')
+  const [roomCode, setRoomCode] = useState(() => inviteRoomCode ?? readLastRoom(getLocalStorage())?.roomCode ?? '')
   const [roomInviteUrl, setRoomInviteUrl] = useState('')
   const [roomInviteCopied, setRoomInviteCopied] = useState(false)
   const [mode, setMode] = useState<Mode>('classic')
@@ -199,6 +199,7 @@ function App() {
   const [isConnecting, setIsConnecting] = useState(false)
   const activeRoom = useRef<Room | null>(null)
   const recoveringRoom = useRef<Room | null>(null)
+  const autoReconnectAttempted = useRef(false)
   const fpsSamples = useRef(createFrameRateAccumulator())
   const previousFeedbackSnapshot = useRef<{ description: string; diceSequence: number; turnPhase: TurnPhase; players: Map<string, { cash: number; position: number }>; properties: Map<string, PropertyHolding> } | null>(null)
   const pendingLandingSound = useRef<GameSound | null>(null)
@@ -207,6 +208,28 @@ function App() {
   const throwTimeouts = useRef(new Map<number, number>())
   const impactTimeouts = useRef(new Map<number, number>())
   const earthquakeTimeouts = useRef(new Map<number, number>())
+  useEffect(() => {
+    if (autoReconnectAttempted.current || inviteRoomCode) return
+    autoReconnectAttempted.current = true
+    const lastRoom = readLastRoom(getLocalStorage())
+    if (!lastRoom) return
+    setIsConnecting(true)
+    setIsReconnecting(true)
+    void recoverRoomAfterRetries(
+      () => lastRoom.reconnectionToken ? roomClient.reconnect(lastRoom.reconnectionToken) : Promise.reject(new Error('No saved token')),
+      () => roomClient.joinById(lastRoom.roomCode, { name: lastRoom.name }),
+    ).then(({ room: recovered }) => {
+      if (recovered) {
+        setName(lastRoom.name)
+        connectToRoom(recovered, lastRoom.name)
+      } else {
+        setError('Não foi possível retomar a última sala. Confira o código e o nome ou entre em outra sala.')
+      }
+    }).finally(() => {
+      setIsConnecting(false)
+      setIsReconnecting(false)
+    })
+  }, [inviteRoomCode])
   useEffect(() => {
     setSelectedCardPropertyId(null)
     setFirstSwapTargetId('')
@@ -643,7 +666,11 @@ function App() {
       if (typeof payload?.cardId === 'string') setDevArmedEventCardId((current) => current === payload.cardId ? '' : current)
     })
     const handleDrop = () => setIsReconnecting(true)
-    const handleReconnect = () => setIsReconnecting(false)
+    const handleReconnect = () => {
+      setIsReconnecting(false)
+      const playerName = readLastRoom(getLocalStorage())?.name ?? name.trim()
+      saveLastRoom(getLocalStorage(), { roomCode: room.roomId, name: playerName, reconnectionToken: room.reconnectionToken })
+    }
     const handlePlayerEmote = (payload: { sessionId?: unknown; emote?: unknown }) => {
       if (typeof payload?.sessionId !== 'string' || !isPlayerEmote(payload.emote)) return
       const sessionId = payload.sessionId
@@ -712,7 +739,7 @@ function App() {
         if (recoveringRoom.current === room) return
         recoveringRoom.current = room
         setIsReconnecting(true)
-        const playerName = room.state.players.get(room.sessionId)?.name ?? name.trim()
+        const playerName = readLastRoom(getLocalStorage())?.name ?? room.state.players.get(room.sessionId)?.name ?? name.trim()
         const recovery = await recoverRoomAfterRetries(
           () => roomClient.reconnect(room.reconnectionToken),
           () => roomClient.joinById(room.roomId, { name: playerName }),
@@ -724,6 +751,7 @@ function App() {
         }
         if (recovery.room) {
           configureRoomReconnection(recovery.room)
+          saveLastRoom(getLocalStorage(), { roomCode: recovery.room.roomId, name: playerName, reconnectionToken: recovery.room.reconnectionToken })
           previousFeedbackSnapshot.current = null
           activeRoom.current = recovery.room
           setRoom(recovery.room)
@@ -807,21 +835,26 @@ function App() {
     setAuctionBidAmount((current) => normalizeAuctionBidInput(current, auctionMinimumBid))
   }, [auctionId, auctionMinimumBid])
 
+  function connectToRoom(nextRoom: Room, playerName: string) {
+    configureRoomReconnection(nextRoom)
+    saveLastRoom(getLocalStorage(), { roomCode: nextRoom.roomId, name: playerName, reconnectionToken: nextRoom.reconnectionToken })
+    previousFeedbackSnapshot.current = null
+    setIsReconnecting(false)
+    activeRoom.current = nextRoom
+    setRoom(nextRoom)
+    setRoomCode(nextRoom.roomId)
+    setRoomInviteUrl('')
+    setRoomInviteCopied(false)
+    setScreen('room')
+  }
+
   async function createRoom() {
     if (!name.trim()) return setError('Escolha um nome para continuar.')
     setIsConnecting(true)
     setError('')
     try {
       const nextRoom = await roomClient.create('game_room', { mode, matchDuration, name: name.trim() })
-      configureRoomReconnection(nextRoom)
-      previousFeedbackSnapshot.current = null
-      setIsReconnecting(false)
-      activeRoom.current = nextRoom
-      setRoom(nextRoom)
-      setRoomCode(nextRoom.roomId)
-      setRoomInviteUrl('')
-      setRoomInviteCopied(false)
-      setScreen('room')
+      connectToRoom(nextRoom, name.trim())
     } catch {
       setError('Não foi possível criar a sala. Confira se o servidor está disponível e tente novamente.')
     } finally {
@@ -837,15 +870,7 @@ function App() {
     setError('')
     try {
       const nextRoom = await roomClient.joinById(normalizedRoomCode, { name: name.trim() })
-      configureRoomReconnection(nextRoom)
-      previousFeedbackSnapshot.current = null
-      setIsReconnecting(false)
-      activeRoom.current = nextRoom
-      setRoom(nextRoom)
-      setRoomCode(nextRoom.roomId)
-      setRoomInviteUrl('')
-      setRoomInviteCopied(false)
-      setScreen('room')
+      connectToRoom(nextRoom, name.trim())
     } catch {
       setError('Não encontrei essa sala. Confira o código e tente novamente.')
     } finally {
@@ -870,6 +895,7 @@ function App() {
   }
 
   async function leaveRoom() {
+    clearLastRoom(getLocalStorage())
     const currentRoom = activeRoom.current
     activeRoom.current = null
     setRoom(null)

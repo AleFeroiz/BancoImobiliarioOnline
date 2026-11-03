@@ -511,6 +511,25 @@ describe('sala privada', () => {
     await expect(emote).resolves.toMatchObject({ sessionId: oldSessionId })
   })
 
+  it('permite retomar uma cadeira offline mesmo quando os seis lugares estão ocupados', async () => {
+    const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
+    const host = await colyseus.connectTo(room, { name: 'Lia' })
+    for (let index = 0; index < 5; index++) await colyseus.connectTo(room, { name: `Pessoa ${index + 1}` })
+    const started = new Promise<void>((resolve) => host.onMessage('game:started', () => resolve()))
+    markPlayersReady(room)
+    host.send('start')
+    await started
+
+    host.reconnection.enabled = false
+    void host.leave(false)
+    await waitFor(() => room.state.players.get(host.sessionId)?.isConnected === false)
+
+    const returning = await colyseus.sdk.joinById(room.roomId, { name: 'Lia' })
+    await waitFor(() => room.state.players.get(host.sessionId)?.controllerSessionId === returning.sessionId)
+    expect(room.state.players.size).toBe(6)
+    expect(room.state.players.get(host.sessionId)?.isBotControlled).toBe(false)
+  })
+
   it('resolve a dívida da pessoa desconectada e devolve o controle na reconexão', async () => {
     const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
     const host = await colyseus.connectTo(room, { name: 'Lia' })

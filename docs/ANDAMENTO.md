@@ -1,3 +1,13 @@
+# Retomada de sala após queda e nova visita — implementação concluída (2026-11-03)
+
+- Pedido: permitir reentrada com mesmo nome/código após queda e tentar automaticamente a última sala ao reabrir o site.
+- Estado inicial: `main` alinhada com `origin/main` antes do `git fetch` (o sandbox negou escrita em `.git/FETCH_HEAD`); mudanças locais preexistentes em `assets/blender/special-corners.blend` e `.blend1` fora do escopo.
+- Descoberta: o cliente só guarda a sessão em memória; o servidor usa `maxClients = 6`, de modo que reservas de reconexão podem manter uma sala cheia bloqueada antes de `onAuth`, mesmo quando uma cadeira está offline.
+- Implementado: sala conserva seis cadeiras e reserva capacidade para conexões temporárias; o navegador salva a última sala, nome e token e tenta retomar ao abrir o site.
+- Validação: teste de regressão falhou antes da correção com “room is locked” e passou depois; `npm run verify` passou com 61 arquivos, 344 testes e builds web/servidor.
+- Playtest visual pendente: o navegador interno recusou a URL local com `Local browser use is disabled in Work settings`; os servidores de teste foram encerrados. Ver `docs/VALIDACAO.md`.
+- Próximo passo: revisar a retomada ao reabrir o site e a reentrada manual em uma partida real quando o navegador local estiver disponível.
+
 # Revisão das telas da partida em celular — implementação concluída (2026-11-03)
 
 - Escopo confirmado pelo usuário: somente telas dentro da partida; home e lobby ficam fora.
