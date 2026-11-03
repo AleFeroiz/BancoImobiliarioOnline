@@ -473,6 +473,13 @@ export class GameRoom extends Room<{ state: LobbyState }> {
         property.ownerSessionId = this.getPlayerSessionId(client)
         this.state.landingDescription += ` ${space.name} recomprada por ${price.toLocaleString('pt-BR')}; o valor integral da recompra foi pago ao antigo proprietário.`
         if (this.checkMonopolyVictory(this.getPlayerSessionId(client))) return
+        this.state.pendingPropertyId = propertyId
+        if (space.buildable && this.canImproveOwnedProperty(this.getPlayerSessionId(client), propertyId)) {
+          this.state.turnPhase = 'buyback-upgrade'
+          this.state.turnSeconds = TURN_DECISION_SECONDS
+          this.turnTimerKey = `${this.state.turnNumber}:${this.getPlayerSessionId(client)}:buyback-upgrade`
+          return
+        }
       } else {
         this.state.landingDescription += ' Você escolheu continuar sem recomprar; o aluguel já foi pago.'
       }
@@ -509,7 +516,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       this.finishExpiredPhaseIfReady()
     },
     build: (client: Client, payload: { propertyId?: unknown; targetHouses?: unknown; hotel?: unknown }) => {
-      if (this.state.status !== 'playing' || this.state.turnPhase !== 'resolve' || this.getPlayerSessionId(client) !== this.state.activePlayerSessionId) return
+      if (this.state.status !== 'playing' || !['resolve', 'buyback-upgrade'].includes(this.state.turnPhase) || this.getPlayerSessionId(client) !== this.state.activePlayerSessionId) return
       const propertyId = typeof payload?.propertyId === 'number' ? payload.propertyId : -1
       const player = this.state.players.get(this.getPlayerSessionId(client))
       const property = this.state.properties.get(String(propertyId))
@@ -548,6 +555,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
         this.state.landingDescription = `${targetHouses} ${targetHouses === 1 ? 'casa construída' : 'casas construídas'} em ${space.name} por ${cost.toLocaleString('pt-BR')}.`
       }
       this.state.pendingPropertyId = 255
+      this.state.turnPhase = 'resolve'
       this.finishExpiredPhaseIfReady()
     },
     sellBuilding: (client: Client, payload: { propertyId?: unknown }) => {
@@ -807,7 +815,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       this.clearAuction(true)
     },
     finishTurn: (client: Client) => {
-      if (this.state.status !== 'playing' || !['resolve', 'jail'].includes(this.state.turnPhase)) return
+      if (this.state.status !== 'playing' || !['resolve', 'jail', 'buyback-upgrade'].includes(this.state.turnPhase)) return
       if (this.getPlayerSessionId(client) !== this.state.activePlayerSessionId) {
         client.send('room:error', { message: 'Somente a pessoa da vez pode concluir a jogada.' })
         return
@@ -874,19 +882,12 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       const passesStart = distance > 0 && startPosition + distance >= boardSpaces.length
       const travelDescription = `Volta ao Brasil: sua peça viajou para ${space.name}.${passesStart ? ` Passou pela Partida e recebeu R$ ${START_BONUS.toLocaleString('pt-BR')}.` : ''}`
       player.position = spaceId
-      this.state.pawnMoveMode = 'teleport'
-      this.state.turnPhase = 'moving'
       this.state.landingDescription = travelDescription
       if (passesStart) {
         this.creditCash(player, START_BONUS)
+        this.advanceOwnedEffectsOnLap(this.getPlayerSessionId(client))
       }
-      this.state.presentationSpeed = this.state.animationSpeed
-      this.schedulePresentation(getAnimationDuration(PAWN_TELEPORT_ANIMATION_DURATION_MS, this.state.presentationSpeed), () => {
-        if (this.state.turnPhase !== 'moving' || this.state.activePlayerSessionId !== this.getPlayerSessionId(client) || player.position !== spaceId) return
-        this.state.pawnMoveMode = 'walk'
-        this.resolveSpace(this.getPlayerSessionId(client), player, true, `Volta ao Brasil: chegada em ${space.name}.${passesStart ? ` Passou pela Partida e recebeu R$ ${START_BONUS.toLocaleString('pt-BR')}.` : ''}`)
-        this.finishExpiredPhaseIfReady()
-      })
+      this.startPawnMovement(this.getPlayerSessionId(client), player, startPosition, travelDescription)
     },
     resolveCardTarget: (client: Client, payload: { propertyId?: unknown; targetSessionId?: unknown; secondSessionId?: unknown }) => {
       const actorId = this.getPlayerSessionId(client)
@@ -920,7 +921,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
         }
         property.blackoutTurns = 3
         this.broadcast('game:city-effect', { id: ++this.throwSequence, spaceId: propertyId, effect: 'blackout' })
-        this.state.landingDescription = `${boardSpaces[propertyId].name} ficará sem aluguel nos próximos três turnos de ${target!.name}.`
+        this.state.landingDescription = `${boardSpaces[propertyId].name} ficará sem aluguel até ${target!.name} completar três voltas no tabuleiro.`
       } else if (card.effect.kind === 'earthquake') {
         if (space?.kind !== 'property' || !property || property.ownerSessionId !== targetId || !validTarget || property.houses === PROPERTY_HOTEL_LEVEL || cardBlocked) {
           invalid('Escolha um imóvel sem hotel e sem proteção que pertença a outra pessoa.')
@@ -944,9 +945,9 @@ export class GameRoom extends Room<{ state: LobbyState }> {
           invalid('Escolha um imóvel seu.')
           return
         }
-        property.protectionTurns = Math.max(property.protectionTurns, 4)
+        property.protectionTurns = Math.max(property.protectionTurns, 3)
         this.broadcast('game:city-effect', { id: ++this.throwSequence, spaceId: propertyId, effect: 'protection' })
-        this.state.landingDescription = `${boardSpaces[propertyId].name} está protegida contra cartas pelos próximos três turnos do dono.`
+        this.state.landingDescription = `${boardSpaces[propertyId].name} está protegida contra cartas até o dono completar três voltas no tabuleiro.`
       } else if (card.effect.kind === 'swap') {
         const secondId = typeof payload?.secondSessionId === 'string' ? payload.secondSessionId : ''
         const second = this.state.players.get(secondId)
@@ -1051,7 +1052,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       this.state.turnSeconds = phase === 'roll'
         ? TURN_ROLL_SECONDS
       : phase === 'card-target' ? (this.cardTargetRevealPending ? CARD_REVEAL_SECONDS : CARD_TARGET_SECONDS)
-      : ['purchase', 'buyback', 'company-roll', 'resolve', 'jail', 'world-cup', 'world-tour', 'debt'].includes(phase) ? TURN_DECISION_SECONDS : 0
+      : ['purchase', 'buyback', 'buyback-upgrade', 'company-roll', 'resolve', 'jail', 'world-cup', 'world-tour', 'debt'].includes(phase) ? TURN_DECISION_SECONDS : 0
       return
     }
     if (phase === 'card-target' && this.cardTargetRevealPending) {
@@ -1067,7 +1068,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       }
       return
     }
-    if (this.state.turnSeconds === 0 || !['roll', 'purchase', 'buyback', 'company-roll', 'start-upgrade', 'resolve', 'jail', 'world-cup', 'world-tour', 'card-target', 'debt'].includes(phase)) return
+    if (this.state.turnSeconds === 0 || !['roll', 'purchase', 'buyback', 'buyback-upgrade', 'company-roll', 'start-upgrade', 'resolve', 'jail', 'world-cup', 'world-tour', 'card-target', 'debt'].includes(phase)) return
     this.state.turnSeconds -= 1
     if (this.state.turnSeconds > 0) return
 
@@ -1079,6 +1080,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
     else if (phase === 'company-roll') this.messages.rollCompany(client)
     else if (phase === 'purchase') this.messages.declinePurchase(client)
     else if (phase === 'buyback') this.messages.buyback(client, { accept: false })
+    else if (phase === 'buyback-upgrade') this.messages.finishTurn(client)
     else if (phase === 'start-upgrade') this.messages.startUpgrade(client, { accept: false })
     else if (phase === 'resolve') this.messages.finishTurn(client)
     else if (phase === 'jail') this.messages.finishTurn(client)
@@ -1158,21 +1160,23 @@ export class GameRoom extends Room<{ state: LobbyState }> {
     const sessionId = this.state.activePlayerSessionId
     const player = this.state.players.get(sessionId)
     if (!player) return
-    const propertyId = this.state.pendingPropertyId
-    const property = this.state.properties.get(String(propertyId))
-    if (property?.ownerSessionId === sessionId && player.position === propertyId && boardSpaces[propertyId]?.buildable) {
-      const holdings = this.getHoldings()
-      const canImprove = property.houses === PROPERTY_BUILD_LEVELS
-        ? player.hasCompletedFirstLap && canBuildHotel(propertyId, sessionId, holdings, this.availableCash(player))
-        : [1, 2, 3].some((level) => level > property.houses && canBuildLevelAfterFirstLap(player.hasCompletedFirstLap, level) && canBuildProperty(propertyId, sessionId, holdings, this.availableCash(player), level))
-      if (canImprove) return
-    }
+    if (this.canImproveOwnedProperty(sessionId, this.state.pendingPropertyId)) return
     const key = `${this.state.turnNumber}:${sessionId}:${this.state.diceSequence}:${this.state.landingDescription}`
     if (key === this.autoFinishKey) return
     this.autoFinishKey = key
     this.schedulePresentation(1_100, () => {
       if (this.state.turnPhase === 'resolve' && this.state.activePlayerSessionId === sessionId) this.messages.finishTurn({ sessionId, send: () => undefined } as unknown as Client)
     })
+  }
+
+  private canImproveOwnedProperty(sessionId: string, propertyId: number) {
+    const player = this.state.players.get(sessionId)
+    const property = this.state.properties.get(String(propertyId))
+    if (!player || !property || property.ownerSessionId !== sessionId || player.position !== propertyId || !boardSpaces[propertyId]?.buildable) return false
+    const holdings = this.getHoldings()
+    return property.houses === PROPERTY_BUILD_LEVELS
+      ? player.hasCompletedFirstLap && canBuildHotel(propertyId, sessionId, holdings, this.availableCash(player))
+      : [1, 2, 3].some((level) => level > property.houses && canBuildLevelAfterFirstLap(player.hasCompletedFirstLap, level) && canBuildProperty(propertyId, sessionId, holdings, this.availableCash(player), level))
   }
 
   private stopClocks() {
@@ -1254,6 +1258,14 @@ export class GameRoom extends Room<{ state: LobbyState }> {
         .every((candidate) => candidate.id === propertyId || this.state.properties.get(String(candidate.id))?.ownerSessionId === sessionId))
       const price = property ? forcedBuybackCost(propertyId, property.houses) : Number.POSITIVE_INFINITY
       this.messages.buyback(client, { accept: Boolean(property && shouldBotBuyback(price, botCash, completesGroup)) })
+    } else if (this.state.turnPhase === 'buyback-upgrade') {
+      const propertyId = this.state.pendingPropertyId
+      const property = this.state.properties.get(String(propertyId))
+      const level = property?.houses === PROPERTY_BUILD_LEVELS ? PROPERTY_HOTEL_LEVEL : (property?.houses ?? 0) + 1
+      const cost = level === PROPERTY_HOTEL_LEVEL ? hotelConstructionCost(propertyId) : constructionCost(propertyId)
+      if (property && this.canImproveOwnedProperty(sessionId, propertyId) && botCash - cost >= 150_000) {
+        this.messages.build(client, { propertyId, ...(level === PROPERTY_HOTEL_LEVEL ? { hotel: true } : { targetHouses: level }) })
+      } else this.messages.finishTurn(client)
     } else if (this.state.turnPhase === 'purchase') {
       const space = boardSpaces[this.state.pendingPropertyId]
       const groupSpaces = space?.kind === 'property' ? boardSpaces.filter((candidate) => candidate.kind === 'property' && candidate.color === space.color) : []
@@ -1452,12 +1464,6 @@ export class GameRoom extends Room<{ state: LobbyState }> {
   private advanceTurn() {
     this.consecutiveDoubles = 0
     this.lastRollWasDouble = false
-    const endingSessionId = this.state.activePlayerSessionId
-    for (const property of this.state.properties.values()) {
-      if (property.ownerSessionId !== endingSessionId) continue
-      property.blackoutTurns = Math.max(0, property.blackoutTurns - 1)
-      property.protectionTurns = Math.max(0, property.protectionTurns - 1)
-    }
     this.state.pendingPropertyId = 255
     this.state.pawnMoveMode = 'walk'
     const roomPlayerIds = Array.from(this.state.players.entries()).map(([sessionId]) => sessionId)
@@ -1704,6 +1710,15 @@ export class GameRoom extends Room<{ state: LobbyState }> {
     if (player.position < previousPosition) {
       player.hasCompletedFirstLap = true
       this.creditCash(player, START_BONUS)
+      this.advanceOwnedEffectsOnLap(sessionId)
+    }
+  }
+
+  private advanceOwnedEffectsOnLap(sessionId: string) {
+    for (const property of this.state.properties.values()) {
+      if (property.ownerSessionId !== sessionId) continue
+      property.blackoutTurns = Math.max(0, property.blackoutTurns - 1)
+      property.protectionTurns = Math.max(0, property.protectionTurns - 1)
     }
   }
 
@@ -1784,7 +1799,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
         const ownership = new Map(Array.from(this.state.properties.entries()).map(([id, item]) => [Number(id), item.ownerSessionId]))
         const rent = calculateRent(space.id, ownership, property.houses, this.state.worldCupSpaceId, this.getFestivalSpaceIds())
         if (owner && property.blackoutTurns > 0 && property.houses !== PROPERTY_HOTEL_LEVEL) {
-          this.state.landingDescription += ` ${space.name} está em apagão; não há aluguel por ${property.blackoutTurns} turno(s) do dono.`
+          this.state.landingDescription += ` ${space.name} está em apagão; não há aluguel por mais ${property.blackoutTurns} volta(s) do dono.`
         } else if (owner && space.company) {
           this.pendingCompanyRent = { sessionId, ownerSessionId: property.ownerSessionId, spaceId: space.id, rentPerPip: calculateCompanyRent(ownership, property.ownerSessionId, 1) }
           this.state.turnPhase = 'company-roll'

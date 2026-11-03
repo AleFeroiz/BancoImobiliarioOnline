@@ -48,7 +48,7 @@ Este documento descreve somente as regras atuais do BANTEC. Referências ao Expr
 - **Partida:** ao passar ou chegar, recebe R$ 300.000. Ao parar exatamente nela, uma cidade própria aleatória sem hotel é selecionada para oferecer uma melhoria de um nível pelo custo normal; aceitar debita o custo ao jogador, recusar não altera o imóvel. Apenas passar pela Partida não ativa essa oferta.
 - **Prisão:** pode aguardar um turno, tentar sair com duplas ou pagar R$ 200.000 e lançar no mesmo turno. Uma tentativa sem duplas consome o turno preso; depois de três turnos, sai automaticamente. Duplas tentadas para sair não concedem uma rolagem extra.
 - **Copa do Mundo:** escolhe uma propriedade própria para sediar a Copa; ela cobra duas vezes o aluguel normal até a sede mudar. Sem propriedade própria elegível, não há nova sede. A escolha usa o tabuleiro e destaca as opções válidas.
-- **Volta ao Brasil:** ao chegar, escolhe no tabuleiro uma propriedade própria, uma propriedade livre ou uma casa especial para visitar; a chegada é resolvida normalmente. O bônus de R$ 300.000 só é pago se o trajeto escolhido passar pela Partida. A carta Volta ao Brasil paga o bônus apenas quando o caminho até o canto cruzar a Partida.
+- **Volta ao Brasil:** ao chegar, escolhe no tabuleiro uma propriedade própria, uma propriedade livre ou uma casa especial para visitar; a chegada é resolvida normalmente. A peça percorre as casas sempre para a frente; quando o destino fica atrás, ela completa o restante do circuito e passa pela Partida antes de chegar. O bônus de R$ 300.000 só é pago se o trajeto escolhido passar pela Partida. A carta Volta ao Brasil paga o bônus apenas quando o caminho até o canto cruzar a Partida.
 
 ## Cartas Sorte ou Revés
 
@@ -56,10 +56,10 @@ O servidor sorteia com reposição entre estas quatorze cartas autorais:
 
 1. **Generoso:** transfira uma propriedade sua para outra pessoa à sua escolha.
 2. **Aniversário:** receba R$ 50.000 de cada outro participante.
-3. **Apagão:** escolha uma propriedade de outra pessoa; ela fica sem cobrar aluguel durante três turnos do dono. Hotel não pode ser alvo.
+3. **Apagão:** escolha uma propriedade de outra pessoa; ela fica sem cobrar aluguel até o dono completar três voltas no tabuleiro. Hotel não pode ser alvo.
 4. **Terremoto:** escolha uma propriedade de outra pessoa e destrua-a. Hotel não pode ser alvo; a propriedade destruída volta ao banco.
 5. **Ladrão:** escolha uma pessoa e roube R$ 200.000 dela.
-6. **Proteção:** escolha uma propriedade sua; por três turnos do dono, nenhum efeito de carta pode afetá-la.
+6. **Proteção:** escolha uma propriedade sua; até completar três voltas no tabuleiro, nenhum efeito de carta pode afetá-la.
 7. **Prisão:** vá para a Prisão e aplique as opções normais desse canto.
 8. **Volta ao Brasil:** vá para o canto Volta ao Brasil e escolha um destino válido. Receba R$ 300.000 se o caminho até o canto cruzar a Partida.
 9. **Sede da Copa:** vá para a Copa do Mundo e escolha uma propriedade própria elegível.
@@ -69,7 +69,7 @@ O servidor sorteia com reposição entre estas quatorze cartas autorais:
 13. **Aluguel em dobro:** pague duas vezes o próximo aluguel devido, seja de cidade ou companhia.
 14. **Desconto no aluguel:** pague metade do próximo aluguel devido, seja de cidade ou companhia.
 
-Proteção bloqueia qualquer efeito de carta, inclusive Generoso. Apagão e Proteção duram os três próximos turnos do dono. As cartas de dobro e desconto se acumulam multiplicativamente e são consumidas juntas no próximo aluguel devido; duas cartas pendentes de efeitos opostos se cancelam. Elas também modificam aluguéis de companhias e incidem sobre o valor final após os demais multiplicadores. Se o relógio expirar durante uma escolha de carta, o servidor sorteia uma das opções válidas; se não houver opção, encerra o efeito. A seleção manual de qualquer propriedade-alvo acontece diretamente no tabuleiro com o padrão de opções iluminadas/apagadas; alvos que sejam pessoas são selecionados pelos controles de participantes.
+Proteção bloqueia qualquer efeito de carta, inclusive Generoso. Apagão e Proteção duram até o dono passar três vezes pela Partida avançando pelo percurso do tabuleiro, inclusive na Volta ao Brasil; jogar uma vez sem cruzá-la não reduz o efeito. Prisão continua contando turnos. As cartas de dobro e desconto se acumulam multiplicativamente e são consumidas juntas no próximo aluguel devido; duas cartas pendentes de efeitos opostos se cancelam. Elas também modificam aluguéis de companhias e incidem sobre o valor final após os demais multiplicadores. Se o relógio expirar durante uma escolha de carta, o servidor sorteia uma das opções válidas; se não houver opção, encerra o efeito. A seleção manual de qualquer propriedade-alvo acontece diretamente no tabuleiro com o padrão de opções iluminadas/apagadas; alvos que sejam pessoas são selecionados pelos controles de participantes.
 
 ## Ações durante a partida
 

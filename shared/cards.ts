@@ -24,10 +24,10 @@ export type EventCard = {
 export const EVENT_CARDS: readonly EventCard[] = [
   { id: 'generous', title: 'Generoso', description: 'Escolha uma propriedade sua e dê a outro jogador.', effect: { kind: 'generous' } },
   { id: 'birthday', title: 'Aniversário', description: 'Receba R$ 50.000 de cada outro jogador.', effect: { kind: 'birthday', amount: 50_000 } },
-  { id: 'blackout', title: 'Apagão', description: 'Escolha uma propriedade de outro jogador. Ela não cobrará aluguel pelos próximos três turnos do dono. Hotéis não podem ser escolhidos.', effect: { kind: 'blackout' } },
+  { id: 'blackout', title: 'Apagão', description: 'Escolha uma propriedade de outro jogador. Ela não cobrará aluguel até o dono completar três voltas. Hotéis não podem ser escolhidos.', effect: { kind: 'blackout' } },
   { id: 'earthquake', title: 'Terremoto', description: 'Escolha uma propriedade de outro jogador e destrua-a. Ela volta ao banco. Hotéis não podem ser escolhidos.', effect: { kind: 'earthquake' } },
   { id: 'thief', title: 'Ladrão', description: 'Escolha um jogador e roube R$ 200.000 dele.', effect: { kind: 'thief', amount: 200_000 } },
-  { id: 'protection', title: 'Proteção', description: 'Escolha uma propriedade sua. Por três turnos do dono, cartas não podem afetá-la.', effect: { kind: 'protection' } },
+  { id: 'protection', title: 'Proteção', description: 'Escolha uma propriedade sua. Até você completar três voltas, cartas não podem afetá-la.', effect: { kind: 'protection' } },
   { id: 'jail', title: 'Vá para a prisão', description: 'Vá para a prisão e resolva o canto normalmente.', effect: { kind: 'jail' } },
   { id: 'world-tour', title: 'Volta ao Brasil', description: 'Vá para Volta ao Brasil, receba R$ 300.000 se cruzar a Partida e escolha seu destino.', effect: { kind: 'world-tour' } },
   { id: 'world-cup', title: 'Sede da Copa do Mundo', description: 'Vá para a sede da Copa do Mundo e resolva o canto normalmente.', effect: { kind: 'world-cup' } },

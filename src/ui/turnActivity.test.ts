@@ -40,11 +40,14 @@ describe('atividade do jogador da vez', () => {
     expect(shouldSuppressTurnCardForFeedback(true, 'roll')).toBe(true)
     expect(shouldSuppressTurnCardForFeedback(true, 'start-upgrade')).toBe(false)
     expect(shouldShowTurnCard(true, 'start-upgrade', true)).toBe(true)
+    expect(shouldShowTurnCard(true, 'debt', true)).toBe(true)
+    expect(shouldShowTurnCard(true, 'buyback-upgrade', true)).toBe(true)
   })
 
   it('não deixa uma inspeção antiga esconder o painel de compra, mesmo sem saldo suficiente', () => {
     expect(shouldSuppressTurnCardForSpaceSelection(true, 'purchase', false, false, false)).toBe(false)
     expect(shouldSuppressTurnCardForSpaceSelection(true, 'resolve', false, false, false)).toBe(true)
+    expect(shouldSuppressTurnCardForSpaceSelection(true, 'debt', false, false, false)).toBe(false)
   })
 
   it('libera o tabuleiro durante qualquer escolha válida e mantém a revelação da carta por cima', () => {

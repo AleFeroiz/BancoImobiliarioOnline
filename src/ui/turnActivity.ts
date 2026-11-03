@@ -1,4 +1,4 @@
-type ActivityPhase = 'roll' | 'rolling' | 'moving' | 'resolve' | 'purchase' | 'buyback' | 'start-upgrade' | 'company-roll' | 'jail' | 'world-cup' | 'world-tour' | 'card-target' | 'debt' | 'ended'
+type ActivityPhase = 'roll' | 'rolling' | 'moving' | 'resolve' | 'purchase' | 'buyback' | 'buyback-upgrade' | 'start-upgrade' | 'company-roll' | 'jail' | 'world-cup' | 'world-tour' | 'card-target' | 'debt' | 'ended'
 
 export function isBoardSelectionGuidanceActive(hasBoardChoice: boolean, showingCardReveal: boolean) {
   return hasBoardChoice && !showingCardReveal
@@ -6,15 +6,15 @@ export function isBoardSelectionGuidanceActive(hasBoardChoice: boolean, showingC
 
 export function shouldShowTurnCard(isMyTurn: boolean, phase: ActivityPhase, hasActiveCardTitle = false, isPresentationAnimating = false) {
   if (phase === 'ended') return true
-  return isMyTurn && !isPresentationAnimating && !['roll', 'company-roll', 'resolve', 'world-cup', 'world-tour'].includes(phase) && (!hasActiveCardTitle || phase === 'card-target' || phase === 'start-upgrade')
+  return isMyTurn && !isPresentationAnimating && !['roll', 'company-roll', 'resolve', 'world-cup', 'world-tour'].includes(phase) && (!hasActiveCardTitle || ['card-target', 'start-upgrade', 'buyback-upgrade', 'debt'].includes(phase))
 }
 
 export function shouldSuppressTurnCardForFeedback(feedbackPending: boolean, phase: ActivityPhase) {
-  return phase !== 'ended' && feedbackPending && !['purchase', 'buyback', 'start-upgrade', 'jail', 'debt'].includes(phase)
+  return phase !== 'ended' && feedbackPending && !['purchase', 'buyback', 'buyback-upgrade', 'start-upgrade', 'jail', 'debt'].includes(phase)
 }
 
 export function shouldSuppressTurnCardForSpaceSelection(hasSelectedSpace: boolean, phase: ActivityPhase, ownPropertyLanding: boolean, showPropertyPanel: boolean, showObjectivePanel: boolean) {
-  return hasSelectedSpace && phase !== 'ended' && phase !== 'purchase' && phase !== 'buyback' && phase !== 'start-upgrade' && !ownPropertyLanding && !showPropertyPanel && !showObjectivePanel
+  return hasSelectedSpace && phase !== 'ended' && phase !== 'purchase' && phase !== 'buyback' && phase !== 'buyback-upgrade' && phase !== 'start-upgrade' && phase !== 'debt' && !ownPropertyLanding && !showPropertyPanel && !showObjectivePanel
 }
 
 export function getTurnActivityLabel(phase: ActivityPhase) {
@@ -24,6 +24,7 @@ export function getTurnActivityLabel(phase: ActivityPhase) {
     case 'moving': return 'Movendo o peão'
     case 'purchase': return 'Decidindo a compra'
     case 'buyback': return 'Decidindo a recompra'
+    case 'buyback-upgrade': return 'Decidindo a melhoria após recompra'
     case 'company-roll': return 'Girando o D6 da companhia'
     case 'start-upgrade': return 'Melhoria da Partida'
     case 'jail': return 'Decidindo na prisão'

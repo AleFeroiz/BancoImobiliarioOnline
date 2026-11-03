@@ -7,6 +7,7 @@ import { PropertyState } from '../src/rooms/schema/LobbyState.js'
 import { boardSpaces, getLineTitleIds } from '../../shared/board.js'
 import { EVENT_CARDS, type EventCard } from '../../shared/cards.js'
 import { CARD_REVEAL_SECONDS, CARD_TARGET_SECONDS } from '../../shared/game.js'
+import { PAWN_STEP_ANIMATION_DURATION_MS, getAnimationDuration } from '../../shared/game.js'
 import { PROPERTY_HOTEL_LEVEL, START_BONUS, STARTING_CASH, TURN_DECISION_SECONDS, TURN_ROLL_SECONDS, bankReturnValue, buildingSaleValue, calculateRent, constructionCost, forcedBuybackCost, taxForSpace } from '../../shared/game.js'
 
 async function waitFor(condition: () => boolean, timeout = 2500) {
@@ -464,10 +465,11 @@ describe('sala privada', () => {
     expect(room.state.properties.get('1')?.ownerSessionId).toBe(host.sessionId)
     expect(room.state.activePlayerSessionId).toBe(host.sessionId)
     expect(room.state.turnNumber).toBe(1)
+    const diceSequenceBeforeBot = room.state.diceSequence
     const serverGame = room as unknown as { processBotStep: () => void; schedulePresentation: (_delayMs: number, action: () => void) => void }
     serverGame.schedulePresentation = (_delayMs, action) => action()
     serverGame.processBotStep()
-    expect(room.state.turnPhase).not.toBe('roll')
+    expect(room.state.diceSequence).toBeGreaterThan(diceSequenceBeforeBot)
     room.onReconnect({ sessionId: host.sessionId } as never)
     expect(room.state.players.get(host.sessionId)).toMatchObject({ isConnected: true, isBotControlled: false, reconnectionExpired: false })
     await waitFor(() => room.state.matchSeconds < 30 * 60, 1500)
@@ -1333,13 +1335,16 @@ describe('sala privada', () => {
     expect(visitor.cash).toBe(2_147_000_000 - rent)
     expect(owner.cash).toBe(STARTING_CASH + rent)
     visitorClient.send('buyback', { accept: true })
-    await waitFor(() => room.state.turnPhase === 'resolve')
+    await waitFor(() => room.state.turnPhase === 'buyback-upgrade')
     expect(visitor.cash).toBe(2_147_000_000 - rent - price)
     expect(owner.cash).toBe(STARTING_CASH + rent + price)
     expect(room.state.properties.get(String(propertySpace.id))?.ownerSessionId).toBe(visitorClient.sessionId)
     expect(room.state.properties.get(String(propertySpace.id))?.houses).toBe(1)
     expect(room.state.landingDescription).toContain('Aluguel:')
     expect(room.state.landingDescription).toContain('valor integral da recompra foi pago')
+    visitorClient.send('build', { propertyId: propertySpace.id, targetHouses: 2 })
+    await waitFor(() => room.state.turnPhase === 'resolve')
+    expect(room.state.properties.get(String(propertySpace.id))?.houses).toBe(2)
   })
 
   it('não oferece recompra quando o saldo restante após o aluguel é insuficiente', async () => {
@@ -1372,6 +1377,32 @@ describe('sala privada', () => {
     expect(visitor.cash).toBe(price - 1)
     expect(owner.cash).toBe(STARTING_CASH + rent)
     expect(property.ownerSessionId).toBe(ownerClient.sessionId)
+  })
+
+  it('após recompra sem saldo para construção, segue sem abrir melhoria', async () => {
+    const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
+    const buyerClient = await colyseus.connectTo(room, { name: 'Ana' })
+    const ownerClient = await colyseus.connectTo(room, { name: 'Bia' })
+    markPlayersReady(room)
+    buyerClient.send('start')
+    await waitFor(() => room.state.status === 'playing')
+    room.state.festivalSpaceIds = ''
+
+    const space = boardSpaces.find((candidate) => candidate.buildable)!
+    const property = new PropertyState()
+    property.ownerSessionId = ownerClient.sessionId
+    room.state.properties.set(String(space.id), property)
+    const buyer = room.state.players.get(buyerClient.sessionId)!
+    buyer.position = space.id
+    buyer.cash = calculateRent(space.id, new Map([[space.id, ownerClient.sessionId]]), 0) + forcedBuybackCost(space.id, 0)
+    const serverGame = room as unknown as { resolveSpace: (sessionId: string, player: typeof buyer) => void }
+    serverGame.resolveSpace(buyerClient.sessionId, buyer)
+    expect(room.state.turnPhase).toBe('buyback')
+
+    buyerClient.send('buyback', { accept: true })
+    await waitFor(() => property.ownerSessionId === buyerClient.sessionId)
+    expect(buyer.cash).toBe(0)
+    expect(room.state.turnPhase).toBe('resolve')
   })
 
   it('cobra aluguel de hotel sem oferecer recompra', async () => {
@@ -1515,6 +1546,38 @@ describe('sala privada', () => {
     expect(visitor.cash).toBe(STARTING_CASH - normalRent + START_BONUS - taxForSpace(2))
     expect(room.state.landingDescription).toContain('Passou pela Partida')
     expect(room.state.landingDescription).toContain('Volta ao Brasil')
+  })
+
+  it('percorre todas as casas ao escolher um destino atrás na Volta ao Brasil', async () => {
+    const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
+    const host = await colyseus.connectTo(room, { name: 'Ana' })
+    await colyseus.connectTo(room, { name: 'Bia' })
+    markPlayersReady(room)
+    host.send('start')
+    await waitFor(() => room.state.status === 'playing')
+
+    const actor = room.state.players.get(host.sessionId)!
+    const protectedProperty = new PropertyState()
+    protectedProperty.ownerSessionId = host.sessionId
+    protectedProperty.protectionTurns = 3
+    room.state.properties.set('1', protectedProperty)
+    room.state.activePlayerSessionId = host.sessionId
+    room.state.turnPhase = 'world-tour'
+    actor.position = 30
+    const cashBefore = actor.cash
+    let scheduledDelay = 0
+    let completeMovement = () => undefined
+    const serverGame = room as unknown as { schedulePresentation: (delay: number, action: () => void) => void }
+    serverGame.schedulePresentation = (delay, action) => { scheduledDelay = delay; completeMovement = action }
+
+    host.send('chooseWorldTour', { spaceId: 29 })
+    await waitFor(() => room.state.turnPhase === 'moving')
+    expect(room.state.pawnMoveMode).toBe('walk')
+    expect(scheduledDelay).toBe(39 * getAnimationDuration(PAWN_STEP_ANIMATION_DURATION_MS, room.state.animationSpeed))
+    expect(actor.cash).toBe(cashBefore + START_BONUS)
+    expect(protectedProperty.protectionTurns).toBe(2)
+    completeMovement()
+    expect(actor.position).toBe(29)
   })
 
   it('oferece na Partida uma melhoria aleatória paga para uma cidade própria', async () => {
@@ -2023,7 +2086,7 @@ describe('sala privada', () => {
 
     room.state.activePlayerSessionId = guest.sessionId
     serverGame.advanceTurn()
-    expect(room.state.properties.get(String(targetId))?.blackoutTurns).toBe(2)
+    expect(room.state.properties.get(String(targetId))?.blackoutTurns).toBe(3)
 
     const protectedProperty = room.state.properties.get(String(targetId))!
     protectedProperty.protectionTurns = 3
@@ -2057,11 +2120,16 @@ describe('sala privada', () => {
     room.state.turnPhase = 'card-target'
     room.state.activeCardId = 'protection'
     host.send('resolveCardTarget', { propertyId: protectionId })
-    await waitFor(() => protectionChoice.protectionTurns === 4)
-    expect(protectionChoice.protectionTurns).toBe(4)
+    await waitFor(() => protectionChoice.protectionTurns === 3)
+    expect(protectionChoice.protectionTurns).toBe(3)
+    serverGame.advanceTurn()
+    expect(protectionChoice.protectionTurns).toBe(3)
+    hostPlayer.position = boardSpaces.length - 2
+    ;(serverGame as typeof serverGame & { movePlayer: (sessionId: string, player: typeof hostPlayer, spaces: number) => void }).movePlayer(host.sessionId, hostPlayer, 3)
+    expect(protectionChoice.protectionTurns).toBe(2)
   })
 
-  it('suspende o aluguel durante três turnos do dono por Apagão e retoma a cobrança ao expirar', async () => {
+  it('suspende o aluguel durante três voltas do dono por Apagão e retoma a cobrança ao expirar', async () => {
     const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
     const host = await colyseus.connectTo(room, { name: 'Ana' })
     const guest = await colyseus.connectTo(room, { name: 'Bia' })
@@ -2092,10 +2160,13 @@ describe('sala privada', () => {
     expect(room.state.landingDescription).toContain('está em apagão; não há aluguel')
     expect(visitor.cash).toBe(visitorCash)
 
-    for (const turnsRemaining of [2, 1, 0]) {
+    for (const lapsRemaining of [2, 1, 0]) {
       room.state.activePlayerSessionId = guest.sessionId
       privateRoom.advanceTurn()
-      expect(property.blackoutTurns).toBe(turnsRemaining)
+      expect(property.blackoutTurns).toBe(lapsRemaining + 1)
+      owner.position = boardSpaces.length - 2
+      ;(privateRoom as unknown as { movePlayer: (sessionId: string, player: typeof owner, spaces: number) => void }).movePlayer(guest.sessionId, owner, 3)
+      expect(property.blackoutTurns).toBe(lapsRemaining)
     }
 
     room.state.activePlayerSessionId = host.sessionId
@@ -2108,7 +2179,7 @@ describe('sala privada', () => {
     host.send('buyback', { accept: false })
     await waitFor(() => room.state.turnPhase === 'resolve')
     expect(visitor.cash).toBe(visitorCash - rent)
-    expect(owner.cash).toBe(STARTING_CASH + rent)
+    expect(owner.cash).toBe(STARTING_CASH + 3 * START_BONUS + rent)
   })
 
   it('Terremoto devolve ao banco o imóvel atingido e apaga suas construções', async () => {

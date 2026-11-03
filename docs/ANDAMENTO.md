@@ -1,3 +1,12 @@
+# Percurso, efeitos, recompra e dívida — concluído (2026-11-02)
+
+- Pedido: Volta ao Brasil deve percorrer a volta completa ao escolher casa anterior; efeitos temporários devem contar voltas completas, não turnos; recompra deve oferecer melhoria imediata quando possível; dívida precisa mostrar saldo, total e falta em destaque.
+- Estado inicial: `main` alinhada com `origin/main` em `a600a88`; alterações locais preexistentes em `assets/blender/special-corners.blend` e `.blend1` permanecem fora do escopo.
+- Descoberta: a dívida já tinha os valores no JSX, mas a seleção de imóvel suprimia o cartão central; Volta ao Brasil usava teleporte mesmo ao cruzar a Partida.
+- Implementado: Volta ao Brasil percorre cada casa no sentido de avanço; Apagão e Proteção descontam duração na volta do proprietário; recompra abre melhoria quando há construção legal e saldo; dívida preserva o painel de valores durante a escolha no tabuleiro. Após revisão do usuário, o painel de dívida foi reduzido e ações inativas deixaram de ocupar espaço.
+- Validação: `npm run verify` passou com 61 arquivos de teste, 341 testes e builds web/servidor. Playtests locais em `6DKEZ` e `53UMP` confirmaram o painel central de dívida e sua versão compacta. Ver `docs/VALIDACAO.md`.
+- Próximo passo: observar ao vivo uma Volta ao Brasil com destino anterior e uma recompra com melhoria; a duração e as transições têm cobertura automatizada.
+
 # Fluxo de turnos e clareza da partida — concluído (2026-11-02)
 
 - Pedido: retirar avisos sequenciais, avançar automaticamente quando não há ação, destacar rolagem, selecionar alvos pelos cartões, explicitar dívida, pedir D6 na companhia e criar modelos para Prisão e Partida.
