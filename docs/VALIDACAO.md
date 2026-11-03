@@ -1041,3 +1041,9 @@
 - Playtest com `agent-browser` em sala local de seis participantes. Em 1280×720, os cartões ficaram em uma faixa e o tabuleiro sem sobreposição do HUD; em 390×844, o HUD se reorganizou e o formulário DEV rolou dentro do painel. O botão de saldo alterou R$ 3.000.000 para R$ 3.010.000, e o seletor “Casa de destino” abriu e permitiu teleporte no teste anterior desta mesma sessão. Console sem erros da aplicação; apenas a mensagem informativa do React DevTools.
 - Capturas da revisão em `dogfood-output/screenshots/owned-city-1280-revised.png` e `dogfood-output/screenshots/game-mobile-dev.png`.
 - Limite: a abertura automática de leilão foi coberta por regressão de estado; não foi concluída uma rodada humana completa com captura do painel aparecendo simultaneamente em dois clientes. O toque foi avaliado por viewport/controles do navegador, sem dispositivo físico.
+
+## Ilustrações das cartas Sorte ou Revés
+
+- Prancha das 15 artes revisada em miniatura. ComfyUI local com Stable Diffusion 1.5, img2img em 512 × 512 a partir de guias desenhadas, uma carta por vez. Assets finais em WebP de 320 × 320, cerca de 132 kB no total.
+- Em sala local com bot, o modo DEV armou Proteção e Desconto no aluguel e acionou o sorteio por teleporte. Capturas confirmaram a arte correta, a leitura do texto e o botão OK em desktop e viewport de 390 × 844, respectivamente. A casa aparece dentro da bolha azul na carta Proteção.
+- O teste de catálogo confirmou um arquivo por identificador. `npm run verify` passou com 364 testes em 64 arquivos e builds web e servidor.

@@ -1136,6 +1136,7 @@ button:disabled{opacity:.55;cursor:not-allowed}
 .game-event-card{width:min(310px,calc(100vw - 42px));padding:19px 21px 16px;border:2px solid #d1b553;border-radius:15px;background:linear-gradient(160deg,#fffbed,#f3edcf);box-shadow:0 20px 65px rgba(14,30,29,.38);color:#344c3c;text-align:center;cursor:pointer;animation:reveal-card-in .25s cubic-bezier(.18,.75,.2,1) both}
 .event-card-kicker{display:block;padding:8px 10px;border-radius:8px;background:#477e89;color:#f8f2df;font-size:9px;font-weight:800;letter-spacing:.12em}
 .event-card-art{width:100px;height:86px;display:grid;place-items:center;margin:12px auto 10px;border:1px solid rgba(186,158,75,.45);border-radius:10px;background:radial-gradient(circle at 50% 45%,#f5e7aa,#e6d18c 68%,#cfb969);color:#8e7538;font-family:Georgia,serif;font-size:43px;text-shadow:0 2px 0 rgba(255,255,255,.65)}
+.event-card-art.event-card-illustration{display:block;width:auto;height:clamp(58px,22dvh,118px);aspect-ratio:1;object-fit:contain}
 .game-event-card h2{margin:5px 0 7px;font-family:'Playfair Display',Georgia,serif;font-size:22px;line-height:1.1}
 .game-event-card p{margin:0 auto 12px;color:#687766;font-size:11px;line-height:1.45}
 .game-event-card>small{display:block;padding-top:10px;border-top:1px solid rgba(118,132,99,.2);color:#7b846e;font-size:8px;font-weight:700}

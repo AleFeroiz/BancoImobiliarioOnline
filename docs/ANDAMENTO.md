@@ -1,3 +1,10 @@
+# Ícones das cartas Sorte ou Revés — implementação concluída
+
+- Escopo: 15 ilustrações quadradas, coloridas e estilizadas, com peão legível e uma cena própria para cada carta.
+- A amostra Ladrão e as 14 descrições restantes foram aprovadas pelo usuário. Em Proteção, uma bolha azul semitransparente envolve a casa.
+- As 15 artes foram refinadas localmente em 512 × 512 no ComfyUI com Stable Diffusion 1.5 e exportadas em WebP de 320 × 320. A revelação usa o identificador da carta para mostrar a arte.
+- Validação: 364 testes e builds web e servidor passaram. Proteção foi revisada em partida no desktop e Desconto no aluguel em viewport de 390 × 844. Ver `docs/VALIDACAO.md`.
+
 # Revisão responsiva, leilões e controles DEV — implementação concluída (2026-11-03)
 
 - Pedido: revisar telas, tooltips e responsividade em diferentes dispositivos; mostrar o leilão a todos na sala; corrigir controles do modo DEV para mouse e toque.
