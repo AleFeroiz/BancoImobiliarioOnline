@@ -1,3 +1,11 @@
+# Revisão das telas da partida em celular — implementação concluída (2026-11-03)
+
+- Escopo confirmado pelo usuário: somente telas dentro da partida; home e lobby ficam fora.
+- Achados no CSS: a regra de paisagem limitada a 640 px não alcançava muitos telefones girados; seis cartões em três colunas comprimiam nomes, saldos e botões de 22 px; painéis contextuais usavam quatro colunas mesmo no telefone.
+- Correções: cartões em duas colunas no retrato e três na paisagem baixa; alvos de toque maiores; opções de propriedades em duas colunas; limites de altura e rolagem para painéis, cartas, ajuda, configurações e resultado.
+- Validação: `npm run verify` passou com 61 arquivos, 341 testes e builds web/servidor; grafo atualizado. O navegador local permanece desabilitado no Work, então a inspeção visual das telas segue pendente.
+- Próximo passo: percorrer visualmente compra, carta, dívida, leilão, configurações, ajuda e resultado em retrato e paisagem quando o navegador estiver disponível.
+
 # Painel de dívida em escala menor e responsiva — concluído (2026-11-03)
 
 - Pedido: reduzir novamente o painel de dívida e adaptar a escala para todos os dispositivos.

@@ -1,3 +1,9 @@
+# 2026-11-03 — Revisão das telas da partida em celular
+
+- Revisão estática do CSS identificou a regra de paisagem que só era aplicada até 640 px e áreas de toque de 22 px nos cartões de jogador. A correção amplia os controles e adapta os painéis da partida, preservando a rolagem vertical em telas baixas.
+- Revisão visual local indisponível: o inventário CUA retornou “Local browser use is disabled in Work settings”; não há screenshot desta revisão.
+- `npm run verify` passou: 61 arquivos, 341 testes e builds web/servidor. Permanece o aviso conhecido do chunk 3D acima de 500 kB. Inspeção visual pendente em 320×568, 390×844 e 844×390 quando o navegador estiver habilitado.
+
 # 2026-11-03 — Escala responsiva menor do painel de dívida
 
 - Implementado CSS fluido para desktop, tablet e celular: largura até 280 px, padding e letras reduzidos; telas com até 500 px de altura recebem espaçamento ainda menor e limite de altura seguro para rolagem.
