@@ -13,6 +13,7 @@ import { BUILDING_GROUP_Y, getBoardSpaceDecoration, getPropertyModelYOffset } fr
 import { getBoardTileTheme } from './boardTileTheme'
 import { getFestivalBannerPlacement } from './festivalBanner'
 import { getPawnStackIndices, getPawnTilePosition } from './pawnPlacement'
+import { getWealthHeadwear, type WealthHeadwear } from './wealthHeadwear'
 import { fitSpaceLabel, shouldRenderSpaceLabel } from './spaceLabel'
 import { getPawnStepPath } from './pawnPath'
 import { getPropertyDisplayHouses, getPropertyVisualChange } from './gameFeedback'
@@ -254,7 +255,26 @@ function SpaceLabel({ name, size, ink, outline, outwardRotation }: { name: strin
   )
 }
 
-function AnimatedPawn({ player, stackIndex, pawnGroups, reducedMotion, movementEnabled, moveMode, presentationSpeed, pawnStepSoundEnabled, isActive, onMovementComplete }: { player: PlayerToken; stackIndex: number; pawnGroups: Map<string, Group>; reducedMotion: boolean; movementEnabled: boolean; moveMode: 'walk' | 'teleport'; presentationSpeed: AnimationSpeed; pawnStepSoundEnabled: boolean; isActive: boolean; onMovementComplete: () => void }) {
+function HeadwearModel({ kind, baseY }: { kind: 'crown' | 'jester'; baseY: number }) {
+  const { scene } = useGLTF('/assets/wealth-headwear.glb')
+  const model = useMemo(() => {
+    const source = scene.getObjectByName(kind === 'crown' ? 'Headwear_Crown' : 'Headwear_Jester')
+    if (!source) return null
+    const clone = source.clone(true)
+    const bounds = new Box3().setFromObject(clone)
+    const placement = getCenteredModelPlacement(bounds)
+    clone.position.set(...placement)
+    makeSceneMaterialsUnlit(clone)
+    clone.traverse((obj) => {
+      const mesh = obj as Mesh
+      if (mesh.isMesh) mesh.raycast = skipRaycast
+    })
+    return clone
+  }, [kind, scene])
+  return model && <group position={[0, baseY, 0]} raycast={skipRaycast}><primitive object={model} /></group>
+}
+
+function AnimatedPawn({ player, headwear, stackIndex, pawnGroups, reducedMotion, movementEnabled, moveMode, presentationSpeed, pawnStepSoundEnabled, isActive, onMovementComplete }: { player: PlayerToken; headwear: 'crown' | 'jester' | null; stackIndex: number; pawnGroups: Map<string, Group>; reducedMotion: boolean; movementEnabled: boolean; moveMode: 'walk' | 'teleport'; presentationSpeed: AnimationSpeed; pawnStepSoundEnabled: boolean; isActive: boolean; onMovementComplete: () => void }) {
   const group = useRef<Group>(null)
   const { invalidate } = useThree()
   const { scene: tokenScene } = useGLTF('/assets/player-tokens.glb')
@@ -303,6 +323,7 @@ function AnimatedPawn({ player, stackIndex, pawnGroups, reducedMotion, movementE
     })
     return { object: clone, outline }
   }, [player.characterType, player.color, tokenScene])
+  const headwearY = player.characterType === 'pawn' ? 0.60 : model ? new Box3().setFromObject(model.object).getSize(new Vector3()).y * 0.56 - 0.02 : 0.53
   useEffect(() => () => model?.outline.traverse((object) => {
     const mesh = object as Mesh
     if (mesh.isMesh) (Array.isArray(mesh.material) ? mesh.material : [mesh.material]).forEach((material) => material.dispose())
@@ -397,6 +418,7 @@ function AnimatedPawn({ player, stackIndex, pawnGroups, reducedMotion, movementE
           </mesh>
         </group>
       </> : model && <><primitive object={model.outline} scale={0.61} /><primitive object={model.object} scale={0.56} /></>}
+      {headwear && <Suspense fallback={null}><HeadwearModel kind={headwear} baseY={headwearY} /></Suspense>}
       {player.activity && <Html position={[0, player.characterType === 'pawn' ? 0.86 : 0.66, 0]} center distanceFactor={12} zIndexRange={[6, 0]} style={{ pointerEvents: 'none' }}><div className="turn-activity-bubble" role="status" aria-live="polite">{player.activity}</div></Html>}
       {player.emote && <Html key={player.emote.sequence} position={[0, player.characterType === 'pawn' ? 1.08 : 0.9, 0]} center distanceFactor={10} zIndexRange={[8, 0]} style={{ pointerEvents: 'none' }}><div className="player-emote-bubble" aria-label="Emote do jogador">{getPlayerEmoteSymbol(player.emote.emote)}</div></Html>}
       {isActive && <group position={[0, 1.05, 0]}><FloatingPointingArrow color={player.color} size={1.05} baseY={0} /></group>}
@@ -740,6 +762,7 @@ function SpecialCornerModel({ kind, dimmed }: { kind: 'prison' | 'start'; dimmed
 
 function Board({ players, pawnGroups, activePlayerSessionId, destinationSpaceId, propertyBuildings, thrownObjects, earthquakeEvents, cityEffectEvents, worldCupSpaceId, festivalSpaceIds, highlightedSpaceIds, selectionMode, showLiquidationValues, landingPulseSpaceId, landingPulseSequence, diceRollSequence, dice, diceVisible, diceResultVisible, presentationSpeed, reducedMotion, pawnMovementEnabled, pawnMoveMode, pawnStepSoundEnabled, onMovementComplete, onSelectSpace }: { players: PlayerToken[]; pawnGroups: Map<string, Group>; activePlayerSessionId: string; destinationSpaceId: number; propertyBuildings: PropertyBuilding[]; thrownObjects: ThrowableEvent[]; earthquakeEvents: EarthquakeEvent[]; cityEffectEvents: CityEffectEvent[]; worldCupSpaceId: number; festivalSpaceIds: readonly number[]; highlightedSpaceIds: readonly number[]; selectionMode: boolean; showLiquidationValues: boolean; landingPulseSpaceId: number; landingPulseSequence: number; dice: [number, number]; diceVisible: boolean; diceResultVisible: boolean; diceRollSequence: number; presentationSpeed: AnimationSpeed; reducedMotion: boolean; pawnMovementEnabled: boolean; pawnMoveMode: 'walk' | 'teleport'; pawnStepSoundEnabled: boolean; onMovementComplete: () => void; onSelectSpace: (spaceId: number) => void }) {
   const pawnStackIndices = useMemo(() => getPawnStackIndices(players), [players])
+  const wealthHeadwear: WealthHeadwear = useMemo(() => getWealthHeadwear(players, propertyBuildings), [players, propertyBuildings])
   const { scene: buildingScene } = useGLTF('/assets/board-models/board-models.glb')
   const propertyRentLabels = useMemo(() => boardSpaces
     .filter((space) => space.kind === 'property' && propertyBuildings.some((holding) => holding.spaceId === space.id && Boolean(holding.ownerSessionId)))
@@ -824,7 +847,7 @@ function Board({ players, pawnGroups, activePlayerSessionId, destinationSpaceId,
         {propertyBuildings.filter(({ ownerSessionId }) => Boolean(ownerSessionId)).map(({ spaceId, houses, blackoutTurns = 0, protectionTurns = 0, ownerColor, ownerSessionId }) => <AnimatedBuilding key={`buildings-${spaceId}`} spaceId={spaceId} houses={houses} blackoutTurns={blackoutTurns} protectionTurns={protectionTurns} ownerColor={ownerColor} ownerSessionId={ownerSessionId} reducedMotion={reducedMotion} presentationSpeed={presentationSpeed} dimmed={selectionMode && !highlightedSpaceIds.includes(spaceId)} />)}
       </Suspense>
       {destinationSpaceId >= 0 && (() => { const target = positionOnBoard(destinationSpaceId); return <group position={[target.x, 0, target.z]}><FloatingPointingArrow color="#ffe27a" size={1.3} baseY={1.5} /></group> })()}
-      {players.map((player) => <AnimatedPawn key={player.id} player={player} stackIndex={pawnStackIndices.get(player.id) ?? 0} pawnGroups={pawnGroups} reducedMotion={reducedMotion} movementEnabled={pawnMovementEnabled} moveMode={pawnMoveMode} presentationSpeed={presentationSpeed} pawnStepSoundEnabled={pawnStepSoundEnabled} isActive={player.id === activePlayerSessionId} onMovementComplete={onMovementComplete} />)}
+      {players.map((player) => <AnimatedPawn key={player.id} player={player} headwear={player.id === wealthHeadwear.richestId ? 'crown' : player.id === wealthHeadwear.poorestId ? 'jester' : null} stackIndex={pawnStackIndices.get(player.id) ?? 0} pawnGroups={pawnGroups} reducedMotion={reducedMotion} movementEnabled={pawnMovementEnabled} moveMode={pawnMoveMode} presentationSpeed={presentationSpeed} pawnStepSoundEnabled={pawnStepSoundEnabled} isActive={player.id === activePlayerSessionId} onMovementComplete={onMovementComplete} />)}
       {thrownObjects.map((event) => <ThrowableProjectile key={event.id} event={event} pawnGroups={pawnGroups} />)}
       {earthquakeEvents.map((event) => <EarthquakeCollapse key={event.id} event={event} scene={buildingScene} />)}
       {cityEffectEvents.map((event) => <CityEffectMarker key={event.id} event={event} />)}
@@ -1013,7 +1036,7 @@ function BoardSceneCanvas({ nightMode, players, activePlayerSessionId = '', loca
 function samePlayers(first: PlayerToken[], second: PlayerToken[]) {
   return first.length === second.length && first.every((player, index) => {
     const other = second[index]
-    return Boolean(other && player.id === other.id && player.position === other.position && player.color === other.color && player.seatIndex === other.seatIndex && player.characterType === other.characterType && player.activity === other.activity && player.emote?.sequence === other.emote?.sequence)
+    return Boolean(other && player.id === other.id && player.position === other.position && player.color === other.color && player.seatIndex === other.seatIndex && player.cash === other.cash && player.characterType === other.characterType && player.activity === other.activity && player.emote?.sequence === other.emote?.sequence)
   })
 }
 

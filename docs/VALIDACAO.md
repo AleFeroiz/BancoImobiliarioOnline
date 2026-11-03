@@ -1,3 +1,10 @@
+# Coroa e chapéu de bobo nas fichas — 2026-11-03
+
+- Blender MCP conectado em 5.2.2 LTS com protocolo 15 atualizado. Coroa e chapéu modelados, conferidos com `get_scene_info` e `look`, exportados em GLB com Y-up, reimportados no Blender e inspecionados novamente. Fonte: `assets/blender/wealth-headwear.blend`; exportação: `public/assets/wealth-headwear.glb`.
+- Regressões novas cobrem patrimônio igual, mudança de líder por saldo/títulos/construções, exclusão de falido e desempate por cadeira.
+- `npm run verify` passou com loopback permitido: 62 arquivos, 348 testes e builds web/servidor. A primeira execução sem loopback teve `fetch failed` nos testes Colyseus; a repetição concluiu. Permanece o aviso conhecido de chunk acima de 500 kB.
+- Revisão visual em partida pendente: Vite e Colyseus subiram nas portas 5173 e 2567, mas o navegador interno recusou `http://127.0.0.1:5173/` com `Local browser use is disabled in Work settings`. Sem captura da escala dos acessórios sobre as fichas nesta sessão.
+
 # Retomada de sala após queda e nova visita — 2026-11-03
 
 - Regressão Colyseus com seis conexões humanas: após queda com reserva de reconexão ativa, reentrada pelo mesmo código/nome falhava antes da correção com `room is locked`; passou após separar a capacidade de transporte do limite de seis cadeiras.

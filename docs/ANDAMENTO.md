@@ -1,3 +1,11 @@
+# Coroa e chapéu de bobo nas fichas — implementação concluída (2026-11-03)
+
+- Pedido: mostrar uma coroa 3D no participante de maior patrimônio e um chapéu de bobo da corte no de menor patrimônio, acompanhando mudanças durante a partida.
+- Estado inicial: `main` alinhada com `origin/main` em `d713cdaf`; alterações locais anteriores em `assets/blender/special-corners.blend` e `.blend1` estão fora do escopo.
+- Implementado: dois modelos Blender 5.2.2 LTS em `assets/blender/wealth-headwear.blend`, exportados para `public/assets/wealth-headwear.glb`; a cena React Three Fiber escolhe os acessórios pelo patrimônio vigente calculado pela regra existente.
+- Validação: 348 testes em 62 arquivos e builds web/servidor passaram. Os GLB foram reimportados e inspecionados no Blender. O navegador interno impediu a revisão em partida com `Local browser use is disabled in Work settings`; ver `docs/VALIDACAO.md`.
+- Próximo passo: conferir em partida real a escala e a posição dos acessórios nas 14 fichas quando o navegador local estiver habilitado.
+
 # Retomada de sala após queda e nova visita — implementação concluída (2026-11-03)
 
 - Pedido: permitir reentrada com mesmo nome/código após queda e tentar automaticamente a última sala ao reabrir o site.

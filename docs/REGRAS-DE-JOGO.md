@@ -22,6 +22,7 @@ Este documento descreve somente as regras atuais do BANTEC. Referências ao Expr
 - Cada lado do tabuleiro tem seis cidades e uma companhia. Possuir todos os sete títulos do mesmo lado completa um Monopólio em Linha e vence imediatamente; taxas e Sorte ou Revés não contam.
 - A paleta regional dos pisos é Norte turquesa `#00A6A6`, Centro-Oeste dourado `#E6B84B`, Nordeste rosa `#D45087`, Sul verde `#4A9D68` e Sudeste azul `#3B65CC`.
 - As fichas ficam juntas na borda interna de cada piso. Quando várias pessoas param na mesma casa, as fichas se empilham verticalmente; nos quatro cantos, a pilha fica no centro do piso.
+- Durante a partida, a ficha de maior patrimônio usa uma coroa 3D e a de menor patrimônio usa um chapéu de bobo da corte 3D. O patrimônio usa o mesmo cálculo do desempate por tempo: saldo, preço dos títulos e valor de venda das construções. Os acessórios mudam de ficha quando o patrimônio muda; falidos não participam. Com empate no extremo, a cadeira mais antiga recebe o acessório. Se todos têm o mesmo patrimônio, nenhum acessório aparece.
 - Toda casa tem uma função. Os cantos são Partida, Prisão, Copa do Mundo e Volta ao Brasil.
 
 ## Compra, construções e rendas
