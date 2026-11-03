@@ -18,11 +18,12 @@ describe('room reconnection recovery', () => {
     expect(readLastRoom(null)).toBeNull()
     expect(() => saveLastRoom({ setItem: () => { throw new Error('blocked') } }, { roomCode: 'ABCDE', name: 'Lia', reconnectionToken: '' })).not.toThrow()
   })
-  it('keeps automatic retries active long enough for a temporary server outage', () => {
+  it('limita as tentativas automáticas para liberar a recuperação por identidade', () => {
     const room = { reconnection: { maxRetries: 15, minUptime: 5000 } }
 
     configureRoomReconnection(room)
 
+    expect(ROOM_RECONNECT_MAX_RETRIES).toBe(6)
     expect(room.reconnection).toMatchObject({ maxRetries: ROOM_RECONNECT_MAX_RETRIES, minUptime: 0 })
   })
 

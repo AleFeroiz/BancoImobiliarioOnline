@@ -8,7 +8,7 @@ import { boardSpaces, getLineTitleIds } from '../../shared/board.js'
 import { EVENT_CARDS, type EventCard } from '../../shared/cards.js'
 import { CARD_REVEAL_SECONDS, CARD_TARGET_SECONDS } from '../../shared/game.js'
 import { PAWN_STEP_ANIMATION_DURATION_MS, getAnimationDuration } from '../../shared/game.js'
-import { PROPERTY_HOTEL_LEVEL, START_BONUS, STARTING_CASH, TURN_DECISION_SECONDS, TURN_ROLL_SECONDS, bankReturnValue, buildingSaleValue, calculateRent, constructionCost, forcedBuybackCost, taxForSpace } from '../../shared/game.js'
+import { PROPERTY_HOTEL_LEVEL, START_BONUS, STARTING_CASH, TURN_DECISION_SECONDS, TURN_ROLL_SECONDS, bankReturnValue, buildingSaleValue, calculateRent, constructionCost, forcedBuybackCost, getWorldCupRentMultiplier, taxForSpace } from '../../shared/game.js'
 
 async function waitFor(condition: () => boolean, timeout = 2500) {
   const start = Date.now()
@@ -684,7 +684,7 @@ describe('sala privada', () => {
     host.send('start')
     await waitFor(() => room.state.status === 'playing')
 
-    const propertySpace = boardSpaces.find((space) => space.kind === 'property' && !space.buildable)!
+    const propertySpace = boardSpaces.find((space) => space.buildable)!
     const property = new PropertyState()
     property.ownerSessionId = guest.sessionId
     room.state.properties.set(String(propertySpace.id), property)
@@ -1752,7 +1752,7 @@ describe('sala privada', () => {
     privateRoom.resolveSpace(guest.sessionId, visitor)
     expect(room.state.turnPhase).toBe('company-roll')
     ;(room as unknown as { messages: { rollCompany: (client: { sessionId: string }) => void } }).messages.rollCompany({ sessionId: guest.sessionId })
-    const dieRoll = room.state.diceOne
+    const dieRoll = (guestCash - visitor.cash) / 50_000
     expect(dieRoll).toBeGreaterThanOrEqual(1)
     expect(dieRoll).toBeLessThanOrEqual(6)
     expect(visitor.cash).toBe(guestCash - 50_000 * dieRoll)
@@ -2086,7 +2086,7 @@ describe('sala privada', () => {
       resolveSpace: (sessionId: string, player: NonNullable<ReturnType<typeof room.state.players.get>>, drawEvent?: boolean) => void
       advanceTurn: () => void
     }
-    const [giveId, targetId, protectionId] = boardSpaces.filter((space) => space.kind === 'property').slice(0, 3).map((space) => space.id)
+    const [giveId, targetId, protectionId] = boardSpaces.filter((space) => space.buildable).slice(0, 3).map((space) => space.id)
     const hostPlayer = room.state.players.get(host.sessionId)!
     const giveProperty = new PropertyState()
     giveProperty.ownerSessionId = host.sessionId
@@ -2507,5 +2507,115 @@ describe('sala privada', () => {
     expect(player.isBankrupt).toBe(true)
     expect(room.state.status).toBe('playing')
     expect(room.state.turnNumber).toBe(2)
+  })
+
+  it('recupera no lobby a mesma cadeira após queda sem atualizar a página', async () => {
+    const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
+    const host = await colyseus.connectTo(room, { name: 'Lia' })
+    host.send('setReady', { ready: true })
+    await waitFor(() => room.state.players.get(host.sessionId)?.isReady === true)
+    const serverRoom = room as unknown as { allowReconnection: () => Promise<never>; onDrop: (client: { sessionId: string }, code: number) => void }
+    serverRoom.allowReconnection = () => new Promise(() => {})
+    serverRoom.onDrop({ sessionId: host.sessionId }, 1006)
+    await waitFor(() => room.state.players.get(host.sessionId)?.isConnected === false)
+
+    const returning = await colyseus.sdk.joinById(room.roomId, { name: 'Lia' })
+    await waitFor(() => room.state.players.get(host.sessionId)?.controllerSessionId === returning.sessionId)
+    expect(room.state.players.size).toBe(1)
+    expect(room.state.players.get(host.sessionId)).toMatchObject({ isHost: true, isReady: true, isConnected: true })
+    room.onLeave({ sessionId: host.sessionId } as never)
+    expect(room.state.players.get(host.sessionId)?.isConnected).toBe(true)
+  })
+
+  it('divide o dinheiro de dois jogadores com a carta Comunismo e rejeita alvo repetido', async () => {
+    const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
+    const host = await colyseus.connectTo(room, { name: 'Ana' })
+    const guest = await colyseus.connectTo(room, { name: 'Bia' })
+    markPlayersReady(room)
+    host.send('start')
+    await waitFor(() => room.state.status === 'playing')
+    const first = room.state.players.get(host.sessionId)!
+    const second = room.state.players.get(guest.sessionId)!
+    first.cash = 5
+    second.cash = 15
+    room.state.turnPhase = 'card-target'
+    room.state.activeCardId = 'communism'
+    const invalid = new Promise<{ message: string }>((resolve) => host.onMessage('room:error', resolve))
+    host.send('resolveCardTarget', { targetSessionId: host.sessionId, secondSessionId: host.sessionId })
+    await expect(invalid).resolves.toMatchObject({ message: expect.stringContaining('duas pessoas diferentes') })
+    expect([first.cash, second.cash]).toEqual([5, 15])
+    host.send('resolveCardTarget', { targetSessionId: host.sessionId, secondSessionId: guest.sessionId })
+    await waitFor(() => room.state.turnPhase === 'resolve')
+    expect([first.cash, second.cash]).toEqual([10, 10])
+  })
+
+  it('impede recompra e cartas direcionadas sobre companhias', async () => {
+    const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
+    const host = await colyseus.connectTo(room, { name: 'Ana' })
+    const guest = await colyseus.connectTo(room, { name: 'Bia' })
+    markPlayersReady(room)
+    host.send('start')
+    await waitFor(() => room.state.status === 'playing')
+    const company = boardSpaces.find((space) => space.company)!
+    const holding = new PropertyState()
+    holding.ownerSessionId = guest.sessionId
+    room.state.properties.set(String(company.id), holding)
+    const serverRoom = room as unknown as { offerBuybackAfterRent: (sessionId: string, propertyId: number) => boolean }
+    expect(serverRoom.offerBuybackAfterRent(host.sessionId, company.id)).toBe(false)
+    for (const cardId of ['blackout', 'earthquake', 'generous', 'protection'] as const) {
+      holding.ownerSessionId = cardId === 'generous' || cardId === 'protection' ? host.sessionId : guest.sessionId
+      room.state.turnPhase = 'card-target'
+      room.state.activeCardId = cardId
+      const invalid = new Promise<{ message: string }>((resolve) => host.onMessage('room:error', resolve))
+      host.send('resolveCardTarget', { propertyId: company.id, targetSessionId: guest.sessionId })
+      await invalid
+      expect(room.state.turnPhase).toBe('card-target')
+      expect(holding.ownerSessionId).toBe(cardId === 'generous' || cardId === 'protection' ? host.sessionId : guest.sessionId)
+      expect(holding.blackoutTurns).toBe(0)
+      expect(holding.protectionTurns).toBe(0)
+    }
+  })
+
+  it('aumenta o bônus da Copa a cada nova sede, inclusive em companhias', async () => {
+    const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
+    const host = await colyseus.connectTo(room, { name: 'Ana' })
+    const guest = await colyseus.connectTo(room, { name: 'Bia' })
+    markPlayersReady(room)
+    host.send('start')
+    await waitFor(() => room.state.status === 'playing')
+    const city = boardSpaces.find((space) => space.buildable)!
+    const company = boardSpaces.find((space) => space.company)!
+    for (const space of [city, company]) {
+      const holding = new PropertyState()
+      holding.ownerSessionId = host.sessionId
+      room.state.properties.set(String(space.id), holding)
+    }
+    for (const [index, space] of [city, company, city].entries()) {
+      room.state.turnPhase = 'world-cup'
+      host.send('chooseWorldCup', { propertyId: space.id })
+      await waitFor(() => room.state.worldCupHostCount === index + 1)
+      expect(room.state.worldCupSpaceId).toBe(space.id)
+      expect(room.state.landingDescription).toContain(`${getWorldCupRentMultiplier(index + 1).toLocaleString('pt-BR')}×`)
+    }
+    room.state.turnPhase = 'world-cup'
+    host.send('chooseWorldCup', { propertyId: company.id })
+    await waitFor(() => room.state.worldCupHostCount === 4)
+    const visitor = room.state.players.get(guest.sessionId)!
+    const owner = room.state.players.get(host.sessionId)!
+    room.state.activePlayerSessionId = guest.sessionId
+    visitor.position = company.id
+    const serverRoom = room as unknown as {
+      resolveSpace: (sessionId: string, player: typeof visitor) => void
+      schedulePresentation: (delayMs: number, action: () => void) => void
+      messages: { rollCompany: (client: { sessionId: string }) => void }
+    }
+    serverRoom.schedulePresentation = (_delayMs, action) => action()
+    serverRoom.resolveSpace(guest.sessionId, visitor)
+    expect(room.state.turnPhase).toBe('company-roll')
+    const ownerCash = owner.cash
+    serverRoom.messages.rollCompany({ sessionId: guest.sessionId })
+    const paid = owner.cash - ownerCash
+    expect(paid / (50_000 * getWorldCupRentMultiplier(4))).toBeGreaterThanOrEqual(1)
+    expect(paid / (50_000 * getWorldCupRentMultiplier(4))).toBeLessThanOrEqual(6)
   })
 })

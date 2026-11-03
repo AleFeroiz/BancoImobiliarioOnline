@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { boardSpaces } from './board.js'
-import { ANIMATION_SPEEDS, DEFAULT_ANIMATION_SPEED, DICE_ANIMATION_DURATION_MS, FESTIVAL_CITY_COUNT, MATCH_DURATIONS, PAWN_STEP_ANIMATION_DURATION_MS, TURN_DECISION_SECONDS, applyRentMultiplier, areDiceDoubles, calculateCompanyRent, calculateNetWorth, calculateRent, canBuildLevelAfterFirstLap, chooseFestivalCityIds, constructionCost, forcedBuybackCost, getAnimationDuration, getMatchEndSummary, getMonopolyWinReason, hasWinningMonopoly, isAnimationSpeed, isMatchDuration, liquidatablePropertyIds } from './game.js'
+import { ANIMATION_SPEEDS, DEFAULT_ANIMATION_SPEED, DICE_ANIMATION_DURATION_MS, FESTIVAL_CITY_COUNT, MATCH_DURATIONS, PAWN_STEP_ANIMATION_DURATION_MS, TURN_DECISION_SECONDS, applyRentMultiplier, areDiceDoubles, calculateCompanyRent, calculateNetWorth, calculateRent, canBuildLevelAfterFirstLap, chooseFestivalCityIds, constructionCost, divideBalances, forcedBuybackCost, getAnimationDuration, getMatchEndSummary, getMonopolyWinReason, getWorldCupRentMultiplier, hasWinningMonopoly, isAnimationSpeed, isMatchDuration, liquidatablePropertyIds } from './game.js'
 
 describe('tentativas para sair da prisão', () => {
   it('reconhece dois dados iguais como duplas', () => {
@@ -25,6 +25,22 @@ describe('multiplicadores do próximo aluguel', () => {
     expect(applyRentMultiplier(125_000, 0.5)).toBe(62_500)
     expect(applyRentMultiplier(125_000, 2 * 0.5)).toBe(125_000)
     expect(applyRentMultiplier(1, 0.5)).toBe(0)
+  })
+})
+
+describe('Comunismo e Copa do Mundo', () => {
+  it('divide todo o saldo sem criar ou perder dinheiro, inclusive quando o total é ímpar', () => {
+    expect(divideBalances(5, 15)).toEqual([10, 10])
+    expect(divideBalances(5, 14)).toEqual([10, 9])
+    expect(divideBalances(14, 5)).toEqual([9, 10])
+  })
+
+  it('aumenta o aluguel da sede em 0,25× por edição', () => {
+    const city = boardSpaces.find((space) => space.buildable)!
+    const ownership = new Map([[city.id, 'ana']])
+    const baseRent = calculateRent(city.id, ownership)
+    expect([0, 1, 2, 3].map(getWorldCupRentMultiplier)).toEqual([1, 2, 2.25, 2.5])
+    expect(calculateRent(city.id, ownership, 0, city.id, new Set(), getWorldCupRentMultiplier(3))).toBe(baseRent * 2.5)
   })
 })
 
@@ -120,13 +136,13 @@ describe('tempo para decisões', () => {
 })
 
 describe('recompra forçada', () => {
-  it('cobra 2× o investimento no imóvel e nas construções, mas não permite tomar hotel', () => {
+  it('cobra 2× o investimento na cidade e nas construções, mas protege hotéis e companhias', () => {
     const city = boardSpaces.find((space) => space.buildable)
     const company = boardSpaces.find((space) => space.company)
     if (!city || !company) throw new Error('Tabuleiro sem cidade ou companhia.')
     expect(forcedBuybackCost(city.id)).toBe((city.price ?? 0) * 2)
     expect(forcedBuybackCost(city.id, 2)).toBe(((city.price ?? 0) + 2 * constructionCost(city.id)) * 2)
-    expect(forcedBuybackCost(company.id)).toBe((company.price ?? 0) * 2)
+    expect(forcedBuybackCost(company.id)).toBe(0)
     expect(forcedBuybackCost(city.id, 4)).toBe(0)
     expect(forcedBuybackCost(0)).toBe(0)
   })

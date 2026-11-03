@@ -2,7 +2,7 @@ import { randomInt } from 'node:crypto'
 import { CloseCode, Client, Room } from '@colyseus/core'
 import { MAX_ROOM_PLAYERS, type GameMode } from '../../../shared/lobby.js'
 import { isCharacterType, isGameMode, normalizePlayerName } from '../../../shared/lobby.js'
-import { AUCTION_ACCEPT_SECONDS, AUCTION_BID_SECONDS, AUCTION_MIN_BID_INCREMENT, CLASSIC_MATCH_SECONDS, DEFAULT_ANIMATION_SPEED, DICE_ANIMATION_DURATION_MS, JAIL_TURNS, MATCH_DURATIONS, PAWN_STEP_ANIMATION_DURATION_MS, PAWN_TELEPORT_ANIMATION_DURATION_MS, PROPERTY_BUILD_LEVELS, PROPERTY_HOTEL_LEVEL, START_BONUS, STARTING_CASH, TURN_DECISION_SECONDS, TURN_ROLL_SECONDS, applyRentMultiplier, areDiceDoubles, bankReturnValue, buildingSaleValue, calculateCompanyRent, calculateNetWorth, calculateRent, canBuildHotel, canBuildLevelAfterFirstLap, canBuildProperty, canReturnPropertyToBank, canSellBuilding, chooseFestivalCityIds, constructionCost, describeLanding, forcedBuybackCost, getAnimationDuration, getMonopolyWinReason, hasLiquidatableAssets, hotelConstructionCost, isAnimationSpeed, isMatchDuration, movePosition, taxForSpace, type MatchEndReason } from '../../../shared/game.js'
+import { AUCTION_ACCEPT_SECONDS, AUCTION_BID_SECONDS, AUCTION_MIN_BID_INCREMENT, CLASSIC_MATCH_SECONDS, DEFAULT_ANIMATION_SPEED, DICE_ANIMATION_DURATION_MS, JAIL_TURNS, MATCH_DURATIONS, PAWN_STEP_ANIMATION_DURATION_MS, PAWN_TELEPORT_ANIMATION_DURATION_MS, PROPERTY_BUILD_LEVELS, PROPERTY_HOTEL_LEVEL, START_BONUS, STARTING_CASH, TURN_DECISION_SECONDS, TURN_ROLL_SECONDS, applyRentMultiplier, areDiceDoubles, bankReturnValue, buildingSaleValue, calculateCompanyRent, calculateNetWorth, calculateRent, canBuildHotel, canBuildLevelAfterFirstLap, canBuildProperty, canReturnPropertyToBank, canSellBuilding, chooseFestivalCityIds, constructionCost, describeLanding, divideBalances, forcedBuybackCost, getAnimationDuration, getMonopolyWinReason, getWorldCupRentMultiplier, hasLiquidatableAssets, hotelConstructionCost, isAnimationSpeed, isMatchDuration, movePosition, taxForSpace, type MatchEndReason } from '../../../shared/game.js'
 import { boardSpaces } from '../../../shared/board.js'
 import { CARD_REVEAL_SECONDS, CARD_TARGET_SECONDS } from '../../../shared/game.js'
 import { PLAYER_COLORS, isPlayerColor } from '../../../shared/playerColors.js'
@@ -37,6 +37,8 @@ export class GameRoom extends Room<{ state: LobbyState }> {
   private throwSequence = 0
   private throwCooldowns = new Map<string, number>()
   private reconnectedSessionIds = new Map<string, string>()
+  private droppedControllerSessionIds = new Map<string, string>()
+  private supersededClientSessionIds = new Set<string>()
   private turnTimerKey = ''
   private presentationTimers = new Set<ReturnType<typeof setTimeout>>()
   private pendingCardPayments: { sessionId: string; amount: number; reason: string }[] = []
@@ -67,17 +69,37 @@ export class GameRoom extends Room<{ state: LobbyState }> {
   onAuth(_client: Client, options: { name?: unknown }) {
     const name = normalizePlayerName(options.name)
     if (!name) return false
-    if (this.state.status === 'waiting') return this.state.players.size < MAX_ROOM_PLAYERS
+    if (this.state.status === 'waiting') {
+      const returning = Array.from(this.state.players.values()).filter((player) => !player.isBot && !player.isConnected && player.name === name)
+      return returning.length === 1 || this.state.players.size < MAX_ROOM_PLAYERS
+    }
     if (this.state.status !== 'playing') return false
     return Array.from(this.state.players.values()).filter((player) => !player.isBot && !player.isConnected && player.name === name).length === 1
   }
 
   onJoin(client: Client, options: { name: string }) {
     const name = normalizePlayerName(options.name) ?? 'Jogador'
+    if (this.state.status === 'waiting') {
+      const matches = Array.from(this.state.players.entries()).filter(([, candidate]) => !candidate.isBot && !candidate.isConnected && candidate.name === name)
+      if (matches.length === 1) {
+        const [sessionId, returningPlayer] = matches[0]!
+        const previousControllerId = this.droppedControllerSessionIds.get(sessionId)
+        if (previousControllerId) this.supersededClientSessionIds.add(previousControllerId)
+        this.droppedControllerSessionIds.delete(sessionId)
+        this.reconnectedSessionIds.set(client.sessionId, sessionId)
+        returningPlayer.isConnected = true
+        returningPlayer.reconnectionExpired = false
+        returningPlayer.controllerSessionId = client.sessionId
+        return
+      }
+    }
     if (this.state.status === 'playing') {
       const matches = Array.from(this.state.players.entries()).filter(([, candidate]) => !candidate.isBot && !candidate.isConnected && candidate.name === name)
       if (matches.length !== 1) return
       const [sessionId, returningPlayer] = matches[0]!
+      const previousControllerId = this.droppedControllerSessionIds.get(sessionId)
+      if (previousControllerId) this.supersededClientSessionIds.add(previousControllerId)
+      this.droppedControllerSessionIds.delete(sessionId)
       this.reconnectedSessionIds.set(client.sessionId, sessionId)
       this.clearReconnectRetention()
       this.autoDispose = true
@@ -310,7 +332,8 @@ export class GameRoom extends Room<{ state: LobbyState }> {
         if (this.state.turnPhase !== 'rolling' || this.state.activePlayerSessionId !== pending.sessionId) return
         const player = this.state.players.get(pending.sessionId)
         if (!player) return
-        const amount = applyRentMultiplier(pending.rentPerPip * die, player.nextRentMultiplier)
+        const cupMultiplier = pending.spaceId === this.state.worldCupSpaceId ? getWorldCupRentMultiplier(this.state.worldCupHostCount) : 1
+        const amount = applyRentMultiplier(Math.floor(pending.rentPerPip * die * cupMultiplier), player.nextRentMultiplier)
         player.nextRentMultiplier = 1
         this.state.turnPhase = 'resolve'
         this.state.landingDescription = `${boardSpaces[pending.spaceId].name}: D6 ${die}, aluguel ${amount.toLocaleString('pt-BR')}.`
@@ -455,8 +478,8 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       const space = boardSpaces[propertyId]
       if (!buyer || !property || !space || space.kind !== 'property' || !property.ownerSessionId || property.ownerSessionId === this.getPlayerSessionId(client)) return
       const owner = this.state.players.get(property.ownerSessionId)
-      if (payload.accept && property.houses === PROPERTY_HOTEL_LEVEL) {
-        client.send('room:error', { message: 'Propriedades com hotel não podem ser recompradas.' })
+      if (payload.accept && (property.houses === PROPERTY_HOTEL_LEVEL || space.company)) {
+        client.send('room:error', { message: 'Hotéis e companhias não podem ser recomprados.' })
         return
       }
       if (payload.accept) {
@@ -861,9 +884,10 @@ export class GameRoom extends Room<{ state: LobbyState }> {
         return
       }
       this.state.worldCupSpaceId = propertyId
+      this.state.worldCupHostCount += 1
       this.broadcast('game:city-effect', { id: ++this.throwSequence, spaceId: propertyId, effect: 'world-cup' })
       this.state.turnPhase = 'resolve'
-      this.state.landingDescription = `${space.name} será sede da Copa do Mundo. O aluguel agora vale duas vezes o valor normal.`
+      this.state.landingDescription = `${space.name} será sede da Copa do Mundo. O aluguel agora vale ${getWorldCupRentMultiplier(this.state.worldCupHostCount).toLocaleString('pt-BR')}× o valor normal.`
       this.finishExpiredPhaseIfReady()
     },
     chooseWorldTour: (client: Client, payload: { spaceId?: unknown }) => {
@@ -907,7 +931,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       const invalid = (message: string) => client.send('room:error', { message })
 
       if (card.effect.kind === 'generous') {
-        if (space?.kind !== 'property' || !property || property.ownerSessionId !== actorId || !validTarget || cardBlocked) {
+        if (space?.kind !== 'property' || space.company || !property || property.ownerSessionId !== actorId || !validTarget || cardBlocked) {
           invalid('Escolha um imóvel seu sem proteção e outra pessoa que ainda esteja na partida.')
           return
         }
@@ -916,7 +940,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
         this.state.landingDescription = `${actor.name} deu ${boardSpaces[propertyId].name} a ${target!.name}.`
         if (this.checkMonopolyVictory(targetId)) return
       } else if (card.effect.kind === 'blackout') {
-        if (space?.kind !== 'property' || !property || property.ownerSessionId !== targetId || !validTarget || property.houses === PROPERTY_HOTEL_LEVEL || cardBlocked) {
+        if (space?.kind !== 'property' || space.company || !property || property.ownerSessionId !== targetId || !validTarget || property.houses === PROPERTY_HOTEL_LEVEL || cardBlocked) {
           invalid('Escolha um imóvel sem hotel e sem proteção que pertença a outra pessoa.')
           return
         }
@@ -924,7 +948,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
         this.broadcast('game:city-effect', { id: ++this.throwSequence, spaceId: propertyId, effect: 'blackout' })
         this.state.landingDescription = `${boardSpaces[propertyId].name} ficará sem aluguel até ${target!.name} completar três voltas no tabuleiro.`
       } else if (card.effect.kind === 'earthquake') {
-        if (space?.kind !== 'property' || !property || property.ownerSessionId !== targetId || !validTarget || property.houses === PROPERTY_HOTEL_LEVEL || cardBlocked) {
+        if (space?.kind !== 'property' || space.company || !property || property.ownerSessionId !== targetId || !validTarget || property.houses === PROPERTY_HOTEL_LEVEL || cardBlocked) {
           invalid('Escolha um imóvel sem hotel e sem proteção que pertença a outra pessoa.')
           return
         }
@@ -942,13 +966,24 @@ export class GameRoom extends Room<{ state: LobbyState }> {
         this.beginCardPayments(actorId, [{ sessionId: targetId, amount: card.effect.amount, reason: 'Roubo' }])
         return
       } else if (card.effect.kind === 'protection') {
-        if (space?.kind !== 'property' || !property || property.ownerSessionId !== actorId) {
+        if (space?.kind !== 'property' || space.company || !property || property.ownerSessionId !== actorId) {
           invalid('Escolha um imóvel seu.')
           return
         }
         property.protectionTurns = Math.max(property.protectionTurns, 3)
         this.broadcast('game:city-effect', { id: ++this.throwSequence, spaceId: propertyId, effect: 'protection' })
         this.state.landingDescription = `${boardSpaces[propertyId].name} está protegida contra cartas até o dono completar três voltas no tabuleiro.`
+      } else if (card.effect.kind === 'communism') {
+        const secondId = typeof payload?.secondSessionId === 'string' ? payload.secondSessionId : ''
+        const second = this.state.players.get(secondId)
+        if (!validSwapTarget || !second || secondId === targetId || second.isBankrupt) {
+          invalid('Escolha duas pessoas diferentes que ainda estejam na partida. Você pode escolher a si mesmo.')
+          return
+        }
+        const [firstBalance, secondBalance] = divideBalances(target!.cash, second.cash)
+        target!.cash = firstBalance
+        second.cash = secondBalance
+        this.state.landingDescription = `${target!.name} e ${second.name} dividiram seus saldos igualmente: R$ ${firstBalance.toLocaleString('pt-BR')} e R$ ${secondBalance.toLocaleString('pt-BR')}.`
       } else if (card.effect.kind === 'swap') {
         const secondId = typeof payload?.secondSessionId === 'string' ? payload.secondSessionId : ''
         const second = this.state.players.get(secondId)
@@ -1539,11 +1574,11 @@ export class GameRoom extends Room<{ state: LobbyState }> {
     const kind = EVENT_CARDS.find((card) => card.id === this.state.activeCardId)?.effect.kind
     const players = Array.from(this.state.players.entries()).filter(([, player]) => !player.isBankrupt)
     const holdings = Array.from(this.state.properties.entries()).map(([id, holding]) => ({ id: Number(id), holding }))
-    if (kind === 'swap') return players.length >= 2
+    if (kind === 'swap' || kind === 'communism') return players.length >= 2
     if (kind === 'thief') return players.some(([id]) => id !== sessionId)
-    if (kind === 'generous') return players.some(([id]) => id !== sessionId) && holdings.some(({ holding }) => holding.ownerSessionId === sessionId && holding.protectionTurns === 0)
-    if (kind === 'protection') return holdings.some(({ id, holding }) => boardSpaces[id]?.kind === 'property' && holding.ownerSessionId === sessionId && holding.protectionTurns === 0)
-    if (kind === 'blackout' || kind === 'earthquake') return holdings.some(({ id, holding }) => boardSpaces[id]?.kind === 'property' && holding.ownerSessionId !== '' && holding.ownerSessionId !== sessionId && holding.houses !== PROPERTY_HOTEL_LEVEL && holding.protectionTurns === 0)
+    if (kind === 'generous') return players.some(([id]) => id !== sessionId) && holdings.some(({ id, holding }) => boardSpaces[id]?.buildable && holding.ownerSessionId === sessionId && holding.protectionTurns === 0)
+    if (kind === 'protection') return holdings.some(({ id, holding }) => boardSpaces[id]?.buildable && holding.ownerSessionId === sessionId && holding.protectionTurns === 0)
+    if (kind === 'blackout' || kind === 'earthquake') return holdings.some(({ id, holding }) => boardSpaces[id]?.buildable && holding.ownerSessionId !== '' && holding.ownerSessionId !== sessionId && holding.houses !== PROPERTY_HOTEL_LEVEL && holding.protectionTurns === 0)
     return false
   }
 
@@ -1554,19 +1589,19 @@ export class GameRoom extends Room<{ state: LobbyState }> {
     const properties = Array.from(this.state.properties.entries()).map(([id, property]) => [Number(id), property] as const)
     const pick = <T,>(options: readonly T[]) => options.length ? options[randomInt(options.length)] : undefined
     if (card.effect.kind === 'generous') {
-      const property = pick(properties.filter(([, holding]) => holding.ownerSessionId === sessionId && holding.protectionTurns === 0))
+      const property = pick(properties.filter(([id, holding]) => boardSpaces[id]?.buildable && holding.ownerSessionId === sessionId && holding.protectionTurns === 0))
       const recipient = pick(players.filter(([id]) => id !== sessionId))
       if (property && recipient) this.messages.resolveCardTarget(client, { propertyId: property[0], targetSessionId: recipient[0] })
     } else if (card.effect.kind === 'blackout' || card.effect.kind === 'earthquake') {
-      const property = pick(properties.filter(([id, holding]) => boardSpaces[id]?.kind === 'property' && holding.ownerSessionId !== '' && holding.ownerSessionId !== sessionId && holding.houses !== PROPERTY_HOTEL_LEVEL && holding.protectionTurns === 0))
+      const property = pick(properties.filter(([id, holding]) => boardSpaces[id]?.buildable && holding.ownerSessionId !== '' && holding.ownerSessionId !== sessionId && holding.houses !== PROPERTY_HOTEL_LEVEL && holding.protectionTurns === 0))
       if (property) this.messages.resolveCardTarget(client, { propertyId: property[0], targetSessionId: property[1].ownerSessionId })
     } else if (card.effect.kind === 'thief') {
       const target = pick(players.filter(([id]) => id !== sessionId))
       if (target) this.messages.resolveCardTarget(client, { targetSessionId: target[0] })
     } else if (card.effect.kind === 'protection') {
-      const property = pick(properties.filter(([id, holding]) => boardSpaces[id]?.kind === 'property' && holding.ownerSessionId === sessionId && holding.protectionTurns === 0))
+      const property = pick(properties.filter(([id, holding]) => boardSpaces[id]?.buildable && holding.ownerSessionId === sessionId && holding.protectionTurns === 0))
       if (property) this.messages.resolveCardTarget(client, { propertyId: property[0] })
-    } else if (card.effect.kind === 'swap') {
+    } else if (card.effect.kind === 'swap' || card.effect.kind === 'communism') {
       const pair = pick(players.flatMap((first, index) => players.slice(index + 1).map((second) => [first, second] as const)))
       const first = pair?.[0]
       const second = pair?.[1]
@@ -1588,7 +1623,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
     this.state.activeCardId = card.id
     this.state.landingDescription = card.description
 
-    if (['generous', 'blackout', 'earthquake', 'thief', 'protection', 'swap'].includes(card.effect.kind)) {
+    if (['generous', 'blackout', 'earthquake', 'thief', 'protection', 'swap', 'communism'].includes(card.effect.kind)) {
       this.state.turnPhase = 'card-target'
       this.cardTargetRevealPending = !player.isBot && !player.isBotControlled && player.isConnected
       this.state.turnSeconds = this.cardTargetRevealPending ? CARD_REVEAL_SECONDS : CARD_TARGET_SECONDS
@@ -1692,7 +1727,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
     const property = this.state.properties.get(String(propertyId))
     const space = boardSpaces[propertyId]
     const owner = property?.ownerSessionId ? this.state.players.get(property.ownerSessionId) : undefined
-    if (!buyer || !property || !space || space.kind !== 'property' || !owner || owner.isBankrupt || property.ownerSessionId === sessionId || property.houses === PROPERTY_HOTEL_LEVEL) return false
+    if (!buyer || !property || !space || space.kind !== 'property' || space.company || !owner || owner.isBankrupt || property.ownerSessionId === sessionId || property.houses === PROPERTY_HOTEL_LEVEL) return false
 
     const price = forcedBuybackCost(propertyId, property.houses)
     if (!this.canSpend(buyer, price) || owner.cash + price > MAX_SCHEMA_CASH) return false
@@ -1798,7 +1833,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       } else if (property.ownerSessionId !== this.state.activePlayerSessionId) {
         const owner = this.state.players.get(property.ownerSessionId)
         const ownership = new Map(Array.from(this.state.properties.entries()).map(([id, item]) => [Number(id), item.ownerSessionId]))
-        const rent = calculateRent(space.id, ownership, property.houses, this.state.worldCupSpaceId, this.getFestivalSpaceIds())
+        const rent = calculateRent(space.id, ownership, property.houses, this.state.worldCupSpaceId, this.getFestivalSpaceIds(), getWorldCupRentMultiplier(this.state.worldCupHostCount))
         if (owner && property.blackoutTurns > 0 && property.houses !== PROPERTY_HOTEL_LEVEL) {
           this.state.landingDescription += ` ${space.name} está em apagão; não há aluguel por mais ${property.blackoutTurns} volta(s) do dono.`
         } else if (owner && space.company) {
@@ -1886,7 +1921,16 @@ export class GameRoom extends Room<{ state: LobbyState }> {
   }
 
   onLeave(client: Client) {
-    const player = this.state.players.get(this.getPlayerSessionId(client))
+    if (this.supersededClientSessionIds.delete(client.sessionId)) {
+      this.reconnectedSessionIds.delete(client.sessionId)
+      return
+    }
+    const sessionId = this.getPlayerSessionId(client)
+    const player = this.state.players.get(sessionId)
+    if (player?.controllerSessionId && player.controllerSessionId !== client.sessionId) {
+      this.reconnectedSessionIds.delete(client.sessionId)
+      return
+    }
     if (this.state.status === 'playing' && player) {
       player.isConnected = false
       if (!player.isBot) player.isBotControlled = true
@@ -1898,7 +1942,8 @@ export class GameRoom extends Room<{ state: LobbyState }> {
     }
     this.reconnectedSessionIds.delete(client.sessionId)
     if (this.state.status === 'playing') this.stopClocks()
-    this.state.players.delete(this.getPlayerSessionId(client))
+    this.droppedControllerSessionIds.delete(sessionId)
+    this.state.players.delete(sessionId)
     if (this.state.status === 'playing') this.state.status = 'waiting'
     if (![...this.state.players.values()].some((player) => player.isHost)) {
       const nextHost = [...this.state.players.values()].find((candidate) => candidate.isConnected && !candidate.isBot)
@@ -1907,8 +1952,11 @@ export class GameRoom extends Room<{ state: LobbyState }> {
   }
 
   onDrop(client: Client, _code: CloseCode) {
+    if (this.supersededClientSessionIds.has(client.sessionId)) return
     const player = this.state.players.get(this.getPlayerSessionId(client))
+    if (player?.controllerSessionId && player.controllerSessionId !== client.sessionId) return
     if (player) {
+      this.droppedControllerSessionIds.set(this.getPlayerSessionId(client), client.sessionId)
       player.isConnected = false
       player.reconnectionExpired = false
       player.isBotControlled = this.state.status === 'playing' && !player.isBot
@@ -1919,8 +1967,11 @@ export class GameRoom extends Room<{ state: LobbyState }> {
   }
 
   onReconnect(client: Client) {
+    if (this.supersededClientSessionIds.has(client.sessionId)) return
     const player = this.state.players.get(this.getPlayerSessionId(client))
+    if (player?.controllerSessionId && player.controllerSessionId !== client.sessionId) return
     if (player) {
+      this.droppedControllerSessionIds.delete(this.getPlayerSessionId(client))
       player.isConnected = true
       player.reconnectionExpired = false
       player.isBotControlled = false
@@ -1948,6 +1999,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
   }
 
   private getPlayerSessionId(client: Client) {
+    if (this.supersededClientSessionIds.has(client.sessionId)) return ''
     return this.reconnectedSessionIds.get(client.sessionId) ?? client.sessionId
   }
 

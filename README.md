@@ -26,7 +26,7 @@ No Modo DEV ativado no lobby, a anfitriã também pode teleportar a pessoa da ve
 
 ## Economia atual
 
-A partida começa com R$ 2.000.000 e paga R$ 300.000 ao passar pela Partida. Os preços, custos de melhoria e aluguéis incrementais das 24 cidades seguem uma curva adaptada das capturas de Business Tour. Três cidades aleatórias recebem festival e aluguel em dobro; monopólio regional e Copa também dobram e acumulam. Companhias mantêm o preço de R$ 500.000; ao cair numa delas, um D6 novo define o aluguel por quantidade de companhias do dono. As regras detalhadas e valores exatos ficam em `docs/DECISOES.md` e `docs/REGRAS-DE-JOGO.md`.
+A partida começa com R$ 2.000.000 e paga R$ 300.000 ao passar pela Partida. Os preços, custos de melhoria e aluguéis incrementais das 24 cidades seguem uma curva adaptada das capturas de Business Tour. Três cidades aleatórias recebem festival e aluguel em dobro; monopólio regional dobra, enquanto a Copa começa em 2× e aumenta 0,25× por nova sede. Companhias mantêm o preço de R$ 500.000; ao cair numa delas, um D6 novo define o aluguel por quantidade de companhias do dono. As regras detalhadas e valores exatos ficam em `docs/DECISOES.md` e `docs/REGRAS-DE-JOGO.md`.
 ## Desenvolvimento local
 
 Requer Node.js 24 LTS e npm 10 ou superior. Abra dois terminais na pasta do projeto:

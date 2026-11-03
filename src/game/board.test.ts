@@ -113,12 +113,12 @@ describe('tabuleiro', () => {
     expect(taxForSpace(0)).toBe(0)
   })
 
-  it('contém as quatorze cartas autorais aprovadas', () => {
+  it('contém as quinze cartas autorais aprovadas', () => {
     expect(EVENT_CARDS.map((card) => card.id)).toEqual([
       'generous', 'birthday', 'blackout', 'earthquake', 'thief', 'protection',
-      'jail', 'world-tour', 'world-cup', 'swap', 'world-cup-city', 'start', 'double-next-rent', 'half-next-rent',
+      'jail', 'world-tour', 'world-cup', 'swap', 'communism', 'world-cup-city', 'start', 'double-next-rent', 'half-next-rent',
     ])
-    expect(new Set(EVENT_CARDS.map((card) => card.id)).size).toBe(14)
+    expect(new Set(EVENT_CARDS.map((card) => card.id)).size).toBe(15)
   })
 
   it('define prisão por três turnos completos sem fiança', () => {

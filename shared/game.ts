@@ -8,6 +8,7 @@ export const START_BONUS = 300_000
 export const FESTIVAL_CITY_COUNT = 3
 export const FESTIVAL_RENT_MULTIPLIER = 2
 export const WORLD_CUP_RENT_MULTIPLIER = 2
+export const WORLD_CUP_RENT_STEP = 0.25
 export const COMPANY_RENT_PER_OWNED = 50_000
 export const PROPERTY_BUILD_LEVELS = 3
 export const PROPERTY_HOTEL_LEVEL = 4
@@ -73,6 +74,16 @@ export function applyRentMultiplier(amount: number, multiplier: number) {
   return Math.floor(amount * multiplier)
 }
 
+export function getWorldCupRentMultiplier(hostCount: number) {
+  return hostCount > 0 ? WORLD_CUP_RENT_MULTIPLIER + (hostCount - 1) * WORLD_CUP_RENT_STEP : 1
+}
+
+export function divideBalances(firstCash: number, secondCash: number): readonly [number, number] {
+  const lowerShare = Math.floor((firstCash + secondCash) / 2)
+  const remainder = (firstCash + secondCash) % 2
+  return firstCash <= secondCash ? [lowerShare + remainder, lowerShare] : [lowerShare, lowerShare + remainder]
+}
+
 export function chooseFestivalCityIds(random: () => number = Math.random) {
   const candidates = boardSpaces.filter((space) => space.kind === 'property' && space.buildable).map((space) => space.id)
   for (let index = candidates.length - 1; index > 0; index -= 1) {
@@ -95,21 +106,21 @@ export function describeLanding(spaceId: number) {
     event: 'Você parou em uma casa de evento.',
     tax: 'Você parou em uma casa de taxa.',
     prison: 'Você caiu na prisão. Aguarde, tente duplas ou pague R$ 200.000 para sair.',
-    'world-cup': 'Escolha uma propriedade para sediar a Copa do Mundo; o aluguel dela dobra.',
+    'world-cup': 'Escolha uma propriedade para sediar a Copa do Mundo; o multiplicador de aluguel cresce a cada edição.',
     'world-tour': 'Escolha uma propriedade sua, livre ou casa especial para visitar.',
   } satisfies Record<typeof space.kind, string>
   return `${space.name}. ${descriptions[space.kind]}`
 }
 
-export function calculateRent(spaceId: number, ownership: ReadonlyMap<number, string>, houses = 0, worldCupSpaceId = -1, festivalSpaceIds: ReadonlySet<number> = new Set()) {
+export function calculateRent(spaceId: number, ownership: ReadonlyMap<number, string>, houses = 0, worldCupSpaceId = -1, festivalSpaceIds: ReadonlySet<number> = new Set(), worldCupMultiplier = WORLD_CUP_RENT_MULTIPLIER) {
   const space = boardSpaces[spaceId]
   if (!space || space.kind !== 'property' || typeof space.price !== 'number' || space.company) return 0
   const groupSpaces = boardSpaces.filter((candidate) => candidate.region === space.region)
   const groupIsComplete = groupSpaces.length > 1 && groupSpaces.every((candidate) => ownership.get(candidate.id) === ownership.get(spaceId))
   const level = Math.max(0, Math.min(4, houses))
   const rent = (space.rentAdditions ?? []).slice(0, level + 1).reduce((total, addition) => total + addition, 0)
-  const multiplier = (groupIsComplete ? 2 : 1) * (festivalSpaceIds.has(spaceId) ? FESTIVAL_RENT_MULTIPLIER : 1) * (spaceId === worldCupSpaceId ? WORLD_CUP_RENT_MULTIPLIER : 1)
-  return rent * multiplier
+  const multiplier = (groupIsComplete ? 2 : 1) * (festivalSpaceIds.has(spaceId) ? FESTIVAL_RENT_MULTIPLIER : 1) * (spaceId === worldCupSpaceId ? worldCupMultiplier : 1)
+  return Math.floor(rent * multiplier)
 }
 
 export function calculateCompanyRent(ownership: ReadonlyMap<number, string>, ownerSessionId: string, dieRoll = 1) {
@@ -201,7 +212,7 @@ export function bankReturnValue(spaceId: number) {
 
 export function forcedBuybackCost(spaceId: number, houses = 0) {
   const space = boardSpaces[spaceId]
-  if (!space || space.kind !== 'property' || typeof space.price !== 'number' || houses === PROPERTY_HOTEL_LEVEL) return 0
+  if (!space || space.kind !== 'property' || space.company || typeof space.price !== 'number' || houses === PROPERTY_HOTEL_LEVEL) return 0
   if (!Number.isInteger(houses) || houses < 0 || houses > PROPERTY_BUILD_LEVELS) return 0
   return (space.price + houses * constructionCost(spaceId)) * 2
 }

@@ -29,10 +29,10 @@ Este documento descreve somente as regras atuais do BANTEC. Referências ao Expr
 
 - Ao parar numa cidade livre, a pessoa escolhe comprar ou recusar. Recusada, ela permanece livre.
 - A compra e os custos de melhoria seguem uma curva inspirada nas cidades observadas de Business Tour, interpolada pela ordem de preço para as 24 cidades do BANTEC. Cada nível de construção acrescenta ao aluguel o valor específico daquele nível; os valores não são percentuais uniformes do preço. Novas casas só podem ser compradas quando a pessoa voltar ao imóvel. Na primeira volta individual, cada pessoa pode construir até duas casas; a terceira casa e o hotel ficam liberados depois que ela completar uma volta por movimento normal e cruzar a Partida. Teletransportes ou cartas que levem a pessoa através da Partida não contam como volta completa. A tentativa de comprar a terceira casa antes disso é bloqueada com aviso no painel. O hotel exige três casas e visita posterior; seu custo é o valor configurado para a cidade e substitui as três casas.
-- Monopólio Regional, festival e sede da Copa do Mundo dobram cada um o aluguel calculado e seus multiplicadores se acumulam. Três cidades aleatórias são marcadas como festivais no início da partida.
+- Monopólio Regional e festival dobram cada um o aluguel calculado. A primeira sede da Copa multiplica seu aluguel por 2; cada nova escolha de sede na mesma partida soma 0,25 ao multiplicador (2,25; 2,5; 2,75...). Os multiplicadores se acumulam. Três cidades aleatórias são marcadas como festivais no início da partida.
 - As companhias são AgroBrasil, Aviação Brasil, Energia Brasil e Mineração Brasil. Cada uma custa R$ 500.000. Ao cair numa companhia, o servidor rola um novo D6; o aluguel é R$ 50.000 multiplicados pela quantidade de companhias do dono e pelo resultado do dado. A quantidade máxima é três, pois possuir as quatro encerra a partida com vitória.
 - As quatro taxas cobram por imóvel que a pessoa possui: R$ 10.000, R$ 15.000, R$ 20.000 e R$ 25.000. Cidades e companhias contam; construções não. Títulos já vendidos ou devolvidos ao banco não contam.
-- Ao cair num imóvel de outra pessoa, primeiro se paga o aluguel normal ao dono. Depois, se ainda houver saldo para pagar 2× o investimento total da propriedade e ela não tiver hotel, aparece a opção de recompra. O valor integral da recompra vai diretamente ao dono, sem depender da aceitação dele; a posse passa ao comprador. Hotel impede recompra. Se o aluguel entrar em dívida, a opção só aparece depois que a dívida for quitada e se restar saldo suficiente. Após recomprar uma cidade residencial, o novo dono pode pagar para construir nela durante essa mesma chegada, respeitando a primeira volta, os limites do nível e o saldo.
+- Ao cair numa cidade de outra pessoa, primeiro se paga o aluguel normal ao dono. Depois, se ainda houver saldo para pagar 2× o investimento total e ela não tiver hotel, aparece a opção de recompra. O valor integral da recompra vai diretamente ao dono, sem depender da aceitação dele; a posse passa ao comprador. Hotéis e companhias impedem recompra. Se o aluguel entrar em dívida, a opção só aparece depois que a dívida for quitada e se restar saldo suficiente. Após recomprar uma cidade residencial, o novo dono pode pagar para construir nela durante essa mesma chegada, respeitando a primeira volta, os limites do nível e o saldo.
 - Efeitos temporários de cartas só podem ficar em propriedades com dono. Se uma cidade voltar ao banco, todos os efeitos ligados a ela são removidos; o Festival é permanente e continua associado à cidade mesmo enquanto estiver livre.
 
 ## Dívidas e falência
@@ -48,19 +48,19 @@ Este documento descreve somente as regras atuais do BANTEC. Referências ao Expr
 
 - **Partida:** ao passar ou chegar, recebe R$ 300.000. Ao parar exatamente nela, uma cidade própria aleatória sem hotel é selecionada para oferecer uma melhoria de um nível pelo custo normal; aceitar debita o custo ao jogador, recusar não altera o imóvel. Apenas passar pela Partida não ativa essa oferta.
 - **Prisão:** pode aguardar um turno, tentar sair com duplas ou pagar R$ 200.000 e lançar no mesmo turno. Uma tentativa sem duplas consome o turno preso; depois de três turnos, sai automaticamente. Duplas tentadas para sair não concedem uma rolagem extra.
-- **Copa do Mundo:** escolhe uma propriedade própria para sediar a Copa; ela cobra duas vezes o aluguel normal até a sede mudar. Sem propriedade própria elegível, não há nova sede. A escolha usa o tabuleiro e destaca as opções válidas.
+- **Copa do Mundo:** escolhe uma propriedade própria para sediar a Copa; a primeira sede cobra 2× o aluguel normal. Cada edição seguinte soma 0,25×, mesmo se a sede anterior mudar ou voltar ao banco. O bônus vale para cidades e companhias até a próxima sede. Sem propriedade própria elegível, não há nova sede. A escolha usa o tabuleiro e destaca as opções válidas.
 - **Volta ao Brasil:** ao chegar, escolhe no tabuleiro uma propriedade própria, uma propriedade livre ou uma casa especial para visitar; a chegada é resolvida normalmente. A peça percorre as casas sempre para a frente; quando o destino fica atrás, ela completa o restante do circuito e passa pela Partida antes de chegar. O bônus de R$ 300.000 só é pago se o trajeto escolhido passar pela Partida. A carta Volta ao Brasil paga o bônus apenas quando o caminho até o canto cruzar a Partida.
 
 ## Cartas Sorte ou Revés
 
-O servidor sorteia com reposição entre estas quatorze cartas autorais:
+O servidor sorteia com reposição entre estas quinze cartas autorais:
 
-1. **Generoso:** transfira uma propriedade sua para outra pessoa à sua escolha.
+1. **Generoso:** transfira uma cidade sua para outra pessoa à sua escolha.
 2. **Aniversário:** receba R$ 50.000 de cada outro participante.
-3. **Apagão:** escolha uma propriedade de outra pessoa; ela fica sem cobrar aluguel até o dono completar três voltas no tabuleiro. Hotel não pode ser alvo.
-4. **Terremoto:** escolha uma propriedade de outra pessoa e destrua-a. Hotel não pode ser alvo; a propriedade destruída volta ao banco.
+3. **Apagão:** escolha uma cidade de outra pessoa; ela fica sem cobrar aluguel até o dono completar três voltas no tabuleiro. Hotel não pode ser alvo.
+4. **Terremoto:** escolha uma cidade de outra pessoa e destrua-a. Hotel não pode ser alvo; a cidade destruída volta ao banco.
 5. **Ladrão:** escolha uma pessoa e roube R$ 200.000 dela.
-6. **Proteção:** escolha uma propriedade sua; até completar três voltas no tabuleiro, nenhum efeito de carta pode afetá-la.
+6. **Proteção:** escolha uma cidade sua; até completar três voltas no tabuleiro, nenhum efeito de carta pode afetá-la.
 7. **Prisão:** vá para a Prisão e aplique as opções normais desse canto.
 8. **Volta ao Brasil:** vá para o canto Volta ao Brasil e escolha um destino válido. Receba R$ 300.000 se o caminho até o canto cruzar a Partida.
 9. **Sede da Copa:** vá para a Copa do Mundo e escolha uma propriedade própria elegível.
@@ -69,6 +69,9 @@ O servidor sorteia com reposição entre estas quatorze cartas autorais:
 12. **Início:** vá para a Partida; receba R$ 300.000 somente se o trajeto cruzar a Partida. Parar na Partida também pode oferecer uma melhoria paga de cidade própria.
 13. **Aluguel em dobro:** pague duas vezes o próximo aluguel devido, seja de cidade ou companhia.
 14. **Desconto no aluguel:** pague metade do próximo aluguel devido, seja de cidade ou companhia.
+15. **Comunismo:** escolha duas pessoas solventes, podendo incluir você; a soma dos saldos delas é dividida igualmente. Se a soma for ímpar, a unidade excedente fica com quem tinha menos dinheiro.
+
+Companhias não podem ser alvo de Generoso, Apagão, Terremoto ou Proteção. Cartas que afetam participantes ou o próximo aluguel continuam valendo para o dono e o aluguel de companhias.
 
 Proteção bloqueia qualquer efeito de carta, inclusive Generoso. Apagão e Proteção duram até o dono passar três vezes pela Partida avançando pelo percurso do tabuleiro, inclusive na Volta ao Brasil; jogar uma vez sem cruzá-la não reduz o efeito. Prisão continua contando turnos. As cartas de dobro e desconto se acumulam multiplicativamente e são consumidas juntas no próximo aluguel devido; duas cartas pendentes de efeitos opostos se cancelam. Elas também modificam aluguéis de companhias e incidem sobre o valor final após os demais multiplicadores. Se o relógio expirar durante uma escolha de carta, o servidor sorteia uma das opções válidas; se não houver opção, encerra o efeito. A seleção manual de qualquer propriedade-alvo acontece diretamente no tabuleiro com o padrão de opções iluminadas/apagadas; alvos que sejam pessoas são selecionados pelos controles de participantes.
 

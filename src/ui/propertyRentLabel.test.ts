@@ -26,6 +26,8 @@ describe('rótulos 3D de aluguel', () => {
     const owned = [company, ...otherCompanies].map((space) => ({ spaceId: space.id, ownerSessionId: 'ana', houses: 0 }))
     expect(getPropertyRentLabel(company.id, owned)).toBe('R$ 150.000 × D6')
     expect(getPropertyRentLabel(company.id, owned, company.id)).toBe('R$ 300.000 × D6')
+    expect(getPropertyRentLabel(company.id, owned, company.id, new Set(), 2.25)).toBe('R$ 337.500 × D6')
+    expect(getPropertyRentLabel(company.id, [{ spaceId: company.id, ownerSessionId: 'ana', houses: 0, blackoutTurns: 2 }])).toBe('R$ 50.000 × D6')
   })
 
   it('exibe aluguel zero durante apagão e mantém a exceção de hotel', () => {

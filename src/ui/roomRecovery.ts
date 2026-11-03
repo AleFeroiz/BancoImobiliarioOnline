@@ -1,7 +1,7 @@
 import { normalizePlayerName } from '../../shared/lobby'
 import { normalizeRoomCode } from './roomInvite'
 
-export const ROOM_RECONNECT_MAX_RETRIES = 60
+export const ROOM_RECONNECT_MAX_RETRIES = 6
 const LAST_ROOM_KEY = 'bantec:last-room'
 
 export type LastRoom = { roomCode: string; name: string; reconnectionToken: string }
