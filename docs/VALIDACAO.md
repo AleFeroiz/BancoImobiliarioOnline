@@ -1,3 +1,9 @@
+# 2026-11-03 — Escala responsiva menor do painel de dívida
+
+- Implementado CSS fluido para desktop, tablet e celular: largura até 280 px, padding e letras reduzidos; telas com até 500 px de altura recebem espaçamento ainda menor e limite de altura seguro para rolagem.
+- Playtest manual não concluído: CUA retornou “Local browser use is disabled in Work settings” ao abrir a URL local. Servidores Vite e Colyseus foram encerrados. Não há captura visual desta alteração.
+- `npm run verify` passou: 61 arquivos de teste, 341 testes, builds Vite e servidor. Permanece o aviso conhecido de chunk 3D acima de 500 kB.
+
 # 2026-11-02 — Recuperação da sala e orientação das fichas
 
 - `npm run verify` passou com loopback local permitido: 62 arquivos de teste, 336 testes, build Vite e build do servidor. O primeiro teste dentro do sandbox falhou em `fetch failed`; a repetição com a permissão de loopback passou. Aviso já conhecido de chunk 3D acima de 500 kB.

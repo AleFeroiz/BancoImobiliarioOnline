@@ -1216,18 +1216,20 @@ button:disabled{opacity:.55;cursor:not-allowed}
 .player-target-prompt{position:fixed;z-index:9;top:50%;left:50%;transform:translate(-50%,-50%);display:grid;gap:8px;text-align:center;pointer-events:none;color:#fff9e8;text-shadow:0 3px 14px #000}
 .player-target-prompt strong{font-size:clamp(21px,3vw,42px);letter-spacing:.09em;white-space:nowrap}
 .player-target-prompt small{font-size:clamp(12px,1.3vw,17px)}
-.screen-game .turn-card.debt-panel{position:fixed;z-index:7;top:50%;left:50%;right:auto;bottom:auto;transform:translate(-50%,-50%);width:min(350px,calc(100vw - 28px));max-height:calc(100dvh - 140px);overflow:auto;margin:0;padding:15px 17px;text-align:center;box-shadow:0 18px 48px rgba(5,18,14,.32)}
-.screen-game .debt-panel h2{font-size:clamp(20px,2.4vw,25px);margin:5px 0;text-transform:uppercase}
-.screen-game .debt-panel .debt-actions{gap:5px;margin-top:5px}
-.screen-game .debt-panel .debt-summary{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin:4px 0}
-.screen-game .debt-panel .debt-summary>div{gap:2px;padding:7px}
-.screen-game .debt-panel .debt-summary small{font-size:8px}
-.screen-game .debt-panel .debt-summary strong{font-size:clamp(17px,2vw,21px)}
-.screen-game .debt-panel .debt-summary .debt-shortfall strong{font-size:clamp(22px,2.5vw,27px)}
-.screen-game .debt-panel .debt-actions>p{font-size:9px;line-height:1.3;margin:0}
-.screen-game .debt-panel .debt-actions .roll-button{min-height:32px}
-.screen-game .debt-panel .debt-actions .secondary-action{min-height:28px}
-@media(max-width:640px){.screen-game .roll-control-button{min-height:56px;min-width:190px;font-size:15px}.player-target-prompt{top:57%}.player-target-prompt strong{font-size:20px}.screen-game .turn-card.debt-panel{top:54%;max-height:calc(100dvh - 185px);padding:12px}.screen-game .debt-panel .debt-summary>div{padding:6px}}
+.screen-game .turn-card.debt-panel{position:fixed;z-index:7;top:50%;left:50%;right:auto;bottom:auto;transform:translate(-50%,-50%);width:min(280px,calc(100vw - 24px));max-height:calc(100dvh - 112px);overflow:auto;margin:0;padding:10px 11px;text-align:center;box-shadow:0 14px 38px rgba(5,18,14,.3)}
+.screen-game .debt-panel h2{font-size:clamp(17px,2vw,21px);margin:3px 0;text-transform:uppercase}
+.screen-game .debt-panel .turn-label{font-size:7px}
+.screen-game .debt-panel .debt-actions{gap:4px;margin-top:3px}
+.screen-game .debt-panel .debt-summary{grid-template-columns:repeat(2,minmax(0,1fr));gap:5px;margin:3px 0}
+.screen-game .debt-panel .debt-summary>div{gap:2px;padding:5px}
+.screen-game .debt-panel .debt-summary small{font-size:7px}
+.screen-game .debt-panel .debt-summary strong{font-size:clamp(15px,1.7vw,18px)}
+.screen-game .debt-panel .debt-summary .debt-shortfall strong{font-size:clamp(20px,2.2vw,24px)}
+.screen-game .debt-panel .debt-actions>p{font-size:8px;line-height:1.25;margin:0}
+.screen-game .debt-panel .debt-actions .roll-button{min-height:30px}
+.screen-game .debt-panel .debt-actions .secondary-action{min-height:27px}
+@media(max-width:640px){.screen-game .roll-control-button{min-height:56px;min-width:190px;font-size:15px}.player-target-prompt{top:57%}.player-target-prompt strong{font-size:20px}.screen-game .turn-card.debt-panel{top:50%;width:calc(100vw - 22px);max-width:280px;max-height:calc(100dvh - 100px);padding:9px}.screen-game .debt-panel .debt-summary>div{padding:5px}.screen-game .debt-panel .debt-summary small{font-size:7px}}
+@media(max-height:500px){.screen-game .turn-card.debt-panel{max-height:calc(100dvh - 70px);padding:7px 10px}.screen-game .debt-panel h2{font-size:16px;margin:2px 0}.screen-game .debt-panel .turn-label{font-size:6px}.screen-game .debt-panel .debt-summary{gap:3px;margin:2px 0}.screen-game .debt-panel .debt-summary>div{padding:4px}.screen-game .debt-panel .debt-summary small{font-size:6px}.screen-game .debt-panel .debt-summary strong{font-size:15px}.screen-game .debt-panel .debt-summary .debt-shortfall strong{font-size:18px}.screen-game .debt-panel .debt-actions>p{font-size:7px}}
 /* Carta explícita e inspeção persistente */
 .card-reveal-backdrop{pointer-events:auto}
 .game-event-card{display:flex;flex-direction:column;align-items:center;text-align:center}

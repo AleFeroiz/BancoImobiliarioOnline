@@ -1,3 +1,10 @@
+# Painel de dívida em escala menor e responsiva — concluído (2026-11-03)
+
+- Pedido: reduzir novamente o painel de dívida e adaptar a escala para todos os dispositivos.
+- Implementado: largura máxima de 280 px, espaçamento e tipografia menores, largura fluida em celulares e ajustes para telas com pouca altura.
+- Validação: `npm run verify` passou com 61 arquivos de teste, 341 testes e builds web/servidor. Playtest manual pendente: CUA retornou “Local browser use is disabled in Work settings” ao abrir a URL local; os servidores foram encerrados. Sem captura visual desta alteração.
+- Próximo passo: revisar a escala visualmente nos quatro formatos quando o navegador local estiver habilitado.
+
 # Percurso, efeitos, recompra e dívida — concluído (2026-11-02)
 
 - Pedido: Volta ao Brasil deve percorrer a volta completa ao escolher casa anterior; efeitos temporários devem contar voltas completas, não turnos; recompra deve oferecer melhoria imediata quando possível; dívida precisa mostrar saldo, total e falta em destaque.
