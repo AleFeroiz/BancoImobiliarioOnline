@@ -851,3 +851,6 @@ Implementação local: seis plataformas com fichas e vagas para bots, seletores 
 - Pedido: mostrar efeitos de cartas pendentes junto aos jogadores com tooltip; revelar carta, efeito e usuário a todos; contar voltas restantes de Apagão e Proteção sobre as cidades.
 - Implementado: efeitos pendentes de dobro/metade aparecem em ícones junto ao cartão de cada pessoa; revelação compartilhada identifica quem usou a carta; marcadores 3D indicam as voltas restantes.
 - Próximo passo: verificar build/testes e playtest no navegador, desktop e celular.
+# Ícones dos cantos especiais — implementação
+
+- Copa do Mundo e Volta ao Brasil usam as ilustrações existentes nas revelações ao chegar aos respectivos cantos. A revisão visual em partida permanece pendente.
