@@ -1,3 +1,7 @@
+# Investigação de tela 3D vazia após compra — mitigação implementada (2026-11-04)
+
+Relato: após primeira compra pode haver aparente refresh e perda total da cena 3D; recarregar ou trocar qualidade pode recuperar. Fatos: rótulos 3D surgem na primeira posse; Text do Drei suspende ao carregar a fonte e antes não tinha Suspense local, permitindo propagar a suspensão ao Canvas. Isolados com Suspense para manter a cena enquanto a fonte carrega. Primeira compra local em desktop e viewport 390×844 manteve o tabuleiro; problema persistente dos aparelhos relatados não foi reproduzido. O usuário relatou ocorrências em PC e celular e em Chrome e outros navegadores. Pressão de contextos WebGL e diferenças de dispositivo seguem hipóteses não comprovadas. Ver VALIDACAO.md.
+
 # Configurações de partida e ordem — implementadas (2026-11-04)
 
 Pedido: ordem inicial aleatória, configurações de economia e prazos no lobby, seletores em painéis e borda na cor da vez. Servidor sorteia ordem, valida escolhas da anfitriã e aplica configurações; padrões anteriores preservados. Prazo configurado vale para decisões gerais, mantendo prazos próprios para dados e alvos. Testes e revisão local descritos em VALIDACAO.md.

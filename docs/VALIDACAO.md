@@ -1,3 +1,7 @@
+# Investigação da cena 3D após primeira compra — 2026-11-04
+
+Inspeção do Drei instalado confirmou que Text suspende durante preload da fonte, e o Canvas propaga suspensão sem barreira local. Os rótulos de nome/aluguel eram os primeiros Text criados após uma propriedade ter dono e não possuíam Suspense local. A correção limita a suspensão aos rótulos; teste estrutural falhou antes e passou depois. Em partida local com bot houve primeira compra antes e depois da correção: tabuleiro permaneceu visível em desktop e viewport 390×844; a falha persistente relatada não foi reproduzida e não se forçou perda real de contexto. A suíte completa passou com 374 testes e builds. Logs: Vite registrou erro temporário enquanto o JSX estava sendo editado, resolvido antes do build final; servidor registrou tentativa de retomar sala antiga descartada. O usuário relatou ocorrências em PC e celular, em Chrome e outros navegadores; GPUs não identificadas.
+
 # Ordem, configurações e borda do turno — 2026-11-04
 
 Suíte completa: 373 testes aprovados e builds web/servidor. Testes cobrem sorteio, limites, permissão da anfitriã, bloqueio após início, saldo e quantidade de festivais, além de multiplicadores. Em sala local, painel foi revisado em desktop e viewport 390×844; saldo de R$ 3.000.000 apareceu para os dois participantes e a borda ficou vermelha na vez do participante vermelho. Seletor de ficha revisado no celular. Troca de cor da borda entre turnos, painel de cor e opções não padrão adicionais não tiveram revisão visual manual. Console sem erros ou avisos.

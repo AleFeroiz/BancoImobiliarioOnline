@@ -836,6 +836,7 @@ function Board({ players, pawnGroups, activePlayerSessionId, destinationSpaceId,
           </group>
         )
       })}
+      <Suspense fallback={null}>
       {propertyRentLabels.map(({ id, position, label }) => label && <Billboard key={`rent-${id}`} position={position} follow>
         <group>
           <Text position={[0, 0.18, 0]} renderOrder={1000} material-depthTest={false} material-depthWrite={false} fontSize={0.13} lineHeight={1.1} fontWeight="bold" maxWidth={2} textAlign="center" anchorX="center" anchorY="middle" color={label.ownerColor} outlineColor="#fff9eb" outlineWidth={0.018} depthOffset={-10} raycast={skipRaycast}>{label.name}</Text>
@@ -843,6 +844,7 @@ function Board({ players, pawnGroups, activePlayerSessionId, destinationSpaceId,
           {label.liquidation && <Text position={[0, -0.18, 0]} renderOrder={1000} material-depthTest={false} material-depthWrite={false} fontSize={0.13} lineHeight={1.1} fontWeight="bold" maxWidth={2} textAlign="center" anchorX="center" anchorY="middle" color="#9a392c" outlineColor="#fff9eb" outlineWidth={0.018} depthOffset={-10} raycast={skipRaycast}>{`LIQ. ${label.liquidation}`}</Text>}
         </group>
       </Billboard>)}
+      </Suspense>
       <Suspense fallback={null}>
         {propertyBuildings.filter(({ ownerSessionId }) => Boolean(ownerSessionId)).map(({ spaceId, houses, blackoutTurns = 0, protectionTurns = 0, ownerColor, ownerSessionId }) => <AnimatedBuilding key={`buildings-${spaceId}`} spaceId={spaceId} houses={houses} blackoutTurns={blackoutTurns} protectionTurns={protectionTurns} ownerColor={ownerColor} ownerSessionId={ownerSessionId} reducedMotion={reducedMotion} presentationSpeed={presentationSpeed} dimmed={selectionMode && !highlightedSpaceIds.includes(spaceId)} />)}
       </Suspense>
