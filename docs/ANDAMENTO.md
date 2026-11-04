@@ -854,3 +854,7 @@ Implementação local: seis plataformas com fichas e vagas para bots, seletores 
 # Ícones dos cantos especiais — implementação
 
 - Copa do Mundo e Volta ao Brasil usam as ilustrações existentes nas revelações ao chegar aos respectivos cantos. A revisão visual em partida permanece pendente.
+# Menu de arremesso em telas pequenas — corrigido (2026-11-04)
+
+O menu estava ancorado à direita da seta em todos os cartões móveis, podendo ultrapassar a borda. Ajustado para manter as quatro opções visíveis na viewport e acima do painel de decisão, sem mudar a lógica. Revisado em partida com seis participantes em 390×844 e 844×390, incluindo cartões de borda e lançamento.
+

@@ -1,3 +1,7 @@
+# Menu de arremesso móvel — 2026-11-04
+
+Partida local com cinco bots: menu de arremesso em cartões da borda mostrou tomate, ovo, lama e farinha em 390×844 e 844×390; lançamento acionou intervalo de espera. Durante revisão foi identificada e ajustada a sobreposição pelo painel de compra. Console sem erros ou avisos; servidor registrou tentativa de retomar sala de teste antiga descartada. Teste de regressão verifica regras de posicionamento CSS e camada; revisão visual valida a apresentação real.
+
 # Inatividade e recuperação de turno — 2026-11-04
 
 Suíte completa: 367 testes e builds aprovados antes do ajuste final de reinício do relógio de inatividade na reconexão. No navegador local desktop, após 30 segundos sem input, aviso apareceu e uma tecla devolveu controle. A reconexão causada pelo reinício do servidor de desenvolvimento impediu revisão móvel do aviso. Console sem avisos ou erros; servidor registrou sala descartada após reinício. Compra travada em zero coberta por teste de regressão. O watchdog não recupera fases de animação.
