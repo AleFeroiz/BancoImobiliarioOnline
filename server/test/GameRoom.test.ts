@@ -1839,6 +1839,43 @@ describe('sala privada', () => {
     expect(room.state.landingDescription).toBe('')
   }, 12_000)
 
+  it('ativa bot após inatividade e devolve controle apenas ao próprio jogador', async () => {
+    const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
+    const host = await colyseus.connectTo(room, { name: 'Ana' })
+    const guest = await colyseus.connectTo(room, { name: 'Bia' })
+    markPlayersReady(room)
+    host.send('start')
+    await waitFor(() => room.state.status === 'playing')
+    const server = room as unknown as { lastActivity: Map<string, number> }
+    server.lastActivity.set(host.sessionId, Date.now() - 31_000)
+    await waitFor(() => room.state.players.get(host.sessionId)?.isInactive === true, 2500)
+    expect(room.state.players.get(host.sessionId)?.isBotControlled).toBe(true)
+    guest.send('activity')
+    await new Promise((resolve) => setTimeout(resolve, 30))
+    expect(room.state.players.get(host.sessionId)?.isInactive).toBe(true)
+    host.send('activity')
+    await waitFor(() => room.state.players.get(host.sessionId)?.isInactive === false)
+    expect(room.state.players.get(host.sessionId)?.isBotControlled).toBe(false)
+  })
+
+  it('recupera fase de compra travada no zero sem executar duas vezes', async () => {
+    const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
+    const host = await colyseus.connectTo(room, { name: 'Ana' })
+    await colyseus.connectTo(room, { name: 'Bia' })
+    markPlayersReady(room)
+    host.send('start')
+    await waitFor(() => room.state.status === 'playing')
+    const server = room as unknown as { recoverExpiredTurn: () => void; turnTimerKey: string }
+    room.state.turnPhase = 'purchase'
+    room.state.pendingPropertyId = boardSpaces.find((space) => space.kind === 'property')!.id
+    room.state.turnSeconds = 0
+    server.turnTimerKey = `${room.state.turnNumber}:${room.state.activePlayerSessionId}:purchase`
+    server.recoverExpiredTurn()
+    expect(room.state.turnPhase).toBe('resolve')
+    server.recoverExpiredTurn()
+    expect(room.state.turnPhase).toBe('resolve')
+  })
+
   it('rola automaticamente após 20 segundos e recusa uma compra após a janela de 15 segundos', async () => {
     const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
     const host = await colyseus.connectTo(room, { name: 'Ana' })

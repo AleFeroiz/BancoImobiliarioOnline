@@ -39,6 +39,8 @@ export class GameRoom extends Room<{ state: LobbyState }> {
   private reconnectedSessionIds = new Map<string, string>()
   private droppedControllerSessionIds = new Map<string, string>()
   private supersededClientSessionIds = new Set<string>()
+  private lastActivity = new Map<string, number>()
+  private watchdogTicks = 0
   private turnTimerKey = ''
   private presentationTimers = new Set<ReturnType<typeof setTimeout>>()
   private pendingCardPayments: { sessionId: string; amount: number; reason: string }[] = []
@@ -105,6 +107,8 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       this.autoDispose = true
       returningPlayer.isConnected = true
       returningPlayer.reconnectionExpired = false
+      returningPlayer.isInactive = false
+      this.lastActivity.set(sessionId, Date.now())
       returningPlayer.isBotControlled = false
       returningPlayer.controllerSessionId = client.sessionId
       return
@@ -122,6 +126,13 @@ export class GameRoom extends Room<{ state: LobbyState }> {
   }
 
   messages = {
+    activity: (client: Client) => {
+      const id = this.getPlayerSessionId(client)
+      const player = this.state.players.get(id)
+      if (this.state.status !== 'playing' || !player || player.isBot || !player.isConnected || player.controllerSessionId !== client.sessionId) return
+      this.lastActivity.set(id, Date.now())
+      if (player.isInactive) { player.isInactive = false; player.isBotControlled = false }
+    },
     emote: (client: Client, payload: { emote?: unknown }) => {
       const player = this.state.players.get(this.getPlayerSessionId(client))
       if (this.state.status !== 'playing' || !player || player.isBot || player.isBankrupt || !isPlayerEmote(payload?.emote)) {
@@ -1051,9 +1062,20 @@ export class GameRoom extends Room<{ state: LobbyState }> {
   private startMatchClock() {
     this.stopMatchClock()
     this.stopTurnClock()
+    this.lastActivity.clear()
+    for (const [id, player] of this.state.players) if (!player.isBot && player.isConnected) this.lastActivity.set(id, Date.now())
+    this.watchdogTicks = 0
     this.turnClockInterval = setInterval(() => {
       if (this.state.status !== 'playing') return this.stopTurnClock()
+      const now = Date.now()
+      for (const [id, player] of this.state.players) {
+        if (!player.isBot && player.isConnected && !player.isInactive && now - (this.lastActivity.get(id) ?? now) >= 30_000) {
+          player.isInactive = true
+          player.isBotControlled = true
+        }
+      }
       this.updateTurnClock()
+      if (++this.watchdogTicks >= 15) { this.watchdogTicks = 0; this.recoverExpiredTurn() }
     }, 1000)
     if (this.state.matchDuration === 0) {
       this.state.matchSeconds = 0
@@ -1080,6 +1102,15 @@ export class GameRoom extends Room<{ state: LobbyState }> {
     this.turnClockInterval = undefined
   }
 
+  private recoverExpiredTurn() {
+    if (this.state.status !== 'playing' || this.state.turnSeconds !== 0) return
+    const phase = this.state.turnPhase
+    const key = `${this.state.turnNumber}:${this.state.activePlayerSessionId}:${phase}`
+    if (key !== this.turnTimerKey || !['roll', 'purchase', 'buyback', 'buyback-upgrade', 'company-roll', 'start-upgrade', 'resolve', 'jail', 'world-cup', 'world-tour', 'card-target', 'debt'].includes(phase)) return
+    this.state.turnSeconds = 1
+    this.updateTurnClock()
+  }
+
   private updateTurnClock() {
     const phase = this.state.turnPhase
     const key = `${this.state.turnNumber}:${this.state.activePlayerSessionId}:${phase}`
@@ -1088,7 +1119,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       this.state.turnSeconds = phase === 'roll'
         ? TURN_ROLL_SECONDS
       : phase === 'card-target' ? (this.cardTargetRevealPending ? CARD_REVEAL_SECONDS : CARD_TARGET_SECONDS)
-      : ['purchase', 'buyback', 'buyback-upgrade', 'company-roll', 'resolve', 'jail', 'world-cup', 'world-tour', 'debt'].includes(phase) ? TURN_DECISION_SECONDS : 0
+      : ['purchase', 'buyback', 'buyback-upgrade', 'company-roll', 'start-upgrade', 'resolve', 'jail', 'world-cup', 'world-tour', 'debt'].includes(phase) ? TURN_DECISION_SECONDS : 0
       return
     }
     if (phase === 'card-target' && this.cardTargetRevealPending) {
@@ -1975,6 +2006,8 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       this.droppedControllerSessionIds.delete(this.getPlayerSessionId(client))
       player.isConnected = true
       player.reconnectionExpired = false
+      player.isInactive = false
+      this.lastActivity.set(this.getPlayerSessionId(client), Date.now())
       player.isBotControlled = false
       player.controllerSessionId = client.sessionId
       this.clearReconnectRetention()

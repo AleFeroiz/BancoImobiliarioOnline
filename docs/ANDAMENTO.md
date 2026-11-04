@@ -1,3 +1,7 @@
+# Inatividade e recuperação de turno — investigação em andamento (2026-11-04)
+
+Pedido: após 30 segundos sem interação, bot assume e devolve controle ao toque; verificar periodicamente turnos travados. Implementado: servidor detecta 30 segundos sem input e cede ao bot; toque ou tecla devolve controle com interceptação do primeiro evento. A cada 15 segundos, decisões vencidas em zero são novamente resolvidas com a ação padrão. Testes cobrem tomada e retorno de controle e compra presa em zero. Desktop validou aviso e retorno; revisão móvel do aviso pendente. As fases de animação não são recuperadas pelo watchdog.
+
 # Lobby visual 3D — em andamento (2026-11-04)
 
 Implementação local: seis plataformas com fichas e vagas para bots, seletores compactos e comandos existentes de sala preservados. Suíte completa passou com loopback; revisão visual em desktop e viewport 390×844 confirmou cofrinho, bot, prontidão e início de partida. Retomada manual após recarregar a partida confirmada; teste manual de seis fichas simultâneas ainda pendente. Alterações locais de Blender e capturas pertencem a outra frente e foram preservadas.

@@ -1,3 +1,7 @@
+# Inatividade e recuperação de turno — 2026-11-04
+
+Suíte completa: 367 testes e builds aprovados antes do ajuste final de reinício do relógio de inatividade na reconexão. No navegador local desktop, após 30 segundos sem input, aviso apareceu e uma tecla devolveu controle. A reconexão causada pelo reinício do servidor de desenvolvimento impediu revisão móvel do aviso. Console sem avisos ou erros; servidor registrou sala descartada após reinício. Compra travada em zero coberta por teste de regressão. O watchdog não recupera fases de animação.
+
 # Lobby visual 3D — 2026-11-04
 
 Revisão local no navegador integrado: sala criada, bot adicionado pela vaga, cofrinho selecionado com cor vermelha, prontidão confirmada e partida iniciada; bot comprou uma propriedade. Viewport 390×844 mostrou seis vagas em duas fileiras. Console sem erros ou avisos na partida. Após recarregar a página, a partida foi retomada; seis fichas simultâneas não foram verificadas manualmente. Suíte existente: 365 testes aprovados com loopback.

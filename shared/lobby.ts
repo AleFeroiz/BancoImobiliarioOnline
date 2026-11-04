@@ -31,6 +31,7 @@ export type LobbyPlayer = {
   reconnectionExpired?: boolean
   isBot?: boolean
   isBotControlled?: boolean
+  isInactive?: boolean
   controllerSessionId?: string
   characterType: CharacterType
   color?: PlayerColor

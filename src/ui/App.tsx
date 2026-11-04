@@ -267,6 +267,31 @@ function App() {
   const isAuctionSeller = auctionSellerSessionId === localSessionId
   const holdingsById = new Map(Array.from(roomProperties.entries()).map(([id, holding]) => [Number(id), holding]))
   const localPlayer = roomPlayers.find((player) => player.sessionId === localSessionId)
+  useEffect(() => {
+    if (!room || screen !== 'game') return
+    let lastSent = 0
+    const activity = (event: Event) => {
+      if (localPlayer?.isInactive) {
+        event.preventDefault()
+        event.stopImmediatePropagation()
+        room.send('activity')
+        return
+      }
+      const now = Date.now()
+      if (now - lastSent >= 1000) { lastSent = now; room.send('activity') }
+    }
+    const movement = (event: Event) => { if (!localPlayer?.isInactive) activity(event) }
+    window.addEventListener('pointermove', movement, true)
+    window.addEventListener('pointerdown', activity, true)
+    window.addEventListener('keydown', activity, true)
+    window.addEventListener('wheel', activity, { capture: true, passive: false })
+    return () => {
+      window.removeEventListener('pointermove', movement, true)
+      window.removeEventListener('pointerdown', activity, true)
+      window.removeEventListener('keydown', activity, true)
+      window.removeEventListener('wheel', activity, true)
+    }
+  }, [room, screen, localPlayer?.isInactive])
   const devCashTarget = roomPlayers.find((player) => player.sessionId === devCashTargetSessionId) ?? activePlayer ?? localPlayer
   const availableCash = (player: SyncedPlayer | undefined) => player?.devInfiniteCash ? 2_147_483_647 : player?.cash ?? 0
   const auctionBidMaximum = availableCash(localPlayer) + (auctionHighestBidderSessionId === localSessionId ? auctionHighestBid : 0)
@@ -1111,6 +1136,7 @@ function App() {
         </section>
       )}
 
+      {screen === 'game' && localPlayer?.isInactive && <div className="inactive-overlay" role="alert"><strong>Você está inativo</strong><span>O bot está no controle. Toque ou pressione uma tecla para voltar.</span></div>}
       {screen === 'game' && (
         <section className="game-overlay">
           <div className="game-topline"><button className="back-link" onClick={() => setScreen('room')}>← Sala {roomCode}</button><div className="game-status-cluster"><div className={`game-pill ${matchEnding || (matchDuration > 0 && matchSeconds <= 60) ? 'clock-warning' : ''}`}>{modeDetails[mode].title.toUpperCase()} <span>·</span> {matchDuration === 0 ? 'SEM TEMPO' : formatClock(matchSeconds)}</div>{turnPhase !== 'ended' && <div className={`turn-clock-pill ${turnSeconds > 0 && turnSeconds <= 5 ? 'clock-warning' : ''}`} role="timer" aria-label={`Relógio do turno de ${activePlayer?.name ?? 'jogador ativo'}: ${turnSeconds} segundos restantes`}><span aria-hidden="true">◷</span><small>VEZ · {activePlayer?.name ?? '—'}</small><strong>{formatClock(turnSeconds)}</strong></div>}{animationSpeedControl}</div><div className="game-tools">{auctionId > 0 && <button className="portfolio-toggle auction-toggle-active" aria-expanded={showAuctionPanel} onClick={() => { setShowAuctionPanel((open) => !open);  setShowPropertyPanel(false); setError('') }}>{`Leilão · ${auctionPhase === 'interest' ? 'aceite' : 'lances'} · ${auctionSeconds}s`}</button>}</div></div>
