@@ -4,7 +4,7 @@ Jogo de tabuleiro 3D para navegador, para partidas privadas entre amigos. Sem co
 
 ## Estado atual
 
-Cada pessoa tem 20 segundos para lançar os dados, 20 segundos para escolher alvos de cartas e 15 segundos para as demais decisões; expirações seguem o padrão automático das regras. A vez avança sozinha quando não há mais decisão disponível. Ao pagar aluguel de companhia, a pessoa aciona um D6 separado. O botão “?” abre um guia rápido, e mudanças no saldo local tocam efeitos distintos para dinheiro recebido e pago.
+A ordem dos jogadores é sorteada ao iniciar. A anfitriã pode ajustar saldo inicial, multiplicadores da Copa e de festivais, quantidade de festivais, turnos de prisão e prazo de decisões. Cada pessoa tem 20 segundos para lançar os dados, 20 segundos para escolher alvos de cartas e, por padrão, 15 segundos para as demais decisões; expirações seguem o padrão automático das regras. A vez avança sozinha quando não há mais decisão disponível. Ao pagar aluguel de companhia, a pessoa aciona um D6 separado. O botão “?” abre um guia rápido, e mudanças no saldo local tocam efeitos distintos para dinheiro recebido e pago.
 
 O cartão de cada participante exibe brevemente ganhos em verde ou perdas em vermelho sempre que o saldo muda. Clicar num cartão destaca no tabuleiro todos os títulos daquela pessoa (cidades e companhias); clicar de novo limpa o destaque. Apagão e Proteção duram três voltas do dono no tabuleiro, contadas ao cruzar a Partida.
 

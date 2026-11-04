@@ -1,5 +1,6 @@
 import { ColyseusTestServer, boot } from '@colyseus/testing'
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import { GameRoom } from '../src/rooms/GameRoom.js'
 import { createServer } from 'node:net'
 import appConfig from '../src/app.config.js'
 import type { LobbyState } from '../src/rooms/schema/LobbyState.js'
@@ -53,7 +54,10 @@ describe('sala privada', () => {
 
   beforeEach(async () => {
     await colyseus.cleanup()
+    vi.spyOn(GameRoom.prototype as unknown as { shuffleTurnOrder: (ids: string[]) => string[] }, 'shuffleTurnOrder').mockImplementation((ids) => [...ids])
   })
+
+  afterEach(() => vi.restoreAllMocks())
 
   it('cria código, escolhe anfitrião e sincroniza modo e participantes', async () => {
     const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
@@ -65,6 +69,64 @@ describe('sala privada', () => {
     expect(room.state.mode).toBe('classic')
     expect(room.state.players.get(host.sessionId)).toMatchObject({ name: 'Ana', isHost: true, characterType: 'pawn' })
     expect(room.state.players.get(guest.sessionId)).toMatchObject({ name: 'Bia', isHost: false })
+  })
+
+  it('aceita configurações válidas apenas da anfitriã antes de iniciar', async () => {
+    const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
+    const host = await colyseus.connectTo(room, { name: 'Ana' })
+    const guest = await colyseus.connectTo(room, { name: 'Bia' })
+    guest.send('setMatchOption', { key: 'festivalCount', value: 6 })
+    host.send('setMatchOption', { key: 'festivalCount', value: 999 })
+    host.send('setMatchOption', { key: 'startingCash', value: 3000000 })
+    host.send('setMatchOption', { key: 'festivalCount', value: 0 })
+    host.send('setMatchOption', { key: 'decisionSeconds', value: 30 })
+    host.send('setMatchOption', { key: 'cupInitialMultiplier', value: 3 })
+    host.send('setMatchOption', { key: 'festivalMultiplier', value: 1.5 })
+    host.send('setMatchOption', { key: 'jailTurnLimit', value: 5 })
+    await waitFor(() => room.state.startingCash === 3000000 && room.state.decisionSeconds === 30 && room.state.festivalCount === 0 && room.state.cupInitialMultiplier === 3 && room.state.festivalMultiplier === 1.5 && room.state.jailTurnLimit === 5)
+    markPlayersReady(room)
+    host.send('start')
+    await waitFor(() => room.state.status === 'playing')
+    expect(room.state.festivalSpaceIds).toBe('')
+    expect(room.state.players.get(host.sessionId)?.cash).toBe(3000000)
+    const game = room as unknown as { updateTurnClock: () => void; turnTimerKey: string; sendToJail: (id: string, player: unknown, description: string) => void }
+    room.state.turnPhase = 'purchase'
+    game.turnTimerKey = ''
+    game.updateTurnClock()
+    expect(room.state.turnSeconds).toBe(30)
+    game.sendToJail(host.sessionId, room.state.players.get(host.sessionId), 'teste')
+    expect(room.state.players.get(host.sessionId)?.jailTurns).toBe(5)
+    host.send('setMatchOption', { key: 'startingCash', value: 500000 })
+    await new Promise((resolve) => setTimeout(resolve, 30))
+    expect(room.state.startingCash).toBe(3000000)
+  })
+
+  it('mantém a ordem sorteada ao avançar os turnos', async () => {
+    vi.restoreAllMocks()
+    const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
+    const host = await colyseus.connectTo(room, { name: 'Ana' })
+    const guest = await colyseus.connectTo(room, { name: 'Bia' })
+    markPlayersReady(room)
+    host.send('start')
+    await waitFor(() => room.state.status === 'playing')
+    const order = room.state.turnOrder.split(',')
+    expect([...order].sort()).toEqual([host.sessionId, guest.sessionId].sort())
+    expect(room.state.activePlayerSessionId).toBe(order[0])
+    const game = room as unknown as { advanceTurn: () => void }
+    game.advanceTurn()
+    expect(room.state.activePlayerSessionId).toBe(order[1])
+    game.advanceTurn()
+    expect(room.state.activePlayerSessionId).toBe(order[0])
+  })
+
+  it('sorteia ordem completa sem alterar a lista original', () => {
+    vi.restoreAllMocks()
+    const game = new GameRoom() as unknown as { shuffleTurnOrder: (ids: string[]) => string[] }
+    const ids = ['a', 'b', 'c', 'd', 'e', 'f']
+    const samples = Array.from({ length: 30 }, () => game.shuffleTurnOrder(ids))
+    expect(ids).toEqual(['a', 'b', 'c', 'd', 'e', 'f'])
+    expect(samples.every((sample) => [...sample].sort().join('') === 'abcdef')).toBe(true)
+    expect(new Set(samples.map((sample) => sample.join(''))).size).toBeGreaterThan(1)
   })
 
   it('só inicia quando cada participante humano confirmou que está pronto', async () => {

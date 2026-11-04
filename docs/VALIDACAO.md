@@ -1,3 +1,7 @@
+# Ordem, configurações e borda do turno — 2026-11-04
+
+Suíte completa: 373 testes aprovados e builds web/servidor. Testes cobrem sorteio, limites, permissão da anfitriã, bloqueio após início, saldo e quantidade de festivais, além de multiplicadores. Em sala local, painel foi revisado em desktop e viewport 390×844; saldo de R$ 3.000.000 apareceu para os dois participantes e a borda ficou vermelha na vez do participante vermelho. Seletor de ficha revisado no celular. Troca de cor da borda entre turnos, painel de cor e opções não padrão adicionais não tiveram revisão visual manual. Console sem erros ou avisos.
+
 # Menu de arremesso móvel — 2026-11-04
 
 Partida local com cinco bots: menu de arremesso em cartões da borda mostrou tomate, ovo, lama e farinha em 390×844 e 844×390; lançamento acionou intervalo de espera. Durante revisão foi identificada e ajustada a sobreposição pelo painel de compra. Console sem erros ou avisos; servidor registrou tentativa de retomar sala de teste antiga descartada. Teste de regressão verifica regras de posicionamento CSS e camada; revisão visual valida a apresentação real.
@@ -1065,3 +1069,4 @@ Revisão local no navegador integrado: sala criada, bot adicionado pela vaga, co
 - ACE-Step 1.5 local, modelo turbo com CPU offload e geração sequencial em trechos de 40 s. A geração única de 180 s falhou com timeout CUDA na GTX 970; cinco trechos por faixa foram unidos com sobreposições de quatro segundos e uma sobreposição adicional para fechar o loop.
 - Os dois MP3 finais decodificados têm 180,0 segundos, 48 kHz e estéreo. A diferença máxima entre as amostras da junção foi 0,0046 na partida e 0,0012 na abertura, em escala normalizada. Isso verifica a continuidade numérica, não a continuidade musical ou percepção de cliques.
 - Testes automatizados cobrem repetição, parada e descarte de carregamento antigo. Em sala com bot, o navegador requisitou a faixa da página inicial e depois a da partida; o controle de áudio mudou para desativado, sem erros no navegador. Não houve audição das faixas nem revisão perceptiva das junções.
+

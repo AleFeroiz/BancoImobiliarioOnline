@@ -1338,3 +1338,6 @@ button:disabled{opacity:.55;cursor:not-allowed}
   }
 }
 .screen-game .player-hud:has(.throw-picker){z-index:30}
+/* Pranchetas de personalização do lobby */
+.screen-room .room-appearance .character-selector,.screen-room .room-appearance .player-color-selector{position:fixed;z-index:50;top:50%;left:50%;transform:translate(-50%,-50%);width:min(700px,calc(100vw - 24px));max-height:calc(100dvh - 24px);overflow:auto;box-shadow:0 20px 70px #0009;margin:0}
+.lobby-config-dialog{position:fixed;z-index:50;top:50%;left:50%;transform:translate(-50%,-50%);width:min(440px,calc(100vw - 24px));max-height:calc(100dvh - 24px);overflow:auto;padding:18px;border:1px solid #bdad7e;border-radius:14px;background:#fffdf3;color:#344b3c;box-shadow:0 20px 70px #0009}.lobby-dialog-heading{display:flex;align-items:center;justify-content:space-between}.lobby-dialog-heading button,.character-selector-label button{border:0;border-radius:6px;background:#e5eadc;color:#344b3c;font-size:20px;min-width:32px;min-height:32px}.character-selector-label button{float:right}.lobby-config-dialog p{font-size:11px}.lobby-config-dialog label{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:8px 0;font-size:12px;font-weight:700}.lobby-config-dialog select{min-height:38px;max-width:50%;padding:4px;border:1px solid #c4ccbc;border-radius:7px;background:white;color:#344b3c}

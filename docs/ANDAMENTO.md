@@ -1,3 +1,7 @@
+# Configurações de partida e ordem — implementadas (2026-11-04)
+
+Pedido: ordem inicial aleatória, configurações de economia e prazos no lobby, seletores em painéis e borda na cor da vez. Servidor sorteia ordem, valida escolhas da anfitriã e aplica configurações; padrões anteriores preservados. Prazo configurado vale para decisões gerais, mantendo prazos próprios para dados e alvos. Testes e revisão local descritos em VALIDACAO.md.
+
 # Inatividade e recuperação de turno — investigação em andamento (2026-11-04)
 
 Pedido: após 30 segundos sem interação, bot assume e devolve controle ao toque; verificar periodicamente turnos travados. Implementado: servidor detecta 30 segundos sem input e cede ao bot; toque ou tecla devolve controle com interceptação do primeiro evento. A cada 15 segundos, decisões vencidas em zero são novamente resolvidas com a ação padrão. Testes cobrem tomada e retorno de controle e compra presa em zero. Desktop validou aviso e retorno; revisão móvel do aviso pendente. As fases de animação não são recuperadas pelo watchdog.

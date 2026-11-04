@@ -14,7 +14,7 @@ export function getPropertyLiquidationLabel(spaceId: number, holdings: readonly 
   return formatMoney(holding.houses > 0 ? buildingSaleValue(spaceId, holding.houses) : bankReturnValue(spaceId))
 }
 
-export function getPropertyRentLabel(spaceId: number, holdings: readonly PropertyRentHolding[], worldCupSpaceId = -1, festivalSpaceIds: ReadonlySet<number> = new Set(), worldCupMultiplier = 2) {
+export function getPropertyRentLabel(spaceId: number, holdings: readonly PropertyRentHolding[], worldCupSpaceId = -1, festivalSpaceIds: ReadonlySet<number> = new Set(), worldCupMultiplier = 2, festivalMultiplier = 2) {
   const space = boardSpaces[spaceId]
   if (space?.kind !== 'property') return null
   const holding = holdings.find((item) => item.spaceId === spaceId)
@@ -24,13 +24,13 @@ export function getPropertyRentLabel(spaceId: number, holdings: readonly Propert
     .filter((candidate) => candidate.kind === 'property')
     .map((candidate) => [candidate.id, holdings.find((item) => item.spaceId === candidate.id)?.ownerSessionId || `banco:${candidate.id}`]))
   if (space.company) return `${formatMoney(calculateCompanyRent(ownership, holding.ownerSessionId) * (spaceId === worldCupSpaceId ? worldCupMultiplier : 1))} × D6`
-  return formatMoney(calculateRent(spaceId, ownership, holding?.houses ?? 0, worldCupSpaceId, festivalSpaceIds, worldCupMultiplier))
+  return formatMoney(calculateRent(spaceId, ownership, holding?.houses ?? 0, worldCupSpaceId, festivalSpaceIds, worldCupMultiplier, festivalMultiplier))
 }
 
-export function getPropertyBoardLabel(spaceId: number, holdings: readonly PropertyRentHolding[], worldCupSpaceId = -1, festivalSpaceIds: ReadonlySet<number> = new Set(), showLiquidation = false, worldCupMultiplier = 2) {
+export function getPropertyBoardLabel(spaceId: number, holdings: readonly PropertyRentHolding[], worldCupSpaceId = -1, festivalSpaceIds: ReadonlySet<number> = new Set(), showLiquidation = false, worldCupMultiplier = 2, festivalMultiplier = 2) {
   const space = boardSpaces[spaceId]
   const holding = holdings.find((item) => item.spaceId === spaceId)
-  const rent = getPropertyRentLabel(spaceId, holdings, worldCupSpaceId, festivalSpaceIds, worldCupMultiplier)
+  const rent = getPropertyRentLabel(spaceId, holdings, worldCupSpaceId, festivalSpaceIds, worldCupMultiplier, festivalMultiplier)
   if (space?.kind !== 'property' || !holding?.ownerSessionId || !rent) return null
   return {
     name: space.name,

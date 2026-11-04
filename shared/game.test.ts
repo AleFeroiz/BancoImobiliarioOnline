@@ -35,11 +35,22 @@ describe('Comunismo e Copa do Mundo', () => {
     expect(divideBalances(14, 5)).toEqual([9, 10])
   })
 
+  it('aplica os multiplicadores configurados e aceita zero festivais', () => {
+    const city = boardSpaces.find((space) => space.buildable)!
+    const ownership = new Map([[city.id, 'ana']])
+    const base = calculateRent(city.id, ownership)
+    expect(getWorldCupRentMultiplier(1, 3)).toBe(3)
+    expect(getWorldCupRentMultiplier(2, 3)).toBe(3.25)
+    expect(calculateRent(city.id, ownership, 0, city.id, new Set([city.id]), 3, 1.5)).toBe(base * 4.5)
+    expect(chooseFestivalCityIds(() => 0.5, 0)).toEqual([])
+    expect(chooseFestivalCityIds(() => 0.5, 6)).toHaveLength(6)
+  })
+
   it('aumenta o aluguel da sede em 0,25× por edição', () => {
     const city = boardSpaces.find((space) => space.buildable)!
     const ownership = new Map([[city.id, 'ana']])
     const baseRent = calculateRent(city.id, ownership)
-    expect([0, 1, 2, 3].map(getWorldCupRentMultiplier)).toEqual([1, 2, 2.25, 2.5])
+    expect([0, 1, 2, 3].map((count) => getWorldCupRentMultiplier(count))).toEqual([1, 2, 2.25, 2.5])
     expect(calculateRent(city.id, ownership, 0, city.id, new Set(), getWorldCupRentMultiplier(3))).toBe(baseRent * 2.5)
   })
 })

@@ -2,7 +2,7 @@ import { randomInt } from 'node:crypto'
 import { CloseCode, Client, Room } from '@colyseus/core'
 import { MAX_ROOM_PLAYERS, type GameMode } from '../../../shared/lobby.js'
 import { isCharacterType, isGameMode, normalizePlayerName } from '../../../shared/lobby.js'
-import { AUCTION_ACCEPT_SECONDS, AUCTION_BID_SECONDS, AUCTION_MIN_BID_INCREMENT, CLASSIC_MATCH_SECONDS, DEFAULT_ANIMATION_SPEED, DICE_ANIMATION_DURATION_MS, JAIL_TURNS, MATCH_DURATIONS, PAWN_STEP_ANIMATION_DURATION_MS, PAWN_TELEPORT_ANIMATION_DURATION_MS, PROPERTY_BUILD_LEVELS, PROPERTY_HOTEL_LEVEL, START_BONUS, STARTING_CASH, TURN_DECISION_SECONDS, TURN_ROLL_SECONDS, applyRentMultiplier, areDiceDoubles, bankReturnValue, buildingSaleValue, calculateCompanyRent, calculateNetWorth, calculateRent, canBuildHotel, canBuildLevelAfterFirstLap, canBuildProperty, canReturnPropertyToBank, canSellBuilding, chooseFestivalCityIds, constructionCost, describeLanding, divideBalances, forcedBuybackCost, getAnimationDuration, getMonopolyWinReason, getWorldCupRentMultiplier, hasLiquidatableAssets, hotelConstructionCost, isAnimationSpeed, isMatchDuration, movePosition, taxForSpace, type MatchEndReason } from '../../../shared/game.js'
+import { AUCTION_ACCEPT_SECONDS, AUCTION_BID_SECONDS, AUCTION_MIN_BID_INCREMENT, CLASSIC_MATCH_SECONDS, DEFAULT_ANIMATION_SPEED, DICE_ANIMATION_DURATION_MS, MATCH_DURATIONS, PAWN_STEP_ANIMATION_DURATION_MS, PAWN_TELEPORT_ANIMATION_DURATION_MS, PROPERTY_BUILD_LEVELS, PROPERTY_HOTEL_LEVEL, START_BONUS, TURN_ROLL_SECONDS, applyRentMultiplier, areDiceDoubles, bankReturnValue, buildingSaleValue, calculateCompanyRent, calculateNetWorth, calculateRent, canBuildHotel, canBuildLevelAfterFirstLap, canBuildProperty, canReturnPropertyToBank, canSellBuilding, chooseFestivalCityIds, constructionCost, describeLanding, divideBalances, forcedBuybackCost, getAnimationDuration, getMonopolyWinReason, getWorldCupRentMultiplier, hasLiquidatableAssets, hotelConstructionCost, isAnimationSpeed, isMatchDuration, movePosition, taxForSpace, type MatchEndReason } from '../../../shared/game.js'
 import { boardSpaces } from '../../../shared/board.js'
 import { CARD_REVEAL_SECONDS, CARD_TARGET_SECONDS } from '../../../shared/game.js'
 import { PLAYER_COLORS, isPlayerColor } from '../../../shared/playerColors.js'
@@ -126,6 +126,19 @@ export class GameRoom extends Room<{ state: LobbyState }> {
   }
 
   messages = {
+    setMatchOption: (client: Client, payload: { key?: unknown; value?: unknown }) => {
+      const player = this.state.players.get(this.getPlayerSessionId(client))
+      if (this.state.status !== 'waiting' || !player?.isHost || player.controllerSessionId !== client.sessionId) return
+      const options = {
+        cupInitialMultiplier: [1, 1.5, 2, 2.5, 3, 4, 5], festivalMultiplier: [1, 1.5, 2, 2.5, 3, 4, 5],
+        festivalCount: [0, 1, 2, 3, 4, 5, 6], startingCash: [500000, 1000000, 1500000, 2000000, 3000000, 5000000],
+        jailTurnLimit: [1, 2, 3, 4, 5], decisionSeconds: [10, 15, 20, 30, 45, 60],
+      } as const
+      const key = payload?.key
+      const value = payload?.value
+      if (typeof key !== 'string' || !Object.hasOwn(options, key) || typeof value !== 'number' || !(options[key as keyof typeof options] as readonly number[]).includes(value)) return
+      this.state[key as keyof typeof options] = value
+    },
     activity: (client: Client) => {
       const id = this.getPlayerSessionId(client)
       const player = this.state.players.get(id)
@@ -277,11 +290,11 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       this.state.status = 'playing'
       this.state.presentationSpeed = this.state.animationSpeed
       this.state.properties.clear()
-      this.state.festivalSpaceIds = chooseFestivalCityIds().join(',')
+      this.state.festivalSpaceIds = chooseFestivalCityIds(() => randomInt(1_000_000) / 1_000_000, this.state.festivalCount).join(',')
       for (const player of this.state.players.values()) {
         player.position = 0
         player.hasCompletedFirstLap = false
-        player.cash = STARTING_CASH
+        player.cash = this.state.startingCash
         player.nextRentMultiplier = 1
         player.devInfiniteCash = false
         player.isJailed = false
@@ -292,7 +305,9 @@ export class GameRoom extends Room<{ state: LobbyState }> {
         player.tieBreakRoll = 0
       }
       this.state.turnPhase = 'roll'
-      this.state.activePlayerSessionId = this.state.players.keys().next().value ?? ''
+      const order = this.shuffleTurnOrder(Array.from(this.state.players.keys()))
+      this.state.turnOrder = order.join(',')
+      this.state.activePlayerSessionId = order[0] ?? ''
       this.state.turnNumber = 1
       this.state.turnSeconds = TURN_ROLL_SECONDS
       this.turnTimerKey = `${this.state.turnNumber}:${this.state.activePlayerSessionId}:roll`
@@ -343,7 +358,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
         if (this.state.turnPhase !== 'rolling' || this.state.activePlayerSessionId !== pending.sessionId) return
         const player = this.state.players.get(pending.sessionId)
         if (!player) return
-        const cupMultiplier = pending.spaceId === this.state.worldCupSpaceId ? getWorldCupRentMultiplier(this.state.worldCupHostCount) : 1
+        const cupMultiplier = pending.spaceId === this.state.worldCupSpaceId ? getWorldCupRentMultiplier(this.state.worldCupHostCount, this.state.cupInitialMultiplier) : 1
         const amount = applyRentMultiplier(Math.floor(pending.rentPerPip * die * cupMultiplier), player.nextRentMultiplier)
         player.nextRentMultiplier = 1
         this.state.turnPhase = 'resolve'
@@ -511,7 +526,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
         this.state.pendingPropertyId = propertyId
         if (space.buildable && this.canImproveOwnedProperty(this.getPlayerSessionId(client), propertyId)) {
           this.state.turnPhase = 'buyback-upgrade'
-          this.state.turnSeconds = TURN_DECISION_SECONDS
+          this.state.turnSeconds = this.state.decisionSeconds
           this.turnTimerKey = `${this.state.turnNumber}:${this.getPlayerSessionId(client)}:buyback-upgrade`
           return
         }
@@ -898,7 +913,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       this.state.worldCupHostCount += 1
       this.broadcast('game:city-effect', { id: ++this.throwSequence, spaceId: propertyId, effect: 'world-cup' })
       this.state.turnPhase = 'resolve'
-      this.state.landingDescription = `${space.name} será sede da Copa do Mundo. O aluguel agora vale ${getWorldCupRentMultiplier(this.state.worldCupHostCount).toLocaleString('pt-BR')}× o valor normal.`
+      this.state.landingDescription = `${space.name} será sede da Copa do Mundo. O aluguel agora vale ${getWorldCupRentMultiplier(this.state.worldCupHostCount, this.state.cupInitialMultiplier).toLocaleString('pt-BR')}× o valor normal.`
       this.finishExpiredPhaseIfReady()
     },
     chooseWorldTour: (client: Client, payload: { spaceId?: unknown }) => {
@@ -1013,7 +1028,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
           if (this.state.turnPhase !== 'moving' || this.state.activePlayerSessionId !== actorId) return
           this.state.pawnMoveMode = 'walk'
           this.state.turnPhase = 'resolve'
-          this.state.turnSeconds = TURN_DECISION_SECONDS
+          this.state.turnSeconds = this.state.decisionSeconds
           this.turnTimerKey = `${this.state.turnNumber}:${actorId}:resolve`
           this.finishExpiredPhaseIfReady()
         })
@@ -1025,7 +1040,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       }
       this.state.turnPhase = 'resolve'
       this.cardTargetRevealPending = false
-      this.state.turnSeconds = TURN_DECISION_SECONDS
+      this.state.turnSeconds = this.state.decisionSeconds
       this.turnTimerKey = `${this.state.turnNumber}:${actorId}:resolve`
       this.finishExpiredPhaseIfReady()
     },
@@ -1119,7 +1134,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       this.state.turnSeconds = phase === 'roll'
         ? TURN_ROLL_SECONDS
       : phase === 'card-target' ? (this.cardTargetRevealPending ? CARD_REVEAL_SECONDS : CARD_TARGET_SECONDS)
-      : ['purchase', 'buyback', 'buyback-upgrade', 'company-roll', 'start-upgrade', 'resolve', 'jail', 'world-cup', 'world-tour', 'debt'].includes(phase) ? TURN_DECISION_SECONDS : 0
+      : ['purchase', 'buyback', 'buyback-upgrade', 'company-roll', 'start-upgrade', 'resolve', 'jail', 'world-cup', 'world-tour', 'debt'].includes(phase) ? this.state.decisionSeconds : 0
       return
     }
     if (phase === 'card-target' && this.cardTargetRevealPending) {
@@ -1159,7 +1174,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
     }
     else {
       this.autoResolveDebt(sessionId)
-      if (this.state.turnPhase === 'debt' && this.state.activePlayerSessionId === sessionId) this.state.turnSeconds = TURN_DECISION_SECONDS
+      if (this.state.turnPhase === 'debt' && this.state.activePlayerSessionId === sessionId) this.state.turnSeconds = this.state.decisionSeconds
     }
   }
 
@@ -1528,12 +1543,18 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       : 'O leilão terminou sem lances; o imóvel continua com o dono.'
   }
 
+  private shuffleTurnOrder(ids: string[]) {
+    const order = [...ids]
+    for (let i = order.length - 1; i > 0; i--) { const j = randomInt(i + 1); [order[i], order[j]] = [order[j]!, order[i]!] }
+    return order
+  }
+
   private advanceTurn() {
     this.consecutiveDoubles = 0
     this.lastRollWasDouble = false
     this.state.pendingPropertyId = 255
     this.state.pawnMoveMode = 'walk'
-    const roomPlayerIds = Array.from(this.state.players.entries()).map(([sessionId]) => sessionId)
+    const roomPlayerIds = this.state.turnOrder ? this.state.turnOrder.split(',') : Array.from(this.state.players.keys())
     const solventPlayers = roomPlayerIds.filter((sessionId) => !this.state.players.get(sessionId)?.isBankrupt)
     if (solventPlayers.length <= 1) {
       this.finishMatch(solventPlayers.length ? 'bankruptcy' : 'no-solvent-players', solventPlayers[0])
@@ -1557,7 +1578,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
     const nextPlayer = this.state.players.get(this.state.activePlayerSessionId)
     this.state.turnNumber += 1
     this.state.turnPhase = nextPlayer?.isJailed ? 'jail' : 'roll'
-    this.state.turnSeconds = this.state.turnPhase === 'jail' ? TURN_DECISION_SECONDS : TURN_ROLL_SECONDS
+    this.state.turnSeconds = this.state.turnPhase === 'jail' ? this.state.decisionSeconds : TURN_ROLL_SECONDS
     this.turnTimerKey = `${this.state.turnNumber}:${this.state.activePlayerSessionId}:${this.state.turnPhase}`
     this.state.diceOne = 0
     this.state.diceTwo = 0
@@ -1596,7 +1617,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
     this.pendingCardPaymentActorSessionId = ''
     this.state.activePlayerSessionId = actorSessionId
     this.state.turnPhase = 'resolve'
-    this.state.turnSeconds = TURN_DECISION_SECONDS
+    this.state.turnSeconds = this.state.decisionSeconds
     this.turnTimerKey = `${this.state.turnNumber}:${actorSessionId}:resolve`
     this.finishExpiredPhaseIfReady()
   }
@@ -1640,7 +1661,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
     }
     if (this.state.turnPhase === 'card-target') {
       this.state.turnPhase = 'resolve'
-      this.state.turnSeconds = TURN_DECISION_SECONDS
+      this.state.turnSeconds = this.state.decisionSeconds
       this.turnTimerKey = `${this.state.turnNumber}:${sessionId}:resolve`
       this.state.landingDescription = 'Não existe alvo disponível.'
       this.finishExpiredPhaseIfReady()
@@ -1669,7 +1690,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
         .map(([id]) => ({ sessionId: id, amount, reason: 'Aniversário' }))
       this.beginCardPayments(sessionId, payments)
     } else if (card.effect.kind === 'jail') {
-      this.sendToJail(sessionId, player, `${card.description} Sua peça foi enviada à prisão por três turnos.`)
+      this.sendToJail(sessionId, player, `${card.description} Sua peça foi enviada à prisão por ${this.state.jailTurnLimit} turno(s).`)
     } else if (card.effect.kind === 'world-tour') {
       this.startCardTeleport(sessionId, player, 30, 'Carta Volta ao Brasil: chegada ao canto. Escolha seu destino.')
     } else if (card.effect.kind === 'world-cup') {
@@ -1766,7 +1787,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
 
     this.state.pendingPropertyId = propertyId
     this.state.turnPhase = 'buyback'
-    this.state.turnSeconds = TURN_DECISION_SECONDS
+    this.state.turnSeconds = this.state.decisionSeconds
     this.turnTimerKey = `${this.state.turnNumber}:${sessionId}:buyback`
     this.state.landingDescription += ` Aluguel quitado. Você ainda pode recomprar ${space.name} por ${price.toLocaleString('pt-BR')} (2× o investimento).`
     return true
@@ -1831,7 +1852,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
   private sendToJail(sessionId: string, player: LobbyPlayerState, description: string) {
     player.position = 10
     player.isJailed = true
-    player.jailTurns = JAIL_TURNS
+    player.jailTurns = this.state.jailTurnLimit
     this.state.pendingPropertyId = 255
     this.state.turnPhase = 'moving'
     this.state.pawnMoveMode = 'teleport'
@@ -1865,7 +1886,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       } else if (property.ownerSessionId !== this.state.activePlayerSessionId) {
         const owner = this.state.players.get(property.ownerSessionId)
         const ownership = new Map(Array.from(this.state.properties.entries()).map(([id, item]) => [Number(id), item.ownerSessionId]))
-        const rent = calculateRent(space.id, ownership, property.houses, this.state.worldCupSpaceId, this.getFestivalSpaceIds(), getWorldCupRentMultiplier(this.state.worldCupHostCount))
+        const rent = calculateRent(space.id, ownership, property.houses, this.state.worldCupSpaceId, this.getFestivalSpaceIds(), getWorldCupRentMultiplier(this.state.worldCupHostCount, this.state.cupInitialMultiplier), this.state.festivalMultiplier)
         if (owner && property.blackoutTurns > 0 && property.houses !== PROPERTY_HOTEL_LEVEL) {
           this.state.landingDescription += ` ${space.name} está em apagão; não há aluguel por mais ${property.blackoutTurns} volta(s) do dono.`
         } else if (owner && space.company) {
@@ -1899,7 +1920,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
         const [propertyId] = eligible[randomInt(eligible.length)]!
         this.state.pendingPropertyId = propertyId
         this.state.turnPhase = 'start-upgrade'
-        this.state.turnSeconds = TURN_DECISION_SECONDS
+        this.state.turnSeconds = this.state.decisionSeconds
         this.turnTimerKey = `${this.state.turnNumber}:${sessionId}:start-upgrade`
         this.state.landingDescription += ` Você parou exatamente na Partida. Pode pagar para melhorar uma cidade sua aleatória: ${boardSpaces[propertyId]!.name}.`
       } else {
@@ -1911,8 +1932,8 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       this.collectPayment(sessionId, player, tax, '', 'Taxa')
     } else if (space.kind === 'prison') {
       player.isJailed = true
-      player.jailTurns = JAIL_TURNS
-      this.state.landingDescription = `${describeLanding(space.id)} Você perderá os próximos três turnos.`
+      player.jailTurns = this.state.jailTurnLimit
+      this.state.landingDescription = `${describeLanding(space.id)} Você perderá os próximos ${this.state.jailTurnLimit} turno(s).`
     } else if (space.kind === 'world-cup') {
       this.state.landingDescription = describeLanding(space.id)
       if (this.getWorldCupDefaultPropertyId(sessionId) < 0) {

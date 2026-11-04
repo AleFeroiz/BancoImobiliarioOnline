@@ -74,8 +74,8 @@ export function applyRentMultiplier(amount: number, multiplier: number) {
   return Math.floor(amount * multiplier)
 }
 
-export function getWorldCupRentMultiplier(hostCount: number) {
-  return hostCount > 0 ? WORLD_CUP_RENT_MULTIPLIER + (hostCount - 1) * WORLD_CUP_RENT_STEP : 1
+export function getWorldCupRentMultiplier(hostCount: number, initial = WORLD_CUP_RENT_MULTIPLIER) {
+  return hostCount > 0 ? initial + (hostCount - 1) * WORLD_CUP_RENT_STEP : 1
 }
 
 export function divideBalances(firstCash: number, secondCash: number): readonly [number, number] {
@@ -84,13 +84,13 @@ export function divideBalances(firstCash: number, secondCash: number): readonly 
   return firstCash <= secondCash ? [lowerShare + remainder, lowerShare] : [lowerShare, lowerShare + remainder]
 }
 
-export function chooseFestivalCityIds(random: () => number = Math.random) {
+export function chooseFestivalCityIds(random: () => number = Math.random, count = FESTIVAL_CITY_COUNT) {
   const candidates = boardSpaces.filter((space) => space.kind === 'property' && space.buildable).map((space) => space.id)
   for (let index = candidates.length - 1; index > 0; index -= 1) {
     const swapIndex = Math.min(index, Math.max(0, Math.floor(random() * (index + 1))))
     ;[candidates[index], candidates[swapIndex]] = [candidates[swapIndex]!, candidates[index]!]
   }
-  return candidates.slice(0, FESTIVAL_CITY_COUNT)
+  return candidates.slice(0, count)
 }
 
 export function areDiceDoubles(dice: DiceRoll) {
@@ -112,14 +112,14 @@ export function describeLanding(spaceId: number) {
   return `${space.name}. ${descriptions[space.kind]}`
 }
 
-export function calculateRent(spaceId: number, ownership: ReadonlyMap<number, string>, houses = 0, worldCupSpaceId = -1, festivalSpaceIds: ReadonlySet<number> = new Set(), worldCupMultiplier = WORLD_CUP_RENT_MULTIPLIER) {
+export function calculateRent(spaceId: number, ownership: ReadonlyMap<number, string>, houses = 0, worldCupSpaceId = -1, festivalSpaceIds: ReadonlySet<number> = new Set(), worldCupMultiplier = WORLD_CUP_RENT_MULTIPLIER, festivalMultiplier = FESTIVAL_RENT_MULTIPLIER) {
   const space = boardSpaces[spaceId]
   if (!space || space.kind !== 'property' || typeof space.price !== 'number' || space.company) return 0
   const groupSpaces = boardSpaces.filter((candidate) => candidate.region === space.region)
   const groupIsComplete = groupSpaces.length > 1 && groupSpaces.every((candidate) => ownership.get(candidate.id) === ownership.get(spaceId))
   const level = Math.max(0, Math.min(4, houses))
   const rent = (space.rentAdditions ?? []).slice(0, level + 1).reduce((total, addition) => total + addition, 0)
-  const multiplier = (groupIsComplete ? 2 : 1) * (festivalSpaceIds.has(spaceId) ? FESTIVAL_RENT_MULTIPLIER : 1) * (spaceId === worldCupSpaceId ? worldCupMultiplier : 1)
+  const multiplier = (groupIsComplete ? 2 : 1) * (festivalSpaceIds.has(spaceId) ? festivalMultiplier : 1) * (spaceId === worldCupSpaceId ? worldCupMultiplier : 1)
   return Math.floor(rent * multiplier)
 }
 
