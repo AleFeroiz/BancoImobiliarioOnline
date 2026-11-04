@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { scheduleSceneRenderWake, subscribeSceneContextRecovery, subscribeSceneResumeWake } from './sceneRenderWake'
+import { scheduleSceneRenderWake, subscribeSceneContextRecovery, subscribeSceneHealthMonitor, subscribeSceneResumeWake } from './sceneRenderWake'
 
 describe('demand-rendered board wake', () => {
   it('requests redraws immediately, on the next frame, and after the turn transition settles', () => {
@@ -60,6 +60,22 @@ describe('demand-rendered board wake', () => {
     cleanup()
     windowTarget.dispatchEvent(new Event('focus'))
     expect(invalidate).toHaveBeenCalledTimes(3)
+  })
+
+  it('verifica a cada dez segundos e recupera somente perda persistente sem evento', () => {
+    let tick = () => {}
+    let visible = true, lost = false, notified = false
+    const redraw = vi.fn(), recover = vi.fn(), clear = vi.fn()
+    const stop = subscribeSceneHealthMonitor(redraw, () => visible, () => lost, () => notified, recover,
+      (callback, delay) => { expect(delay).toBe(10_000); tick = callback; return 7 }, clear)
+    tick(); expect(redraw).toHaveBeenCalledWith(2)
+    lost = true; tick(); expect(recover).not.toHaveBeenCalled()
+    visible = false; tick(); visible = true
+    tick(); expect(recover).not.toHaveBeenCalled()
+    tick(); tick(); expect(recover).toHaveBeenCalledOnce()
+    lost = false; tick(); lost = true; notified = true; tick(); tick()
+    expect(recover).toHaveBeenCalledOnce()
+    stop(); expect(clear).toHaveBeenCalledWith(7)
   })
 
   it('replaces a canvas only if WebGL does not restore its context', () => {

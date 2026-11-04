@@ -41,6 +41,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
   private supersededClientSessionIds = new Set<string>()
   private lastActivity = new Map<string, number>()
   private watchdogTicks = 0
+  private supervisionStartsAt = 0
   private turnTimerKey = ''
   private presentationTimers = new Set<ReturnType<typeof setTimeout>>()
   private pendingCardPayments: { sessionId: string; amount: number; reason: string }[] = []
@@ -108,7 +109,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       returningPlayer.isConnected = true
       returningPlayer.reconnectionExpired = false
       returningPlayer.isInactive = false
-      this.lastActivity.set(sessionId, Date.now())
+      this.lastActivity.set(sessionId, Math.max(Date.now(), this.supervisionStartsAt))
       returningPlayer.isBotControlled = false
       returningPlayer.controllerSessionId = client.sessionId
       return
@@ -143,7 +144,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       const id = this.getPlayerSessionId(client)
       const player = this.state.players.get(id)
       if (this.state.status !== 'playing' || !player || player.isBot || !player.isConnected || player.controllerSessionId !== client.sessionId) return
-      this.lastActivity.set(id, Date.now())
+      this.lastActivity.set(id, Math.max(Date.now(), this.supervisionStartsAt))
       if (player.isInactive) { player.isInactive = false; player.isBotControlled = false }
     },
     emote: (client: Client, payload: { emote?: unknown }) => {
@@ -1078,19 +1079,13 @@ export class GameRoom extends Room<{ state: LobbyState }> {
     this.stopMatchClock()
     this.stopTurnClock()
     this.lastActivity.clear()
-    for (const [id, player] of this.state.players) if (!player.isBot && player.isConnected) this.lastActivity.set(id, Date.now())
+    this.supervisionStartsAt = Date.now() + 5_000
+    for (const [id, player] of this.state.players) if (!player.isBot && player.isConnected) this.lastActivity.set(id, this.supervisionStartsAt)
     this.watchdogTicks = 0
     this.turnClockInterval = setInterval(() => {
       if (this.state.status !== 'playing') return this.stopTurnClock()
-      const now = Date.now()
-      for (const [id, player] of this.state.players) {
-        if (!player.isBot && player.isConnected && !player.isInactive && now - (this.lastActivity.get(id) ?? now) >= 30_000) {
-          player.isInactive = true
-          player.isBotControlled = true
-        }
-      }
       this.updateTurnClock()
-      if (++this.watchdogTicks >= 15) { this.watchdogTicks = 0; this.recoverExpiredTurn() }
+      this.processSupervision(Date.now())
     }, 1000)
     if (this.state.matchDuration === 0) {
       this.state.matchSeconds = 0
@@ -1105,6 +1100,17 @@ export class GameRoom extends Room<{ state: LobbyState }> {
         if (['roll', 'resolve', 'jail'].includes(this.state.turnPhase)) this.finishMatch('timeout')
       }
     }, 1000)
+  }
+
+  private processSupervision(now: number) {
+    if (now < this.supervisionStartsAt || this.state.status !== 'playing') return
+    for (const [id, player] of this.state.players) {
+      if (!player.isBot && player.isConnected && !player.isInactive && now - (this.lastActivity.get(id) ?? now) >= 30_000) {
+        player.isInactive = true
+        player.isBotControlled = true
+      }
+    }
+    if (++this.watchdogTicks >= 15) { this.watchdogTicks = 0; this.recoverExpiredTurn() }
   }
 
   private stopMatchClock() {
@@ -2028,7 +2034,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       player.isConnected = true
       player.reconnectionExpired = false
       player.isInactive = false
-      this.lastActivity.set(this.getPlayerSessionId(client), Date.now())
+      this.lastActivity.set(this.getPlayerSessionId(client), Math.max(Date.now(), this.supervisionStartsAt))
       player.isBotControlled = false
       player.controllerSessionId = client.sessionId
       this.clearReconnectRetention()

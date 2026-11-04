@@ -1,3 +1,7 @@
+# Supervisão de cena e início da partida — implementada (2026-11-04)
+
+Pedido: verificar renderização periodicamente e evitar que supervisores de inatividade e turno atuem nos primeiros 5 s. Fatos: supervisores atuais não desconectam a sala; inatividade começa após 30 s e watchdog de turno a cada 15 s. Implementada tolerância inicial de 5 s para os dois supervisores, sem atrasar relógios normais; checagem gráfica a cada 10 s com aba visível solicita quadro e recupera contexto comprovadamente perdido sem evento após duas verificações. Causa do ciclo de conexão não reproduzida ou confirmada. A checagem não detecta toda tela vazia com contexto aparentemente saudável. Ver VALIDACAO.md.
+
 # Investigação de tela 3D vazia após compra — mitigação implementada (2026-11-04)
 
 Relato: após primeira compra pode haver aparente refresh e perda total da cena 3D; recarregar ou trocar qualidade pode recuperar. Fatos: rótulos 3D surgem na primeira posse; Text do Drei suspende ao carregar a fonte e antes não tinha Suspense local, permitindo propagar a suspensão ao Canvas. Isolados com Suspense para manter a cena enquanto a fonte carrega. Primeira compra local em desktop e viewport 390×844 manteve o tabuleiro; problema persistente dos aparelhos relatados não foi reproduzido. O usuário relatou ocorrências em PC e celular e em Chrome e outros navegadores. Pressão de contextos WebGL e diferenças de dispositivo seguem hipóteses não comprovadas. Ver VALIDACAO.md.

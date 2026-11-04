@@ -1908,9 +1908,10 @@ describe('sala privada', () => {
     markPlayersReady(room)
     host.send('start')
     await waitFor(() => room.state.status === 'playing')
-    const server = room as unknown as { lastActivity: Map<string, number> }
-    server.lastActivity.set(host.sessionId, Date.now() - 31_000)
-    await waitFor(() => room.state.players.get(host.sessionId)?.isInactive === true, 2500)
+    const server = room as unknown as { lastActivity: Map<string, number>; supervisionStartsAt: number; processSupervision: (now: number) => void }
+    server.lastActivity.set(host.sessionId, server.supervisionStartsAt)
+    server.processSupervision(server.supervisionStartsAt + 30_000)
+    expect(room.state.players.get(host.sessionId)?.isInactive).toBe(true)
     expect(room.state.players.get(host.sessionId)?.isBotControlled).toBe(true)
     guest.send('activity')
     await new Promise((resolve) => setTimeout(resolve, 30))
@@ -1918,6 +1919,28 @@ describe('sala privada', () => {
     host.send('activity')
     await waitFor(() => room.state.players.get(host.sessionId)?.isInactive === false)
     expect(room.state.players.get(host.sessionId)?.isBotControlled).toBe(false)
+  })
+
+  it('aguarda cinco segundos antes dos supervisores sem atrasar o relógio do turno', async () => {
+    const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
+    const host = await colyseus.connectTo(room, { name: 'Ana' })
+    await colyseus.connectTo(room, { name: 'Bia' })
+    markPlayersReady(room); host.send('start')
+    await waitFor(() => room.state.status === 'playing')
+    const game = room as unknown as { supervisionStartsAt: number; watchdogTicks: number; lastActivity: Map<string, number>; processSupervision: (now: number) => void; updateTurnClock: () => void }
+    const start = game.supervisionStartsAt
+    expect(game.lastActivity.get(host.sessionId)).toBe(start)
+    game.lastActivity.set(host.sessionId, start - 60_000)
+    game.watchdogTicks = 14
+    game.processSupervision(start - 1)
+    expect(room.state.players.get(host.sessionId)?.isInactive).toBe(false)
+    expect(game.watchdogTicks).toBe(14)
+    const previous = room.state.turnSeconds
+    game.updateTurnClock()
+    expect(room.state.turnSeconds).toBe(previous - 1)
+    game.processSupervision(start)
+    expect(room.state.players.get(host.sessionId)?.isInactive).toBe(true)
+    expect(game.watchdogTicks).toBe(0)
   })
 
   it('recupera fase de compra travada no zero sem executar duas vezes', async () => {

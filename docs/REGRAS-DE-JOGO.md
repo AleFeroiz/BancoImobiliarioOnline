@@ -1,6 +1,6 @@
 # Regras do BANTEC
 
-- Após 30 segundos sem interação, o bot assume temporariamente. O primeiro toque ou tecla devolve o controle sem acionar outro comando. O servidor tenta recuperar decisões vencidas que permaneçam travadas.
+- Após os primeiros 5 segundos da partida, 30 segundos sem interação fazem o bot assumir temporariamente. O primeiro toque ou tecla devolve o controle sem acionar outro comando. Após a mesma tolerância inicial, o servidor tenta recuperar decisões vencidas que permaneçam travadas. Os relógios normais seguem desde o início.
 
 Este documento descreve somente as regras atuais do BANTEC. Referências ao Express, Volta ao Mundo, estações, hipotecas resgatáveis ou regras clássicas abaixo não fazem parte do jogo atual. A base de decisões e a lista de cidades estão em [DECISOES.md](DECISOES.md).
 

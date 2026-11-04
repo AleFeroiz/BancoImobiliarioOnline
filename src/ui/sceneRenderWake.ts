@@ -77,3 +77,32 @@ export function subscribeSceneContextRecovery(
     canvas.removeEventListener('webglcontextrestored', onContextRestored)
   }
 }
+/** Requests a periodic redraw; only a repeatedly confirmed lost context triggers recovery. */
+export function subscribeSceneHealthMonitor(
+  invalidate: InvalidateScene,
+  isVisible: () => boolean,
+  isContextLost: () => boolean,
+  wasLossNotified: () => boolean,
+  recoverMissedLoss: () => void,
+  setIntervalFn: (callback: () => void, delayMs: number) => number,
+  clearIntervalFn: (timer: number) => void,
+) {
+  let missedLossChecks = 0
+  let recoveryRequested = false
+  const timer = setIntervalFn(() => {
+    if (!isVisible()) { missedLossChecks = 0; return }
+    if (!isContextLost()) {
+      missedLossChecks = 0
+      recoveryRequested = false
+      invalidate(2)
+      return
+    }
+    if (wasLossNotified()) { missedLossChecks = 0; return }
+    missedLossChecks += 1
+    if (missedLossChecks >= 2 && !recoveryRequested) {
+      recoveryRequested = true
+      recoverMissedLoss()
+    }
+  }, 10_000)
+  return () => clearIntervalFn(timer)
+}

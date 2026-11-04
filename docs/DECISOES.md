@@ -1,6 +1,6 @@
 # Lobby visual — decisão de 2026-11-04
 
-- Durante a partida, 30 segundos sem interação colocam o bot no controle; o primeiro toque ou tecla devolve o controle sem executar outra ação. O servidor verifica periodicamente decisões vencidas que ficaram em zero e tenta a resolução padrão novamente.
+- Após os primeiros 5 segundos da partida, 30 segundos sem interação colocam o bot no controle; o primeiro toque ou tecla devolve o controle sem executar outra ação. Depois do intervalo inicial de 5 segundos, o servidor verifica periodicamente decisões vencidas que ficaram em zero e tenta a resolução padrão novamente. A cena solicita novo quadro a cada 10 segundos com a aba visível e tenta recuperar perda persistente de contexto detectada; não recarrega a página.
 
 Após criar ou entrar na sala, mostrar até seis fichas 3D em plataformas, com nomes, cores e estado de prontidão. Vagas permitem à anfitriã adicionar bots; demais controles e seletores ficam compactos. No celular, usar duas fileiras de três. Manter as regras existentes de sala, reconexão e início.
 

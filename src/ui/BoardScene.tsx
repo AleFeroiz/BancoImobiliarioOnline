@@ -1,7 +1,7 @@
 import { Canvas } from '@react-three/fiber'
 import { Billboard, Html, OrbitControls, Text } from '@react-three/drei'
 import { memo, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import { BackSide, Box3, CanvasTexture, DoubleSide, Path, PerspectiveCamera, Shape, ShapeGeometry, SRGBColorSpace, Vector3, type Group, type Mesh, type Object3D } from 'three'
+import { BackSide, Box3, CanvasTexture, DoubleSide, Path, PerspectiveCamera, Shape, ShapeGeometry, SRGBColorSpace, Vector3, type Group, type Mesh, type Object3D, type WebGLRenderer } from 'three'
 import { useFrame, useThree } from '@react-three/fiber'
 import { useGLTF } from '@react-three/drei'
 import { boardSpaces, positionOnBoard } from '../game/board'
@@ -27,7 +27,7 @@ import { applySelectionContrast, createTokenOutlineMaterial, createUnlitMaterial
 import { getBuildingEdgeOffset, getBuildingRentLabelPosition, getCenteredModelPlacement, getModelEdgeFootprint } from './modelPlacement'
 import { getPropertyBoardLabel } from './propertyRentLabel'
 import { playGameSound } from './gameAudio'
-import { scheduleSceneRenderWake, subscribeSceneContextRecovery, subscribeSceneResumeWake } from './sceneRenderWake'
+import { scheduleSceneRenderWake, subscribeSceneContextRecovery, subscribeSceneHealthMonitor, subscribeSceneResumeWake } from './sceneRenderWake'
 import { getGraphicsDprRange, getLowerGraphicsQuality, type GraphicsQuality } from './graphicsQuality'
 import { getGameBackgroundColor } from './nightMode'
 import { getPlayerEmoteSymbol, type PlayerEmote } from '../../shared/playerEmotes'
@@ -927,6 +927,7 @@ type BoardSceneProps = { nightMode: boolean; players: PlayerToken[]; activePlaye
 
 function SceneRenderWake({ sequence, onUnrecoveredContextLoss, onContextLost, onContextRestored }: { sequence: number; onUnrecoveredContextLoss: () => void; onContextLost: () => void; onContextRestored: () => void }) {
   const { gl, invalidate } = useThree()
+  const lossNotified = useRef(false)
 
   useEffect(() => scheduleSceneRenderWake(
     invalidate,
@@ -945,10 +946,20 @@ function SceneRenderWake({ sequence, onUnrecoveredContextLoss, onContextLost, on
       (callback, delayMs) => window.setTimeout(callback, delayMs),
       (timer) => window.clearTimeout(timer),
       1800,
-      onContextLost,
-      onContextRestored,
+      () => { lossNotified.current = true; onContextLost() },
+      () => { lossNotified.current = false; onContextRestored() },
+    )
+    const removeHealthMonitor = subscribeSceneHealthMonitor(
+      invalidate,
+      () => document.visibilityState === 'visible',
+      () => gl.getContext().isContextLost(),
+      () => lossNotified.current,
+      onUnrecoveredContextLoss,
+      (callback, delay) => window.setInterval(callback, delay),
+      (timer) => window.clearInterval(timer),
     )
     return () => {
+      removeHealthMonitor()
       removeResumeListeners()
       removeContextListeners()
     }
@@ -970,6 +981,7 @@ function BoardSceneCanvas({ nightMode, players, activePlayerSessionId = '', loca
   const [recoveryQuality, setRecoveryQuality] = useState<GraphicsQuality | null>(null)
   const [contextStatus, setContextStatus] = useState<'ready' | 'lost' | 'recovering' | 'failed'>('ready')
   const recoveryAttempts = useRef(0)
+  const currentRenderer = useRef<WebGLRenderer | null>(null)
   const recoveryResetTimer = useRef<number | undefined>(undefined)
   const requestedQuality = useRef(graphicsQuality)
   const effectiveQuality = recoveryQuality ?? graphicsQuality
@@ -977,7 +989,7 @@ function BoardSceneCanvas({ nightMode, players, activePlayerSessionId = '', loca
     setContextStatus('ready')
     if (recoveryResetTimer.current !== undefined) window.clearTimeout(recoveryResetTimer.current)
     recoveryResetTimer.current = window.setTimeout(() => {
-      recoveryAttempts.current = 0
+      if (currentRenderer.current && !currentRenderer.current.getContext().isContextLost()) recoveryAttempts.current = 0
       recoveryResetTimer.current = undefined
     }, 10_000)
   }, [])
@@ -1015,7 +1027,7 @@ function BoardSceneCanvas({ nightMode, players, activePlayerSessionId = '', loca
   }, [graphicsQuality])
   return (
     <>
-    <Canvas key={canvasGeneration} onCreated={markCanvasStable} camera={{ position: [12.5, 15.5, 15.5], fov: 34 }} dpr={getGraphicsDprRange(effectiveQuality)} frameloop="demand" gl={{ antialias: false, powerPreference: recoveryQuality ? 'default' : 'high-performance', stencil: false }}>
+    <Canvas key={canvasGeneration} onCreated={(state) => { currentRenderer.current = state.gl; markCanvasStable() }} camera={{ position: [12.5, 15.5, 15.5], fov: 34 }} dpr={getGraphicsDprRange(effectiveQuality)} frameloop="demand" gl={{ antialias: false, powerPreference: recoveryQuality ? 'default' : 'high-performance', stencil: false }}>
       <color attach="background" args={[getGameBackgroundColor(nightMode)]} />
       <SceneRenderWake sequence={renderWakeSequence} onUnrecoveredContextLoss={recoverLostContext} onContextLost={markContextLost} onContextRestored={markContextRestored} />
       <ResponsiveCamera tilt={16} horizontal={45} />
