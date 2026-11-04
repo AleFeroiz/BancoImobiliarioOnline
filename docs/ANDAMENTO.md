@@ -1,3 +1,7 @@
+# Lobby visual 3D — em andamento (2026-11-04)
+
+Implementação local: seis plataformas com fichas e vagas para bots, seletores compactos e comandos existentes de sala preservados. Suíte completa passou com loopback; revisão visual em desktop e viewport 390×844 confirmou cofrinho, bot, prontidão e início de partida. Retomada manual após recarregar a partida confirmada; teste manual de seis fichas simultâneas ainda pendente. Alterações locais de Blender e capturas pertencem a outra frente e foram preservadas.
+
 # Trilhas da página inicial e da partida — implementadas
 
 - Pedido: duas músicas instrumentais locais de aproximadamente três minutos, com variações e transição contínua ao repetir.

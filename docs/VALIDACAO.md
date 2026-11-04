@@ -1,3 +1,7 @@
+# Lobby visual 3D — 2026-11-04
+
+Revisão local no navegador integrado: sala criada, bot adicionado pela vaga, cofrinho selecionado com cor vermelha, prontidão confirmada e partida iniciada; bot comprou uma propriedade. Viewport 390×844 mostrou seis vagas em duas fileiras. Console sem erros ou avisos na partida. Após recarregar a página, a partida foi retomada; seis fichas simultâneas não foram verificadas manualmente. Suíte existente: 365 testes aprovados com loopback.
+
 # Coroa e chapéu de bobo nas fichas — 2026-11-03
 
 - Blender MCP conectado em 5.2.2 LTS com protocolo 15 atualizado. Coroa e chapéu modelados, conferidos com `get_scene_info` e `look`, exportados em GLB com Y-up, reimportados no Blender e inspecionados novamente. Fonte: `assets/blender/wealth-headwear.blend`; exportação: `public/assets/wealth-headwear.glb`.

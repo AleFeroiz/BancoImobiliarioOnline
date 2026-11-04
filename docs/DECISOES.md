@@ -1,3 +1,7 @@
+# Lobby visual — decisão de 2026-11-04
+
+Após criar ou entrar na sala, mostrar até seis fichas 3D em plataformas, com nomes, cores e estado de prontidão. Vagas permitem à anfitriã adicionar bots; demais controles e seletores ficam compactos. No celular, usar duas fileiras de três. Manter as regras existentes de sala, reconexão e início.
+
 # Decisões do projeto
 
 ## Confirmadas e vigentes

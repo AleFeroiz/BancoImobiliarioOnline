@@ -1,0 +1,39 @@
+import { Suspense, useMemo } from 'react'
+import { Canvas } from '@react-three/fiber'
+import { useGLTF } from '@react-three/drei'
+import { Box3, Mesh, Vector3 } from 'three'
+import type { CharacterType } from '../../shared/lobby'
+import { createUnlitMaterial, getOwnerTintOverride } from './sceneMaterials'
+
+const roots: Partial<Record<CharacterType, string>> = { car: 'Token_Car', motorcycle: 'Token_Motorcycle', airplane: 'Token_Airplane', highHeel: 'Token_HighHeel', train: 'Token_Train', topHat: 'Token_TopHat', piggyBank: 'Token_PiggyBank', ship: 'Token_Ship', rubberDuck: 'Token_RubberDuck', dog: 'Token_Dog', cat: 'Token_Cat', cow: 'Token_Cow', penguin: 'Token_Penguin' }
+
+const primaryMaterials: Partial<Record<CharacterType, string>> = { piggyBank: 'TOKEN_PINK', cat: 'TOKEN_CREAM', cow: 'TOKEN_WHITE', dog: 'TOKEN_CREAM', highHeel: 'TOKEN_RED', penguin: 'TOKEN_DARK', rubberDuck: 'TOKEN_YELLOW', ship: 'TOKEN_BLUE', topHat: 'TOKEN_DARK', train: 'TOKEN_RED' }
+
+function Token({ type, color }: { type: CharacterType; color: string }) {
+  const { scene } = useGLTF('/assets/player-tokens.glb')
+  const model = useMemo(() => {
+    const source = scene.getObjectByName(roots[type] ?? '')
+    if (!source || type === 'pawn') return null
+    const clone = source.clone(true)
+    const box = new Box3().setFromObject(clone)
+    const center = box.getCenter(new Vector3())
+    const size = box.getSize(new Vector3())
+    clone.position.sub(center)
+    const scale = 1.25 / Math.max(size.x, size.y, size.z)
+    clone.scale.setScalar(scale)
+    clone.traverse((object) => {
+      const mesh = object as Mesh
+      if (!mesh.isMesh) return
+      const recolor = (material: import('three').Material) => createUnlitMaterial(material, material.name === primaryMaterials[type] ? color : getOwnerTintOverride(mesh.name, material.name, color))
+      mesh.material = Array.isArray(mesh.material) ? mesh.material.map(recolor) : recolor(mesh.material)
+    })
+    return clone
+  }, [scene, type, color])
+  if (type === 'pawn') return <group position={[0, -0.48, 0]}><mesh position={[0, 0.32, 0]}><cylinderGeometry args={[0.25, 0.38, 0.48, 12]} /><meshBasicMaterial color={color} /></mesh><mesh position={[0, 0.74, 0]}><sphereGeometry args={[0.25, 20, 16]} /><meshBasicMaterial color={color} /></mesh></group>
+  return model ? <primitive object={model} /> : null
+}
+
+export default function LobbyToken({ type, color }: { type: CharacterType; color: string }) {
+  return <div className="lobby-token" aria-hidden="true"><Canvas frameloop="demand" camera={{ position: [2, 1.5, 3], fov: 32 }} gl={{ alpha: true, antialias: true }}><Suspense fallback={null}><Token type={type} color={color} /></Suspense></Canvas></div>
+}
+
