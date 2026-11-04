@@ -1,24 +1,15 @@
 import type { GameSound } from './gameFeedback'
 
 let context: AudioContext | null = null
-let musicTimer: number | null = null
 let musicGeneration = 0
+let musicSource: AudioBufferSourceNode | null = null
 let musicBus: GainNode | null = null
-let musicOscillators: OscillatorNode[] = []
-
-const musicPhrase = [0, 2, 3, 4, 2, 3, 5, 3, 0, 2, 4, 3, 1, 3, 2, 0]
-const musicScale = [220, 261.63, 293.66, 329.63, 392, 440]
-
-export function getBackgroundMusicFrequency(step: number) {
-  const phraseIndex = ((Math.floor(step) % musicPhrase.length) + musicPhrase.length) % musicPhrase.length
-  return musicScale[musicPhrase[phraseIndex] ?? 0] ?? musicScale[0]!
-}
-
+let musicRequest: AbortController | null = null
 function getAudioContext() {
   if (typeof window === 'undefined' || !('AudioContext' in window)) return null
   try {
     context ??= new AudioContext()
-    if (context.state === 'suspended') void context.resume()
+    if (context.state === 'suspended') void context.resume().catch(() => {})
     return context
   } catch {
     return null
@@ -285,80 +276,52 @@ export function unlockGameAudio() {
   getAudioContext()
 }
 
-export function startGameMusic() {
+export type MusicTrack = 'home' | 'game'
+
+export function startGameMusic(track: MusicTrack) {
   const audio = getAudioContext()
-  if (!audio || typeof window === 'undefined') return
+  if (!audio) return
 
   stopGameMusic()
   const generation = musicGeneration
-  const bus = audio.createGain()
-  bus.gain.setValueAtTime(0.22, audio.currentTime)
-  bus.connect(audio.destination)
-  musicBus = bus
+  const request = new AbortController()
+  musicRequest = request
+  const url = `${import.meta.env.BASE_URL}assets/music/${track}.mp3`
 
-  const pad = audio.createOscillator()
-  const padGain = audio.createGain()
-  pad.type = 'sine'
-  pad.frequency.setValueAtTime(130.81, audio.currentTime)
-  padGain.gain.setValueAtTime(0.012, audio.currentTime)
-  pad.connect(padGain)
-  padGain.connect(bus)
-  pad.start()
-  musicOscillators.push(pad)
-
-  let step = 0
-  const scheduleNote = () => {
-    if (musicGeneration !== generation || musicBus !== bus) return
-    const onset = audio.currentTime + 0.04
-    const oscillator = audio.createOscillator()
-    const envelope = audio.createGain()
-    oscillator.type = 'sine'
-    oscillator.frequency.setValueAtTime(getBackgroundMusicFrequency(step), onset)
-    envelope.gain.setValueAtTime(0.0001, onset)
-    envelope.gain.exponentialRampToValueAtTime(0.075, onset + 0.06)
-    envelope.gain.exponentialRampToValueAtTime(0.0001, onset + 0.72)
-    oscillator.connect(envelope)
-    envelope.connect(bus)
-    oscillator.onended = () => {
-      oscillator.disconnect()
-      envelope.disconnect()
-      musicOscillators = musicOscillators.filter((active) => active !== oscillator)
-    }
-    oscillator.start(onset)
-    oscillator.stop(onset + 0.74)
-    musicOscillators.push(oscillator)
-    step += 1
-    musicTimer = window.setTimeout(scheduleNote, 820)
-  }
-
-  try {
-    scheduleNote()
-  } catch {
-    stopGameMusic()
-  }
+  void fetch(url, { signal: request.signal })
+    .then((response) => {
+      if (!response.ok) throw new Error(`Music request failed: ${response.status}`)
+      return response.arrayBuffer()
+    })
+    .then((data) => audio.decodeAudioData(data))
+    .then((buffer) => {
+      if (generation !== musicGeneration) return
+      const bus = audio.createGain()
+      const source = audio.createBufferSource()
+      bus.gain.value = 0.14
+      source.buffer = buffer
+      source.loop = true
+      source.connect(bus)
+      bus.connect(audio.destination)
+      musicSource = source
+      musicBus = bus
+      musicRequest = null
+      source.start()
+    })
+    .catch(() => {
+      // Music is optional and can fail to load or be blocked without affecting the game.
+    })
 }
 
 export function stopGameMusic() {
   musicGeneration += 1
-  if (musicTimer !== null && typeof window !== 'undefined') window.clearTimeout(musicTimer)
-  musicTimer = null
-
-  const audio = context
-  const bus = musicBus
+  musicRequest?.abort()
+  musicRequest = null
+  if (musicSource) {
+    musicSource.stop()
+    musicSource.disconnect()
+    musicSource = null
+  }
+  musicBus?.disconnect()
   musicBus = null
-  if (audio && bus) {
-    const now = audio.currentTime
-    bus.gain.cancelScheduledValues(now)
-    bus.gain.setTargetAtTime(0, now, 0.06)
-    window.setTimeout(() => bus.disconnect(), 300)
-  }
-  for (const oscillator of musicOscillators) {
-    try {
-      oscillator.stop()
-      oscillator.disconnect()
-    } catch {
-      // An already-ended note needs no cleanup.
-    }
-  }
-  musicOscillators = []
 }

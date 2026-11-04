@@ -1,17 +1,47 @@
-import { describe, expect, it } from 'vitest'
-import { getBackgroundMusicFrequency, getGameAudioEffectStyle } from './gameAudio'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { getGameAudioEffectStyle } from './gameAudio'
 
-describe('background game music', () => {
-  it('uses a calm repeating phrase in a safe audible range', () => {
-    const phrase = Array.from({ length: 16 }, (_, step) => getBackgroundMusicFrequency(step))
-
-    expect(new Set(phrase).size).toBeGreaterThan(4)
-    expect(phrase.every((frequency) => frequency >= 200 && frequency <= 450)).toBe(true)
-    expect(getBackgroundMusicFrequency(16)).toBe(phrase[0])
-    expect(getBackgroundMusicFrequency(-1)).toBe(phrase[15])
-  })
+afterEach(() => {
+  vi.unstubAllGlobals()
+  vi.resetModules()
 })
 
+describe('background music', () => {
+  it('loops the requested track and stops it when audio is disabled', async () => {
+    const source = { connect: vi.fn(), disconnect: vi.fn(), start: vi.fn(), stop: vi.fn(), loop: false, buffer: null }
+    const bus = { gain: { value: 0 }, connect: vi.fn(), disconnect: vi.fn() }
+    const audio = { state: 'running', destination: {}, decodeAudioData: vi.fn().mockResolvedValue({}), createGain: () => bus, createBufferSource: () => source }
+    vi.stubGlobal('window', { AudioContext: vi.fn(function () { return audio }) })
+    vi.stubGlobal('AudioContext', vi.fn(function () { return audio }))
+    const fetchAudio = vi.fn().mockResolvedValue({ ok: true, arrayBuffer: () => Promise.resolve(new ArrayBuffer(1)) })
+    vi.stubGlobal('fetch', fetchAudio)
+    const { startGameMusic, stopGameMusic } = await import('./gameAudio')
+
+    startGameMusic('home')
+    await vi.waitFor(() => expect(source.start).toHaveBeenCalledOnce())
+    expect(fetchAudio.mock.calls[0]?.[0]).toContain('assets/music/home.mp3')
+    expect(source.loop).toBe(true)
+    stopGameMusic()
+    expect(source.stop).toHaveBeenCalledOnce()
+  })
+
+  it('does not start an obsolete track after changing screens', async () => {
+    let finishDecode!: (buffer: object) => void
+    const source = { connect: vi.fn(), disconnect: vi.fn(), start: vi.fn(), stop: vi.fn() }
+    const audio = { state: 'running', destination: {}, decodeAudioData: () => new Promise((resolve) => { finishDecode = resolve }), createGain: vi.fn(), createBufferSource: () => source }
+    vi.stubGlobal('window', { AudioContext: vi.fn(function () { return audio }) })
+    vi.stubGlobal('AudioContext', vi.fn(function () { return audio }))
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, arrayBuffer: () => Promise.resolve(new ArrayBuffer(1)) }))
+    const { startGameMusic, stopGameMusic } = await import('./gameAudio')
+
+    startGameMusic('game')
+    await vi.waitFor(() => expect(finishDecode).toBeDefined())
+    stopGameMusic()
+    finishDecode({})
+    await Promise.resolve()
+    expect(source.start).not.toHaveBeenCalled()
+  })
+})
 describe('identidade dos efeitos de áudio', () => {
   it('diferencia dinheiro recebido, perda, dados e construção', () => {
     expect(getGameAudioEffectStyle('money-in')).toBe('cash-register')

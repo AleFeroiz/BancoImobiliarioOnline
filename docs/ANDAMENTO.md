@@ -1,3 +1,12 @@
+# Trilhas da página inicial e da partida — implementadas
+
+- Pedido: duas músicas instrumentais locais de aproximadamente três minutos, com variações e transição contínua ao repetir.
+- Direção aprovada: abertura acolhedora e tranquila; partida alegre, divertida e discreta sob os efeitos sonoros.
+- O ACE-Step local gerou cinco trechos de 40 segundos para cada faixa. A tentativa direta de 180 segundos falhou com timeout CUDA. As junções e o fechamento foram feitos com sobreposição de quatro segundos, produzindo dois MP3 de exatamente 180 segundos.
+- O cliente seleciona a faixa pela tela, respeita o controle de áudio e espera a interação quando o navegador bloqueia reprodução automática. Na troca ou ao silenciar, cancela o carregamento anterior e interrompe a fonte.
+- Validação: testes de cancelamento e de repetição; suite completa e builds passaram antes do ajuste final para manter a trilha ao passar da home ao lobby. O navegador carregou as duas faixas e o controle de áudio respondeu. As amostras finais foram verificadas numericamente, mas não houve audição para avaliar a transição musical e as junções entre trechos.
+- Próximo passo: ouvir as duas faixas completas e suas transições em partida, principalmente a volta do fim ao início.
+
 # Ícones das cartas Sorte ou Revés — implementação concluída
 
 - Escopo: 15 ilustrações quadradas, coloridas e estilizadas, com peão legível e uma cena própria para cada carta.

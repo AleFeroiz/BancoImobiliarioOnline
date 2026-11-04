@@ -1047,3 +1047,9 @@
 - Prancha das 15 artes revisada em miniatura. ComfyUI local com Stable Diffusion 1.5, img2img em 512 × 512 a partir de guias desenhadas, uma carta por vez. Assets finais em WebP de 320 × 320, cerca de 132 kB no total.
 - Em sala local com bot, o modo DEV armou Proteção e Desconto no aluguel e acionou o sorteio por teleporte. Capturas confirmaram a arte correta, a leitura do texto e o botão OK em desktop e viewport de 390 × 844, respectivamente. A casa aparece dentro da bolha azul na carta Proteção.
 - O teste de catálogo confirmou um arquivo por identificador. `npm run verify` passou com 364 testes em 64 arquivos e builds web e servidor.
+
+## Trilhas instrumentais geradas localmente
+
+- ACE-Step 1.5 local, modelo turbo com CPU offload e geração sequencial em trechos de 40 s. A geração única de 180 s falhou com timeout CUDA na GTX 970; cinco trechos por faixa foram unidos com sobreposições de quatro segundos e uma sobreposição adicional para fechar o loop.
+- Os dois MP3 finais decodificados têm 180,0 segundos, 48 kHz e estéreo. A diferença máxima entre as amostras da junção foi 0,0046 na partida e 0,0012 na abertura, em escala normalizada. Isso verifica a continuidade numérica, não a continuidade musical ou percepção de cliques.
+- Testes automatizados cobrem repetição, parada e descarte de carregamento antigo. Em sala com bot, o navegador requisitou a faixa da página inicial e depois a da partida; o controle de áudio mudou para desativado, sem erros no navegador. Não houve audição das faixas nem revisão perceptiva das junções.

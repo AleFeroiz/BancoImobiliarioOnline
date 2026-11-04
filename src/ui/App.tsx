@@ -838,12 +838,14 @@ function App() {
     }
   }, [soundEnabled])
 
+  const musicTrack = screen === 'game' ? 'game' : 'home'
+
   useEffect(() => {
-    if (screen !== 'game' || !soundEnabled) return
+    if (!soundEnabled) return
     unlockGameAudio()
-    startGameMusic()
+    startGameMusic(musicTrack)
     return stopGameMusic
-  }, [screen, soundEnabled])
+  }, [musicTrack, soundEnabled])
 
   useEffect(() => {
     setAuctionBidAmount((current) => normalizeAuctionBidInput(current, auctionMinimumBid))
