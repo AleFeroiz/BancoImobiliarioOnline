@@ -1078,3 +1078,24 @@ Revisão local no navegador integrado: sala criada, bot adicionado pela vaga, co
 - Os dois MP3 finais decodificados têm 180,0 segundos, 48 kHz e estéreo. A diferença máxima entre as amostras da junção foi 0,0046 na partida e 0,0012 na abertura, em escala normalizada. Isso verifica a continuidade numérica, não a continuidade musical ou percepção de cliques.
 - Testes automatizados cobrem repetição, parada e descarte de carregamento antigo. Em sala com bot, o navegador requisitou a faixa da página inicial e depois a da partida; o controle de áudio mudou para desativado, sem erros no navegador. Não houve audição das faixas nem revisão perceptiva das junções.
 
+
+## Protótipo Unity Web — 2026-11-05
+
+- Unity 6000.3.9f1, Editor e cliente Web local; servidor Colyseus local e isolado. As provas de integração no Editor exercitaram sala, bot, início, compra, construção, aluguel, dívida, falência e vencedor. A verificação de controle de turno cobriu bot, jogador, reconexão e lobby.
+- No navegador, um build anterior criou sala, selecionou ficha, iniciou partida com bot e mostrou nome e preço ao inspecionar uma casa. Em viewport 390 × 844, o tabuleiro e o painel ficaram separados, mas textos e botões ficaram pequenos; revisão identificou necessidade de correção. Não equivale a teste em aparelho físico.
+- `npm run verify`: 376 testes em 66 arquivos, build web e build do servidor aprovados. Medição em disco: build Unity sem compressão 65.971.561 bytes; `dist` web 11.543.735 bytes. Não foram medidos tempo de carregamento, memória ou FPS em condições equivalentes.
+- Ainda faltam teste de hospedagem HTTPS e servidor separado, revisão visual completa e comparação de desempenho real. O cliente Unity é provisório e não cobre toda a interface e os efeitos do jogo web.
+
+## Playtest Unity WebLatest — 2026-11-05
+
+Build WebGL `Builds/WebLatest`: carregou no navegador; servidor Colyseus local criou sala `7TDNU`; jogador alternou prontidão, adicionou bot, iniciou a partida, lançou dados, avançou à fase de compra e comprou Parauapebas. O estado exibiu saldo reduzido de R$ 2.000.000 para R$ 1.920.000 e fase `resolve`. As fichas atualizaram as posições no tabuleiro. Servidores locais encerrados após a revisão.
+
+Em 1280 × 720 a interface ficou legível e o painel não cobriu o tabuleiro. Ainda falta revalidar 390 × 844 no build atualizado; a revisão anterior nessa dimensão apontou escala pequena. A fidelidade geral permanece abaixo do jogo web e a medição de desempenho continua limitada a tamanho de arquivos.
+
+Em 390 × 844 no build `WebLatest`, o tabuleiro e o painel ficaram separados; texto, campos e botões de entrada/prontidão têm tamanho legível. Criei uma sala pelo toque e alternei prontidão e inclusão de bot. O painel rolou, mas o botão Iniciar ficou abaixo da área visível após esses passos; revisar a navegação rolável do lobby móvel antes de considerar a experiência móvel pronta. Não testado em aparelho físico.
+
+No build WebGL `WebFinal`, a criação de sala foi repetida em 390 × 844 e os quatro comandos do lobby, incluindo `Iniciar partida`, ficaram visíveis juntos sem rolagem. A cena e o painel permaneceram separados. Servidores encerrados após o teste.
+
+## Playtest Unity WebFinal — aluguel no navegador — 2026-11-05
+
+Build `Bantec/Builds/WebFinal` servido localmente em `http://127.0.0.1:5173/` contra Colyseus em `:2567`. Na sala de teste, criei a sala, adicionei bot, marquei prontidão, iniciei, rolei os dados, comprei Belém e resolvi turnos até o bot parar em uma propriedade do jogador. O saldo do bot passou de R$ 2.000.000 para R$ 1.660.000 e o do jogador humano ficou em R$ 1.030.000; o estado visual voltou à fase `resolve`, confirmando o pagamento de R$ 340.000 no cliente WebGL. A integração no Editor segue como evidência para construção; a construção não foi alcançada manualmente no navegador. Ambos os servidores foram encerrados ao fim. Revisão desktop 1280 × 720; o teste em viewport 390 × 844 do lobby foi registrado acima; nenhum aparelho físico foi usado.
