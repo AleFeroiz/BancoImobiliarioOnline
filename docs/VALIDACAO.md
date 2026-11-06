@@ -1139,3 +1139,9 @@ O pacote `Builds/WebReleaseActivityFix` foi preparado por `deployment/package-pr
 - No playtest web local, **Leilão** aparece junto de **Apostas** e **Empréstimo**. Ao ativar Leilão, o tabuleiro entra em seleção; clicar na propriedade iluminada Manaus abriu o inspetor de imóvel de outro jogador, mostrando o lance inicial arredondado e a ação **Pedir leilão**. A solicitação foi enviada; o bot recusou e a reserva retornou ao saldo.
 - Em viewports de 390 × 844 e 320 × 568, o painel de apostas permaneceu dentro da viewport. No tamanho menor, o conteúdo do painel rola internamente. A janela de empréstimo também abriu pelo botão próprio e ficou enquadrada na tela.
 - Testes direcionados de posicionamento e seleção passaram (4 testes). `npm run verify` passou com 404 testes em 70 arquivos e concluiu os builds Vite e do servidor. O Vite manteve o aviso de bundle principal acima de 500 kB (1.482,93 kB; gzip 423,83 kB).
+
+### 2026-11-06 — Copa do Mundo apenas em cidades
+
+- A propriedade própria escolhida para sediar a Copa precisa ser uma cidade. A tentativa de selecionar uma companhia retorna erro sem mudar a sede ou a contagem de edições; os destaques da UI e a escolha automática de bots também excluem companhias.
+- Testes direcionados: 95 passaram (incluindo GameRoom); `npm run verify`: 406 testes em 72 arquivos aprovados, build Vite e build do servidor concluídos. O bundle principal continua gerando o aviso de tamanho acima de 500 kB (1.482,96 kB; gzip 423,85 kB).
+- No navegador em sala local, comprei AgroBrasil e, sem possuir cidade, usei os controles DEV para chegar à Copa. A partida avançou sem abrir uma seleção de sede. Vite em 5173 e Colyseus temporário em 2568 foram encerrados; 2567 estava ocupada por um serviço não identificado e foi preservada.

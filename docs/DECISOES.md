@@ -61,6 +61,7 @@ A volta começa pela região de menor participação no PIB nacional e termina n
 
 ## Outras regras econômicas aprovadas
 
+- **Sede da Copa do Mundo:** somente uma cidade própria pode sediá-la; companhias não são elegíveis.
 - **Monopólio Regional:** possuir todas as cidades de uma região dobra o aluguel. Completar duas regiões diferentes é uma vitória imediata. O Sul tem quatro cidades; cada outra região tem cinco.
 - **Monopólio em Linha:** cada lado do tabuleiro contém seis cidades e uma companhia. Possuir os sete títulos daquele lado vence imediatamente. Taxas e Sorte ou Revés não contam.
 - **Companhias:** AgroBrasil, Aviação Brasil, Energia Brasil e Mineração Brasil custam R$ 500.000 cada. Ao cair numa companhia, role um novo D6: o aluguel é R$ 50.000 × companhias do dono (1–3) × resultado. Possuir as quatro vence imediatamente; companhias não pertencem às regiões, mas contam para a linha e os impostos.

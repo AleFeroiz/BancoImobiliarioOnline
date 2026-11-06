@@ -1,3 +1,8 @@
+# Copa do Mundo: somente cidades podem sediar — implementado (2026-11-06)
+
+- A seleção manual, os destaques do tabuleiro e a escolha automática agora consideram apenas cidades próprias. O servidor rejeita tentativas de usar companhias como sede.
+- `npm run verify` passou com 406 testes em 72 arquivos e builds web/servidor. Playtest local confirmou avanço automático quando a pessoa possui apenas uma companhia.
+
 # Correções na UI de leilão, apostas e empréstimo — implementadas (2026-11-06)
 
 - A ação **Leilão** agora fica ao lado de **Apostas** e **Empréstimo**. Ela ativa seleção de propriedades no tabuleiro; clicar numa casa iluminada seleciona o imóvel e abre suas ações de anunciar ou pedir leilão.

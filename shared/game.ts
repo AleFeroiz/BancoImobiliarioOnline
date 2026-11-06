@@ -121,7 +121,7 @@ export function describeLanding(spaceId: number) {
     event: 'Você parou em uma casa de evento.',
     tax: 'Você parou em uma casa de taxa.',
     prison: 'Você caiu na prisão. Aguarde, tente duplas ou pague R$ 200.000 para sair.',
-    'world-cup': 'Escolha uma propriedade para sediar a Copa do Mundo; o multiplicador de aluguel cresce a cada edição.',
+    'world-cup': 'Escolha uma cidade sua para sediar a Copa do Mundo; o multiplicador de aluguel cresce a cada edição.',
     'world-tour': 'Escolha uma propriedade sua, livre ou casa especial para visitar.',
   } satisfies Record<typeof space.kind, string>
   return `${space.name}. ${descriptions[space.kind]}`
