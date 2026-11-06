@@ -4,6 +4,7 @@ import { useGLTF } from '@react-three/drei'
 import { Box3, Mesh, Vector3 } from 'three'
 import type { CharacterType } from '../../shared/lobby'
 import { createUnlitMaterial, getOwnerTintOverride } from './sceneMaterials'
+import { PawnGeometry } from './PawnGeometry'
 
 const roots: Partial<Record<CharacterType, string>> = { car: 'Token_Car', motorcycle: 'Token_Motorcycle', airplane: 'Token_Airplane', highHeel: 'Token_HighHeel', train: 'Token_Train', topHat: 'Token_TopHat', piggyBank: 'Token_PiggyBank', ship: 'Token_Ship', rubberDuck: 'Token_RubberDuck', dog: 'Token_Dog', cat: 'Token_Cat', cow: 'Token_Cow', penguin: 'Token_Penguin' }
 
@@ -29,7 +30,7 @@ function Token({ type, color }: { type: CharacterType; color: string }) {
     })
     return clone
   }, [scene, type, color])
-  if (type === 'pawn') return <group position={[0, -0.48, 0]}><mesh position={[0, 0.32, 0]}><cylinderGeometry args={[0.25, 0.38, 0.48, 12]} /><meshBasicMaterial color={color} /></mesh><mesh position={[0, 0.74, 0]}><sphereGeometry args={[0.25, 20, 16]} /><meshBasicMaterial color={color} /></mesh></group>
+  if (type === 'pawn') return <group position={[0, -0.48, 0]} scale={1.8}><mesh><PawnGeometry /><meshBasicMaterial color={color} /></mesh></group>
   return model ? <primitive object={model} /> : null
 }
 

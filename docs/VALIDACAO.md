@@ -1,3 +1,10 @@
+# Reformulação do conjunto de fichas — 2026-11-06
+
+- Blender 5.2.2 LTS e MCP 1.8: as 13 fichas tiveram silhuetas ou detalhes revisados, com 148 a 464 triângulos cada. Rodas de carro e moto foram reconstruídas, e a orientação das rodas do trem, sua chaminé e o mastro do navio foram corrigidos. Os animais receberam traços, pernas ou detalhes para diferenciá-los; salto e cartola receberam acabamentos. O perfil do peão gerado em código foi revisto no Blender e compartilhado nas duas cenas.
+- Exportei `public/assets/player-tokens.glb` em Y-up a partir de `assets/blender/player-tokens.blend`; a reimportação no Blender mostrou 13 raízes e material `OWNER_TINT`. Moto e vaca reimportadas foram inspecionadas visualmente.
+- `npm run verify` passou: 406 testes em 72 arquivos e builds web/servidor; permanece o aviso conhecido de bundle acima de 500 kB. `npm run graphify -- update .` atualizou o grafo após a mudança no código.
+- Playtest desktop local: peão, moto e vaca no lobby; peão em uma partida com bot e moto em outra. Com a moto, comprei Belém com uma casa por R$ 170.000 e o saldo passou de R$ 2.000.000 a R$ 1.830.000; o tabuleiro e a construção permaneceram visíveis. Vite 5173 e Colyseus 2568 foram encerrados. O servidor registrou tentativa de reconexão à sala de teste antiga já descartada. Não revisei cada uma das 13 fichas em partida nem em aparelho físico.
+
 # Fichas low-poly — 2026-11-06
 
 - Blender 5.2.2 LTS, MCP Blender 1.8. Em `assets/blender/player-tokens.blend`, revi as 13 fichas e alterei o sapato de salto (sandália com palmilha estreita, arco exposto, salto fino, tiras cruzadas, tira de tornozelo e fivela dourada) e o casco do navio (laterais facetadas e proa afilada). As onze fichas restantes foram inspecionadas e mantidas.

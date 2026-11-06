@@ -1,3 +1,7 @@
+# Reformulação de todas as fichas — implementada (2026-11-06)
+
+- As 13 fichas foram reformuladas no Blender 5.2.2, com 148 a 464 triângulos por modelo, e exportadas em Y-up. O peão padrão foi redesenhado no lobby e no tabuleiro. A suíte passou com 406 testes e builds; a revisão local conferiu peão, moto e vaca no lobby e o peão e a moto em partida. Detalhes em [tokens-conjunto.md](trabalho/tokens-conjunto.md) e `docs/VALIDACAO.md`.
+
 # Revisão visual low-poly das fichas — concluída (2026-11-06)
 
 - Refeitos o sapato de salto e o casco do navio na sessão Blender 5.2.2; as outras fichas foram revisadas e mantidas. `npm run verify` passou com 406 testes e builds web/servidor; lobby e partida local mostraram o Salto selecionado e as fichas no tabuleiro. Fonte, exportação e limites da revisão em [tokens-low-poly.md](trabalho/tokens-low-poly.md) e `docs/VALIDACAO.md`.

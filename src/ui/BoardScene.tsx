@@ -13,6 +13,7 @@ import { BUILDING_GROUP_Y, getBoardSpaceDecoration, getPropertyModelYOffset } fr
 import { getBoardTileTheme } from './boardTileTheme'
 import { getFestivalBannerPlacement } from './festivalBanner'
 import { getPawnStackIndices, getPawnTilePosition } from './pawnPlacement'
+import { PawnGeometry } from './PawnGeometry'
 import { getWealthHeadwear, type WealthHeadwear } from './wealthHeadwear'
 import { fitSpaceLabel, shouldRenderSpaceLabel } from './spaceLabel'
 import { getPawnStepPath } from './pawnPath'
@@ -398,22 +399,14 @@ function AnimatedPawn({ player, headwear, stackIndex, pawnGroups, reducedMotion,
       <TokenHighlight color={player.color} baseY={baseY} />
       {player.characterType === 'pawn' ? <>
         <group scale={1.24}>
-          <mesh position={[0, 0.17, 0]} raycast={skipRaycast}>
-            <cylinderGeometry args={[0.16, 0.23, 0.25, 7]} />
-            <meshBasicMaterial color="#26352f" side={BackSide} toneMapped={false} />
-          </mesh>
-          <mesh position={[0, 0.39, 0]} raycast={skipRaycast}>
-            <sphereGeometry args={[0.16, 14, 12]} />
+          <mesh raycast={skipRaycast}>
+            <PawnGeometry />
             <meshBasicMaterial color="#26352f" side={BackSide} toneMapped={false} />
           </mesh>
         </group>
         <group scale={1.12}>
-          <mesh position={[0, 0.17, 0]} raycast={skipRaycast}>
-            <cylinderGeometry args={[0.16, 0.23, 0.25, 7]} />
-            <meshBasicMaterial color={player.color} />
-          </mesh>
-          <mesh position={[0, 0.39, 0]} raycast={skipRaycast}>
-            <sphereGeometry args={[0.16, 14, 12]} />
+          <mesh raycast={skipRaycast}>
+            <PawnGeometry />
             <meshBasicMaterial color={player.color} />
           </mesh>
         </group>
