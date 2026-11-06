@@ -1,6 +1,8 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import type { Room } from '@colyseus/sdk'
 import { BET_MINIMUM, BET_STEP, betLimit, type BetOffer } from '../../shared/betting'
+import { getBettingPanelPosition } from './bettingPanelPosition'
 
 type BetReceipt = { requestId: string; offerId: string; amount: number; optionId: string; won: boolean; payout: number; net: number }
 type Props = { room: Room; cash: number; startingCash: number; used: boolean; lapRevision: number; isInDebt: boolean; isEnded: boolean }
@@ -14,6 +16,9 @@ export function BettingPanel({ room, cash, startingCash, used, lapRevision, isIn
   const [receipt, setReceipt] = useState<BetReceipt | null>(null)
   const [pending, setPending] = useState(false)
   const [error, setError] = useState('')
+  const triggerRef = useRef<HTMLButtonElement>(null)
+  const panelRef = useRef<HTMLElement>(null)
+  const [panelPosition, setPanelPosition] = useState({ left: 12, top: 12, width: 300, maxHeight: 400 })
   const limit = betLimit(startingCash, cash)
   const currentReceipt = receipt && offers.some((offer) => offer.offerId === receipt.offerId) ? receipt : null
 
@@ -39,10 +44,41 @@ export function BettingPanel({ room, cash, startingCash, used, lapRevision, isIn
   const displayedOffers = useMemo(() => offers, [offers])
   const changeAmount = (delta: number) => setAmount((value) => Math.max(BET_MINIMUM, Math.min(limit, Math.round((value + delta) / BET_STEP) * BET_STEP)))
 
+  const updatePanelPosition = useCallback(() => {
+    const anchor = triggerRef.current?.getBoundingClientRect()
+    if (!anchor) return
+    const viewport = window.visualViewport
+    const width = viewport?.width ?? window.innerWidth
+    const height = viewport?.height ?? window.innerHeight
+    const panel = panelRef.current
+    setPanelPosition(getBettingPanelPosition(
+      { left: anchor.left, right: anchor.right, top: anchor.top },
+      { width: panel?.offsetWidth ?? 390, height: panel?.scrollHeight ?? 500 },
+      { width, height, offsetLeft: viewport?.offsetLeft ?? 0, offsetTop: viewport?.offsetTop ?? 0 },
+      width <= 640,
+    ))
+  }, [])
+
+  useLayoutEffect(() => {
+    if (!open) return
+    updatePanelPosition()
+    const observer = new ResizeObserver(updatePanelPosition)
+    if (panelRef.current) observer.observe(panelRef.current)
+    window.addEventListener('resize', updatePanelPosition)
+    window.visualViewport?.addEventListener('resize', updatePanelPosition)
+    window.visualViewport?.addEventListener('scroll', updatePanelPosition)
+    return () => {
+      observer.disconnect()
+      window.removeEventListener('resize', updatePanelPosition)
+      window.visualViewport?.removeEventListener('resize', updatePanelPosition)
+      window.visualViewport?.removeEventListener('scroll', updatePanelPosition)
+    }
+  }, [open, updatePanelPosition])
+
   if (isEnded) return null
   return <div className="betting-control">
-    <button type="button" aria-expanded={open} aria-controls="betting-panel" onClick={() => { const next = !open; setOpen(next); if (next) room.send('requestBetOffers') }}><span aria-hidden="true">◉</span><small>APOSTAS{used ? ' · USADA' : ''}</small></button>
-    {open && <section id="betting-panel" className="betting-panel" aria-label="Apostas" data-camera-drag="off">
+    <button ref={triggerRef} type="button" aria-expanded={open} aria-controls="betting-panel" onClick={() => { const next = !open; setOpen(next); if (next) room.send('requestBetOffers') }}><span aria-hidden="true">◉</span><small>APOSTAS{used ? ' · USADA' : ''}</small></button>
+    {open && createPortal(<section ref={panelRef} id="betting-panel" className="betting-panel" aria-label="Apostas" data-camera-drag="off" style={{ left: panelPosition.left, top: panelPosition.top, width: panelPosition.width, maxHeight: panelPosition.maxHeight }}>
       <header><strong>APOSTAS DA VOLTA</strong><button type="button" aria-label="Fechar apostas" onClick={() => setOpen(false)}>×</button></header>
       <p>Uma aposta até passar pela Partida. Limite: {formatMoney(limit)}.</p>
       <div className="bet-amount"><button type="button" aria-label="Diminuir aposta em R$ 100.000" disabled={amount <= BET_MINIMUM || pending} onClick={() => changeAmount(-100_000)}>−100 mil</button><button type="button" aria-label="Diminuir aposta em R$ 10.000" disabled={amount <= BET_MINIMUM || pending} onClick={() => changeAmount(-10_000)}>−10 mil</button><strong>{formatMoney(amount)}</strong><button type="button" aria-label="Aumentar aposta em R$ 10.000" disabled={amount >= limit || pending} onClick={() => changeAmount(10_000)}>+10 mil</button><button type="button" aria-label="Aumentar aposta em R$ 100.000" disabled={amount >= limit || pending} onClick={() => changeAmount(100_000)}>+100 mil</button></div>
@@ -57,6 +93,6 @@ export function BettingPanel({ room, cash, startingCash, used, lapRevision, isIn
       })}</div>}
       {error && <p role="alert">{error}</p>}
       {currentReceipt && <p role="status" aria-live="polite">{currentReceipt.won ? `Você ganhou! Lucro de ${formatMoney(currentReceipt.net)}.` : `Você perdeu ${formatMoney(currentReceipt.amount)}.`}</p>}
-    </section>}
+    </section>, document.body)}
   </div>
 }

@@ -1,6 +1,7 @@
 import LobbyToken from './LobbyToken'
 import { BettingPanel } from './BettingPanel'
 import { lazy, Suspense, useEffect, useRef, useState, type CSSProperties } from 'react'
+import { createPortal } from 'react-dom'
 import { CloseCode, type Room } from '@colyseus/sdk'
 import { CHARACTER_OPTIONS, MAX_ROOM_PLAYERS, type CharacterType, type GameMode, type LobbyPlayer } from '../../shared/lobby'
 import { getMatchEndSummary, type MatchEndReason } from '../../shared/game'
@@ -12,6 +13,7 @@ import { finalScoreMetrics, rankFinalScore, scoreCriteria } from './scoreCriteri
 import { getLobbyPlayerEntries } from './lobbySnapshot'
 import { canAffordPurchase } from './purchaseActions'
 import { adjustAuctionStartingBid, getAuctionStartBlockReason, normalizeAuctionBidInput, normalizeAuctionStartingBid } from './auctionActions'
+import { selectedAuctionProperty } from './auctionSelection'
 import { boardSpaces, formatMoney } from '../game/board'
 import { ANIMATION_SPEEDS, AUCTION_MIN_BID_INCREMENT, DEFAULT_ANIMATION_SPEED, MATCH_DURATIONS, PROPERTY_BUILD_LEVELS, PROPERTY_HOTEL_LEVEL, START_BONUS, calculateCompanyRent, calculateRent, canBuildHotel, canBuildLevelAfterFirstLap, canBuildProperty, canSellBuilding, constructionCost, forcedBuybackCost, getWorldCupRentMultiplier, hasLiquidatableAssets, hotelConstructionCost, liquidatablePropertyIds, taxForSpace, type AnimationSpeed, type MatchDuration, type PropertyHolding } from '../../shared/game'
 import { PLAYER_COLORS } from './playerPalette'
@@ -153,6 +155,7 @@ function App() {
   const [devCashTargetSessionId, setDevCashTargetSessionId] = useState('')
   const [devCashAmount, setDevCashAmount] = useState(String(START_BONUS * 10))
   const [loanSelection, setLoanSelection] = useState(10_000)
+  const [showLoanPanel, setShowLoanPanel] = useState(false)
   const [dice, setDice] = useState<[number, number]>([0, 0])
   const [landingDescription, setLandingDescription] = useState('')
   const [activeCardTitle, setActiveCardTitle] = useState('')
@@ -285,7 +288,7 @@ function App() {
   const localPlayer = roomPlayers.find((player) => player.sessionId === localSessionId)
   const loanLimit = Math.floor((matchOptions.startingCash * 0.25) / 10_000) * 10_000
   const loanRate = localPlayer ? 1 + localPlayer.loanCount * 0.5 : 1
-  const canTakeLoan = Boolean(localPlayer && turnPhase !== 'ended' && localPlayer.loanAmount <= 0 && !localPlayer.loanUsedThisLap && loanLimit >= 10_000)
+  const canTakeLoan = Boolean(localPlayer && turnPhase !== 'ended' && auctionId === 0 && localPlayer.loanAmount <= 0 && !localPlayer.loanUsedThisLap && loanLimit >= 10_000)
   useEffect(() => {
     if (!room || screen !== 'game') return
     let lastSent = 0
@@ -519,6 +522,7 @@ function App() {
     setPortfolioBoardSelection(false)
     setSelectedPlayerSessionId('')
     setShowAuctionPanel(false)
+    setShowLoanPanel(false)
     setShowHelp(false)
     setShowOptions(false)
     setShowEmotePicker(false)
@@ -539,6 +543,15 @@ function App() {
     window.addEventListener('keydown', closeOnEscape)
     return () => window.removeEventListener('keydown', closeOnEscape)
   }, [showOptions])
+
+  useEffect(() => {
+    if (!showLoanPanel) return
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setShowLoanPanel(false)
+    }
+    window.addEventListener('keydown', closeOnEscape)
+    return () => window.removeEventListener('keydown', closeOnEscape)
+  }, [showLoanPanel])
 
   useEffect(() => () => {
     emoteTimeouts.current.forEach((timer) => window.clearTimeout(timer))
@@ -1043,7 +1056,9 @@ function App() {
   function handleSelectSpace(spaceId: number) {
     if (auctionId > 0) return
     if (auctionBoardSelection) {
-      setSelectedSpaceId(spaceId)
+      const selectedAuctionPropertyId = selectedAuctionProperty(spaceId, auctionBoardSelection, boardChoiceSpaceIds)
+      if (selectedAuctionPropertyId === null) return
+      setSelectedSpaceId(selectedAuctionPropertyId)
       setAuctionBoardSelection(false)
       setShowAuctionPanel(false)
       setShowPropertyPanel(false)
@@ -1202,7 +1217,7 @@ function App() {
       {screen === 'game' && localPlayer?.isInactive && <div className="inactive-overlay" role="alert"><strong>Você está inativo</strong><span>O bot está no controle. Toque ou pressione uma tecla para voltar.</span></div>}
       {screen === 'game' && (
         <section className="game-overlay">
-          <div className="game-topline"><button className="back-link" onClick={() => setScreen('room')}>← Sala {roomCode}</button><div className="game-status-cluster"><div className={`game-pill ${matchEnding || (matchDuration > 0 && matchSeconds <= 60) ? 'clock-warning' : ''}`}>{modeDetails[mode].title.toUpperCase()} <span>·</span> {matchDuration === 0 ? 'SEM TEMPO' : formatClock(matchSeconds)}</div>{turnPhase !== 'ended' && <div className={`turn-clock-pill ${turnSeconds > 0 && turnSeconds <= 5 ? 'clock-warning' : ''}`} role="timer" aria-label={`Relógio do turno de ${activePlayer?.name ?? 'jogador ativo'}: ${turnSeconds} segundos restantes`}><span aria-hidden="true">◷</span><small>VEZ · {activePlayer?.name ?? '—'}</small><strong>{formatClock(turnSeconds)}</strong></div>}{animationSpeedControl}</div><div className="game-tools"><button className={`portfolio-toggle${auctionId > 0 || auctionRequestId > 0 && auctionRequestSellerSessionId === localSessionId ? ' auction-toggle-active' : ''}`} aria-expanded={showAuctionPanel || auctionBoardSelection} disabled={turnPhase === 'ended' || auctionId === 0 && (auctionCooldownSeconds > 0 || auctionRequestId > 0 && auctionRequestSellerSessionId !== localSessionId)} onClick={() => { if (auctionId > 0 || auctionRequestId > 0) { setShowAuctionPanel((open) => !open); setAuctionBoardSelection(false) } else setAuctionBoardSelection((selecting) => !selecting); setShowPropertyPanel(false); setError('') }}>{auctionId > 0 ? `Leilão · lances · ${auctionSeconds}s` : auctionRequestId > 0 && auctionRequestSellerSessionId === localSessionId ? `Pedido · ${auctionRequestSeconds}s` : auctionCooldownSeconds > 0 ? `Leilão · ${auctionCooldownSeconds}s` : 'Leilão'}</button></div></div>
+          <div className="game-topline"><button className="back-link" onClick={() => setScreen('room')}>← Sala {roomCode}</button><div className="game-status-cluster"><div className={`game-pill ${matchEnding || (matchDuration > 0 && matchSeconds <= 60) ? 'clock-warning' : ''}`}>{modeDetails[mode].title.toUpperCase()} <span>·</span> {matchDuration === 0 ? 'SEM TEMPO' : formatClock(matchSeconds)}</div>{turnPhase !== 'ended' && <div className={`turn-clock-pill ${turnSeconds > 0 && turnSeconds <= 5 ? 'clock-warning' : ''}`} role="timer" aria-label={`Relógio do turno de ${activePlayer?.name ?? 'jogador ativo'}: ${turnSeconds} segundos restantes`}><span aria-hidden="true">◷</span><small>VEZ · {activePlayer?.name ?? '—'}</small><strong>{formatClock(turnSeconds)}</strong></div>}{animationSpeedControl}</div><div className="game-tools" aria-live="polite">{auctionId > 0 && <span className="auction-live-status">LANCES ABERTOS · {auctionSeconds}s</span>}</div></div>
           <div className="game-topline-camera-hint" aria-label="Controles da câmera">Arraste para girar · scroll ou pinça para zoom</div>
           {doublesAnnouncementVisible && <div className="doubles-announcement" role="status" aria-live="assertive"><span>✦</span><strong>TIROU DUPLAS!</strong><small>Você joga novamente</small></div>}
           <div className={`player-hud player-count-${roomPlayers.length}`}>{roomPlayers.map((player, index) => {
@@ -1220,7 +1235,7 @@ function App() {
           {inspectedPlayer && !selectingPlayer && <div className="inspected-player-banner" style={{ '--inspected-color': inspectedPlayer.color } as CSSProperties} role="status"><span className="inspected-player-dot" />{inspectedPlayer.name}<small>PROPRIEDADES EM DESTAQUE</small></div>}
           {selectingPlayer && <div className="player-target-prompt" role="status"><strong>{(activeCardId === 'swap' || activeCardId === 'communism') && firstSwapTargetId ? 'ESCOLHA O SEGUNDO JOGADOR' : 'ESCOLHA O JOGADOR'}</strong><small>Toque em um cartão iluminado · {turnSeconds}s</small></div>}
           {throwImpacts.length > 0 && <div className={`throw-impact-screen impact-${throwImpacts[throwImpacts.length - 1].object}`} role="status" aria-live="polite" aria-label={`Você foi atingido com ${getThrowableLabel(throwImpacts[throwImpacts.length - 1].object)}`}><span key={throwImpacts[throwImpacts.length - 1].id}>{getThrowableSymbol(throwImpacts[throwImpacts.length - 1].object)}</span><small>{getThrowableLabel(throwImpacts[throwImpacts.length - 1].object)}</small></div>}
-          {localPlayer && turnPhase !== 'ended' && <div className={`game-quick-actions seat-${roomPlayers.findIndex((player) => player.sessionId === localPlayer.sessionId)}`} aria-label="Ações rápidas" data-camera-drag="off"><button type="button" className="camera-mode-button" onClick={() => setCameraMode((mode) => mode === 'board' ? 'player' : 'board')} aria-label={cameraMode === 'board' ? 'Seguir meu personagem' : 'Orbitar tabuleiro'} aria-pressed={cameraMode === 'player'}><span aria-hidden="true">◎</span><small>{cameraMode === 'board' ? 'Tabuleiro' : 'Seguir'}</small></button><button type="button" onClick={() => setShowOptions(true)} aria-label="Configurações da partida"><span aria-hidden="true">⚙</span><small>Config</small></button><div className="emote-control"><button type="button" onClick={() => setShowEmotePicker((open) => !open)} aria-label="Escolher emote" aria-expanded={showEmotePicker}><span aria-hidden="true">☺</span><small>Emote</small></button>{showEmotePicker && <div className="emote-picker" role="group" aria-label="Escolha um emote">{PLAYER_EMOTES.map(({ id, label, symbol }) => <button key={id} type="button" aria-label={label} title={label} onClick={() => { room?.send('emote', { emote: id }); setShowEmotePicker(false) }}>{symbol}</button>)}</div>}</div>{room && <BettingPanel room={room} cash={localPlayer.cash} startingCash={matchOptions.startingCash} used={localPlayer.betUsedThisLap} lapRevision={localPlayer.betLapRevision} isInDebt={turnPhase === 'debt' && activePlayerSessionId === localPlayer.sessionId} isEnded={false} />}<button type="button" onClick={() => setShowHelp((open) => !open)} aria-label="Prévia das regras" aria-expanded={showHelp} aria-controls="game-help-dialog"><span aria-hidden="true">?</span><small>Regras</small></button></div>}
+          {localPlayer && turnPhase !== 'ended' && <div className={`game-quick-actions seat-${roomPlayers.findIndex((player) => player.sessionId === localPlayer.sessionId)}`} aria-label="Ações rápidas" data-camera-drag="off"><button type="button" className="camera-mode-button" onClick={() => setCameraMode((mode) => mode === 'board' ? 'player' : 'board')} aria-label={cameraMode === 'board' ? 'Seguir meu personagem' : 'Orbitar tabuleiro'} aria-pressed={cameraMode === 'player'}><span aria-hidden="true">◎</span><small>{cameraMode === 'board' ? 'Tabuleiro' : 'Seguir'}</small></button><button type="button" onClick={() => setShowOptions(true)} aria-label="Configurações da partida"><span aria-hidden="true">⚙</span><small>Config</small></button><div className="emote-control"><button type="button" onClick={() => setShowEmotePicker((open) => !open)} aria-label="Escolher emote" aria-expanded={showEmotePicker}><span aria-hidden="true">☺</span><small>Emote</small></button>{showEmotePicker && <div className="emote-picker" role="group" aria-label="Escolha um emote">{PLAYER_EMOTES.map(({ id, label, symbol }) => <button key={id} type="button" aria-label={label} title={label} onClick={() => { room?.send('emote', { emote: id }); setShowEmotePicker(false) }}>{symbol}</button>)}</div>}</div><div className="game-economy-actions" aria-label="Ações financeiras"><button type="button" className={`economy-action-button${auctionBoardSelection ? ' economy-action-selected' : auctionId > 0 ? ' auction-toggle-active' : ''}`} aria-label={auctionBoardSelection ? 'Cancelar seleção de imóvel para leilão' : auctionId > 0 ? `Abrir leilão · ${auctionSeconds} segundos` : 'Selecionar imóvel para leilão'} aria-pressed={auctionBoardSelection || showAuctionPanel} disabled={auctionId === 0 && (auctionCooldownSeconds > 0 || auctionRequestId > 0 && auctionRequestSellerSessionId !== localSessionId)} title={auctionCooldownSeconds > 0 ? `Novo leilão em ${auctionCooldownSeconds}s` : 'Selecionar uma propriedade no tabuleiro para anunciar ou pedir leilão'} onClick={() => { if (auctionId > 0 || auctionRequestId > 0) { setShowAuctionPanel((open) => !open); setAuctionBoardSelection(false) } else { const selecting = !auctionBoardSelection; setAuctionBoardSelection(selecting); if (selecting) setSelectedSpaceId(null); setShowAuctionPanel(false) } setShowPropertyPanel(false); setError('') }}><span aria-hidden="true">⚖</span><small>{auctionBoardSelection ? 'Escolher' : auctionId > 0 ? `Lances · ${auctionSeconds}s` : auctionCooldownSeconds > 0 ? `Leilão · ${auctionCooldownSeconds}s` : 'Leilão'}</small></button>{room && <BettingPanel room={room} cash={localPlayer.cash} startingCash={matchOptions.startingCash} used={localPlayer.betUsedThisLap} lapRevision={localPlayer.betLapRevision} isInDebt={turnPhase === 'debt' && activePlayerSessionId === localPlayer.sessionId} isEnded={false} />}<button type="button" className="economy-action-button" aria-label={localPlayer.loanAmount > 0 ? 'Ver empréstimo ativo' : 'Abrir empréstimo ao banco'} aria-expanded={showLoanPanel} onClick={() => { setAuctionBoardSelection(false); setShowAuctionPanel(false); setShowLoanPanel(true) }}><span aria-hidden="true">▣</span><small>{localPlayer.loanAmount > 0 ? 'Empréstimo ativo' : 'Empréstimo'}</small></button></div><button type="button" onClick={() => setShowHelp((open) => !open)} aria-label="Prévia das regras" aria-expanded={showHelp} aria-controls="game-help-dialog"><span aria-hidden="true">?</span><small>Regras</small></button></div>}
           {modalVisible && !feedbackPending && <div className={`game-modal-backdrop${selectingPlayer ? ' player-target-backdrop' : ''}`} aria-hidden="true" />}
           {selectedSpace && turnPhase !== 'ended' && !boardChoicePhase && !ownPropertyLanding && !(isMyTurn && (turnPhase === 'purchase' || turnPhase === 'world-cup' || turnPhase === 'world-tour')) && !showPropertyPanel && (
             <aside className={`space-inspector${selectedSpace.kind === 'property' ? ' property-inspection-panel' : ''}`} aria-label={`Detalhes de ${selectedSpace.name}`}>
@@ -1402,15 +1417,17 @@ function App() {
               )}
             </div>
           )}
-          {turnPhase !== 'ended' && localPlayer && <aside className="loan-control" aria-label="Empréstimo ao banco">
+          {showLoanPanel && turnPhase !== 'ended' && localPlayer && createPortal(<div className="loan-dialog-backdrop" role="presentation" onPointerDown={(event) => { if (event.target === event.currentTarget) setShowLoanPanel(false) }}>
+            <aside className="loan-control" aria-label="Empréstimo ao banco" role="dialog" aria-modal="true" data-camera-drag="off">
+              <header><strong>EMPRÉSTIMO AO BANCO</strong><button type="button" aria-label="Fechar empréstimo" onClick={() => setShowLoanPanel(false)}>×</button></header>
             {localPlayer.loanAmount > 0 ? <><strong>EMPRÉSTIMO ATIVO</strong><span>{formatMoney(localPlayer.loanAmount)} · pagar {formatMoney(localPlayer.loanDue)} na Partida</span></> : <>
-              <strong>EMPRÉSTIMO AO BANCO</strong>
               <div className="loan-steps"><button type="button" aria-label="Diminuir empréstimo em R$ 100.000" disabled={!canTakeLoan || loanSelection <= 10_000} onClick={() => setLoanSelection((value) => Math.max(10_000, value - 100_000))}>−100 mil</button><button type="button" aria-label="Diminuir empréstimo em R$ 10.000" disabled={!canTakeLoan || loanSelection <= 10_000} onClick={() => setLoanSelection((value) => Math.max(10_000, value - 10_000))}>−10 mil</button><b>{formatMoney(Math.min(loanSelection, loanLimit))}</b><button type="button" aria-label="Aumentar empréstimo em R$ 10.000" disabled={!canTakeLoan || loanSelection >= loanLimit} onClick={() => setLoanSelection((value) => Math.min(loanLimit, value + 10_000))}>+10 mil</button><button type="button" aria-label="Aumentar empréstimo em R$ 100.000" disabled={!canTakeLoan || loanSelection >= loanLimit} onClick={() => setLoanSelection((value) => Math.min(loanLimit, value + 100_000))}>+100 mil</button></div>
               <span>Limite {formatMoney(loanLimit)} · juros {Math.round(loanRate * 100)}% · pagar {formatMoney(Math.ceil(Math.min(loanSelection, loanLimit) * (1 + loanRate)))} na próxima Partida</span>
               <button type="button" className="loan-submit" disabled={!canTakeLoan} onClick={() => room?.send('takeLoan', { amount: Math.min(loanSelection, loanLimit) })}>Pegar empréstimo</button>
             </>}
             {localPlayer.loanUsedThisLap && localPlayer.loanAmount <= 0 && <small>Você já contratou nesta volta; poderá contratar de novo ao passar pela Partida.</small>}
-          </aside>}
+            </aside>
+          </div>, document.body)}
           {turnPhase !== 'ended' && !feedbackPending && ((['roll', 'company-roll'].includes(turnPhase) && isMyTurn) || (isHost && devModeEnabled)) && <div className={`roll-control${isHost && devModeEnabled && turnPhase === 'roll' ? ' roll-control-dev' : ''}`}>
             {['roll', 'company-roll'].includes(turnPhase) && isMyTurn && <button className="roll-control-button" type="button" onClick={() => room?.send(turnPhase === 'company-roll' ? 'rollCompany' : 'roll')}>{turnPhase === 'company-roll' ? '🎲 Girar D6 do aluguel' : '🎲 GIRAR DADOS'}</button>}
             {isHost && devModeEnabled && turnPhase === 'roll' && <form className="dev-dice-controls" aria-label="Forçar resultado dos dados" onSubmit={(event) => { event.preventDefault(); room?.send('devRoll', { diceOne: forcedDice[0], diceTwo: forcedDice[1] }) }}>

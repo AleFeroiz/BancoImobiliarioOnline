@@ -1133,3 +1133,9 @@ O pacote `Builds/WebReleaseActivityFix` foi preparado por `deployment/package-pr
 ## Leilão compartilhado na versão web — 2026-11-06
 
 `npm run verify` passou com 400 testes em 68 arquivos; os builds Vite e servidor passaram. No playtest com dois clientes, anúncio de Manaus abriu a disputa nas duas sessões; um lance de R$ 280 mil foi sincronizado, o título e o pagamento transferidos, os relógios retomados e o cooldown global exibido. Revisão desktop concluída; revisão visual mobile do painel e fluxos manuais de pedido seguem pendentes. A suíte automatizada cobre pedidos, reservas e estratégia dos bots.
+
+### 2026-11-06 — Ajustes de seleção de leilão e ações financeiras
+
+- No playtest web local, **Leilão** aparece junto de **Apostas** e **Empréstimo**. Ao ativar Leilão, o tabuleiro entra em seleção; clicar na propriedade iluminada Manaus abriu o inspetor de imóvel de outro jogador, mostrando o lance inicial arredondado e a ação **Pedir leilão**. A solicitação foi enviada; o bot recusou e a reserva retornou ao saldo.
+- Em viewports de 390 × 844 e 320 × 568, o painel de apostas permaneceu dentro da viewport. No tamanho menor, o conteúdo do painel rola internamente. A janela de empréstimo também abriu pelo botão próprio e ficou enquadrada na tela.
+- Testes direcionados de posicionamento e seleção passaram (4 testes). `npm run verify` passou com 404 testes em 70 arquivos e concluiu os builds Vite e do servidor. O Vite manteve o aviso de bundle principal acima de 500 kB (1.482,93 kB; gzip 423,83 kB).

@@ -1,3 +1,9 @@
+# Correções na UI de leilão, apostas e empréstimo — implementadas (2026-11-06)
+
+- A ação **Leilão** agora fica ao lado de **Apostas** e **Empréstimo**. Ela ativa seleção de propriedades no tabuleiro; clicar numa casa iluminada seleciona o imóvel e abre suas ações de anunciar ou pedir leilão.
+- O painel de apostas é posicionado em relação à viewport, inclusive em tela estreita. O botão **Empréstimo** abre a janela apenas quando acionado.
+- Testes de posicionamento em viewport e de seleção de alvo passaram. Playtest em 390 × 844 e 320 × 568 confirmou o painel de apostas dentro da tela; clique em Manaus abriu o inspetor do imóvel do bot com o lance inicial e a ação de pedir leilão. A janela de empréstimo também abriu no celular.
+
 # Leilão compartilhado — implementado (2026-11-06)
 - Plano e relatório em [leilao-compartilhado.md](trabalho/leilao-compartilhado.md) e [relatorio-leilao-compartilhado.md](trabalho/relatorio-leilao-compartilhado.md). Implementados pedido com reserva e prazo, anúncio próprio direto, disputa pública com pausa e retomada do jogo, cooldown global, estratégia de bots, transferência do imóvel com construções/efeitos e interface compartilhada. `npm run verify` e playtest desktop com dois clientes passaram. Revisão mobile visual do painel de leilão segue pendente; detalhes em `docs/VALIDACAO.md`.
 
