@@ -22,6 +22,8 @@ As fichas de participantes preservam o peão original e oferecem 13 alternativas
 
 Na revisão de 2026-11-06, todas as fichas receberam ajustes de silhueta ou detalhes mantendo materiais chapados e geometria low poly. A cor de jogador continua aplicada aos materiais previstos pelo jogo; o peão padrão usa o mesmo perfil facetado no lobby e no tabuleiro.
 
+Na revisão seguinte, a referência enviada orientou o salto como sapato fechado de bico fino e salto agulha, com couro escuro; o navio passou a ter casco afilado, ponte e chaminé. O couro continua recebendo a cor escolhida no lobby.
+
 Os modelos de propriedade permanecem assentados no piso e ficam afastados do centro, próximos da borda externa, enquanto os peões circulam pela faixa verde. Nome e aluguel são rótulos 3D com renderização à frente dos modelos dos personagens; o nome usa a cor do dono.
 
 O usuário pediu cinco níveis visuais originais para propriedades: terreno identificado pela pessoa dona, uma casa, duas casas, três casas e hotel. Os modelos foram criados na sessão conectada do Blender 5.2.2 LTS e reunidos em `public/assets/board-models/board-models.glb`; a fonte editável está em `assets/blender/board-models.blend`. Os telhados, a bandeira e os detalhes marcados com o material `OWNER_TINT` recebem a cor atual do dono no jogo. Paredes claras, janelas azul-escuras e bases de pedra mantêm leitura contra os oito grupos de cores.

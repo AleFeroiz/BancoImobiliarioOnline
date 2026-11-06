@@ -1,3 +1,7 @@
+# Salto e navio — implementados (2026-11-06)
+
+- O salto foi refeito como sapato fechado de bico fino e salto agulha; o navio recebeu casco afilado, ponte, janelas e chaminé. Blender 5.2.2, exportação GLB Y-up e reimportação concluídos. `npm run verify` passou com 408 testes; revisão no lobby confirmou seleção e cor do salto e do navio, e uma partida local mostrou o navio no tabuleiro. Detalhes em [salto-navio.md](trabalho/salto-navio.md) e `docs/VALIDACAO.md`.
+
 # Reformulação de todas as fichas — implementada (2026-11-06)
 
 - As 13 fichas foram reformuladas no Blender 5.2.2, com 148 a 464 triângulos por modelo, e exportadas em Y-up. O peão padrão foi redesenhado no lobby e no tabuleiro. A suíte passou com 406 testes e builds; a revisão local conferiu peão, moto e vaca no lobby e o peão e a moto em partida. Detalhes em [tokens-conjunto.md](trabalho/tokens-conjunto.md) e `docs/VALIDACAO.md`.

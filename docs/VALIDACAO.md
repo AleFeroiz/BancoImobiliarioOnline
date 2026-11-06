@@ -1,3 +1,10 @@
+# Salto fechado e navio — 2026-11-06
+
+- Blender 5.2.2 LTS/MCP 1.8: o salto foi refeito como sapato fechado de bico fino com abertura para o pé e salto agulha, com 236 triângulos; o navio recebeu casco afilado, convés, ponte, janelas e chaminé, com 256 triângulos. Revisados em perfil, topo e três quartos.
+- `public/assets/player-tokens.glb` foi exportado em Y-up e reimportado no Blender: 13 raízes, sete partes no salto com `HighHeel_Leather` e `HighHeel_SoleDark`, e 18 partes no navio. A fonte é `assets/blender/player-tokens.blend`.
+- O teste de regressão de cores verifica o couro do salto, a sola escura, o casco do navio e materiais `OWNER_TINT`. `npm run verify` passou: 408 testes em 73 arquivos e builds web/servidor; permanece o aviso conhecido de bundle acima de 500 kB.
+- Playtest desktop: selecionei o salto e mudei a cor de vermelho para azul, depois selecionei o navio. Uma partida com bot exibiu o navio em movimento, com propriedade comprada pelo bot e aluguel transferido. Vite 5173 e Colyseus 2568 foram encerrados; o servidor registrou tentativa de reconexão a uma sala de teste antiga descartada. Não houve revisão em celular físico.
+
 # Reformulação do conjunto de fichas — 2026-11-06
 
 - Blender 5.2.2 LTS e MCP 1.8: as 13 fichas tiveram silhuetas ou detalhes revisados, com 148 a 464 triângulos cada. Rodas de carro e moto foram reconstruídas, e a orientação das rodas do trem, sua chaminé e o mastro do navio foram corrigidos. Os animais receberam traços, pernas ou detalhes para diferenciá-los; salto e cartola receberam acabamentos. O perfil do peão gerado em código foi revisto no Blender e compartilhado nas duas cenas.

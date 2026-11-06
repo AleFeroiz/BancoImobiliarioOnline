@@ -3,12 +3,11 @@ import { Canvas } from '@react-three/fiber'
 import { useGLTF } from '@react-three/drei'
 import { Box3, Mesh, Vector3 } from 'three'
 import type { CharacterType } from '../../shared/lobby'
-import { createUnlitMaterial, getOwnerTintOverride } from './sceneMaterials'
+import { createUnlitMaterial } from './sceneMaterials'
+import { getLobbyTokenColorOverride } from './lobbyTokenMaterials'
 import { PawnGeometry } from './PawnGeometry'
 
 const roots: Partial<Record<CharacterType, string>> = { car: 'Token_Car', motorcycle: 'Token_Motorcycle', airplane: 'Token_Airplane', highHeel: 'Token_HighHeel', train: 'Token_Train', topHat: 'Token_TopHat', piggyBank: 'Token_PiggyBank', ship: 'Token_Ship', rubberDuck: 'Token_RubberDuck', dog: 'Token_Dog', cat: 'Token_Cat', cow: 'Token_Cow', penguin: 'Token_Penguin' }
-
-const primaryMaterials: Partial<Record<CharacterType, string>> = { piggyBank: 'TOKEN_PINK', cat: 'TOKEN_CREAM', cow: 'TOKEN_WHITE', dog: 'TOKEN_CREAM', highHeel: 'TOKEN_RED', penguin: 'TOKEN_DARK', rubberDuck: 'TOKEN_YELLOW', ship: 'TOKEN_BLUE', topHat: 'TOKEN_DARK', train: 'TOKEN_RED' }
 
 function Token({ type, color }: { type: CharacterType; color: string }) {
   const { scene } = useGLTF('/assets/player-tokens.glb')
@@ -25,7 +24,7 @@ function Token({ type, color }: { type: CharacterType; color: string }) {
     clone.traverse((object) => {
       const mesh = object as Mesh
       if (!mesh.isMesh) return
-      const recolor = (material: import('three').Material) => createUnlitMaterial(material, material.name === primaryMaterials[type] ? color : getOwnerTintOverride(mesh.name, material.name, color))
+      const recolor = (material: import('three').Material) => createUnlitMaterial(material, getLobbyTokenColorOverride(type, mesh.name, material.name, color))
       mesh.material = Array.isArray(mesh.material) ? mesh.material.map(recolor) : recolor(mesh.material)
     })
     return clone
