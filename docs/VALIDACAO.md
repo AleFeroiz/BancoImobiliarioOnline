@@ -1,3 +1,10 @@
+# Fichas low-poly — 2026-11-06
+
+- Blender 5.2.2 LTS, MCP Blender 1.8. Em `assets/blender/player-tokens.blend`, revi as 13 fichas e alterei o sapato de salto (sandália com palmilha estreita, arco exposto, salto fino, tiras cruzadas, tira de tornozelo e fivela dourada) e o casco do navio (laterais facetadas e proa afilada). As onze fichas restantes foram inspecionadas e mantidas.
+- Exportei `public/assets/player-tokens.glb` em Y-up e reimportei-o no Blender: 13 raízes `Token_*` conferidas, inclusive o salto e o navio. A fonte `.blend` foi recarregada após a inspeção do GLB.
+- `npm run verify` passou: 406 testes em 72 arquivos, builds Vite e servidor; o aviso conhecido de bundle principal acima de 500 kB permanece. A primeira tentativa sandbox falhou por `fetch failed` nos testes Colyseus; a repetição com acesso local passou.
+- Playtest desktop local: selecionei Salto no lobby, adicionei um bot e iniciei uma partida real. A ficha e a partida renderizaram no tabuleiro; a partida avançou por uma carta de aniversário que creditou R$ 50.000. Servidor e Vite foram encerrados ao fim; portas 2568 e 5173 ficaram livres. A porta 2567 falhou com `EADDRINUSE` sem listener identificável, então preservei qualquer processo desconhecido.
+
 # Supervisão gráfica e tolerância inicial — 2026-11-04
 
 Testes de regressão cobrem tolerância inicial de 5 s, relógio de turno ativo durante esse período, temporização de inatividade, verificações gráficas de 10 s, aba oculta e recuperação apenas após perda de contexto persistente não notificada. Suite completa: 376 testes e builds aprovados. Em sala local, início transcorreu sem desconexão, bot comprou imóvel e cena ficou visível em desktop e viewport 390×844; inatividade e retomada também observadas. Navegador sem erros ou avisos; servidor registrou tentativa de reconectar sala de teste antiga descartada. O ciclo de desconexão relatado e perda real de contexto não foram reproduzidos. A verificação detecta contexto perdido, não prova correção dos pixels quando o contexto permanece saudável.
