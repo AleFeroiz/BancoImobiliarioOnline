@@ -9,6 +9,7 @@ import { boardSpaces, getLineTitleIds } from '../../shared/board.js'
 import { EVENT_CARDS, type EventCard } from '../../shared/cards.js'
 import { CARD_REVEAL_SECONDS, CARD_TARGET_SECONDS } from '../../shared/game.js'
 import { PAWN_STEP_ANIMATION_DURATION_MS, getAnimationDuration } from '../../shared/game.js'
+import { BET_MINIMUM } from '../../shared/betting.js'
 import { PROPERTY_HOTEL_LEVEL, START_BONUS, STARTING_CASH, TURN_DECISION_SECONDS, TURN_ROLL_SECONDS, bankReturnValue, buildingSaleValue, calculateRent, constructionCost, forcedBuybackCost, getWorldCupRentMultiplier, taxForSpace } from '../../shared/game.js'
 
 async function waitFor(condition: () => boolean, timeout = 2500) {
@@ -106,6 +107,51 @@ describe('sala privada', () => {
     expect(player.loanDue).toBe(0)
     expect(player.loanUsedThisLap).toBe(false)
     expect(room.state.turnPhase).not.toBe('debt')
+    await colyseus.cleanup()
+  })
+
+  it('mantém as ofertas da aposta e aplica uma única transação por volta', async () => {
+    const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
+    const host = await colyseus.connectTo(room, { name: 'Ana' })
+    const guest = await colyseus.connectTo(room, { name: 'Bia' })
+    markPlayersReady(room)
+    host.send('start')
+    await waitFor(() => room.state.status === 'playing')
+    const player = room.state.players.get(guest.sessionId)!
+    const offerMessages: unknown[] = []
+    const resultMessages: unknown[] = []
+    guest.onMessage('bet:offers', (message) => offerMessages.push(message))
+    guest.onMessage('bet:result', (message) => resultMessages.push(message))
+    guest.send('requestBetOffers')
+    await waitFor(() => offerMessages.length === 1)
+    guest.send('requestBetOffers')
+    await waitFor(() => offerMessages.length === 2)
+    expect(offerMessages[1]).toEqual(offerMessages[0])
+    const data = offerMessages[0] as { offers: { id: string; offerId: string }[] }
+    const before = player.cash
+    const requestId = 'bet-request-1'
+    const bet = { requestId, offerId: data.offers[0]!.offerId, optionId: data.offers[0]!.id, amount: BET_MINIMUM }
+    guest.send('placeBet', bet)
+    await waitFor(() => resultMessages.length === 1 && player.betUsedThisLap)
+    const balanceAfterFirst = player.cash
+    const receipt = resultMessages[0]
+    guest.send('placeBet', bet)
+    await waitFor(() => resultMessages.length === 2)
+    expect(player.cash).toBe(balanceAfterFirst)
+    expect(resultMessages[1]).toEqual(receipt)
+    expect(player.cash).toBeGreaterThanOrEqual(before - BET_MINIMUM)
+    const movementRoom = room as unknown as {
+      movePlayer: (sessionId: string, target: typeof player, spaces: number) => void
+      startCardTeleport: (sessionId: string, target: typeof player, destinationId: number, description: string) => void
+    }
+    player.position = boardSpaces.length - 1
+    player.betUsedThisLap = true
+    movementRoom.startCardTeleport(guest.sessionId, player, 0, 'Teleporte de teste.')
+    expect(player.betUsedThisLap).toBe(true)
+    player.position = boardSpaces.length - 1
+    movementRoom.movePlayer(guest.sessionId, player, 1)
+    expect(player.betUsedThisLap).toBe(false)
+    expect(player.betLapRevision).toBe(1)
     await colyseus.cleanup()
   })
 

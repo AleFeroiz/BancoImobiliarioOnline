@@ -1,6 +1,6 @@
 # Apostas — plano detalhado de implementação
 
-Estado: planejamento concluído em 2026-11-06; implementação ainda não iniciada. Escopo: versão web React/Colyseus com tabuleiro React Three Fiber. Referências: `../REGRAS-DE-JOGO.md`, `../DECISOES.md` e `emprestimo-banco.md`.
+Estado: implementação concluída na versão web em 2026-11-06. Escopo: React/Colyseus com tabuleiro React Three Fiber. Referências: `../REGRAS-DE-JOGO.md`, `../DECISOES.md` e `emprestimo-banco.md`.
 
 ## 1. Regras confirmadas
 
@@ -199,4 +199,10 @@ Os nomes novos são propostas de organização. Preservar a engine e a cena 3D a
 
 Pronto para uso quando servidor e UI aplicarem as regras acima, os testes de integração cobrirem resolução e renovação por movimento real do servidor, o playtest confirmar sincronização e responsividade, e `npm run verify` e o hook passarem. Atualizar Graphify após mudar código. Registrar em `docs/VALIDACAO.md` comandos, resultados, tamanhos revisados e limitações reais. Confirmar push de `main`; não tratar commit local como publicação.
 
-Este documento é um plano. Nenhum sistema de apostas foi implementado ou validado ainda. Os perfis econômicos são a configuração inicial proposta para a implementação; mudanças futuras devem ser registradas como calibração, sem alterar silenciosamente partidas em andamento.
+## 11. Implementação e validação
+
+Implementação: `shared/betting.ts`, `server/src/rooms/GameRoom.ts`, `server/src/rooms/schema/LobbyState.ts`, `src/ui/BettingPanel.tsx`, `src/ui/App.tsx` e `src/ui/styles.css`. Regras documentadas em `docs/REGRAS-DE-JOGO.md`; testes puros em `shared/betting.test.ts` e teste de sala em `server/test/GameRoom.test.ts`.
+
+`npm run verify` passou com 393 testes em 68 arquivos, build Vite e build do servidor. No playtest conectado com anfitrião e bot, as três opções foram recebidas; uma aposta de R$ 10.000 com opção de 60% foi perdida, saldo mudou de R$ 2.000.000 para R$ 1.990.000 e a UI marcou a aposta como usada. Em 390 × 844, o painel mediu 366 × 184 px, permaneceu dentro da viewport e a largura do documento foi 390 px. Teste Colyseus cobre opções estáveis, cobrança única diante de mensagem repetida, teleporte sem renovação e renovação ao cruzar a Partida. O hook de commit também executará a verificação completa. Aviso restante do build: bundle principal acima de 500 KB, como já ocorria antes.
+
+Os perfis econômicos refletem a calibração inicial aprovada nesta tarefa. Ajustes futuros devem ser registrados sem alterar silenciosamente partidas em andamento.
