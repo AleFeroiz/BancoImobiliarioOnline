@@ -52,9 +52,10 @@ export const TURN_ROLL_SECONDS = 20
 export const TURN_DECISION_SECONDS = 15
 export const CARD_REVEAL_SECONDS = 10
 export const CARD_TARGET_SECONDS = 20
-export const AUCTION_ACCEPT_SECONDS = 10
+export const AUCTION_REQUEST_SECONDS = 15
 export const AUCTION_BID_SECONDS = 10
 export const AUCTION_MIN_BID_INCREMENT = 10_000
+export const AUCTION_GLOBAL_COOLDOWN_SECONDS = 120
 
 export function isMatchDuration(value: unknown): value is MatchDuration {
   return typeof value === 'number' && MATCH_DURATIONS.some((duration) => duration === value)

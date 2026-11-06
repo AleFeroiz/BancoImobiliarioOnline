@@ -1,3 +1,6 @@
+# Leilão compartilhado — implementado (2026-11-06)
+- Plano e relatório em [leilao-compartilhado.md](trabalho/leilao-compartilhado.md) e [relatorio-leilao-compartilhado.md](trabalho/relatorio-leilao-compartilhado.md). Implementados pedido com reserva e prazo, anúncio próprio direto, disputa pública com pausa e retomada do jogo, cooldown global, estratégia de bots, transferência do imóvel com construções/efeitos e interface compartilhada. `npm run verify` e playtest desktop com dois clientes passaram. Revisão mobile visual do painel de leilão segue pendente; detalhes em `docs/VALIDACAO.md`.
+
 # Protótipo Unity Web — em andamento (2026-11-05)
 
 - Projeto separado em `C:\Meus Projetos\Unity\BantecUnity\Bantec`, Unity 6000.3.9f1. O projeto estava não rastreado e não possui remoto Git configurado; o trabalho existente foi preservado.

@@ -939,6 +939,8 @@ button:disabled{opacity:.55;cursor:not-allowed}
 .auction-bid-stepper button{min-width:42px;min-height:42px;border:1px solid #d5d9ca;border-radius:9px;background:#f1efdf;color:#47634a;font-size:21px;font-weight:700;line-height:1;touch-action:manipulation}
 .auction-bid-stepper button:hover:not(:disabled){background:#e3e9d6;border-color:#aebd9f}
 .auction-bid-stepper button:disabled{opacity:.45;cursor:not-allowed}
+.money-stepper.has-large-step{grid-template-columns:34px 34px minmax(0,1fr) 34px 34px;gap:4px}
+.money-stepper.has-large-step button{min-width:34px;min-height:40px;font-size:11px}
 .auction-bid-stepper output{min-height:42px;display:grid;place-items:center;padding:0 5px;border:1px solid #d5d9ca;border-radius:9px;background:#fffdf4;color:#354b3e;font-size:11px;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
 .game-feedback-toast{color:color-mix(in srgb,var(--feedback-player-color,#405a43) 68%,#33483a)}
 .game-feedback-toast>strong{color:var(--feedback-player-color,#405a43);font-weight:800}

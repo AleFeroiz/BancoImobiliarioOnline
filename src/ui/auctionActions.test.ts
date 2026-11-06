@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { adjustAuctionStartingBid, getAuctionStartBlockReason, normalizeAuctionBidInput } from './auctionActions'
+import { adjustAuctionStartingBid, getAuctionStartBlockReason, normalizeAuctionBidInput, normalizeAuctionStartingBid } from './auctionActions'
 
 describe('lance de leilão', () => {
   it('avança o valor sugerido quando outro lance eleva o mínimo', () => {
@@ -14,6 +14,12 @@ describe('lance de leilão', () => {
     expect(normalizeAuctionBidInput('', 0)).toBe('10000')
   })
 
+  it('arredonda preços de tabela para o próximo incremento válido', () => {
+    expect(normalizeAuctionStartingBid(275_000)).toBe(280_000)
+    expect(normalizeAuctionStartingBid(280_000)).toBe(280_000)
+    expect(getAuctionStartBlockReason(275_000, false)).toContain('múltiplo')
+  })
+
   it('aumenta e diminui o lance pelos botões, respeitando o mínimo', () => {
     expect(adjustAuctionStartingBid('400000', 1, 10_000)).toBe('410000')
     expect(adjustAuctionStartingBid('400000', -1, 10_000)).toBe('390000')
@@ -22,7 +28,7 @@ describe('lance de leilão', () => {
 
   it('permite anunciar fora da vez mesmo com construções e valida só disputa aberta ou lance inicial', () => {
     expect(getAuctionStartBlockReason(500_000, false)).toBeNull()
-    expect(getAuctionStartBlockReason(0, false)).toContain('lance inicial mínimo')
+    expect(getAuctionStartBlockReason(0, false)).toContain('pelo menos 10.000')
     expect(getAuctionStartBlockReason(500_000, true)).toContain('Já existe um leilão')
   })
 })

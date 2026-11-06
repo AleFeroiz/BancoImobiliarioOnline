@@ -1129,3 +1129,7 @@ O cabeçalho HTTP do pacote de teste foi conferido: `200`, `Content-Type: applic
 ## Playtest Unity Web — construção manual — 2026-11-05
 
 O pacote `Builds/WebReleaseActivityFix` foi preparado por `deployment/package-preview.ps1`, que remove as extensões `.br` das URLs HTML e instala `vercel.json`; o pacote passou a carregar pela prévia Brotli local. Na sala descartável `MZFGJ`, UnityBuilder chegou à fase `resolve` em Campo Grande. No cliente Unity Web, cliquei em **Construir próxima casa**: o saldo caiu de R$ 290.000 para R$ 200.000, o botão virou **Concluir vez** e a construção apareceu no tabuleiro. O cliente React da mesma sala refletiu o novo saldo, confirmando a atualização do servidor Colyseus. A pasta preparada mede 12.710.133 bytes. Isso fecha a validação manual de construção que faltava; ainda faltam aparelho físico, métricas comparáveis de FPS/memória/carregamento e hospedagem HTTPS com servidor separado. Os servidores locais foram encerrados após o teste.
+
+## Leilão compartilhado na versão web — 2026-11-06
+
+`npm run verify` passou com 400 testes em 68 arquivos; os builds Vite e servidor passaram. No playtest com dois clientes, anúncio de Manaus abriu a disputa nas duas sessões; um lance de R$ 280 mil foi sincronizado, o título e o pagamento transferidos, os relógios retomados e o cooldown global exibido. Revisão desktop concluída; revisão visual mobile do painel e fluxos manuais de pedido seguem pendentes. A suíte automatizada cobre pedidos, reservas e estratégia dos bots.

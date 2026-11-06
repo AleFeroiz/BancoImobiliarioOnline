@@ -92,6 +92,16 @@ export const LobbyState = schema({
   auctionHighestBidderSessionId: t.string().default(''),
   auctionPhase: t.string().default(''),
   auctionSeconds: t.uint8().default(0),
+  auctionCooldownSeconds: t.uint16().default(0),
+  auctionRequestId: t.uint32().default(0),
+  auctionRequestPropertyId: t.uint8().default(255),
+  auctionRequestSellerSessionId: t.string().default(''),
+  auctionRequestorSessionId: t.string().default(''),
+  auctionRequestBid: t.int32().default(0),
+  auctionRequestSeconds: t.uint8().default(0),
+  auctionPausedTurnPhase: t.string().default(''),
+  auctionPausedTurnSeconds: t.uint8().default(0),
+  auctionOrigin: t.string().default(''),
 })
 
 export type LobbyState = SchemaType<typeof LobbyState>

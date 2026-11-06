@@ -16,9 +16,11 @@ export function shouldBotBuyback(price: number, cash: number, completesGroup: bo
 
 export function chooseBotAuctionBid({
   price,
-  bankReturnValue,
+  bankReturnValue: _bankReturnValue,
   isBuildable,
   completesGroup,
+  improvementValue = 0,
+  blocksImmediateWin = false,
   startingBid,
   highestBid,
   cash,
@@ -27,12 +29,20 @@ export function chooseBotAuctionBid({
   bankReturnValue: number
   isBuildable: boolean
   completesGroup: boolean
+  improvementValue?: number
+  blocksImmediateWin?: boolean
   startingBid: number
   highestBid: number
   cash: number
 }) {
-  const maxFactor = isBuildable && completesGroup ? 1.2 : isBuildable ? 0.75 : 0.8
-  const maxValue = Math.floor((price - bankReturnValue) * maxFactor)
+  const maxFactor = completesGroup ? 1.2 : isBuildable ? 0.75 : 0.8
+  const maxValue = Math.floor((price * maxFactor + improvementValue * 0.65) * (blocksImmediateWin ? 1.2 : 1))
   const nextBid = highestBid > 0 ? highestBid + AUCTION_MIN_BID_INCREMENT : startingBid
-  return nextBid <= maxValue && cash >= nextBid + 100_000 ? nextBid : null
+  const reserve = completesGroup || blocksImmediateWin ? 50_000 : 150_000
+  return nextBid <= maxValue && cash - nextBid >= reserve ? nextBid : null
+}
+
+export function shouldBotAcceptAuctionRequest({ offer, price, improvementValue = 0, completesGroup = false }: { offer: number; price: number; improvementValue?: number; completesGroup?: boolean }) {
+  const requiredValue = price + improvementValue * 0.75 + (completesGroup ? price * 0.25 : 0)
+  return offer >= requiredValue
 }

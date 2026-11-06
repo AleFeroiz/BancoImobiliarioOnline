@@ -1,6 +1,6 @@
 # Leilão compartilhado — plano de implementação
 
-Estado: planejamento consolidado em 2026-11-06, pronto para implementação. Escopo: jogo web React/Colyseus com cena React Three Fiber. As regras abaixo descrevem a reforma aprovada; o comportamento do código atual só será substituído na implementação.
+Estado: implementado em 2026-11-06. Escopo: jogo web React/Colyseus com cena React Three Fiber. As regras aprovadas foram implementadas; ver o [relatório de implementação](relatorio-leilao-compartilhado.md) e a validação em `docs/VALIDACAO.md`.
 
 ## 1. Regras já confirmadas
 
@@ -178,4 +178,4 @@ Proposta: desconexão não cancela lance já dado nem compra obrigatória; a res
 - Reconectar vendedor, maior ofertante e observador preserva estado; bot não executa jogada normal durante pausa.
 - Playtest com pelo menos dois clientes: pedido aceito, recusado, lance superado, compra sem concorrência e retomada do turno. Revisar desktop, 390 × 844 e largura 320 px, inclusive solicitação e painel de lance.
 
-Plano pronto para execução. Nesta etapa houve somente consolidação documental; não há implementação do novo leilão nem validação de código da reforma. Os detalhes técnicos identificados como propostas podem ser resolvidos durante implementação dentro das regras confirmadas, registrando escolhas e evidências.
+Implementação concluída. Os parâmetros técnicos foram aplicados no servidor e na interface; resultados, arquivos, validação e limitações estão no [relatório](relatorio-leilao-compartilhado.md).
