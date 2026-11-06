@@ -59,6 +59,56 @@ describe('sala privada', () => {
 
   afterEach(() => vi.restoreAllMocks())
 
+  it('permite empréstimo fora da vez, aplica limite e bloqueia outro ativo', async () => {
+    const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
+    const host = await colyseus.connectTo(room, { name: 'Ana' })
+    const guest = await colyseus.connectTo(room, { name: 'Bia' })
+    markPlayersReady(room)
+    host.send('start')
+    await waitFor(() => room.state.status === 'playing')
+
+    const player = room.state.players.get(guest.sessionId)!
+    const before = player.cash
+    guest.send('takeLoan', { amount: 500_000 })
+    await waitFor(() => player.loanDue === 1_000_000)
+    expect(player.cash).toBe(before + 500_000)
+    expect(player.loanAmount).toBe(500_000)
+    expect(player.loanUsedThisLap).toBe(true)
+
+    guest.send('takeLoan', { amount: 10_000 })
+    await new Promise((resolve) => setTimeout(resolve, 30))
+    expect(player.loanAmount).toBe(500_000)
+    await colyseus.cleanup()
+  })
+
+  it('cobra o empréstimo ao cruzar a Partida depois do bônus normal', async () => {
+    const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
+    const host = await colyseus.connectTo(room, { name: 'Ana' })
+    const guest = await colyseus.connectTo(room, { name: 'Bia' })
+    markPlayersReady(room)
+    host.send('start')
+    await waitFor(() => room.state.status === 'playing')
+    const player = room.state.players.get(host.sessionId)!
+    player.position = boardSpaces.length - 2
+    player.loanAmount = 100_000
+    player.loanDue = 200_000
+    player.loanCount = 1
+    player.loanUsedThisLap = true
+    const privateRoom = room as unknown as {
+      movePlayer: (sessionId: string, target: typeof player, spaces: number) => void
+      collectLoanPayment: (sessionId: string, target: typeof player) => void
+    }
+    const before = player.cash
+    privateRoom.movePlayer(host.sessionId, player, 3)
+    privateRoom.collectLoanPayment(host.sessionId, player)
+    expect(player.cash).toBe(before + START_BONUS - 200_000)
+    expect(player.loanAmount).toBe(0)
+    expect(player.loanDue).toBe(0)
+    expect(player.loanUsedThisLap).toBe(false)
+    expect(room.state.turnPhase).not.toBe('debt')
+    await colyseus.cleanup()
+  })
+
   it('cria código, escolhe anfitrião e sincroniza modo e participantes', async () => {
     const room = await colyseus.createRoom<LobbyState>('game_room', { mode: 'classic' })
     const host = await colyseus.connectTo(room, { name: 'Ana' })

@@ -328,6 +328,7 @@ button:disabled{opacity:.55;cursor:not-allowed}
 .jail-actions{display:grid;grid-template-columns:1fr 1fr;gap:7px}
 .jail-hint{grid-column:1/-1;margin:0;padding:8px 9px;border:1px solid #ead7b0;border-radius:8px;background:#f8f0dc;color:#87663c;font-size:9px;line-height:1.4}
 .debt-actions{display:grid;gap:8px;margin-top:10px}
+.loan-control{position:fixed;z-index:6;left:14px;bottom:14px;display:grid;gap:5px;width:min(310px,calc(100vw - 28px));padding:10px 12px;border:1px solid #d8c99e;border-radius:12px;background:rgba(250,246,232,.96);color:#354c3a;box-shadow:0 8px 24px rgba(8,25,16,.2);font-size:11px}.loan-control>strong{font-size:10px;letter-spacing:.08em}.loan-control>span,.loan-control>small{color:#667362;font-size:10px}.loan-steps{display:flex;align-items:center;justify-content:space-between;gap:3px}.loan-steps button{border:1px solid #c9c2a9;border-radius:6px;padding:5px;background:#fff;color:#354c3a;font-size:9px}.loan-steps button:disabled{opacity:.45}.loan-steps b{font-size:12px}.loan-submit{border:0;border-radius:7px;padding:7px;background:#315b3a;color:white;font-weight:800}.loan-submit:disabled{opacity:.45}@media(max-width:640px){.loan-control{bottom:8px;left:8px;width:min(280px,calc(100vw - 16px));padding:7px 9px}.loan-steps button{padding:4px 3px;font-size:8px}}
 .debt-actions>strong{color:#a14f38;font-size:13px}
 .debt-actions>p{margin:0;color:#647568;font-size:9px}
 .debt-actions .roll-button{width:100%;min-height:38px;margin:0}

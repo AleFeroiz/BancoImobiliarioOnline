@@ -5,6 +5,20 @@ export type MatchEndReason = 'timeout' | 'bankruptcy' | 'no-solvent-players' | '
 
 export const STARTING_CASH = 2_000_000
 export const START_BONUS = 300_000
+export const LOAN_MINIMUM = 10_000
+export const LOAN_STEP = 10_000
+export const LOAN_STARTING_CASH_RATIO = 0.25
+
+export function loanLimit(startingCash: number) {
+  if (!Number.isSafeInteger(startingCash) || startingCash < LOAN_MINIMUM / LOAN_STARTING_CASH_RATIO) return 0
+  return Math.floor(startingCash * LOAN_STARTING_CASH_RATIO / LOAN_STEP) * LOAN_STEP
+}
+
+export function loanRepayment(amount: number, previousLoans: number) {
+  if (!Number.isSafeInteger(amount) || amount < LOAN_MINIMUM || !Number.isSafeInteger(previousLoans) || previousLoans < 0) return 0
+  const interestRate = 1 + previousLoans * 0.5
+  return Math.ceil(amount * (1 + interestRate))
+}
 export const FESTIVAL_CITY_COUNT = 3
 export const FESTIVAL_RENT_MULTIPLIER = 2
 export const WORLD_CUP_RENT_MULTIPLIER = 2

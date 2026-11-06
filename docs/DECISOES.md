@@ -8,6 +8,8 @@ Após criar ou entrar na sala, mostrar até seis fichas 3D em plataformas, com n
 
 ## Confirmadas e vigentes
 
+- **Empréstimo ao banco (2026-11-06):** empréstimo livre por jogador, com valor escolhido até 25% do saldo inicial da sala, mínimo R$ 10.000 e incremento de R$ 10.000. Um ativo por vez e uma nova contratação por volta após cruzar a Partida. Juros progressivos: 100% na primeira contratação e +50 pontos percentuais por contratação posterior. Vence ao cruzar a Partida, depois do bônus; movimentos que percorrem casas contam, teletransportes não. Sem quitação antecipada. Cobrança insuficiente usa o fluxo de dívida existente; empréstimo contratado durante dívida paga a dívida anterior quando houver saldo. Fim por tempo desconta saldo devedor; vitória por monopólio permanece imediata. Bots podem tomar empréstimo apenas para quitar dívida.
+
 - A ordem completa é sorteada pelo servidor no início e mantida durante a partida. No lobby, a anfitriã configura multiplicadores iniciais da Copa e dos festivais, quantidade de festivais, saldo inicial, turnos na prisão e prazo das decisões gerais. Padrões: 2×, 2×, 3, R$ 2.000.000, 3 e 15 s. Dados e alvos de cartas conservam os prazos próprios. A borda do tabuleiro usa a cor da pessoa da vez.
 
 - A partida não exibe fila de avisos textuais de acontecimentos. O estado segue visível no tabuleiro, nos cartões e nas escolhas necessárias. Quando a chegada ou a resolução não oferece ação disponível, o servidor passa a vez automaticamente após uma pausa curta; construir num imóvel próprio ainda é uma escolha enquanto for possível. O botão de rolagem normal e o D6 da companhia ficam destacados no HUD.

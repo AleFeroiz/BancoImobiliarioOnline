@@ -1,6 +1,21 @@
 import { describe, expect, it } from 'vitest'
 import { boardSpaces } from './board.js'
-import { ANIMATION_SPEEDS, DEFAULT_ANIMATION_SPEED, DICE_ANIMATION_DURATION_MS, FESTIVAL_CITY_COUNT, MATCH_DURATIONS, PAWN_STEP_ANIMATION_DURATION_MS, TURN_DECISION_SECONDS, applyRentMultiplier, areDiceDoubles, calculateCompanyRent, calculateNetWorth, calculateRent, canBuildLevelAfterFirstLap, chooseFestivalCityIds, constructionCost, divideBalances, forcedBuybackCost, getAnimationDuration, getMatchEndSummary, getMonopolyWinReason, getWorldCupRentMultiplier, hasWinningMonopoly, isAnimationSpeed, isMatchDuration, liquidatablePropertyIds } from './game.js'
+import { ANIMATION_SPEEDS, DEFAULT_ANIMATION_SPEED, DICE_ANIMATION_DURATION_MS, FESTIVAL_CITY_COUNT, LOAN_MINIMUM, MATCH_DURATIONS, PAWN_STEP_ANIMATION_DURATION_MS, TURN_DECISION_SECONDS, applyRentMultiplier, areDiceDoubles, calculateCompanyRent, calculateNetWorth, calculateRent, canBuildLevelAfterFirstLap, chooseFestivalCityIds, constructionCost, divideBalances, forcedBuybackCost, getAnimationDuration, getMatchEndSummary, getMonopolyWinReason, getWorldCupRentMultiplier, hasWinningMonopoly, isAnimationSpeed, isMatchDuration, liquidatablePropertyIds, loanLimit, loanRepayment } from './game.js'
+
+describe('empréstimo ao banco', () => {
+  it('calcula limite de 25% em incrementos de R$ 10 mil e exige valor mínimo', () => {
+    expect(loanLimit(2_000_000)).toBe(500_000)
+    expect(loanLimit(1_000_000)).toBe(250_000)
+    expect(loanLimit(39_999)).toBe(0)
+  })
+
+  it('aumenta os juros em 50 pontos percentuais por contratação', () => {
+    expect(loanRepayment(500_000, 0)).toBe(1_000_000)
+    expect(loanRepayment(500_000, 1)).toBe(1_250_000)
+    expect(loanRepayment(500_000, 2)).toBe(1_500_000)
+    expect(loanRepayment(LOAN_MINIMUM - 1, 0)).toBe(0)
+  })
+})
 
 describe('tentativas para sair da prisão', () => {
   it('reconhece dois dados iguais como duplas', () => {

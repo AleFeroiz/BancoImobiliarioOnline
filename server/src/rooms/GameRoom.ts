@@ -2,7 +2,7 @@ import { randomInt } from 'node:crypto'
 import { CloseCode, Client, Room } from '@colyseus/core'
 import { MAX_ROOM_PLAYERS, type GameMode } from '../../../shared/lobby.js'
 import { isCharacterType, isGameMode, normalizePlayerName } from '../../../shared/lobby.js'
-import { AUCTION_ACCEPT_SECONDS, AUCTION_BID_SECONDS, AUCTION_MIN_BID_INCREMENT, CLASSIC_MATCH_SECONDS, DEFAULT_ANIMATION_SPEED, DICE_ANIMATION_DURATION_MS, MATCH_DURATIONS, PAWN_STEP_ANIMATION_DURATION_MS, PAWN_TELEPORT_ANIMATION_DURATION_MS, PROPERTY_BUILD_LEVELS, PROPERTY_HOTEL_LEVEL, START_BONUS, TURN_ROLL_SECONDS, applyRentMultiplier, areDiceDoubles, bankReturnValue, buildingSaleValue, calculateCompanyRent, calculateNetWorth, calculateRent, canBuildHotel, canBuildLevelAfterFirstLap, canBuildProperty, canReturnPropertyToBank, canSellBuilding, chooseFestivalCityIds, constructionCost, describeLanding, divideBalances, forcedBuybackCost, getAnimationDuration, getMonopolyWinReason, getWorldCupRentMultiplier, hasLiquidatableAssets, hotelConstructionCost, isAnimationSpeed, isMatchDuration, movePosition, taxForSpace, type MatchEndReason } from '../../../shared/game.js'
+import { AUCTION_ACCEPT_SECONDS, AUCTION_BID_SECONDS, AUCTION_MIN_BID_INCREMENT, CLASSIC_MATCH_SECONDS, DEFAULT_ANIMATION_SPEED, DICE_ANIMATION_DURATION_MS, LOAN_MINIMUM, MATCH_DURATIONS, PAWN_STEP_ANIMATION_DURATION_MS, PAWN_TELEPORT_ANIMATION_DURATION_MS, PROPERTY_BUILD_LEVELS, PROPERTY_HOTEL_LEVEL, START_BONUS, TURN_ROLL_SECONDS, applyRentMultiplier, areDiceDoubles, bankReturnValue, buildingSaleValue, calculateCompanyRent, calculateNetWorth, calculateRent, canBuildHotel, canBuildLevelAfterFirstLap, canBuildProperty, canReturnPropertyToBank, canSellBuilding, chooseFestivalCityIds, constructionCost, describeLanding, divideBalances, forcedBuybackCost, getAnimationDuration, getMonopolyWinReason, getWorldCupRentMultiplier, hasLiquidatableAssets, hotelConstructionCost, isAnimationSpeed, isMatchDuration, loanLimit, loanRepayment, movePosition, taxForSpace, type MatchEndReason } from '../../../shared/game.js'
 import { boardSpaces } from '../../../shared/board.js'
 import { CARD_REVEAL_SECONDS, CARD_TARGET_SECONDS } from '../../../shared/game.js'
 import { PLAYER_COLORS, isPlayerColor } from '../../../shared/playerColors.js'
@@ -296,6 +296,10 @@ export class GameRoom extends Room<{ state: LobbyState }> {
         player.position = 0
         player.hasCompletedFirstLap = false
         player.cash = this.state.startingCash
+        player.loanCount = 0
+        player.loanAmount = 0
+        player.loanDue = 0
+        player.loanUsedThisLap = false
         player.nextRentMultiplier = 1
         player.devInfiniteCash = false
         player.isJailed = false
@@ -344,6 +348,31 @@ export class GameRoom extends Room<{ state: LobbyState }> {
         return
       }
       this.rollForPlayer(this.getPlayerSessionId(client))
+    },
+    takeLoan: (client: Client, payload: { amount?: unknown }) => {
+      const sessionId = this.getPlayerSessionId(client)
+      const player = this.state.players.get(sessionId)
+      const amount = payload?.amount
+      const limit = loanLimit(this.state.startingCash)
+      if (this.state.status !== 'playing' || !player || player.isBankrupt || player.loanAmount > 0 || player.loanUsedThisLap) return
+      if (typeof amount !== 'number' || !Number.isSafeInteger(amount) || amount < LOAN_MINIMUM || amount > limit || amount % LOAN_MINIMUM !== 0) {
+        client.send('room:error', { message: 'Escolha um empréstimo válido dentro do limite da sala.' })
+        return
+      }
+      const due = loanRepayment(amount, player.loanCount)
+      if (player.cash + amount > MAX_SCHEMA_CASH) {
+        client.send('room:error', { message: 'Esse empréstimo ultrapassa o limite de saldo do jogo.' })
+        return
+      }
+      player.loanCount += 1
+      player.loanAmount = amount
+      player.loanDue = due
+      player.loanUsedThisLap = true
+      this.creditCash(player, amount)
+      this.state.landingDescription = `${player.name} contratou empréstimo de ${amount.toLocaleString('pt-BR')}; deverá pagar ${due.toLocaleString('pt-BR')} ao passar pela Partida.`
+      if (this.state.turnPhase === 'debt' && this.state.activePlayerSessionId === sessionId && this.canSpend(player, this.state.debtAmount)) {
+        this.messages.payDebt({ sessionId, send: () => undefined } as unknown as Client)
+      }
     },
     rollCompany: (client: Client) => {
       const pending = this.pendingCompanyRent
@@ -666,8 +695,16 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       if (creditor && !creditor.isBankrupt) this.creditCash(creditor, amount)
       const reason = this.state.debtReason
       this.clearDebt()
+      if (reason === 'Pagamento do empréstimo') {
+        debtor.loanAmount = 0
+        debtor.loanDue = 0
+      }
       this.state.turnPhase = 'resolve'
       this.state.landingDescription = `Dívida paga (${reason}): ${amount.toLocaleString('pt-BR')}.`
+      if (debtor.loanDue > 0) {
+        this.collectLoanPayment(this.getPlayerSessionId(client), debtor)
+        if (this.state.turnPhase === 'debt') return
+      }
       if (this.pendingCardPaymentActorSessionId) {
         this.resumeCardPayments()
         return
@@ -1382,6 +1419,13 @@ export class GameRoom extends Room<{ state: LobbyState }> {
         this.messages.payDebt(client)
         return
       }
+      const botLoanLimit = loanLimit(this.state.startingCash)
+      const shortfall = this.state.debtAmount - player.cash
+      const botLoan = Math.ceil(shortfall / LOAN_MINIMUM) * LOAN_MINIMUM
+      if (player.isBot && player.loanAmount === 0 && !player.loanUsedThisLap && botLoan <= botLoanLimit && player.cash + botLoan <= MAX_SCHEMA_CASH) {
+        this.messages.takeLoan(client, { amount: botLoan })
+        return
+      }
       const holdings = this.getHoldings()
       const owned = [...holdings.entries()].filter(([, holding]) => holding.ownerSessionId === sessionId)
       const building = owned.find(([propertyId, holding]) => holding.houses > 0 && canSellBuilding(propertyId, sessionId, holdings))
@@ -1420,11 +1464,11 @@ export class GameRoom extends Room<{ state: LobbyState }> {
     const ranked = activePlayers.map(([sessionId, player]) => ({
       sessionId,
       player,
-      netWorth: calculateNetWorth(sessionId, player.cash, holdings),
+      netWorth: calculateNetWorth(sessionId, player.cash, holdings) - (reason === 'timeout' ? player.loanDue : 0),
     }))
     for (const [sessionId, player] of this.state.players.entries()) {
       player.finalCash = player.cash
-      player.finalNetWorth = Math.min(MAX_SCHEMA_CASH, calculateNetWorth(sessionId, player.cash, holdings))
+      player.finalNetWorth = Math.max(0, calculateNetWorth(sessionId, player.cash, holdings) - (reason === 'timeout' ? player.loanDue : 0))
       player.tieBreakRoll = 0
     }
 
@@ -1737,6 +1781,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
     const travelDescription = passesStart ? `${description} Você passou pela Partida e recebeu R$ ${START_BONUS.toLocaleString('pt-BR')}.` : description
     this.state.landingDescription = travelDescription
     if (passesStart) {
+      player.loanUsedThisLap = false
       this.creditCash(player, START_BONUS)
     }
     this.state.presentationSpeed = this.state.animationSpeed
@@ -1744,6 +1789,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
       if (this.state.turnPhase !== 'moving' || this.state.activePlayerSessionId !== sessionId || player.position !== destinationId) return
       this.state.pawnMoveMode = 'walk'
       this.resolveSpace(sessionId, player, false, travelDescription)
+      this.collectLoanPayment(sessionId, player)
       this.finishExpiredPhaseIfReady()
     })
   }
@@ -1804,9 +1850,28 @@ export class GameRoom extends Room<{ state: LobbyState }> {
     player.position = movePosition(player.position, [spaces, 0])
     if (player.position < previousPosition) {
       player.hasCompletedFirstLap = true
+      player.loanUsedThisLap = false
       this.creditCash(player, START_BONUS)
       this.advanceOwnedEffectsOnLap(sessionId)
     }
+  }
+
+  private collectLoanPayment(sessionId: string, player: LobbyPlayerState) {
+    if (player.loanDue <= 0 || this.state.turnPhase === 'debt') return
+    const due = player.loanDue
+    if (this.canSpend(player, due)) {
+      this.spendCash(player, due)
+      player.loanAmount = 0
+      player.loanDue = 0
+      this.state.landingDescription += ` Empréstimo quitado: ${due.toLocaleString('pt-BR')} pagos ao banco.`
+      return
+    }
+    this.state.debtAmount = due
+    this.state.debtCreditorSessionId = ''
+    this.state.debtReason = 'Pagamento do empréstimo'
+    this.state.turnPhase = 'debt'
+    this.clearAuction(true)
+    this.state.landingDescription += ` Dívida de empréstimo de ${due.toLocaleString('pt-BR')} com o banco. Venda construções ou devolva imóveis ao banco para pagar.`
   }
 
   private advanceOwnedEffectsOnLap(sessionId: string) {
@@ -1975,6 +2040,7 @@ export class GameRoom extends Room<{ state: LobbyState }> {
     this.schedulePresentation(Math.max(1, steps) * getAnimationDuration(PAWN_STEP_ANIMATION_DURATION_MS, this.state.presentationSpeed), () => {
       if (this.state.turnPhase !== 'moving' || this.state.activePlayerSessionId !== sessionId) return
       this.resolveSpace(sessionId, player, drawEvent, descriptionPrefix)
+      this.collectLoanPayment(sessionId, player)
       this.finishExpiredPhaseIfReady()
     })
   }
