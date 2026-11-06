@@ -1,6 +1,6 @@
 # Empréstimo ao banco — plano de implementação
 
-Estado: implementação concluída na versão web. Escopo: jogo web React/Colyseus. Apostas, alterações de leilão e protótipo Unity não fazem parte desta etapa.
+Estado: implementação concluída na versão web e publicada em `main` no commit `a2466e2`. Escopo: jogo web React/Colyseus. Apostas, alterações de leilão e protótipo Unity não fazem parte desta etapa.
 
 ## Regras confirmadas
 
@@ -13,12 +13,12 @@ Estado: implementação concluída na versão web. Escopo: jogo web React/Colyse
 - No fim por tempo, descontar o valor integral pendente do patrimônio. Vitória imediata por monopólio permanece válida mesmo com empréstimo ativo.
 - Bots podem contratar para tentar pagar dívidas, sem contratar para comprar propriedades.
 
-## Questões técnicas a resolver durante a implementação
+## Decisões técnicas aplicadas
 
-- Determinar arredondamento do teto de 25% para múltiplos de R$ 10.000 e comportamento se o teto for menor que o mínimo; verificar limites reais do saldo configurável antes de escolher e documentar a solução.
-- Definir como a cobrança pendente é representada ao virar dívida, evitando dedução dupla no patrimônio e nova contratação antes da liquidação; preservar o limite por volta.
-- Verificar a ordem de resolução quando uma passagem gera cobrança e também uma ação de chegada, e como suspender e retomar o movimento sem perder eventos.
-- Identificar quais trajetos de cartas existentes percorrem o tabuleiro e quais são teletransportes; não presumir que todas as cartas usam o mesmo caminho.
+- O teto de 25% é arredondado para baixo a múltiplos de R$ 10.000. Se ficar abaixo do mínimo de R$ 10.000, empréstimos ficam indisponíveis.
+- O estado por jogador guarda valor contratado, valor devido, contagem de empréstimos e bloqueio até a próxima passagem válida; a dívida pendente é descontada uma vez no patrimônio final.
+- O bônus normal de Partida é creditado antes da cobrança. Se não houver saldo para quitar tudo, o sistema usa o fluxo existente de dívida bancária, sem pagamento parcial.
+- Movimentos que percorrem casas, inclusive Volta ao Brasil, podem passar pela Partida. Teletransportes como Troca-Troca não contam.
 
 ## Passo a passo
 
@@ -31,4 +31,8 @@ Estado: implementação concluída na versão web. Escopo: jogo web React/Colyse
 7. Criar testes de regras e integração para limites, escala, uma contratação por volta, fora da vez, dívida, bônus antes da cobrança, passagem próxima, movimentos de carta e teletransporte, insuficiência e falência, patrimônio, monopólio, bots, reconexão e requisições inválidas ou duplicadas.
 8. Executar `npm run verify`, fazer playtest real com clientes e bots em desktop e celular conforme o procedimento do README, registrar evidências em `docs/VALIDACAO.md` e atualizar o andamento. Revisar diff e publicar conforme o fluxo do projeto.
 
-Implementação: estado por jogador em `server/src/rooms/schema/LobbyState.ts`; validação autoritativa, pagamentos, movimentos e bots em `server/src/rooms/GameRoom.ts`; controles DOM responsivos em `src/ui/App.tsx` e `src/ui/styles.css`; limites e juros em `shared/game.ts`. Testes em `shared/game.test.ts` e `server/test/GameRoom.test.ts`. Validação: `npm run verify` passou com 381 testes e uma partida local confirmou a contratação e atualização de saldo/valor devido. O limite é arredondado para baixo em múltiplos de R$ 10.000; para saldo inicial abaixo de R$ 40.000, o empréstimo fica indisponível por não caber o mínimo. A cobrança ao cruzar a Partida e a validação visual em celular ainda não foram exercitadas em partida real.
+## Implementação e validação
+
+Estado serializável por jogador: `server/src/rooms/schema/LobbyState.ts`. Validação autoritativa, crédito, cobrança, movimentos e bots: `server/src/rooms/GameRoom.ts`. Painel DOM: `src/ui/App.tsx` e `src/ui/styles.css`. Limite e escala de juros: `shared/game.ts`. Testes: `shared/game.test.ts` e `server/test/GameRoom.test.ts`.
+
+`npm run verify` passou com 382 testes em 66 arquivos e builds do Vite e do servidor. Playtest desktop conectado confirmou seletor, contratação e sincronização de saldo e vencimento. A revisão visual em viewport de 390 × 844 confirmou que seletor e controles do empréstimo cabem na interface móvel. A passagem com cobrança foi exercitada pelo teste Colyseus, que movimenta o jogador através da Partida e verifica o bônus antes da quitação; não foi repetida numa partida ao vivo nesta revisão. A sala de teste já aberta estava conectada a um servidor legado na porta 2567, então foi preservada. Os servidores isolados iniciados para a revisão foram encerrados.
